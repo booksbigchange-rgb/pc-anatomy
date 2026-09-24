@@ -23,6 +23,7 @@ export default function Home() {
   const [search, setSearch] = useState(false),
     [query, setQuery] = useState(''),
     [about, setAbout] = useState(false),
+    [studentMode, setStudentMode] = useState(true),
     [mode, setMode] = useState<'explorer' | 'comparison'>('explorer'),
     // `null` until the viewer has reported for the first time. Zero means the
     // viewer is running and nothing is switched on, which is a different thing
@@ -93,8 +94,10 @@ export default function Home() {
     >
       <Topbar
         layers={layers}
+        studentMode={studentMode}
         onReset={explorer.reset}
         onToggleLayers={() => explorer.setLayers(!layers)}
+        onToggleStudentMode={() => setStudentMode((value) => !value)}
         onSearch={() => setSearch(true)}
         onAbout={() => setAbout(true)}
       />
@@ -192,6 +195,7 @@ export default function Home() {
         selection={state.selection}
         level={state.level}
         isolated={state.isolated}
+        studentMode={studentMode}
         onClose={() => choose(null)}
         onSelectConcept={selectResult}
         onDive={explorer.dive}
