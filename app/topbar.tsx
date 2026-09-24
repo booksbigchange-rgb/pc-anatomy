@@ -1,6 +1,6 @@
 'use client';
 import { Code2, Cpu, Info, Layers3, Search } from 'lucide-react';
-import { GUIDE, REPOSITORY } from './links';
+import { GUIDE, UPSTREAM_REPOSITORY } from './links';
 
 type Props = {
   layers: boolean;
@@ -19,22 +19,22 @@ export default function Topbar({
 }: Props) {
   return (
     <header className="topbar">
-      <button className="brand" onClick={onReset} aria-label="Reset PC Anatomy">
+      <button className="brand" onClick={onReset} aria-label="Reset Big Change PC Atlas">
         <span className="brand-icon">
           <Cpu size={21} />
         </span>
-        <span>PC Anatomy</span>
+        <span>Big Change PC Atlas</span>
       </button>
       <a
         className="byline"
-        href={REPOSITORY}
+        href={UPSTREAM_REPOSITORY}
         target="_blank"
         rel="noreferrer"
-        title="PC Anatomy on GitHub"
+        title="Based on the open-source PC Anatomy project"
       >
         <Code2 size={13} />
         <span>
-          Created by <strong>Yoseph</strong>
+          Based on <strong>PC Anatomy</strong> by Yoseph
         </span>
       </a>
       <div className="header-actions">
