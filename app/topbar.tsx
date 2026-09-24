@@ -1,25 +1,40 @@
 'use client';
-import { Code2, Cpu, Info, Layers3, Search } from 'lucide-react';
+import {
+  Code2,
+  Cpu,
+  GraduationCap,
+  Info,
+  Layers3,
+  Search,
+} from 'lucide-react';
 import { GUIDE, UPSTREAM_REPOSITORY } from './links';
 
 type Props = {
   layers: boolean;
+  studentMode: boolean;
   onReset: () => void;
   onToggleLayers: () => void;
+  onToggleStudentMode: () => void;
   onSearch: () => void;
   onAbout: () => void;
 };
 
 export default function Topbar({
   layers,
+  studentMode,
   onReset,
   onToggleLayers,
+  onToggleStudentMode,
   onSearch,
   onAbout,
 }: Props) {
   return (
     <header className="topbar">
-      <button className="brand" onClick={onReset} aria-label="Reset Big Change PC Atlas">
+      <button
+        className="brand"
+        onClick={onReset}
+        aria-label="Reset Big Change PC Atlas"
+      >
         <span className="brand-icon">
           <Cpu size={21} />
         </span>
@@ -38,6 +53,15 @@ export default function Topbar({
         </span>
       </a>
       <div className="header-actions">
+        <button
+          className="student-mode-button"
+          aria-pressed={studentMode}
+          onClick={onToggleStudentMode}
+          title="Switch between student and technical explanations"
+        >
+          <GraduationCap size={16} />
+          <span>{studentMode ? 'Student mode' : 'Technical mode'}</span>
+        </button>
         <a
           className="guide-link"
           href={GUIDE}
