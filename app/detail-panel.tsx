@@ -22,6 +22,7 @@ type Props = {
   selection: Selection | null;
   level: LevelId;
   isolated: boolean;
+  studentMode: boolean;
   onClose: () => void;
   onSelectConcept: (id: string) => void;
   onDive: (id: string) => void;
@@ -30,11 +31,23 @@ type Props = {
   onHide: (id: string) => void;
 };
 
+const studentTips: Record<Concept['category'], string> = {
+  Chassis: 'The chassis protects the hardware and keeps every major part in the right place.',
+  Cooling: 'Cooling removes heat so the computer can keep working safely and reliably.',
+  Board: 'Board components connect the computer parts so they can communicate with each other.',
+  Power: 'Power components deliver the correct electrical power to the rest of the computer.',
+  Memory: 'Memory gives the computer fast temporary space for information it is actively using.',
+  Storage: 'Storage keeps files, programs and data even after the computer is turned off.',
+  Compute: 'Compute components perform the calculations and instructions that make programs run.',
+  Graphics: 'Graphics components calculate and draw images, video and 3D scenes for the display.',
+};
+
 export default function DetailPanel({
   selected,
   selection,
   level,
   isolated,
+  studentMode,
   onClose,
   onSelectConcept,
   onDive,
@@ -43,6 +56,13 @@ export default function DetailPanel({
   onHide,
 }: Props) {
   const opens = selected && openLevel(selected.id);
+  const specifications = selected
+    ? Object.entries(selected.specifications)
+    : [];
+  const shownSpecifications = studentMode
+    ? specifications.slice(0, 3)
+    : specifications;
+
   return (
     <Sheet
       open={!!selected}
@@ -76,20 +96,34 @@ export default function DetailPanel({
                 ? 'INSTANCE ' + String(selection.instance + 1).padStart(2, '0')
                 : 'COMPONENT GROUP'}
             </div>
-            <SheetDescription>{selected.description}</SheetDescription>
+            <SheetDescription>
+              {studentMode ? selected.purpose : selected.description}
+            </SheetDescription>
             <div className="purpose">
-              <h3>What it does</h3>
-              <p>{selected.purpose}</p>
+              <h3>{studentMode ? 'Why it matters' : 'What it does'}</h3>
+              <p>
+                {studentMode ? studentTips[selected.category] : selected.purpose}
+              </p>
             </div>
             <div className="quantity">{selected.quantity}</div>
             <dl>
-              {Object.entries(selected.specifications).map(([k, v]) => (
+              {shownSpecifications.map(([k, v]) => (
                 <div key={k}>
                   <dt>{k}</dt>
                   <dd>{v}</dd>
                 </div>
               ))}
             </dl>
+            {studentMode && (
+              <div className="student-task">
+                <h3>Try it</h3>
+                <p>
+                  {opens && opens !== level
+                    ? `Focus on this part, then open ${levels[opens].name} to see what is inside.`
+                    : 'Isolate this part, then use Focus to study where it sits in the computer.'}
+                </p>
+              </div>
+            )}
             {selected.parent && (
               <div className="parent-link">
                 Part of{' '}
@@ -122,26 +156,30 @@ export default function DetailPanel({
                 Hide
               </button>
             </div>
-            <p className="accuracy">{selected.physicalAccuracy}</p>
-            {selected.sources.length > 0 && (
-              <div className="source-links">
-                <h3>References & architecture</h3>
-                <p>
-                  Manufacturer documents and standards explain this component
-                  family. Illustrative geometry is not a product schematic.
-                </p>
-                {selected.sources.map((s) => (
-                  <a
-                    key={s}
-                    href={sources[s].url}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {sources[s].name}
-                    <ArrowUpRight size={12} />
-                  </a>
-                ))}
-              </div>
+            {!studentMode && (
+              <>
+                <p className="accuracy">{selected.physicalAccuracy}</p>
+                {selected.sources.length > 0 && (
+                  <div className="source-links">
+                    <h3>References & architecture</h3>
+                    <p>
+                      Manufacturer documents and standards explain this component
+                      family. Illustrative geometry is not a product schematic.
+                    </p>
+                    {selected.sources.map((s) => (
+                      <a
+                        key={s}
+                        href={sources[s].url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {sources[s].name}
+                        <ArrowUpRight size={12} />
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
