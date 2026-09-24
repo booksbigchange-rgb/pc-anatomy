@@ -31,6 +31,7 @@ export default function Topbar({
   return (
     <header className="topbar">
       <button
+        type="button"
         className="brand"
         onClick={onReset}
         aria-label="Reset Big Change PC Atlas"
@@ -54,6 +55,7 @@ export default function Topbar({
       </a>
       <div className="header-actions">
         <button
+          type="button"
           className="student-mode-button"
           aria-pressed={studentMode}
           onClick={onToggleStudentMode}
@@ -70,6 +72,7 @@ export default function Topbar({
           Guide
         </a>
         <button
+          type="button"
           className="mobile-layers"
           onClick={onToggleLayers}
           aria-label="Toggle systems"
@@ -78,6 +81,7 @@ export default function Topbar({
           <Layers3 size={19} />
         </button>
         <button
+          type="button"
           className="search-button"
           aria-label="Find a component"
           onClick={onSearch}
@@ -87,6 +91,7 @@ export default function Topbar({
           <kbd>/</kbd>
         </button>
         <button
+          type="button"
           className="info-button"
           aria-label="About and sources"
           onClick={onAbout}
