@@ -595,8 +595,6 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
       canvas.removeEventListener('pointerup', pick);
       controls.dispose();
       groupsRef.current = null;
-      portsRef.current = [];
-      cablesRef.current = new Map();
       renderer.dispose();
       scene.traverse((object) => {
         if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
