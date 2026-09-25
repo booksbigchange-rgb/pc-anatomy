@@ -11,6 +11,40 @@ The school edition treats public GitHub availability as **insufficient permissio
 - Usage: codebase and procedural Three.js hardware.
 - Requirement: retain MIT notice and upstream attribution.
 
+## Approved visual assets
+
+### Skywolf Game Studios / CC0Tree — Computer Tower
+
+- Source: https://github.com/SkywolfGameStudios/CC0Tree
+- Asset: `Assets/SM_ComputerTower.fbx`
+- License: CC0 1.0 Universal.
+- Decision: **approved and integrated**.
+- Usage: exterior system-unit shell in the Big Change Computer Lab.
+- Integration: vendored into the repository as base64 so the classroom build makes no runtime request to a third-party host.
+- Big Change keeps its own teaching ports, selection state, connection exercises and internal PC Anatomy explorer; the CC0 model is visual geometry only.
+
+### MrEliptik / Office Low Poly Pack
+
+- Source: https://mreliptik.itch.io/office-low-poly-pack
+- License: CC0 1.0 Universal as stated by the author.
+- Relevant assets: laptop, keyboard, mouse, monitor, ultrawide monitor, Mini PC, PC, speakers and desk props.
+- Decision: **approved as a visual candidate**, but no file is copied until the original download is acquired directly from the author page and the included archive is inspected.
+- Note: the author states the keyboard layout is not intended to be completely realistic, so any keyboard legends must be replaced or omitted for classroom accuracy.
+
+### KayKit Furniture Bits
+
+- Source: https://github.com/KayKit-Game-Assets/KayKit-Furniture-Bits-1.0
+- License: CC0 1.0 Universal.
+- Decision: **approved for optional classroom environment props**.
+- Usage target: chairs, lamps and room dressing only; core computer teaching objects stay purpose-built so ports and interaction targets remain accurate.
+
+### Poly Haven
+
+- Source: https://polyhaven.com
+- License: CC0 for its asset library.
+- Decision: **approved for optional lighting/material resources** after individual asset-size review.
+- Usage rule: prefer small, local files; do not add a runtime dependency on the Poly Haven API.
+
 ## Donor review
 
 ### Vincexodus/PCBUILD3R
