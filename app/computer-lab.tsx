@@ -39,6 +39,7 @@ type ConnectionTask = {
   name: string;
   device: LabPartId;
   portType: PortType;
+  targetPort: PortId;
   instruction: string;
 };
 
@@ -85,6 +86,7 @@ const CONNECTION_TASKS: ConnectionTask[] = [
     name: 'Keyboard → USB',
     device: 'keyboard',
     portType: 'usb',
+    targetPort: 'tower-usb-1',
     instruction:
       'Connect the keyboard. Rotate the computer if needed, then click one of the USB ports.',
   },
@@ -93,6 +95,7 @@ const CONNECTION_TASKS: ConnectionTask[] = [
     name: 'Mouse → USB',
     device: 'mouse',
     portType: 'usb',
+    targetPort: 'tower-usb-2',
     instruction:
       'Connect the mouse to the remaining USB port on the system unit.',
   },
@@ -101,6 +104,7 @@ const CONNECTION_TASKS: ConnectionTask[] = [
     name: 'Monitor → HDMI',
     device: 'monitor',
     portType: 'hdmi',
+    targetPort: 'tower-hdmi',
     instruction:
       'Connect the monitor to HDMI. The display connector is on the rear teaching panel, so rotate the tower to find it.',
   },
@@ -525,32 +529,11 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
           return;
         }
 
-        if (
-          task.portType === 'usb' &&
-          task.id === 'mouse-usb' &&
-          id === 'tower-usb-1' &&
-          connectedRef.current.includes('keyboard-usb')
-        ) {
+        if (id !== task.targetPort) {
           setFeedback(
-            'That USB port already has the keyboard. Try the second USB port.',
+            `That is the right kind of port, but this exercise uses the other ${task.portType.toUpperCase()} socket so each cable stays visible. Try the highlighted target.`,
           );
           return;
-        }
-
-        if (
-          task.portType === 'usb' &&
-          task.id === 'keyboard-usb' &&
-          id === 'tower-usb-2'
-        ) {
-          // Either front USB socket is valid for a keyboard. Swap which visual
-          // cable is treated as occupied so the exercise remains forgiving.
-          const first = cablesRef.current.get('keyboard-usb');
-          const second = cablesRef.current.get('mouse-usb');
-          if (first && second) {
-            const firstVisible = first.visible;
-            first.visible = second.visible;
-            second.visible = firstVisible;
-          }
         }
 
         const nextConnected = connectedRef.current.includes(task.id)
