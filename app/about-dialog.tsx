@@ -68,6 +68,15 @@ export default function AboutDialog({ open, onOpenChange }: Props) {
           ))}
         <a
           className="about-source"
+          href="https://github.com/FrameworkComputer/Framework-Laptop-13"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Framework Laptop 13 CAD · Framework Computer · CC BY 4.0
+          <ArrowUpRight size={15} />
+        </a>
+        <a
+          className="about-source"
           href={UPSTREAM_REPOSITORY}
           target="_blank"
           rel="noreferrer"
@@ -95,7 +104,9 @@ export default function AboutDialog({ open, onOpenChange }: Props) {
         </a>
         <p className="about-foot">
           Big Change learning edition. Upstream PC Anatomy remains credited under
-          its MIT License. No affiliation with NVIDIA, AMD or Intel.
+          its MIT License. Framework Laptop 13 CAD is converted and optimized
+          under CC BY 4.0; its inclusion does not imply endorsement by Framework
+          Computer. No affiliation with NVIDIA, AMD or Intel.
         </p>
       </DialogContent>
     </Dialog>
