@@ -1,0 +1,271 @@
+.assembly-lab {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr) 315px;
+  grid-template-rows: 72px minmax(0, 1fr);
+  color: #eef3f4;
+  background: #10171d;
+  overflow: hidden;
+}
+.assembly-topbar {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 0 22px;
+  border-bottom: 1px solid #2d3940;
+  background: #10161b;
+  z-index: 5;
+}
+.assembly-back,
+.assembly-primary {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #3b4b52;
+  border-radius: 7px;
+  color: #c7d1d5;
+  background: #182127;
+}
+.assembly-back {
+  justify-self: start;
+  padding: 0 12px;
+}
+.assembly-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.assembly-brand > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+.assembly-brand strong {
+  font-size: 17px;
+}
+.assembly-brand small {
+  color: #81939b;
+  font: 9px/1.2 monospace;
+  letter-spacing: 1.35px;
+}
+.assembly-brand-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: #132128;
+  background: linear-gradient(135deg, #a3dce3, #a8d2b5);
+}
+.assembly-progress-label {
+  justify-self: end;
+  color: #9eacb2;
+  font: 11px/1.2 monospace;
+}
+.assembly-steps,
+.assembly-detail {
+  padding: 28px 22px;
+  background: #151d22;
+  overflow-y: auto;
+}
+.assembly-steps {
+  border-right: 1px solid #303b41;
+}
+.assembly-detail {
+  border-left: 1px solid #303b41;
+}
+.assembly-eyebrow {
+  margin: 0 0 11px;
+  color: #84acb4;
+  font: 10px/1.4 monospace;
+  letter-spacing: 1.5px;
+}
+.assembly-steps h1,
+.assembly-detail h2 {
+  margin: 0 0 12px;
+}
+.assembly-steps h1 {
+  font-size: clamp(28px, 3vw, 38px);
+  line-height: 1;
+}
+.assembly-detail h2 {
+  font-size: 30px;
+}
+.assembly-intro,
+.assembly-detail > p:not(.assembly-eyebrow) {
+  color: #b8c4c8;
+  font-size: 14px;
+  line-height: 1.58;
+}
+.assembly-progress {
+  height: 6px;
+  margin: 20px 0;
+  border-radius: 999px;
+  background: #27333a;
+  overflow: hidden;
+}
+.assembly-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #79cdd6, #a9d7bf);
+  transition: width 180ms ease;
+}
+.assembly-step-list {
+  display: grid;
+  gap: 7px;
+}
+.assembly-step {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 11px;
+  border: 1px solid #344148;
+  border-radius: 7px;
+  color: #98a7ad;
+  background: #1a2328;
+}
+.assembly-step.active {
+  color: #edfcfd;
+  border-color: #6aaeb8;
+  background: #22383e;
+}
+.assembly-step.done {
+  color: #b8ddcf;
+  border-color: #486e60;
+  background: #182a24;
+}
+.assembly-stage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  background:
+    radial-gradient(circle at 53% 42%, rgba(52, 83, 92, .46), transparent 48%),
+    linear-gradient(#10171d, #0c1216);
+}
+.assembly-stage canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+.assembly-stage-tip {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 11px;
+  border: 1px solid #3a474e;
+  border-radius: 999px;
+  color: #a7b4b9;
+  background: #10181dcc;
+  backdrop-filter: blur(8px);
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.assembly-feedback {
+  margin-top: 24px;
+  padding: 14px;
+  border-left: 3px solid #79c6d0;
+  background: #1a2429;
+}
+.assembly-feedback strong {
+  font-size: 12px;
+}
+.assembly-feedback p {
+  margin: 7px 0 0;
+  color: #adb9be;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.assembly-primary {
+  width: 100%;
+  margin-top: 22px;
+  justify-content: space-between;
+  padding: 0 14px;
+  border-color: #537780;
+  color: #e4fbfd;
+  background: #1d353b;
+  font-weight: 650;
+}
+@media (max-width: 980px) {
+  .assembly-lab {
+    grid-template-columns: 225px minmax(0, 1fr);
+  }
+  .assembly-detail {
+    position: absolute;
+    right: 14px;
+    bottom: 64px;
+    width: min(305px, calc(100vw - 265px));
+    max-height: 48vh;
+    border: 1px solid #39474e;
+    border-radius: 10px;
+    box-shadow: 0 16px 50px #0009;
+  }
+}
+@media (max-width: 680px) {
+  .assembly-lab {
+    grid-template-columns: 1fr;
+    grid-template-rows: 64px minmax(0, 1fr) auto;
+  }
+  .assembly-topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 0 10px;
+  }
+  .assembly-back {
+    width: 34px;
+    padding: 0;
+    font-size: 0;
+  }
+  .assembly-brand strong {
+    font-size: 13px;
+  }
+  .assembly-brand small {
+    display: none;
+  }
+  .assembly-progress-label {
+    font-size: 9px;
+  }
+  .assembly-steps {
+    position: absolute;
+    left: 10px;
+    top: 76px;
+    width: 176px;
+    padding: 12px;
+    border: 1px solid #344148;
+    border-radius: 9px;
+    background: #121a1ee8;
+    backdrop-filter: blur(8px);
+    z-index: 3;
+  }
+  .assembly-steps h1,
+  .assembly-intro,
+  .assembly-progress {
+    display: none;
+  }
+  .assembly-step {
+    min-height: 38px;
+    font-size: 11px;
+  }
+  .assembly-detail {
+    position: static;
+    width: auto;
+    max-height: none;
+    grid-row: 3;
+    padding: 16px;
+    border: 0;
+    border-top: 1px solid #303b41;
+    border-radius: 0;
+  }
+  .assembly-detail h2 {
+    font-size: 22px;
+  }
+}
