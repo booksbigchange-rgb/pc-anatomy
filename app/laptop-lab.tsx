@@ -918,6 +918,8 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   const selectPart = (id: LaptopPartId) => {
     const part = PARTS.find((candidate) => candidate.id === id);
     if (!part) return;
+    modeRef.current = 'explore';
+    setMode('explore');
     viewRef.current = part.view;
     setView(part.view);
     selectedRef.current = part.id;
@@ -926,6 +928,8 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
 
   const changeView = (next: LaptopView) => {
     setGuided(false);
+    modeRef.current = 'explore';
+    setMode('explore');
     viewRef.current = next;
     setView(next);
     const first = PARTS.find((part) => part.view === next)!;
@@ -934,6 +938,8 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   };
 
   const startGuide = () => {
+    modeRef.current = 'explore';
+    setMode('explore');
     setGuided(true);
     setLessonIndex(0);
     selectPart(LESSON_ORDER[0]);
@@ -946,6 +952,27 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     );
     setLessonIndex(next);
     selectPart(LESSON_ORDER[next]);
+  };
+
+  const startConnections = () => {
+    setGuided(false);
+    modeRef.current = 'connections';
+    setMode('connections');
+    viewRef.current = 'outside';
+    setView('outside');
+    setConnectionFeedback(
+      allConnectionsComplete
+        ? 'All four connections are complete. Reset them to practise again.'
+        : currentConnection.instruction,
+    );
+  };
+
+  const resetConnections = () => {
+    connectedRef.current = [];
+    connectionTaskRef.current = 0;
+    setConnected([]);
+    setConnectionTask(0);
+    setConnectionFeedback(CONNECTION_TASKS[0].instruction);
   };
 
   return (
