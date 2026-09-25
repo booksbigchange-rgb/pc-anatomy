@@ -288,6 +288,44 @@ function tag(group: THREE.Group, id: LaptopPartId) {
   return group;
 }
 
+function laptopPort(
+  id: LaptopPortId,
+  size: [number, number, number],
+  position: [number, number, number],
+  color: number,
+) {
+  const item = rounded(
+    size[0],
+    size[1],
+    size[2],
+    Math.min(...size) * 0.22,
+    color,
+    0.28,
+    0.4,
+  );
+  item.position.set(...position);
+  item.userData.laptopPort = id;
+  item.userData.portType = PORT_TYPES[id];
+  return item;
+}
+
+function connectionCable(start: THREE.Vector3, end: THREE.Vector3) {
+  const middle = start.clone().lerp(end, 0.5);
+  middle.y = Math.max(0.65, Math.min(start.y, end.y) - 0.28);
+  const curve = new THREE.CatmullRomCurve3([start, middle, end]);
+  const geometry = new THREE.TubeGeometry(curve, 26, 0.035, 8, false);
+  const material = new THREE.MeshStandardMaterial({
+    color: 0x7fcbd5,
+    roughness: 0.5,
+    metalness: 0.05,
+    emissive: 0x0e3036,
+    emissiveIntensity: 0.34,
+  });
+  const cable = new THREE.Mesh(geometry, material);
+  cable.castShadow = true;
+  return cable;
+}
+
 function makeScreenTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 1024;
@@ -433,19 +471,14 @@ function buildLaptop() {
   displayPivot.add(tag(displayGroup, 'display'));
   outside.add(displayPivot);
 
-  const portRail = rounded(0.08, 0.13, 3.35, 0.025, 0x424d54, 0.36, 0.38);
-  portRail.position.set(-3.72, 0.98, 0.1);
-  outside.add(portRail);
-  for (const [z, width, color] of [
-    [-1.1, 0.42, 0x4e8394],
-    [-0.38, 0.42, 0x4e8394],
-    [0.52, 0.5, 0x8e7ca8],
-    [1.28, 0.28, 0xa98265],
-  ] as const) {
-    const p = rounded(0.05, 0.11, width, 0.018, color, 0.3, 0.4);
-    p.position.set(-3.79, 0.98, z);
-    outside.add(p);
-  }
+  const ports: THREE.Mesh[] = [
+    laptopPort('usb-left', [0.06, 0.16, 0.48], [-3.82, 0.96, -0.95], 0x4e8394),
+    laptopPort('usb-right', [0.06, 0.16, 0.48], [3.82, 0.96, -0.45], 0x4e8394),
+    laptopPort('hdmi-left', [0.06, 0.18, 0.58], [-3.82, 0.96, 0.02], 0x8e7ca8),
+    laptopPort('power-left', [0.06, 0.16, 0.28], [-3.82, 0.96, 1.25], 0xa98265),
+    laptopPort('audio-right', [0.06, 0.2, 0.2], [3.82, 0.96, 1.12], 0x8aa08e),
+  ];
+  outside.add(...ports);
 
   const lowerShell = rounded(7.34, 0.28, 4.82, 0.2, 0x69747a, 0.4, 0.44);
   lowerShell.position.y = 0.6;
@@ -565,7 +598,7 @@ function buildLaptop() {
   root.add(outside, inside);
   root.position.set(0, -0.05, 0.2);
 
-  return { root, outside, inside };
+  return { root, outside, inside, ports };
 }
 
 function addEnvironment(scene: THREE.Scene) {
