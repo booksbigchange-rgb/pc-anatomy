@@ -3,6 +3,7 @@
 @import './computer-lab.css';
 @import './computer-lab-connections.css';
 @import './laptop-lab.css';
+@import './assembly-lab.css';
 @custom-variant dark (&:is(.dark *));
 @theme inline {
   --color-background: var(--background);
