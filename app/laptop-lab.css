@@ -379,3 +379,103 @@
     margin-bottom: 10px;
   }
 }
+
+.laptop-connection-list {
+  display: grid;
+  gap: 7px;
+}
+.laptop-connection-list button {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 1px solid #344148;
+  border-radius: 7px;
+  color: #b8c4c8;
+  background: #1b2429;
+  text-align: left;
+}
+.laptop-connection-list button > span:first-child {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid #53646c;
+  border-radius: 50%;
+  color: #9fb1b8;
+  font-size: 10px;
+}
+.laptop-connection-list button.active {
+  color: #edfcfd;
+  border-color: #6aaeb8;
+  background: #22383e;
+}
+.laptop-connection-list button.active > span:first-child {
+  color: #14252a;
+  border-color: #8ed8df;
+  background: #8ed8df;
+}
+.laptop-connection-list button.done {
+  color: #b8ddcf;
+  border-color: #486e60;
+  background: #182a24;
+}
+.laptop-connection-list button.done > span:first-child {
+  color: #14231e;
+  border-color: #8cc8ad;
+  background: #8cc8ad;
+}
+.laptop-connection-list .laptop-reset-connections {
+  min-height: 36px;
+  justify-content: center;
+  margin-top: 5px;
+  border-style: dashed;
+  color: #8fa0a7;
+  background: transparent;
+  font-size: 11px;
+}
+.laptop-port-key {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+.laptop-port-key span {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 8px;
+  border: 1px solid #303b41;
+  border-radius: 5px;
+  color: #aeb9bd;
+  background: #11191d;
+  font-size: 11px;
+}
+.laptop-port-key i {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: #4e8394;
+}
+.laptop-port-key i.hdmi {
+  background: #8e7ca8;
+}
+.laptop-port-key i.power {
+  background: #a98265;
+}
+.laptop-port-key i.audio {
+  border-radius: 50%;
+  background: #8aa08e;
+}
+@media (max-width: 680px) {
+  .laptop-connection-list button {
+    min-height: 40px;
+    font-size: 12px;
+  }
+  .laptop-port-key {
+    margin-top: 12px;
+  }
+}
