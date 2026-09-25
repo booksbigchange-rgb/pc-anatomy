@@ -57,8 +57,8 @@ PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab i
 
 ### Milestone D — Build and Troubleshoot
 
-- [ ] Assembly state model
-- [ ] Snap targets and placement validation
-- [ ] Installation order
+- [x] Assembly state model foundation
+- [x] Snap targets and placement validation foundation
+- [x] Installation order for PSU → motherboard → CPU → RAM → SSD → GPU
 - [ ] Troubleshooting scenarios
 - [ ] Assessment hooks
