@@ -246,6 +246,7 @@ export default function AssemblyLab({ onBack }: { onBack: () => void }) {
 
   const [current, setCurrent] = useState(0);
   const [installed, setInstalled] = useState<AssemblyPartId[]>([]);
+  const [session, setSession] = useState(0);
   const [feedback, setFeedback] = useState(
     'Drag the highlighted part into the glowing target.',
   );
@@ -490,10 +491,15 @@ export default function AssemblyLab({ onBack }: { onBack: () => void }) {
         for (const material of materials) material.dispose();
       });
     };
-  }, []);
+  }, [session]);
 
   const reset = () => {
-    window.location.reload();
+    currentRef.current = 0;
+    installedRef.current = [];
+    setCurrent(0);
+    setInstalled([]);
+    setFeedback('Drag the highlighted part into the glowing target.');
+    setSession((value) => value + 1);
   };
 
   return (
