@@ -366,11 +366,6 @@ function cableLine(start: THREE.Vector3, end: THREE.Vector3) {
 export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const groupsRef = useRef<Map<LabPartId, THREE.Group> | null>(null);
-  const portsRef = useRef<THREE.Mesh[]>([]);
-  const cablesRef = useRef<Map<ConnectionId, THREE.Mesh>>(new Map());
-  const modeRef = useRef<LabMode>('explore');
-  const taskRef = useRef(0);
-  const connectedRef = useRef<ConnectionId[]>([]);
 
   const [selected, setSelected] = useState<LabPartId>('tower');
   const [labMode, setLabMode] = useState<LabMode>('explore');
@@ -383,18 +378,6 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
   const selectedPart = PARTS.find((part) => part.id === selected)!;
   const currentTask = CONNECTION_TASKS[taskIndex];
   const allConnected = connected.length === CONNECTION_TASKS.length;
-
-  useEffect(() => {
-    modeRef.current = labMode;
-  }, [labMode]);
-
-  useEffect(() => {
-    taskRef.current = taskIndex;
-  }, [taskIndex]);
-
-  useEffect(() => {
-    connectedRef.current = connected;
-  }, [connected]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -453,7 +436,6 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
     const tower = towerBuild.group;
     const keyboard = buildKeyboard();
     const mouse = buildMouse();
-    portsRef.current = towerBuild.ports;
 
     for (const [id, group] of [
       ['monitor', monitor],
@@ -475,7 +457,6 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
       return item?.getWorldPosition(new THREE.Vector3()) ?? new THREE.Vector3();
     };
 
-    const cables = new Map<ConnectionId, THREE.Mesh>();
     const keyboardCable = cableLine(
       new THREE.Vector3(-0.25, 0.9, 3.05),
       portPosition('tower-usb-1'),
@@ -494,11 +475,18 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
       ['mouse-usb', mouseCable],
       ['monitor-hdmi', monitorCable],
     ] as const) {
-      cable.visible = false;
-      cables.set(id, cable);
+      cable.visible = connected.includes(id);
       scene.add(cable);
     }
-    cablesRef.current = cables;
+
+    for (const item of towerBuild.ports) {
+      const material = item.material;
+      if (!(material instanceof THREE.MeshStandardMaterial)) continue;
+      const type = item.userData.portType as PortType;
+      const target = labMode === 'connect' && type === currentTask.portType;
+      material.emissive.setHex(target ? 0x19444b : 0x000000);
+      material.emissiveIntensity = target ? 1.1 : 0;
+    }
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
@@ -509,8 +497,8 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
       pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
 
-      if (modeRef.current === 'connect') {
-        const portHit = raycaster.intersectObjects(portsRef.current, false)[0];
+      if (labMode === 'connect') {
+        const portHit = raycaster.intersectObjects(towerBuild.ports, false)[0];
         if (!portHit) {
           setFeedback(
             'That is not a connection port. Rotate the setup and look for the highlighted ports.',
@@ -520,7 +508,7 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
 
         const id = portHit.object.userData.labPort as PortId;
         const clickedType = PORT_TYPES[id];
-        const task = CONNECTION_TASKS[taskRef.current];
+        const task = CONNECTION_TASKS[taskIndex];
 
         if (clickedType !== task.portType) {
           setFeedback(
@@ -536,19 +524,17 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
           return;
         }
 
-        const nextConnected = connectedRef.current.includes(task.id)
-          ? connectedRef.current
-          : [...connectedRef.current, task.id];
-        connectedRef.current = nextConnected;
+        const nextConnected = connected.includes(task.id)
+          ? connected
+          : [...connected, task.id];
         setConnected(nextConnected);
         setFeedback(`Correct — ${task.name} is connected.`);
 
         const nextIndex = CONNECTION_TASKS.findIndex(
           (candidate, index) =>
-            index > taskRef.current && !nextConnected.includes(candidate.id),
+            index > taskIndex && !nextConnected.includes(candidate.id),
         );
         if (nextIndex >= 0) {
-          taskRef.current = nextIndex;
           setTaskIndex(nextIndex);
         }
         return;
@@ -605,7 +591,7 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
         else material.dispose();
       });
     };
-  }, []);
+  }, [connected, currentTask.portType, labMode, taskIndex]);
 
   useEffect(() => {
     const groups = groupsRef.current;
@@ -626,27 +612,8 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
     }
   }, [labMode, selected]);
 
-  useEffect(() => {
-    for (const item of portsRef.current) {
-      const material = item.material;
-      if (!(material instanceof THREE.MeshStandardMaterial)) continue;
-      const type = item.userData.portType as PortType;
-      const target = labMode === 'connect' && type === currentTask.portType;
-      material.emissive.setHex(target ? 0x19444b : 0x000000);
-      material.emissiveIntensity = target ? 1.1 : 0;
-    }
-  }, [currentTask.portType, labMode]);
-
-  useEffect(() => {
-    for (const [id, cable] of cablesRef.current) {
-      cable.visible = connected.includes(id);
-    }
-  }, [connected]);
-
   const resetConnections = () => {
-    connectedRef.current = [];
     setConnected([]);
-    taskRef.current = 0;
     setTaskIndex(0);
     setFeedback('Start with the keyboard. Find a USB port on the system unit.');
   };
@@ -748,7 +715,6 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
                     (done ? 'done' : '')
                   }
                   onClick={() => {
-                    taskRef.current = index;
                     setTaskIndex(index);
                     setFeedback(
                       done
