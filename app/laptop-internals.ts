@@ -209,19 +209,22 @@ function addBoardDetails(group: THREE.Group) {
 
 function buildMotherboard() {
   const group = new THREE.Group();
+  const shell = new THREE.Group();
+
   const pcb = mesh(boardShape(), C.pcb, 0.56, 0.06);
-  group.add(pcb);
+  shell.add(pcb);
 
   const edge = new THREE.LineSegments(
     new THREE.EdgesGeometry(boardShape(), 20),
     new THREE.LineBasicMaterial({ color: C.pcbEdge }),
   );
   edge.position.y = 0.012;
-  group.add(edge);
+  shell.add(edge);
 
+  group.add(shell);
   addBoardDetails(group);
   group.position.set(0.15, 1.02, -0.92);
-  return tag(group, 'motherboard');
+  return { group: tag(group, 'motherboard'), shell };
 }
 
 function buildCpu() {
@@ -507,7 +510,16 @@ export function buildRealisticLaptopInternals() {
   const wifi = buildWifi();
   const speakers = buildSpeakers();
 
-  inside.add(battery, motherboard, cpu, ram, ssd, fan, wifi, speakers);
+  inside.add(
+    battery,
+    motherboard.group,
+    cpu,
+    ram,
+    ssd,
+    fan,
+    wifi,
+    speakers,
+  );
 
   // Major internal cables students can recognize.
   inside.add(
@@ -534,5 +546,7 @@ export function buildRealisticLaptopInternals() {
   return {
     inside,
     batteryMount: battery,
+    motherboardMount: motherboard.group,
+    motherboardShell: motherboard.shell,
   };
 }
