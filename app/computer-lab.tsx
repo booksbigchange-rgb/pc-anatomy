@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
+  BookOpen,
   Box,
   Cable,
   CheckCircle2,
@@ -113,6 +114,15 @@ const PARTS: LabPart[] = [
     lesson:
       'Power cables connect the equipment to a safe outlet or power strip. Students should not handle mains wiring inside a real power supply.',
   },
+];
+
+const GUIDE_ORDER: LabPartId[] = [
+  'monitor',
+  'keyboard',
+  'mouse',
+  'network',
+  'power-strip',
+  'tower',
 ];
 
 const CONNECTION_TASKS: ConnectionTask[] = [
@@ -724,6 +734,8 @@ export default function ComputerLab({
 
   const [selected, setSelected] = useState<LabPartId>('tower');
   const [labMode, setLabMode] = useState<LabMode>('explore');
+  const [guided, setGuided] = useState(false);
+  const [guideIndex, setGuideIndex] = useState(0);
   const [taskIndex, setTaskIndex] = useState(0);
   const [connected, setConnected] = useState<ConnectionId[]>([]);
   const [feedback, setFeedback] = useState(
@@ -731,6 +743,8 @@ export default function ComputerLab({
   );
 
   const selectedPart = PARTS.find((part) => part.id === selected)!;
+  const guidePart =
+    PARTS.find((part) => part.id === GUIDE_ORDER[guideIndex]) ?? PARTS[0];
   const currentTask = CONNECTION_TASKS[taskIndex];
   const allConnected = connected.length === CONNECTION_TASKS.length;
 
@@ -1049,6 +1063,7 @@ export default function ComputerLab({
   };
 
   const chooseMode = (mode: LabMode) => {
+    setGuided(false);
     modeRef.current = mode;
     setLabMode(mode);
     if (mode === 'connect') {
@@ -1058,6 +1073,25 @@ export default function ComputerLab({
           : currentTask.instruction,
       );
     }
+  };
+
+  const startGuide = () => {
+    setGuided(true);
+    setGuideIndex(0);
+    modeRef.current = 'explore';
+    setLabMode('explore');
+    selectedRef.current = GUIDE_ORDER[0];
+    setSelected(GUIDE_ORDER[0]);
+  };
+
+  const moveGuide = (direction: -1 | 1) => {
+    const next = Math.min(
+      GUIDE_ORDER.length - 1,
+      Math.max(0, guideIndex + direction),
+    );
+    setGuideIndex(next);
+    selectedRef.current = GUIDE_ORDER[next];
+    setSelected(GUIDE_ORDER[next]);
   };
 
   return (
@@ -1076,11 +1110,19 @@ export default function ComputerLab({
         <div className="lab-mode-switch" aria-label="Computer Lab activity">
           <button
             type="button"
-            className={labMode === 'explore' ? 'active' : ''}
+            className={labMode === 'explore' && !guided ? 'active' : ''}
             onClick={() => chooseMode('explore')}
           >
             <Rotate3D size={15} />
             Explore
+          </button>
+          <button
+            type="button"
+            className={guided ? 'active' : ''}
+            onClick={startGuide}
+          >
+            <BookOpen size={15} />
+            Guided
           </button>
           <button
             type="button"
@@ -1106,20 +1148,36 @@ export default function ComputerLab({
 
       <aside className="lab-parts" aria-label="Computer setup learning panel">
         <p className="lab-eyebrow">
-          {labMode === 'explore'
-            ? '01 / COMPUTER SETUP'
-            : '02 / CONNECTIONS'}
+          {guided
+            ? `GUIDED LESSON · ${guideIndex + 1} / ${GUIDE_ORDER.length}`
+            : labMode === 'explore'
+              ? '01 / COMPUTER SETUP'
+              : '02 / CONNECTIONS'}
         </p>
         <h1>
-          {labMode === 'explore'
-            ? 'Meet the whole computer.'
-            : 'Connect the devices.'}
+          {guided
+            ? guidePart.name
+            : labMode === 'explore'
+              ? 'Meet the whole computer.'
+              : 'Connect the devices.'}
         </h1>
         <p className="lab-intro">
-          {labMode === 'explore'
-            ? 'Start with the equipment students see every day, then move inside the system unit.'
-            : 'Follow the tasks in order. Rotate the 3D setup and click the highlighted port on the system unit.'}
+          {guided
+            ? guidePart.description
+            : labMode === 'explore'
+              ? 'Start with the equipment students see every day, then move inside the system unit.'
+              : 'Follow the tasks in order. Rotate the 3D setup and click the highlighted port on the system unit.'}
         </p>
+
+        {guided && (
+          <div className="lab-progress" aria-label="Whole computer lesson progress">
+            <span
+              style={{
+                width: ((guideIndex + 1) / GUIDE_ORDER.length) * 100 + '%',
+              }}
+            />
+          </div>
+        )}
 
         {labMode === 'explore' ? (
           <div className="lab-part-list">
@@ -1131,6 +1189,7 @@ export default function ComputerLab({
                   key={part.id}
                   className={selected === part.id ? 'active' : ''}
                   onClick={() => {
+                    setGuided(false);
                     selectedRef.current = part.id;
                     setSelected(part.id);
                   }}
@@ -1201,22 +1260,47 @@ export default function ComputerLab({
       <aside className="lab-detail" aria-live="polite">
         {labMode === 'explore' ? (
           <>
-            <p className="lab-eyebrow">SELECTED COMPONENT</p>
+            <p className="lab-eyebrow">
+              {guided
+                ? `LESSON STEP ${guideIndex + 1} / ${GUIDE_ORDER.length}`
+                : 'SELECTED COMPONENT'}
+            </p>
             <h2>{selectedPart.name}</h2>
             <p>{selectedPart.description}</p>
             <div className="lab-lesson">
-              <strong>What students learn next</strong>
+              <strong>{guided ? 'Why it matters' : 'What students learn next'}</strong>
               <p>{selectedPart.lesson}</p>
             </div>
-            {selected === 'tower' && (
-              <button
-                type="button"
-                className="lab-primary-action"
-                onClick={onOpenPC}
-              >
-                Open the system unit
-                <span>→</span>
-              </button>
+            {guided ? (
+              <div className="lab-guide-controls">
+                <button
+                  type="button"
+                  disabled={guideIndex === 0}
+                  onClick={() => moveGuide(-1)}
+                >
+                  ← Back
+                </button>
+                {guideIndex < GUIDE_ORDER.length - 1 ? (
+                  <button type="button" onClick={() => moveGuide(1)}>
+                    Next →
+                  </button>
+                ) : (
+                  <button type="button" onClick={onOpenPC}>
+                    Continue inside PC →
+                  </button>
+                )}
+              </div>
+            ) : (
+              selected === 'tower' && (
+                <button
+                  type="button"
+                  className="lab-primary-action"
+                  onClick={onOpenPC}
+                >
+                  Open the system unit
+                  <span>→</span>
+                </button>
+              )
             )}
           </>
         ) : (
