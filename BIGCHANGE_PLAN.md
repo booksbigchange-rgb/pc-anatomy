@@ -43,10 +43,10 @@ PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab i
 
 - [x] USB keyboard/mouse
 - [x] HDMI monitor connection
-- [ ] Ethernet
-- [ ] Power
+- [x] Ethernet
+- [x] Power
 - [ ] Headphones/audio
-- [ ] Correct/incorrect port feedback
+- [x] Correct/incorrect port feedback
 
 ### Milestone C — Laptop
 
