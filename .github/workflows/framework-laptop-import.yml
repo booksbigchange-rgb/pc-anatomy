@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   convert:
-    if: github.event.head_commit.message == 'Add Framework laptop CAD conversion gate' || github.event.head_commit.message == 'Retry Framework laptop CAD conversion' || github.event.head_commit.message == 'Build Framework realistic battery asset' || github.event.head_commit.message == 'Add Framework mainboard outline conversion' || github.event.head_commit.message == 'Retry Framework mainboard outline conversion' || github.event.head_commit.message == 'Resolve DXF insert geometry for mainboard'
+    if: github.event.head_commit.message == 'Add Framework laptop CAD conversion gate' || github.event.head_commit.message == 'Retry Framework laptop CAD conversion' || github.event.head_commit.message == 'Build Framework realistic battery asset' || github.event.head_commit.message == 'Add Framework mainboard outline conversion' || github.event.head_commit.message == 'Retry Framework mainboard outline conversion' || github.event.head_commit.message == 'Resolve DXF insert geometry for mainboard' || github.event.head_commit.message == 'Extract Framework mainboard hatch boundaries'
     runs-on: ubuntu-latest
     steps:
       - name: Check out school branch
