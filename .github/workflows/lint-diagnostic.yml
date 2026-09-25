@@ -1,0 +1,25 @@
+name: Diagnose Computer Lab lint
+
+on:
+  push:
+    branches:
+      - bigchange-school
+    paths:
+      - .github/workflows/lint-diagnostic.yml
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    if: github.event.head_commit.message == 'Add temporary lint diagnostic'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Computer Lab lint details
+        run: npx oxlint app/computer-lab.tsx --format json || true
