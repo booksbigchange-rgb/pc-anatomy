@@ -636,17 +636,28 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const selectedRef = useRef<LaptopPartId>('display');
   const viewRef = useRef<LaptopView>('outside');
+  const modeRef = useRef<LaptopMode>('explore');
+  const connectionTaskRef = useRef(0);
+  const connectedRef = useRef<LaptopConnectionId[]>([]);
 
   const [view, setView] = useState<LaptopView>('outside');
   const [selected, setSelected] = useState<LaptopPartId>('display');
   const [guided, setGuided] = useState(false);
   const [lessonIndex, setLessonIndex] = useState(0);
+  const [mode, setMode] = useState<LaptopMode>('explore');
+  const [connectionTask, setConnectionTask] = useState(0);
+  const [connected, setConnected] = useState<LaptopConnectionId[]>([]);
+  const [connectionFeedback, setConnectionFeedback] = useState(
+    'Choose Connections to practise the ports on a laptop.',
+  );
 
   const visibleParts = PARTS.filter((part) => part.view === view);
   const selectedPart =
     PARTS.find((part) => part.id === selected) ?? visibleParts[0];
   const lessonPart =
     PARTS.find((part) => part.id === LESSON_ORDER[lessonIndex]) ?? PARTS[0];
+  const currentConnection = CONNECTION_TASKS[connectionTask];
+  const allConnectionsComplete = connected.length === CONNECTION_TASKS.length;
 
   useEffect(() => {
     selectedRef.current = selected;
@@ -655,6 +666,18 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     viewRef.current = view;
   }, [view]);
+
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+
+  useEffect(() => {
+    connectionTaskRef.current = connectionTask;
+  }, [connectionTask]);
+
+  useEffect(() => {
+    connectedRef.current = connected;
+  }, [connected]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -712,6 +735,30 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
 
     const laptop = buildLaptop();
     scene.add(laptop.root);
+    scene.updateMatrixWorld(true);
+
+    const portPosition = (id: LaptopPortId) => {
+      const item = laptop.ports.find(
+        (candidate) => candidate.userData.laptopPort === id,
+      );
+      return item?.getWorldPosition(new THREE.Vector3()) ?? new THREE.Vector3();
+    };
+
+    const connectionCables = new Map<LaptopConnectionId, THREE.Mesh>();
+    for (const task of CONNECTION_TASKS) {
+      const cable = connectionCable(
+        new THREE.Vector3(...task.source),
+        portPosition(task.targetPort),
+      );
+      cable.visible = false;
+      connectionCables.set(task.id, cable);
+      scene.add(cable);
+
+      const sourceMarker = rounded(0.42, 0.16, 0.62, 0.06, 0x34434a, 0.48, 0.16);
+      sourceMarker.position.set(...task.source);
+      sourceMarker.position.y -= 0.04;
+      scene.add(sourceMarker);
+    }
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
@@ -721,6 +768,56 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
+
+      if (modeRef.current === 'connections') {
+        const portHit = raycaster.intersectObjects(laptop.ports, false)[0];
+        if (!portHit) {
+          setConnectionFeedback(
+            'That is not a port. Rotate the laptop and click the glowing connection.',
+          );
+          return;
+        }
+
+        const portId = portHit.object.userData.laptopPort as LaptopPortId;
+        const clickedType = PORT_TYPES[portId];
+        const task = CONNECTION_TASKS[connectionTaskRef.current];
+
+        if (clickedType !== task.portType) {
+          setConnectionFeedback(
+            'Not quite. ' +
+              task.name +
+              ' needs a ' +
+              task.portType.toUpperCase() +
+              ' port.',
+          );
+          return;
+        }
+
+        if (portId !== task.targetPort) {
+          setConnectionFeedback(
+            'That port can work for a similar device, but this lesson uses the glowing target.',
+          );
+          return;
+        }
+
+        const nextConnected = connectedRef.current.includes(task.id)
+          ? connectedRef.current
+          : [...connectedRef.current, task.id];
+        connectedRef.current = nextConnected;
+        setConnected(nextConnected);
+        setConnectionFeedback('Correct — ' + task.name + ' is connected.');
+
+        const nextIndex = CONNECTION_TASKS.findIndex(
+          (candidate, index) =>
+            index > connectionTaskRef.current &&
+            !nextConnected.includes(candidate.id),
+        );
+        if (nextIndex >= 0) {
+          connectionTaskRef.current = nextIndex;
+          setConnectionTask(nextIndex);
+        }
+        return;
+      }
 
       const target =
         viewRef.current === 'outside' ? laptop.outside : laptop.inside;
@@ -752,9 +849,25 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     let frame = 0;
     const draw = () => {
       frame = requestAnimationFrame(draw);
-      const insideNow = viewRef.current === 'inside';
+      const connectionMode = modeRef.current === 'connections';
+      const insideNow = !connectionMode && viewRef.current === 'inside';
       laptop.outside.visible = !insideNow;
       laptop.inside.visible = insideNow;
+
+      const activeTask = CONNECTION_TASKS[connectionTaskRef.current];
+      for (const item of laptop.ports) {
+        const material = item.material;
+        if (!(material instanceof THREE.MeshStandardMaterial)) continue;
+        const target =
+          connectionMode && item.userData.laptopPort === activeTask.targetPort;
+        material.emissive.setHex(target ? 0x1d5d66 : 0x000000);
+        material.emissiveIntensity = target ? 1.5 : 0;
+        const pulse = 1 + Math.sin(performance.now() * 0.006) * 0.05;
+        item.scale.setScalar(target ? pulse : 1);
+      }
+
+      for (const [id, cable] of connectionCables)
+        cable.visible = connectedRef.current.includes(id);
 
       const activeRoot = insideNow ? laptop.inside : laptop.outside;
       activeRoot.traverse((object) => {
@@ -766,6 +879,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
         let owner: THREE.Object3D | null = object;
         while (owner && !owner.userData.laptopPart) owner = owner.parent;
         const selectedNow =
+          !connectionMode &&
           owner?.userData.laptopPart === selectedRef.current;
         for (const material of materials) {
           if (!(material instanceof THREE.MeshStandardMaterial)) continue;
