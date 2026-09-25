@@ -37,6 +37,18 @@ The school edition treats public GitHub availability as **insufficient permissio
 - Attribution rule: retain Framework Computer attribution, source link, CC BY 4.0 link, and note that Big Change converts/optimizes the CAD.
 - Release gate: the converted GLB is a candidate until its geometry, orientation, file size, classroom performance, and visible branding have been reviewed.
 
+### Framework Laptop 13 battery CAD
+
+- Official source: https://github.com/FrameworkComputer/Framework-Laptop-13
+- Asset: `Battery/FWKNAQ9_G01_20210911.stp`
+- License: CC BY 4.0.
+- Decision: **approved and integrated** for Realistic Laptop Internals V1.
+- Conversion: STEP → optimized local GLB; 44,816 faces, 894,752 bytes.
+- Physical source dimensions are preserved during conversion.
+- Usage: realistic internal battery geometry in Laptop Lab.
+- Runtime: no third-party request; the converted model is served locally.
+- Branding: neutral Big Change material, no product artwork.
+
 ### MrEliptik / Office Low Poly Pack
 
 - Source: https://mreliptik.itch.io/office-low-poly-pack
