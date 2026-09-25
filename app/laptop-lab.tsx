@@ -126,6 +126,18 @@ const PARTS: LaptopPart[] = [
   },
 ];
 
+const LESSON_ORDER: LaptopPartId[] = [
+  'display',
+  'keyboard',
+  'trackpad',
+  'battery',
+  'motherboard',
+  'ssd',
+  'fan',
+  'wifi',
+  'speakers',
+];
+
 // Representative 15-inch-class laptop proportions.
  // Scene units are proportional rather than tied to a brand-specific model.
  const LAPTOP_DIMENSIONS = {
