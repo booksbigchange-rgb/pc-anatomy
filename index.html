@@ -14,6 +14,47 @@
     />
     <meta name="apple-mobile-web-app-title" content="PC Anatomy" />
     <meta name="theme-color" content="#15191a" />
+    <script>
+      // GitHub Pages replaces hashed Vite assets on every deployment. If a
+      // browser still has an older index/chunk cached while a new deployment
+      // lands, CSS or a dynamic JS chunk can briefly 404. Recover once by
+      // reloading the page with a cache-busting query instead of leaving
+      // students on an unstyled or half-loaded screen.
+      (() => {
+        const key = 'bigchange-asset-recovery';
+        const recover = () => {
+          if (sessionStorage.getItem(key) === '1') return;
+          sessionStorage.setItem(key, '1');
+          const url = new URL(window.location.href);
+          url.searchParams.set('_asset_refresh', Date.now().toString());
+          window.location.replace(url.toString());
+        };
+
+        window.addEventListener(
+          'error',
+          (event) => {
+            const target = event.target;
+            if (
+              (target instanceof HTMLLinkElement &&
+                target.rel === 'stylesheet') ||
+              target instanceof HTMLScriptElement
+            ) {
+              recover();
+            }
+          },
+          true,
+        );
+
+        window.addEventListener('vite:preloadError', (event) => {
+          event.preventDefault();
+          recover();
+        });
+
+        window.addEventListener('load', () => {
+          sessionStorage.removeItem(key);
+        });
+      })();
+    </script>
     <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png" />
     <link rel="icon" type="image/x-icon" sizes="16x16 32x32 48x48 256x256" href="/favicon.ico" />
     <link rel="icon" type="image/svg+xml" sizes="any" href="/favicon.svg" />
@@ -35,6 +76,16 @@
         run them gets the real application. The noscript rule below puts it
         back for the only visitor who needs it.
       */
+      html,
+      body,
+      #root {
+        min-height: 100%;
+        margin: 0;
+        background: #10171d;
+        color: #eef3f4;
+        font-family: 'Segoe UI', Arial, sans-serif;
+      }
+
       #no-script-intro {
         display: none;
       }
