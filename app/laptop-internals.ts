@@ -465,6 +465,53 @@ function buildBatteryFallback() {
   return tag(group, 'battery');
 }
 
+function buildRemovedBottomCover() {
+  const cover = new THREE.Group();
+
+  const panel = rounded(7.28, 0.12, 4.76, 0.16, 0x59646a, 0.42, 0.42);
+  cover.add(panel);
+
+  // Vent field near the cooling area.
+  for (let row = 0; row < 4; row++) {
+    for (let column = 0; column < 12; column++) {
+      const vent = rounded(0.26, 0.022, 0.055, 0.015, 0x20272b, 0.72, 0.05);
+      vent.position.set(-1.55 + column * 0.3, 0.07, -1.25 + row * 0.16);
+      cover.add(vent);
+    }
+  }
+
+  // Captive-screw positions communicate how a real service cover is removed.
+  for (const [x, z] of [
+    [-3.15, -2.0],
+    [0, -2.08],
+    [3.15, -2.0],
+    [-3.15, 1.96],
+    [0, 2.05],
+    [3.15, 1.96],
+  ] as const) {
+    const screw = mesh(
+      new THREE.CylinderGeometry(0.075, 0.075, 0.035, 20),
+      0x9aa4a9,
+      0.28,
+      0.62,
+    );
+    screw.position.set(x, 0.08, z);
+    cover.add(screw);
+  }
+
+  // Park the removed panel beside the chassis so students can see both the
+  // actual internals and the part that was removed to access them.
+  cover.position.set(5.8, 1.25, 0.7);
+  cover.rotation.set(-0.1, 0.18, -0.08);
+  cover.traverse((object) => {
+    if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
+    const item = object as THREE.Mesh;
+    item.castShadow = true;
+    item.receiveShadow = true;
+  });
+  return cover;
+}
+
 function ribbon(
   start: THREE.Vector3,
   end: THREE.Vector3,
@@ -501,6 +548,7 @@ export function buildRealisticLaptopInternals() {
     inside.add(rail);
   }
 
+  const removedBottomCover = buildRemovedBottomCover();
   const battery = buildBatteryFallback();
   const motherboard = buildMotherboard();
   const cpu = buildCpu();
@@ -511,6 +559,7 @@ export function buildRealisticLaptopInternals() {
   const speakers = buildSpeakers();
 
   inside.add(
+    removedBottomCover,
     battery,
     motherboard.group,
     cpu,
@@ -548,5 +597,6 @@ export function buildRealisticLaptopInternals() {
     batteryMount: battery,
     motherboardMount: motherboard.group,
     motherboardShell: motherboard.shell,
+    removedBottomCover,
   };
 }
