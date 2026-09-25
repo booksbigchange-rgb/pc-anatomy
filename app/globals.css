@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import './workbench.css';
 @import './computer-lab.css';
+@import './computer-lab-connections.css';
 @custom-variant dark (&:is(.dark *));
 @theme inline {
   --color-background: var(--background);
