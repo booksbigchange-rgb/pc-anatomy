@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Circle,
   Keyboard,
+  Laptop,
   Monitor,
   Mouse,
   PcCase,
@@ -708,7 +709,13 @@ function addRoom(scene: THREE.Scene) {
   scene.add(grid);
 }
 
-export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
+export default function ComputerLab({
+  onOpenPC,
+  onOpenLaptop,
+}: {
+  onOpenPC: () => void;
+  onOpenLaptop: () => void;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const selectedRef = useRef<LabPartId>('tower');
   const modeRef = useRef<LabMode>('explore');
@@ -1085,10 +1092,16 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
           </button>
         </div>
 
-        <button type="button" className="lab-open-pc" onClick={onOpenPC}>
-          <PcCase size={16} />
-          <span>Explore inside the PC</span>
-        </button>
+        <div className="lab-machine-actions">
+          <button type="button" className="lab-open-pc" onClick={onOpenLaptop}>
+            <Laptop size={16} />
+            <span>Laptop Lab</span>
+          </button>
+          <button type="button" className="lab-open-pc" onClick={onOpenPC}>
+            <PcCase size={16} />
+            <span>Explore inside the PC</span>
+          </button>
+        </div>
       </header>
 
       <aside className="lab-parts" aria-label="Computer setup learning panel">
