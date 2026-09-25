@@ -1,4 +1,5 @@
 name: Deploy Big Change preview
+# Pages source must be set to GitHub Actions (not Deploy from a branch).
 
 on:
   push:
