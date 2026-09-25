@@ -736,6 +736,42 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       },
     );
 
+
+    gltfLoader.load(
+      `${import.meta.env.BASE_URL}models/framework-laptop-13-mainboard.glb`,
+      (gltf) => {
+        if (disposed) return;
+
+        // Replace only the fallback PCB silhouette. The educational component
+        // population stays on top, so students keep recognizable chips,
+        // sockets and connectors while the board perimeter comes from
+        // Framework's official 2D mechanical CAD.
+        for (const child of laptop.motherboardShell.children)
+          child.visible = false;
+
+        const boardModel = gltf.scene;
+        boardModel.scale.setScalar(25.5);
+        boardModel.position.set(0, 0, 0);
+        boardModel.traverse((object) => {
+          if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
+          const item = object as THREE.Mesh;
+          item.castShadow = true;
+          item.receiveShadow = true;
+          item.material = new THREE.MeshStandardMaterial({
+            color: 0x24594e,
+            roughness: 0.54,
+            metalness: 0.06,
+          });
+        });
+        laptop.motherboardShell.add(boardModel);
+      },
+      undefined,
+      () => {
+        // Keep the detailed procedural fallback if the CAD-derived candidate
+        // is unavailable or fails validation.
+      },
+    );
+
     scene.updateMatrixWorld(true);
 
     const portPosition = (id: LaptopPortId) => {
