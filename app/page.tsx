@@ -16,6 +16,7 @@ import DetailPanel from './detail-panel';
 import AboutDialog from './about-dialog';
 import ComparisonWorkbench from './comparison-workbench';
 import ComputerLab from './computer-lab';
+import LaptopLab from './laptop-lab';
 
 export default function Home() {
   const explorer = useExplorer();
@@ -25,7 +26,7 @@ export default function Home() {
     [query, setQuery] = useState(''),
     [about, setAbout] = useState(false),
     [studentMode, setStudentMode] = useState(true),
-    [mode, setMode] = useState<'lab' | 'explorer' | 'comparison'>('lab'),
+    [mode, setMode] = useState<'lab' | 'laptop' | 'explorer' | 'comparison'>('lab'),
     // `null` until the viewer has reported for the first time. Zero means the
     // viewer is running and nothing is switched on, which is a different thing
     // to say to the reader, and saying the wrong one was what put "No
@@ -53,7 +54,7 @@ export default function Home() {
         el.closest('input,textarea,[contenteditable=true]')
       )
         return;
-      if (search || about || mode === 'lab') return;
+      if (search || about || mode !== 'explorer') return;
       if (event.key === '/') {
         event.preventDefault();
         setSearch(true);
@@ -72,7 +73,15 @@ export default function Home() {
   }, [about, choose, mode, navigate, search, state.level]);
 
   if (mode === 'lab')
-    return <ComputerLab onOpenPC={() => setMode('explorer')} />;
+    return (
+      <ComputerLab
+        onOpenPC={() => setMode('explorer')}
+        onOpenLaptop={() => setMode('laptop')}
+      />
+    );
+
+  if (mode === 'laptop')
+    return <LaptopLab onBack={() => setMode('lab')} />;
 
   if (mode === 'comparison')
     return (
