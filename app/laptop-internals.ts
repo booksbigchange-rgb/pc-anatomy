@@ -250,9 +250,9 @@ function buildRam() {
     slot.position.set(0, 0.02, z);
     group.add(slot);
 
-    const module = rounded(1.78, 0.43, 0.07, 0.025, C.ram, 0.52, 0.06);
-    module.position.set(0, 0.24, z);
-    group.add(module);
+    const ramModule = rounded(1.78, 0.43, 0.07, 0.025, C.ram, 0.52, 0.06);
+    ramModule.position.set(0, 0.24, z);
+    group.add(ramModule);
 
     for (const x of [-0.6, -0.2, 0.2, 0.6]) {
       const memoryChip = chip(0.29, 0.045, 0.23);
