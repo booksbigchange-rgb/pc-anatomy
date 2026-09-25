@@ -14,7 +14,7 @@ from pathlib import Path
 import ezdxf
 import numpy as np
 import trimesh
-from ezdxf.path import make_path
+from ezdxf.path import from_hatch, make_path
 from shapely.geometry import LineString
 from shapely.ops import polygonize, unary_union
 
@@ -37,6 +37,23 @@ def linework_from_entity(entity):
         try:
             for child in entity.virtual_entities():
                 lines.extend(linework_from_entity(child))
+        except Exception:
+            return []
+        return lines
+
+    if kind == "HATCH":
+        lines = []
+        try:
+            for path in from_hatch(entity):
+                points = [
+                    (point.x, point.y)
+                    for point in path.flattening(distance=0.18)
+                ]
+                if len(points) < 2:
+                    continue
+                if points[0] != points[-1]:
+                    points.append(points[0])
+                lines.append(LineString(points))
         except Exception:
             return []
         return lines
