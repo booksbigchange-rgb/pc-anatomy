@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   BatteryCharging,
+  BookOpen,
   CircuitBoard,
   Fan,
   HardDrive,
@@ -523,10 +524,14 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
 
   const [view, setView] = useState<LaptopView>('outside');
   const [selected, setSelected] = useState<LaptopPartId>('display');
+  const [guided, setGuided] = useState(false);
+  const [lessonIndex, setLessonIndex] = useState(0);
 
   const visibleParts = PARTS.filter((part) => part.view === view);
   const selectedPart =
     PARTS.find((part) => part.id === selected) ?? visibleParts[0];
+  const lessonPart =
+    PARTS.find((part) => part.id === LESSON_ORDER[lessonIndex]) ?? PARTS[0];
 
   useEffect(() => {
     selectedRef.current = selected;
@@ -681,12 +686,37 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     };
   }, []);
 
+  const selectPart = (id: LaptopPartId) => {
+    const part = PARTS.find((candidate) => candidate.id === id);
+    if (!part) return;
+    viewRef.current = part.view;
+    setView(part.view);
+    selectedRef.current = part.id;
+    setSelected(part.id);
+  };
+
   const changeView = (next: LaptopView) => {
+    setGuided(false);
     viewRef.current = next;
     setView(next);
     const first = PARTS.find((part) => part.view === next)!;
     selectedRef.current = first.id;
     setSelected(first.id);
+  };
+
+  const startGuide = () => {
+    setGuided(true);
+    setLessonIndex(0);
+    selectPart(LESSON_ORDER[0]);
+  };
+
+  const moveGuide = (direction: -1 | 1) => {
+    const next = Math.min(
+      LESSON_ORDER.length - 1,
+      Math.max(0, lessonIndex + direction),
+    );
+    setLessonIndex(next);
+    selectPart(LESSON_ORDER[next]);
   };
 
   return (
@@ -705,7 +735,16 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
             <small>OUTSIDE → INSIDE</small>
           </span>
         </div>
-        <div className="laptop-view-switch">
+        <div className="laptop-header-actions">
+          <button
+            type="button"
+            className={'laptop-guide-button' + (guided ? ' active' : '')}
+            onClick={startGuide}
+          >
+            <BookOpen size={15} />
+            Guided lesson
+          </button>
+          <div className="laptop-view-switch">
           <button
             type="button"
             className={view === 'outside' ? 'active' : ''}
@@ -722,23 +761,42 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
             <CircuitBoard size={15} />
             Inside
           </button>
+          </div>
         </div>
       </header>
 
       <aside className="laptop-parts">
         <p className="laptop-eyebrow">
-          {view === 'outside' ? '01 / LAPTOP EXTERIOR' : '02 / LAPTOP INTERNALS'}
+          {guided
+            ? `GUIDED LESSON · ${lessonIndex + 1} / ${LESSON_ORDER.length}`
+            : view === 'outside'
+              ? '01 / LAPTOP EXTERIOR'
+              : '02 / LAPTOP INTERNALS'}
         </p>
         <h1>
-          {view === 'outside'
-            ? 'Start with what students touch.'
-            : 'Now look under the keyboard.'}
+          {guided
+            ? lessonPart.name
+            : view === 'outside'
+              ? 'Start with what students touch.'
+              : 'Now look under the keyboard.'}
         </h1>
         <p className="laptop-intro">
-          {view === 'outside'
-            ? 'Explore the screen, keyboard and trackpad before opening the machine.'
-            : 'Laptop parts are smaller and packed closer together than desktop components.'}
+          {guided
+            ? lessonPart.description
+            : view === 'outside'
+              ? 'Explore the screen, keyboard and trackpad before opening the machine.'
+              : 'Laptop parts are smaller and packed closer together than desktop components.'}
         </p>
+        {guided && (
+          <div className="laptop-progress" aria-label="Laptop lesson progress">
+            <span
+              style={{
+                width:
+                  ((lessonIndex + 1) / LESSON_ORDER.length) * 100 + '%',
+              }}
+            />
+          </div>
+        )}
         <div className="laptop-part-list">
           {visibleParts.map((part) => {
             const Icon = part.icon;
@@ -748,6 +806,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
                 key={part.id}
                 className={selected === part.id ? 'active' : ''}
                 onClick={() => {
+                  setGuided(false);
                   selectedRef.current = part.id;
                   setSelected(part.id);
                 }}
@@ -759,8 +818,12 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
           })}
         </div>
         <div className="laptop-next">
-          <strong>Next laptop milestone</strong>
-          <span>Ports · charger · webcam · RAM variants · guided lesson</span>
+          <strong>{guided ? 'Lesson path' : 'Next laptop milestone'}</strong>
+          <span>
+            {guided
+              ? 'Outside first, then the main components inside.'
+              : 'Ports · charger · connection practice · improved exterior model'}
+          </span>
         </div>
       </aside>
 
@@ -776,14 +839,43 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       </section>
 
       <aside className="laptop-detail" aria-live="polite">
-        <p className="laptop-eyebrow">SELECTED COMPONENT</p>
+        <p className="laptop-eyebrow">
+          {guided
+            ? `LESSON STEP ${lessonIndex + 1} / ${LESSON_ORDER.length}`
+            : 'SELECTED COMPONENT'}
+        </p>
         <h2>{selectedPart.name}</h2>
         <p>{selectedPart.description}</p>
         <div className="laptop-why">
           <strong>Why it matters</strong>
           <p>{selectedPart.why}</p>
         </div>
-        {view === 'outside' && (
+        {guided ? (
+          <div className="laptop-guide-controls">
+            <button
+              type="button"
+              disabled={lessonIndex === 0}
+              onClick={() => moveGuide(-1)}
+            >
+              ← Back
+            </button>
+            {lessonIndex < LESSON_ORDER.length - 1 ? (
+              <button type="button" onClick={() => moveGuide(1)}>
+                Next →
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setGuided(false);
+                  selectPart('display');
+                }}
+              >
+                Finish lesson ✓
+              </button>
+            )}
+          </div>
+        ) : view === 'outside' ? (
           <button
             type="button"
             className="laptop-primary"
@@ -792,8 +884,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
             Open the laptop
             <span>→</span>
           </button>
-        )}
-        {view === 'inside' && (
+        ) : (
           <button
             type="button"
             className="laptop-primary"
