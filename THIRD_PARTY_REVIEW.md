@@ -23,6 +23,20 @@ The school edition treats public GitHub availability as **insufficient permissio
 - Integration: vendored into the repository as base64 so the classroom build makes no runtime request to a third-party host.
 - Big Change keeps its own teaching ports, selection state, connection exercises and internal PC Anatomy explorer; the CC0 model is visual geometry only.
 
+### Framework Computer / Framework Laptop 13 simplified CAD
+
+- Official source: https://github.com/FrameworkComputer/Framework-Laptop-13
+- Source asset: `Framework Laptop 13 CAD.stp`
+- Source commit: `e5bd4da7a14611935891c867dc40ae83ea8f6297`
+- Git blob: `5222d190375f14f182363d80b84c4211375bee9b`
+- Source size: 21,301,844 bytes.
+- License: CC BY 4.0, confirmed by the official repository license metadata and LICENSE file.
+- Decision: **approved for conversion as a realistic laptop geometry candidate**.
+- School-safety rule: convert the STEP file locally/in CI; do not load CAD or assets from Framework servers at student runtime.
+- Branding rule: use neutral materials and do not rely on Framework trademarks/logos for the classroom UI. CC BY licenses copyright permissions but does not automatically grant trademark rights.
+- Attribution rule: retain Framework Computer attribution, source link, CC BY 4.0 link, and note that Big Change converts/optimizes the CAD.
+- Release gate: the converted GLB is a candidate until its geometry, orientation, file size, classroom performance, and visible branding have been reviewed.
+
 ### MrEliptik / Office Low Poly Pack
 
 - Source: https://mreliptik.itch.io/office-low-poly-pack
