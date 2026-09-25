@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   convert:
-    if: github.event.head_commit.message == 'Add Framework laptop CAD conversion gate'
+    if: github.event.head_commit.message == 'Add Framework laptop CAD conversion gate' || github.event.head_commit.message == 'Retry Framework laptop CAD conversion'
     runs-on: ubuntu-latest
     steps:
       - name: Check out school branch
@@ -32,7 +32,8 @@ jobs:
             cadquery==2.6.1 \
             trimesh==4.8.3 \
             fast-simplification==0.1.12 \
-            numpy==2.2.6
+            numpy==2.2.6 \
+            scipy==1.16.2
 
       - name: Download pinned official CAD
         run: |
