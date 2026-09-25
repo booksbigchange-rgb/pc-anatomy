@@ -33,7 +33,8 @@ jobs:
             trimesh==4.8.3 \
             fast-simplification==0.1.12 \
             numpy==2.2.6 \
-            scipy==1.16.2
+            scipy==1.16.2 \
+            networkx==3.5
 
       - name: Download pinned official CAD
         run: |
