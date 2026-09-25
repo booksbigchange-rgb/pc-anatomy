@@ -7,10 +7,12 @@ import {
   BookOpen,
   Cable,
   CircuitBoard,
+  Cpu,
   Fan,
   HardDrive,
   Keyboard,
   Laptop,
+  MemoryStick,
   Monitor,
   MousePointer2,
   PanelTopOpen,
@@ -23,6 +25,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { buildRealisticLaptopInternals } from './laptop-internals';
 
 type LaptopView = 'outside' | 'inside';
 type LaptopMode = 'explore' | 'connections';
@@ -44,6 +47,8 @@ type LaptopPartId =
   | 'trackpad'
   | 'battery'
   | 'motherboard'
+  | 'cpu'
+  | 'ram'
   | 'ssd'
   | 'fan'
   | 'wifi'
@@ -114,8 +119,26 @@ const PARTS: LaptopPart[] = [
     why: 'Most laptop components are smaller and more tightly integrated than in a desktop PC.',
   },
   {
+    id: 'cpu',
+    name: 'Processor (CPU)',
+    icon: Cpu,
+    view: 'inside',
+    description:
+      'The processor is a compact package mounted on the motherboard under the cooling system.',
+    why: 'It executes program instructions and produces much of the heat carried away by the heat pipes and fan.',
+  },
+  {
+    id: 'ram',
+    name: 'RAM / SODIMM',
+    icon: MemoryStick,
+    view: 'inside',
+    description:
+      'Laptop memory uses compact SODIMM modules installed in dedicated memory sockets.',
+    why: 'RAM holds working data for running programs and can often be upgraded separately from storage.',
+  },
+  {
     id: 'ssd',
-    name: 'SSD',
+    name: 'M.2 SSD',
     icon: HardDrive,
     view: 'inside',
     description:
@@ -196,6 +219,8 @@ const LESSON_ORDER: LaptopPartId[] = [
   'trackpad',
   'battery',
   'motherboard',
+  'cpu',
+  'ram',
   'ssd',
   'fan',
   'wifi',
@@ -482,125 +507,20 @@ function buildLaptop() {
   ];
   outside.add(...ports);
 
-  const lowerShell = rounded(7.34, 0.28, 4.82, 0.2, 0x69747a, 0.4, 0.44);
-  lowerShell.position.y = 0.6;
-  inside.add(lowerShell);
-
-  const battery = new THREE.Group();
-  const batteryBody = rounded(5.55, 0.28, 1.55, 0.14, COLORS.battery, 0.48, 0.12);
-  batteryBody.position.set(0, 1.0, 1.18);
-  battery.add(batteryBody);
-  for (const x of [-2.0, -1.0, 0, 1.0, 2.0]) {
-    const cellMark = rounded(0.55, 0.02, 1.18, 0.06, 0x454f55, 0.72, 0.04);
-    cellMark.position.set(x, 1.16, 1.18);
-    battery.add(cellMark);
-  }
-  inside.add(tag(battery, 'battery'));
-
-  const board = new THREE.Group();
-  const boardMain = rounded(5.25, 0.12, 1.75, 0.1, COLORS.board, 0.58, 0.08);
-  boardMain.position.set(-0.4, 1.0, -1.05);
-  board.add(boardMain);
-  for (const [x, z, w, d, color] of [
-    [-1.55, -1.15, 0.75, 0.65, 0x34393d],
-    [-0.55, -0.9, 0.9, 0.72, 0x1c2326],
-    [0.55, -1.32, 0.62, 0.46, 0x2c3439],
-    [1.45, -0.8, 0.78, 0.6, 0x232a2e],
-  ] as const) {
-    const chip = rounded(w, 0.16, d, 0.06, color, 0.42, 0.18);
-    chip.position.set(x, 1.12, z);
-    board.add(chip);
-  }
-  const heatPipe = mesh(
-    new THREE.TubeGeometry(
-      new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-0.55, 1.26, -0.98),
-        new THREE.Vector3(0.3, 1.28, -1.15),
-        new THREE.Vector3(1.15, 1.28, -1.35),
-      ]),
-      24,
-      0.055,
-      8,
-      false,
-    ),
-    COLORS.copper,
-    0.32,
-    0.62,
-  );
-  board.add(heatPipe);
-  inside.add(tag(board, 'motherboard'));
-
-  const ssdGroup = new THREE.Group();
-  const ssd = rounded(1.7, 0.12, 0.55, 0.07, COLORS.ssd, 0.5, 0.2);
-  ssd.position.set(1.65, 1.05, 0.18);
-  ssdGroup.add(ssd);
-  const ssdLabel = rounded(0.9, 0.02, 0.28, 0.04, COLORS.accent, 0.52, 0.02);
-  ssdLabel.position.set(1.65, 1.12, 0.18);
-  ssdGroup.add(ssdLabel);
-  inside.add(tag(ssdGroup, 'ssd'));
-
-  const fanGroup = new THREE.Group();
-  const fanHousing = mesh(
-    new THREE.CylinderGeometry(0.56, 0.56, 0.18, 32),
-    0x252d31,
-    0.38,
-    0.24,
-  );
-  fanHousing.rotation.x = Math.PI / 2;
-  fanHousing.position.set(2.4, 1.08, -1.22);
-  fanGroup.add(fanHousing);
-  for (let index = 0; index < 8; index++) {
-    const blade = rounded(0.11, 0.04, 0.4, 0.04, 0x526068, 0.48, 0.1);
-    blade.position.set(2.4, 1.18, -1.22);
-    blade.rotation.y = (Math.PI * 2 * index) / 8;
-    blade.translateZ(0.18);
-    fanGroup.add(blade);
-  }
-  inside.add(tag(fanGroup, 'fan'));
-
-  const wifiGroup = new THREE.Group();
-  const wifi = rounded(0.72, 0.12, 0.52, 0.06, 0x4d5d66, 0.48, 0.16);
-  wifi.position.set(-2.65, 1.04, 0.05);
-  wifiGroup.add(wifi);
-  for (const x of [-2.78, -2.52]) {
-    const antenna = mesh(
-      new THREE.TubeGeometry(
-        new THREE.CatmullRomCurve3([
-          new THREE.Vector3(x, 1.12, 0.05),
-          new THREE.Vector3(x - 0.3, 1.16, -0.65),
-          new THREE.Vector3(x - 0.5, 1.2, -1.9),
-        ]),
-        18,
-        0.016,
-        6,
-        false,
-      ),
-      0xc4c9cc,
-      0.5,
-      0.24,
-    );
-    wifiGroup.add(antenna);
-  }
-  inside.add(tag(wifiGroup, 'wifi'));
-
-  const speakers = new THREE.Group();
-  for (const x of [-3.0, 3.0]) {
-    const speaker = rounded(0.62, 0.18, 1.15, 0.09, COLORS.speaker, 0.54, 0.08);
-    speaker.position.set(x, 1.02, 1.28);
-    speakers.add(speaker);
-    for (const z of [0.95, 1.25, 1.55]) {
-      const slot = rounded(0.35, 0.02, 0.055, 0.02, 0x56636a, 0.7, 0.02);
-      slot.position.set(x, 1.13, z);
-      speakers.add(slot);
-    }
-  }
-  inside.add(tag(speakers, 'speakers'));
+  const realisticInternals = buildRealisticLaptopInternals();
+  inside.add(realisticInternals.inside);
 
   inside.visible = false;
   root.add(outside, inside);
   root.position.set(0, -0.05, 0.2);
 
-  return { root, outside, inside, ports };
+  return {
+    root,
+    outside,
+    inside,
+    ports,
+    batteryMount: realisticInternals.batteryMount,
+  };
 }
 
 function addEnvironment(scene: THREE.Scene) {
