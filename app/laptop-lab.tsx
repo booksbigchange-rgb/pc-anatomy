@@ -14,12 +14,14 @@ import {
   Monitor,
   MousePointer2,
   PanelTopOpen,
+  Scan,
   Rotate3D,
   Volume2,
   Wifi,
 } from 'lucide-react';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 type LaptopView = 'outside' | 'inside';
@@ -637,12 +639,16 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   const selectedRef = useRef<LaptopPartId>('display');
   const viewRef = useRef<LaptopView>('outside');
   const modeRef = useRef<LaptopMode>('explore');
+  const guidedRef = useRef(false);
+  const realisticRef = useRef(true);
   const connectionTaskRef = useRef(0);
   const connectedRef = useRef<LaptopConnectionId[]>([]);
 
   const [view, setView] = useState<LaptopView>('outside');
   const [selected, setSelected] = useState<LaptopPartId>('display');
   const [guided, setGuided] = useState(false);
+  const [realisticExterior, setRealisticExterior] = useState(true);
+  const [realisticLoaded, setRealisticLoaded] = useState(false);
   const [lessonIndex, setLessonIndex] = useState(0);
   const [mode, setMode] = useState<LaptopMode>('explore');
   const [connectionTask, setConnectionTask] = useState(0);
@@ -670,6 +676,14 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     modeRef.current = mode;
   }, [mode]);
+
+  useEffect(() => {
+    guidedRef.current = guided;
+  }, [guided]);
+
+  useEffect(() => {
+    realisticRef.current = realisticExterior;
+  }, [realisticExterior]);
 
   useEffect(() => {
     connectionTaskRef.current = connectionTask;
@@ -735,6 +749,44 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
 
     const laptop = buildLaptop();
     scene.add(laptop.root);
+
+    const realisticLaptop = new THREE.Group();
+    realisticLaptop.visible = false;
+    scene.add(realisticLaptop);
+
+    let disposed = false;
+    const gltfLoader = new GLTFLoader();
+    gltfLoader.load(
+      `${import.meta.env.BASE_URL}models/framework-laptop-13.glb`,
+      (gltf) => {
+        if (disposed) return;
+        const model = gltf.scene;
+        model.traverse((object) => {
+          if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
+          const item = object as THREE.Mesh;
+          item.castShadow = true;
+          item.receiveShadow = true;
+          item.material = new THREE.MeshStandardMaterial({
+            color: 0xaab4ba,
+            roughness: 0.38,
+            metalness: 0.46,
+          });
+        });
+        model.scale.setScalar(25.5);
+        model.position.set(0, 0.74, 0.05);
+        realisticLaptop.add(model);
+        setRealisticLoaded(true);
+      },
+      undefined,
+      () => {
+        if (!disposed) {
+          realisticRef.current = false;
+          setRealisticExterior(false);
+          setRealisticLoaded(false);
+        }
+      },
+    );
+
     scene.updateMatrixWorld(true);
 
     const portPosition = (id: LaptopPortId) => {
@@ -822,6 +874,13 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
         return;
       }
 
+      const realisticNow =
+        realisticRef.current &&
+        !guidedRef.current &&
+        modeRef.current === 'explore' &&
+        viewRef.current === 'outside';
+      if (realisticNow) return;
+
       const target =
         viewRef.current === 'outside' ? laptop.outside : laptop.inside;
       const hit = raycaster.intersectObject(target, true)[0];
@@ -854,7 +913,14 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       frame = requestAnimationFrame(draw);
       const connectionMode = modeRef.current === 'connections';
       const insideNow = !connectionMode && viewRef.current === 'inside';
-      laptop.outside.visible = !insideNow;
+      const realisticNow =
+        realisticRef.current &&
+        realisticLoaded &&
+        !guidedRef.current &&
+        !connectionMode &&
+        viewRef.current === 'outside';
+      realisticLaptop.visible = realisticNow;
+      laptop.outside.visible = !insideNow && !realisticNow;
       laptop.inside.visible = insideNow;
 
       const activeTask = CONNECTION_TASKS[connectionTaskRef.current];
@@ -900,6 +966,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     draw();
 
     return () => {
+      disposed = true;
       cancelAnimationFrame(frame);
       observer.disconnect();
       canvas.removeEventListener('pointerup', pick);
@@ -1000,6 +1067,28 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
         <div className="laptop-header-actions">
           <button
             type="button"
+            className={
+              'laptop-guide-button' +
+              (realisticExterior && realisticLoaded ? ' active' : '')
+            }
+            onClick={() => {
+              setGuided(false);
+              guidedRef.current = false;
+              modeRef.current = 'explore';
+              setMode('explore');
+              viewRef.current = 'outside';
+              setView('outside');
+              setRealisticExterior((value) => !value);
+            }}
+            title="Toggle the realistic CAD exterior preview"
+          >
+            <Scan size={15} />
+            {realisticExterior && realisticLoaded
+              ? 'Realistic exterior'
+              : 'Teaching model'}
+          </button>
+          <button
+            type="button"
             className={'laptop-guide-button' + (mode === 'connections' ? ' active' : '')}
             onClick={startConnections}
           >
@@ -1056,7 +1145,9 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
             : guided
               ? lessonPart.name
               : view === 'outside'
-                ? 'Start with what students touch.'
+                ? realisticExterior && realisticLoaded
+                  ? 'Review the realistic exterior.'
+                  : 'Start with what students touch.'
                 : 'Now look under the keyboard.'}
         </h1>
         <p className="laptop-intro">
@@ -1067,7 +1158,9 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
             : guided
               ? lessonPart.description
               : view === 'outside'
-                ? 'Explore the screen, keyboard and trackpad before opening the machine.'
+                ? realisticExterior && realisticLoaded
+                  ? 'This preview uses converted official Framework Laptop 13 CAD. Switch to the Teaching model for clickable screen, keyboard, trackpad and ports.'
+                  : 'Explore the screen, keyboard and trackpad before opening the machine.'
                 : 'Laptop parts are smaller and packed closer together than desktop components.'}
         </p>
         {guided && (
