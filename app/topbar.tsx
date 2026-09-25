@@ -5,6 +5,7 @@ import {
   GraduationCap,
   Info,
   Layers3,
+  Monitor,
   Search,
 } from 'lucide-react';
 import { GUIDE, UPSTREAM_REPOSITORY } from './links';
@@ -13,6 +14,7 @@ type Props = {
   layers: boolean;
   studentMode: boolean;
   onReset: () => void;
+  onOpenLab: () => void;
   onToggleLayers: () => void;
   onToggleStudentMode: () => void;
   onSearch: () => void;
@@ -23,6 +25,7 @@ export default function Topbar({
   layers,
   studentMode,
   onReset,
+  onOpenLab,
   onToggleLayers,
   onToggleStudentMode,
   onSearch,
@@ -54,6 +57,15 @@ export default function Topbar({
         </span>
       </a>
       <div className="header-actions">
+        <button
+          type="button"
+          className="student-mode-button"
+          onClick={onOpenLab}
+          title="Return to the whole computer setup"
+        >
+          <Monitor size={16} />
+          <span>Computer Lab</span>
+        </button>
         <button
           type="button"
           className="student-mode-button"
