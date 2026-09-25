@@ -9,18 +9,5 @@ export default defineConfig({
   css: { postcss: { plugins: [tailwindcss()] } },
   resolve: { alias: { '@': fileURLToPath(new URL('.', import.meta.url)) } },
   server: { host: '127.0.0.1', port: 5173 },
-  build: {
-    chunkSizeWarningLimit: 650,
-    cssCodeSplit: false,
-    rolldownOptions: {
-      output: {
-        // GitHub Pages replaces each deployment atomically. Stable asset names
-        // avoid stale-index / new-asset mismatches during rapid classroom
-        // preview deploys.
-        entryFileNames: 'assets/app.js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name][extname]',
-      },
-    },
-  },
+  build: { chunkSizeWarningLimit: 650 },
 });
