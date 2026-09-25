@@ -479,3 +479,113 @@
     margin-top: 12px;
   }
 }
+
+
+.laptop-stage-tip.teardown-open {
+  bottom: 144px;
+}
+
+.laptop-disassembly {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  width: min(560px, calc(100% - 36px));
+  transform: translateX(-50%);
+  padding: 12px 14px 11px;
+  border: 1px solid #3b4b52;
+  border-radius: 10px;
+  background: #10181de8;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 14px 40px #0008;
+  z-index: 3;
+}
+
+.laptop-disassembly-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.laptop-disassembly-head > div {
+  display: grid;
+  gap: 2px;
+}
+
+.laptop-disassembly-head strong {
+  font-size: 12px;
+}
+
+.laptop-disassembly-head span {
+  color: #8ea0a7;
+  font: 10px/1.2 monospace;
+  letter-spacing: .7px;
+  text-transform: uppercase;
+}
+
+.laptop-disassembly-head output {
+  min-width: 42px;
+  color: #dff9fb;
+  font: 700 12px/1 monospace;
+  text-align: right;
+}
+
+.laptop-disassembly-head button {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid #49636c;
+  border-radius: 7px;
+  color: #cfe7ea;
+  background: #1a2b31;
+  font-size: 11px;
+}
+
+.laptop-disassembly-head button.playing {
+  border-color: #7fc9d3;
+  background: #203940;
+}
+
+.laptop-disassembly-head button.reset {
+  width: 34px;
+  padding: 0;
+}
+
+.laptop-disassembly input[type="range"] {
+  width: 100%;
+  margin: 12px 0 7px;
+  accent-color: #79cdd6;
+}
+
+.laptop-disassembly-phases {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: #77888f;
+  font: 9px/1.2 monospace;
+  letter-spacing: .55px;
+  text-transform: uppercase;
+}
+
+@media (max-width: 680px) {
+  .laptop-stage-tip.teardown-open {
+    bottom: 118px;
+  }
+
+  .laptop-disassembly {
+    bottom: 10px;
+    width: calc(100% - 20px);
+    padding: 9px 10px;
+  }
+
+  .laptop-disassembly-head button span {
+    display: none;
+  }
+
+  .laptop-disassembly-phases {
+    font-size: 8px;
+  }
+}
