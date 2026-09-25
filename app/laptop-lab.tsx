@@ -915,7 +915,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       const insideNow = !connectionMode && viewRef.current === 'inside';
       const realisticNow =
         realisticRef.current &&
-        realisticLoaded &&
+        realisticLaptop.children.length > 0 &&
         !guidedRef.current &&
         !connectionMode &&
         viewRef.current === 'outside';
