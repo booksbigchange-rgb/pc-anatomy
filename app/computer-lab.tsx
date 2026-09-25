@@ -541,8 +541,6 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
           : [...connectedRef.current, task.id];
         connectedRef.current = nextConnected;
         setConnected(nextConnected);
-        const cable = cablesRef.current.get(task.id);
-        if (cable) cable.visible = true;
         setFeedback(`Correct — ${task.name} is connected.`);
 
         const nextIndex = CONNECTION_TASKS.findIndex(
@@ -641,13 +639,18 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
     }
   }, [currentTask.portType, labMode]);
 
+  useEffect(() => {
+    for (const [id, cable] of cablesRef.current) {
+      cable.visible = connected.includes(id);
+    }
+  }, [connected]);
+
   const resetConnections = () => {
     connectedRef.current = [];
     setConnected([]);
     taskRef.current = 0;
     setTaskIndex(0);
     setFeedback('Start with the keyboard. Find a USB port on the system unit.');
-    for (const cable of cablesRef.current.values()) cable.visible = false;
   };
 
   const chooseMode = (mode: LabMode) => {
