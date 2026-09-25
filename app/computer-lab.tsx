@@ -14,6 +14,7 @@ import {
   PcCase,
   Rotate3D,
   Wifi,
+  Wrench,
   Zap,
 } from 'lucide-react';
 import * as THREE from 'three';
@@ -722,9 +723,11 @@ function addRoom(scene: THREE.Scene) {
 export default function ComputerLab({
   onOpenPC,
   onOpenLaptop,
+  onOpenAssembly,
 }: {
   onOpenPC: () => void;
   onOpenLaptop: () => void;
+  onOpenAssembly: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const selectedRef = useRef<LabPartId>('tower');
@@ -1135,6 +1138,10 @@ export default function ComputerLab({
         </div>
 
         <div className="lab-machine-actions">
+          <button type="button" className="lab-open-pc" onClick={onOpenAssembly}>
+            <Wrench size={16} />
+            <span>Build a PC</span>
+          </button>
           <button type="button" className="lab-open-pc" onClick={onOpenLaptop}>
             <Laptop size={16} />
             <span>Laptop Lab</span>
