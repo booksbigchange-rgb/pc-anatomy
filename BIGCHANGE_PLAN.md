@@ -35,14 +35,14 @@ PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab i
 - [x] Procedural monitor, system unit, keyboard and mouse
 - [x] Click-to-select learning cards
 - [x] Enter the detailed PC explorer from the system unit
-- [ ] Add ports to each device
-- [ ] Add cable endpoints and connection feedback
+- [x] Add classroom-visible USB, HDMI, Ethernet and power targets to the desktop scene
+- [x] Add keyboard, mouse and monitor cable connection feedback
 - [ ] Add guided “Meet the Computer” lesson
 
 ### Milestone B — Connections
 
-- [ ] USB keyboard/mouse
-- [ ] HDMI or DisplayPort monitor connection
+- [x] USB keyboard/mouse
+- [x] HDMI monitor connection
 - [ ] Ethernet
 - [ ] Power
 - [ ] Headphones/audio
