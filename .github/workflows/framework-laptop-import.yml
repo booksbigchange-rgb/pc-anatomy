@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   convert:
-    if: github.event.head_commit.message == 'Add Framework laptop CAD conversion gate' || github.event.head_commit.message == 'Retry Framework laptop CAD conversion'
+    if: github.event.head_commit.message == 'Add Framework laptop CAD conversion gate' || github.event.head_commit.message == 'Retry Framework laptop CAD conversion' || github.event.head_commit.message == 'Build Framework realistic battery asset'
     runs-on: ubuntu-latest
     steps:
       - name: Check out school branch
@@ -43,9 +43,15 @@ jobs:
             'https://raw.githubusercontent.com/FrameworkComputer/Framework-Laptop-13/e5bd4da7a14611935891c867dc40ae83ea8f6297/Framework%20Laptop%2013%20CAD.stp' \
             --output asset-work/framework-laptop-13.step
           test "$(wc -c < asset-work/framework-laptop-13.step)" -eq 21301844
+          curl --fail --location --retry 3 \
+            'https://raw.githubusercontent.com/FrameworkComputer/Framework-Laptop-13/main/Battery/FWKNAQ9_G01_20210911.stp' \
+            --output asset-work/framework-laptop-13-battery.step
+          test "$(wc -c < asset-work/framework-laptop-13-battery.step)" -eq 11516814
 
       - name: Convert and enforce geometry gates
-        run: python scripts/convert-framework-laptop.py
+        run: |
+          python scripts/convert-framework-laptop.py
+          python scripts/convert-framework-battery.py
 
       - name: Confirm no runtime dependencies were added
         run: git diff --exit-code package.json package-lock.json
@@ -54,6 +60,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/models/framework-laptop-13.glb public/models/framework-laptop-13.meta.json
-          git commit -m "Add converted Framework laptop candidate"
+          git add \
+            public/models/framework-laptop-13.glb \
+            public/models/framework-laptop-13.meta.json \
+            public/models/framework-laptop-13-battery.glb \
+            public/models/framework-laptop-13-battery.meta.json
+          git commit -m "Add converted Framework realistic assets"
           git push origin HEAD:bigchange-school
