@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   convert:
-    if: github.event.head_commit.message == 'Add Framework laptop CAD conversion gate' || github.event.head_commit.message == 'Retry Framework laptop CAD conversion' || github.event.head_commit.message == 'Build Framework realistic battery asset' || github.event.head_commit.message == 'Add Framework mainboard outline conversion'
+    if: github.event.head_commit.message == 'Add Framework laptop CAD conversion gate' || github.event.head_commit.message == 'Retry Framework laptop CAD conversion' || github.event.head_commit.message == 'Build Framework realistic battery asset' || github.event.head_commit.message == 'Add Framework mainboard outline conversion' || github.event.head_commit.message == 'Retry Framework mainboard outline conversion'
     runs-on: ubuntu-latest
     steps:
       - name: Check out school branch
@@ -51,9 +51,9 @@ jobs:
             --output asset-work/framework-laptop-13-battery.step
           test "$(wc -c < asset-work/framework-laptop-13-battery.step)" -eq 11516814
           curl --fail --location --retry 3 \
-            'https://raw.githubusercontent.com/FrameworkComputer/Framework-Laptop-13/57a01b214c70c924dcd60006c7fd4d753e94e86f/Mainboard/2D/fw_main_pcb_generic_2_w_fan_1.dxf' \
+            'https://raw.githubusercontent.com/FrameworkComputer/Framework-Laptop-13/57a01b214c70c924dcd60006c7fd4d753e94e86f/Mainboard/2D/fw_main_pcb_generic_2_w_fan_2.dxf' \
             --output asset-work/framework-laptop-13-mainboard.dxf
-          test "$(wc -c < asset-work/framework-laptop-13-mainboard.dxf)" -eq 1750330
+          test "$(wc -c < asset-work/framework-laptop-13-mainboard.dxf)" -eq 823928
 
       - name: Convert and enforce geometry gates
         run: |
