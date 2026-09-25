@@ -1,0 +1,127 @@
+.lab-mode-switch {
+  justify-self: center;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #30373c;
+  border-radius: 8px;
+  background: #111518;
+}
+.lab-mode-switch button {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border-radius: 5px;
+  color: #929da3;
+  font-size: 12px;
+}
+.lab-mode-switch button.active {
+  color: #e9fbff;
+  background: #22343a;
+}
+.lab-task-list {
+  display: grid;
+  gap: 7px;
+}
+.lab-task-list button {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 12px;
+  border: 1px solid #343b40;
+  border-radius: 7px;
+  color: #bcc4c9;
+  background: #1b2024;
+  text-align: left;
+}
+.lab-task-list button.active {
+  color: #ecfbfd;
+  border-color: #6baab4;
+  background: #22343a;
+}
+.lab-task-list button.done {
+  color: #b7ddd0;
+  border-color: #466d5f;
+  background: #182a24;
+}
+.lab-task-list .lab-reset-connections {
+  min-height: 36px;
+  justify-content: center;
+  margin-top: 5px;
+  border-style: dashed;
+  color: #8f9ba1;
+  background: transparent;
+  font-size: 11px;
+}
+.lab-port-key {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+.lab-port-key span {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 8px;
+  border: 1px solid #30383d;
+  border-radius: 5px;
+  color: #aeb8bd;
+  background: #121619;
+  font-size: 11px;
+}
+.lab-port-key i {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: #4e8394;
+}
+.lab-port-key i.hdmi {
+  background: #8e7ca8;
+}
+.lab-port-key i.ethernet {
+  background: #658f79;
+}
+.lab-port-key i.power {
+  background: #a98265;
+}
+.lab-topbar {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+.lab-open-pc {
+  justify-self: end;
+}
+@media (max-width: 980px) {
+  .lab-mode-switch button {
+    padding: 0 8px;
+  }
+}
+@media (max-width: 680px) {
+  .lab-topbar {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 6px;
+    padding: 0 10px;
+  }
+  .lab-mode-switch {
+    padding: 3px;
+  }
+  .lab-mode-switch button {
+    min-height: 28px;
+    padding: 0 7px;
+  }
+  .lab-mode-switch button {
+    font-size: 0;
+  }
+  .lab-task-list button {
+    min-height: 42px;
+    font-size: 12px;
+  }
+  .lab-port-key {
+    margin-top: 12px;
+  }
+}
