@@ -123,6 +123,27 @@ function boardShape() {
   return geometry;
 }
 
+function pinConnector(
+  width: number,
+  depth: number,
+  pins: number,
+  color = C.connector,
+) {
+  const connector = new THREE.Group();
+  const housing = rounded(width, 0.085, depth, 0.018, color, 0.42, 0.12);
+  connector.add(housing);
+
+  const span = Math.max(width - 0.08, 0.04);
+  for (let index = 0; index < pins; index++) {
+    const x =
+      pins === 1 ? 0 : -span / 2 + (span * index) / Math.max(pins - 1, 1);
+    const pin = rounded(0.018, 0.018, depth * 0.62, 0.003, C.gold, 0.26, 0.62);
+    pin.position.set(x, 0.05, 0);
+    connector.add(pin);
+  }
+  return connector;
+}
+
 function addBoardDetails(group: THREE.Group) {
   // CPU-side VRM stages / inductors.
   for (const [x, z] of [
@@ -175,19 +196,36 @@ function addBoardDetails(group: THREE.Group) {
     group.add(connector);
   }
 
-  // Board headers represented from Framework's published interface set:
-  // battery, fan/speaker JST, display/webcam and input-cover connectors.
-  for (const [x, z, w, d, color] of [
-    [0.3, 0.76, 0.66, 0.18, 0x202529],
-    [-2.2, 0.42, 0.32, 0.18, C.connector],
-    [2.1, 0.2, 0.32, 0.18, C.connector],
-    [1.1, 0.54, 0.82, 0.12, 0xd7d9d4],
-    [-0.9, 0.48, 0.72, 0.12, 0xd7d9d4],
-  ] as const) {
-    const connector = rounded(w, 0.09, d, 0.02, color, 0.42, 0.12);
-    connector.position.set(x, 0.115, z);
-    group.add(connector);
-  }
+  // Framework publishes the connector families and pin counts. Positions are
+  // aligned to the current teaching layout and will be snapped to the official
+  // DXF coordinates once the mechanical-view transform is validated.
+  const batteryConnector = pinConnector(0.72, 0.2, 10, 0x202529);
+  batteryConnector.position.set(0.3, 0.125, 0.76);
+  group.add(batteryConnector);
+
+  const fanConnector = pinConnector(0.34, 0.18, 4);
+  fanConnector.position.set(-2.2, 0.125, 0.42);
+  group.add(fanConnector);
+
+  const speakerConnector = pinConnector(0.34, 0.18, 4);
+  speakerConnector.position.set(2.1, 0.125, 0.2);
+  group.add(speakerConnector);
+
+  const displayConnector = pinConnector(0.92, 0.14, 40, 0xd7d9d4);
+  displayConnector.position.set(1.08, 0.125, 0.54);
+  group.add(displayConnector);
+
+  const webcamConnector = pinConnector(0.72, 0.14, 30, 0xd7d9d4);
+  webcamConnector.position.set(-0.95, 0.125, 0.48);
+  group.add(webcamConnector);
+
+  const inputCoverConnector = pinConnector(1.04, 0.16, 50, 0xd7d9d4);
+  inputCoverConnector.position.set(0.12, 0.125, 0.16);
+  group.add(inputCoverConnector);
+
+  const audioZif = pinConnector(0.5, 0.14, 15, 0xe3e0d7);
+  audioZif.position.set(2.42, 0.125, 0.56);
+  group.add(audioZif);
 
   // Gold mounting pads.
   for (const [x, z] of [
