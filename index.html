@@ -51,6 +51,14 @@
         });
 
         window.addEventListener('load', () => {
+          const stylesheets = Array.from(
+            document.querySelectorAll('link[rel="stylesheet"]'),
+          );
+          const missingStylesheet = stylesheets.some((link) => !link.sheet);
+          if (missingStylesheet) {
+            recover();
+            return;
+          }
           sessionStorage.removeItem(key);
         });
       })();
