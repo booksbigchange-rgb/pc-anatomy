@@ -9,5 +9,21 @@ export default defineConfig({
   css: { postcss: { plugins: [tailwindcss()] } },
   resolve: { alias: { '@': fileURLToPath(new URL('.', import.meta.url)) } },
   server: { host: '127.0.0.1', port: 5173 },
-  build: { chunkSizeWarningLimit: 650 },
+  build: {
+    chunkSizeWarningLimit: 650,
+    rollupOptions: {
+      output: {
+        // GitHub Pages replaces each deployment atomically. Stable asset names
+        // avoid stale-index / new-asset mismatches during rapid classroom
+        // preview deploys.
+        entryFileNames: 'assets/app.js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: (assetInfo) => {
+          const name = assetInfo.name ?? 'asset';
+          if (name.endsWith('.css')) return 'assets/app.css';
+          return 'assets/[name][extname]';
+        },
+      },
+    },
+  },
 });
