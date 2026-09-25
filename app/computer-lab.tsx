@@ -11,13 +11,26 @@ import {
   Mouse,
   PcCase,
   Rotate3D,
+  Wifi,
+  Zap,
 } from 'lucide-react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-type LabPartId = 'monitor' | 'tower' | 'keyboard' | 'mouse';
+type LabPartId =
+  | 'monitor'
+  | 'tower'
+  | 'keyboard'
+  | 'mouse'
+  | 'network'
+  | 'power-strip';
 type LabMode = 'explore' | 'connect';
-type ConnectionId = 'keyboard-usb' | 'mouse-usb' | 'monitor-hdmi';
+type ConnectionId =
+  | 'keyboard-usb'
+  | 'mouse-usb'
+  | 'monitor-hdmi'
+  | 'network-ethernet'
+  | 'tower-power';
 type PortType = 'usb' | 'hdmi' | 'ethernet' | 'power';
 type PortId =
   | 'tower-usb-1'
@@ -78,6 +91,24 @@ const PARTS: LabPart[] = [
       'The mouse is an input device used to point, click, drag and select.',
     lesson: 'A wired mouse commonly connects to a USB port.',
   },
+  {
+    id: 'network',
+    name: 'Network',
+    icon: Wifi,
+    description:
+      'A router or network switch connects the computer to a local network and often to the internet.',
+    lesson:
+      'A wired Ethernet cable connects the network equipment to the computer’s Ethernet port.',
+  },
+  {
+    id: 'power-strip',
+    name: 'Power',
+    icon: Zap,
+    description:
+      'The computer and monitor need electrical power before any data connection can work.',
+    lesson:
+      'Power cables connect the equipment to a safe outlet or power strip. Students should not handle mains wiring inside a real power supply.',
+  },
 ];
 
 const CONNECTION_TASKS: ConnectionTask[] = [
@@ -107,6 +138,24 @@ const CONNECTION_TASKS: ConnectionTask[] = [
     targetPort: 'tower-hdmi',
     instruction:
       'Connect the monitor to HDMI. The display connector is on the rear teaching panel, so rotate the tower to find it.',
+  },
+  {
+    id: 'network-ethernet',
+    name: 'Network → Ethernet',
+    device: 'network',
+    portType: 'ethernet',
+    targetPort: 'tower-ethernet',
+    instruction:
+      'Connect the network box to Ethernet. Find the larger rear network socket.',
+  },
+  {
+    id: 'tower-power',
+    name: 'Power → System unit',
+    device: 'power-strip',
+    portType: 'power',
+    targetPort: 'tower-power',
+    instruction:
+      'Finish the setup by connecting power to the system unit. Find the power inlet low on the rear panel.',
   },
 ];
 
@@ -346,6 +395,64 @@ function buildMouse() {
   return tag(group, 'mouse');
 }
 
+function buildNetworkBox() {
+  const group = new THREE.Group();
+  const body = mesh(
+    new THREE.BoxGeometry(1.55, 0.28, 0.95),
+    COLORS.panel,
+    0.5,
+    0.2,
+  );
+  body.position.y = 0.14;
+  group.add(body);
+  for (const x of [-0.55, -0.18, 0.18, 0.55]) {
+    const light = mesh(
+      new THREE.BoxGeometry(0.08, 0.035, 0.04),
+      COLORS.accent,
+      0.3,
+      0.05,
+    );
+    light.position.set(x, 0.29, 0.47);
+    group.add(light);
+  }
+  for (const x of [-0.5, 0.5]) {
+    const antenna = mesh(
+      new THREE.CylinderGeometry(0.025, 0.025, 0.95, 10),
+      COLORS.dark,
+      0.45,
+      0.25,
+    );
+    antenna.position.set(x, 0.62, -0.32);
+    group.add(antenna);
+  }
+  group.position.set(-4.5, 0.7, -1.45);
+  return tag(group, 'network');
+}
+
+function buildPowerStrip() {
+  const group = new THREE.Group();
+  const body = mesh(
+    new THREE.BoxGeometry(2.35, 0.2, 0.58),
+    0xe0e2e3,
+    0.55,
+    0.06,
+  );
+  group.add(body);
+  for (const x of [-0.72, 0, 0.72]) {
+    const socket = mesh(
+      new THREE.CylinderGeometry(0.12, 0.12, 0.03, 20),
+      0x52575b,
+      0.45,
+      0.05,
+    );
+    socket.rotation.x = Math.PI / 2;
+    socket.position.set(x, 0.11, 0);
+    group.add(socket);
+  }
+  group.position.set(4.65, 0.72, 3.05);
+  return tag(group, 'power-strip');
+}
+
 function cableLine(start: THREE.Vector3, end: THREE.Vector3) {
   const middle = start.clone().lerp(end, 0.5);
   middle.y = Math.max(0.58, Math.min(start.y, end.y) - 0.35);
@@ -436,12 +543,16 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
     const tower = towerBuild.group;
     const keyboard = buildKeyboard();
     const mouse = buildMouse();
+    const network = buildNetworkBox();
+    const powerStrip = buildPowerStrip();
 
     for (const [id, group] of [
       ['monitor', monitor],
       ['tower', tower],
       ['keyboard', keyboard],
       ['mouse', mouse],
+      ['network', network],
+      ['power-strip', powerStrip],
     ] as const) {
       groups.set(id, group);
       scene.add(group);
@@ -469,11 +580,21 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
       new THREE.Vector3(0.15, 1.08, -1.45),
       portPosition('tower-hdmi'),
     );
+    const networkCable = cableLine(
+      new THREE.Vector3(-4.5, 0.88, -1.05),
+      portPosition('tower-ethernet'),
+    );
+    const powerCable = cableLine(
+      new THREE.Vector3(4.65, 0.82, 2.78),
+      portPosition('tower-power'),
+    );
 
     for (const [id, cable] of [
       ['keyboard-usb', keyboardCable],
       ['mouse-usb', mouseCable],
       ['monitor-hdmi', monitorCable],
+      ['network-ethernet', networkCable],
+      ['tower-power', powerCable],
     ] as const) {
       cable.visible = connected.includes(id);
       scene.add(cable);
@@ -740,7 +861,7 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
 
         <div className="lab-next">
           <strong>Coming next</strong>
-          <span>Ethernet · power · laptop · build challenge</span>
+          <span>Laptop · guided lesson · build challenge</span>
         </div>
       </aside>
 
@@ -784,7 +905,7 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
             <h2>{allConnected ? 'Setup connected!' : currentTask.name}</h2>
             <p>
               {allConnected
-                ? 'The keyboard, mouse and monitor now have their basic data connections.'
+                ? 'The keyboard, mouse, monitor, network and system unit power connections are complete.'
                 : currentTask.instruction}
             </p>
             <div className="lab-lesson">
