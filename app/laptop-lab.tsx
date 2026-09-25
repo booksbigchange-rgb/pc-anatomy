@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   BatteryCharging,
@@ -16,8 +16,11 @@ import {
   Monitor,
   MousePointer2,
   PanelTopOpen,
+  Pause,
+  Play,
   Scan,
   Rotate3D,
+  RotateCcw,
   Volume2,
   Wifi,
 } from 'lucide-react';
@@ -25,7 +28,11 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { buildRealisticLaptopInternals } from './laptop-internals';
+import {
+  applyLaptopTeardown,
+  buildRealisticLaptopInternals,
+} from './laptop-internals';
+import { useDisassemblyPlayback } from './use-disassembly-playback';
 
 type LaptopView = 'outside' | 'inside';
 type LaptopMode = 'explore' | 'connections';
@@ -522,6 +529,7 @@ function buildLaptop() {
     batteryMount: realisticInternals.batteryMount,
     motherboardMount: realisticInternals.motherboardMount,
     motherboardShell: realisticInternals.motherboardShell,
+    teardownParts: realisticInternals.teardownParts,
   };
 }
 
@@ -565,6 +573,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   const realisticRef = useRef(true);
   const connectionTaskRef = useRef(0);
   const connectedRef = useRef<LaptopConnectionId[]>([]);
+  const explodeRef = useRef(18);
 
   const [view, setView] = useState<LaptopView>('outside');
   const [selected, setSelected] = useState<LaptopPartId>('display');
@@ -578,6 +587,19 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   const [connectionFeedback, setConnectionFeedback] = useState(
     'Choose Connections to practise the ports on a laptop.',
   );
+  const [explode, setExplodeValue] = useState(18);
+
+  const updateExplode = useCallback((value: number) => {
+    explodeRef.current = value;
+    setExplodeValue(value);
+  }, []);
+
+  const {
+    playing: teardownPlaying,
+    setExplode,
+    stop: stopTeardown,
+    toggleAuto: toggleTeardown,
+  } = useDisassemblyPlayback(explode, updateExplode);
 
   const visibleParts = PARTS.filter((part) => part.view === view);
   const selectedPart =
@@ -586,6 +608,18 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     PARTS.find((part) => part.id === LESSON_ORDER[lessonIndex]) ?? PARTS[0];
   const currentConnection = CONNECTION_TASKS[connectionTask];
   const allConnectionsComplete = connected.length === CONNECTION_TASKS.length;
+  const teardownStage =
+    explode < 14
+      ? 'Assembled'
+      : explode < 32
+        ? 'Bottom cover'
+        : explode < 50
+          ? 'Battery + service parts'
+          : explode < 68
+            ? 'Memory + speakers'
+            : explode < 87
+              ? 'Cooling + CPU'
+              : 'Motherboard';
 
   useEffect(() => {
     selectedRef.current = selected;
@@ -928,6 +962,9 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       for (const marker of connectionMarkers)
         marker.visible = connectionMode;
 
+      if (insideNow)
+        applyLaptopTeardown(laptop.teardownParts, explodeRef.current);
+
       const activeRoot = insideNow ? laptop.inside : laptop.outside;
       activeRoot.traverse((object) => {
         if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
@@ -982,22 +1019,28 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     setMode('explore');
     viewRef.current = part.view;
     setView(part.view);
+    if (part.view === 'inside' && explodeRef.current < 18)
+      setExplode(18);
     selectedRef.current = part.id;
     setSelected(part.id);
   };
 
   const changeView = (next: LaptopView) => {
     setGuided(false);
+    stopTeardown();
     modeRef.current = 'explore';
     setMode('explore');
     viewRef.current = next;
     setView(next);
+    setExplode(next === 'inside' ? 18 : 0);
     const first = PARTS.find((part) => part.view === next)!;
     selectedRef.current = first.id;
     setSelected(first.id);
   };
 
   const startGuide = () => {
+    stopTeardown();
+    setExplode(0);
     modeRef.current = 'explore';
     setMode('explore');
     setGuided(true);
@@ -1015,6 +1058,8 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   };
 
   const startConnections = () => {
+    stopTeardown();
+    setExplode(0);
     setGuided(false);
     modeRef.current = 'connections';
     setMode('connections');
@@ -1240,12 +1285,73 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
           ref={canvasRef}
           aria-label="Interactive 3D laptop. Drag to orbit and click a component."
         />
-        <div className="laptop-stage-tip">
+        <div
+          className={
+            'laptop-stage-tip' +
+            (view === 'inside' && mode === 'explore' && !guided
+              ? ' teardown-open'
+              : '')
+          }
+        >
           <Rotate3D size={15} />
           {mode === 'connections'
             ? 'Drag to orbit · find the glowing port · click to connect'
-            : 'Drag to orbit · scroll to zoom · click a part'}
+            : view === 'inside' && !guided
+              ? 'Drag to orbit · use the teardown slider · click a part'
+              : 'Drag to orbit · scroll to zoom · click a part'}
         </div>
+
+        {view === 'inside' && mode === 'explore' && !guided && (
+          <div className="laptop-disassembly" aria-label="Laptop teardown">
+            <div className="laptop-disassembly-head">
+              <button
+                type="button"
+                className={teardownPlaying ? 'playing' : ''}
+                onClick={toggleTeardown}
+                aria-label={
+                  teardownPlaying
+                    ? 'Pause laptop teardown'
+                    : 'Play laptop teardown'
+                }
+              >
+                {teardownPlaying ? <Pause size={16} /> : <Play size={16} />}
+                <span>{teardownPlaying ? 'Pause' : 'Auto'}</span>
+              </button>
+              <div>
+                <strong>Laptop anatomy</strong>
+                <span>{teardownStage}</span>
+              </div>
+              <output>{Math.round(explode)}%</output>
+              <button
+                type="button"
+                className="reset"
+                onClick={() => {
+                  stopTeardown();
+                  setExplode(0);
+                }}
+                aria-label="Reassemble laptop"
+              >
+                <RotateCcw size={16} />
+              </button>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value={explode}
+              onChange={(event) => setExplode(Number(event.target.value))}
+              aria-label="Laptop teardown progress"
+              aria-valuetext={teardownStage}
+            />
+            <div className="laptop-disassembly-phases" aria-hidden="true">
+              <span>Assembled</span>
+              <span>Service parts</span>
+              <span>Cooling</span>
+              <span>Board out</span>
+            </div>
+          </div>
+        )}
       </section>
 
       <aside className="laptop-detail" aria-live="polite">
