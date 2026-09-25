@@ -33,3 +33,24 @@ This file records assets before they are allowed into the student-facing build.
 > Framework Laptop 13 CAD © Framework Computer Inc., licensed under CC BY 4.0. Converted and optimized for the Big Change Computer Lab. Source: FrameworkComputer/Framework-Laptop-13.
 
 This attribution is for the CAD-derived geometry only and does not imply endorsement by Framework Computer.
+
+
+## Framework Laptop 13 battery — realistic internal asset
+
+| Field | Value |
+| --- | --- |
+| Owner / creator | Framework Computer Inc. |
+| Official repository | https://github.com/FrameworkComputer/Framework-Laptop-13 |
+| Source file | `Battery/FWKNAQ9_G01_20210911.stp` |
+| Git blob SHA | `16ce561192960c9aa0e8f0fdcd957482cd187042` |
+| Source bytes | 11,516,814 |
+| License | CC BY 4.0 |
+| Converted GLB | 894,752 bytes |
+| Output faces | 44,816 |
+| Output vertices | 22,247 |
+| Physical extents | 240.013 × 101.053 × 7.679 mm |
+| Intended use | Realistic Laptop Lab internal battery |
+| Runtime networking | None; asset is committed locally |
+| Status | Approved for Realistic Laptop Internals V1 |
+
+The converted battery uses neutral classroom materials and omits product artwork. Big Change modifies the source only for web conversion, optimization, orientation and materials.
