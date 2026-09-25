@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   BatteryCharging,
   BookOpen,
+  Cable,
   CircuitBoard,
   Fan,
   HardDrive,
@@ -22,6 +23,19 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 type LaptopView = 'outside' | 'inside';
+type LaptopMode = 'explore' | 'connections';
+type LaptopPortType = 'usb' | 'hdmi' | 'power' | 'audio';
+type LaptopPortId =
+  | 'usb-left'
+  | 'usb-right'
+  | 'hdmi-left'
+  | 'power-left'
+  | 'audio-right';
+type LaptopConnectionId =
+  | 'charger-power'
+  | 'usb-device'
+  | 'external-display'
+  | 'headphones-audio';
 type LaptopPartId =
   | 'display'
   | 'keyboard'
@@ -32,6 +46,15 @@ type LaptopPartId =
   | 'fan'
   | 'wifi'
   | 'speakers';
+
+type LaptopConnectionTask = {
+  id: LaptopConnectionId;
+  name: string;
+  portType: LaptopPortType;
+  targetPort: LaptopPortId;
+  instruction: string;
+  source: [number, number, number];
+};
 
 type LaptopPart = {
   id: LaptopPartId;
@@ -126,6 +149,45 @@ const PARTS: LaptopPart[] = [
   },
 ];
 
+const CONNECTION_TASKS: LaptopConnectionTask[] = [
+  {
+    id: 'charger-power',
+    name: 'Charger → Power',
+    portType: 'power',
+    targetPort: 'power-left',
+    instruction:
+      'Connect the charger first. Find the small power port near the rear-left side.',
+    source: [4.85, 0.82, 2.9],
+  },
+  {
+    id: 'usb-device',
+    name: 'USB device → USB',
+    portType: 'usb',
+    targetPort: 'usb-left',
+    instruction:
+      'Connect a USB device. Find the rectangular USB port on the left side.',
+    source: [-4.85, 0.82, 2.25],
+  },
+  {
+    id: 'external-display',
+    name: 'Display → HDMI',
+    portType: 'hdmi',
+    targetPort: 'hdmi-left',
+    instruction:
+      'Connect an external display. Find the wider HDMI port on the left side.',
+    source: [-4.85, 0.82, -0.6],
+  },
+  {
+    id: 'headphones-audio',
+    name: 'Headphones → Audio',
+    portType: 'audio',
+    targetPort: 'audio-right',
+    instruction:
+      'Connect headphones. Find the small round audio jack on the right side.',
+    source: [4.85, 0.82, 1.5],
+  },
+];
+
 const LESSON_ORDER: LaptopPartId[] = [
   'display',
   'keyboard',
@@ -151,6 +213,14 @@ const LESSON_ORDER: LaptopPartId[] = [
    screenHeight: 3.89, // ~16:9
    hingeZ: -2.34,
  } as const;
+
+const PORT_TYPES: Record<LaptopPortId, LaptopPortType> = {
+  'usb-left': 'usb',
+  'usb-right': 'usb',
+  'hdmi-left': 'hdmi',
+  'power-left': 'power',
+  'audio-right': 'audio',
+};
 
 const COLORS = {
   background: 0x10171d,
