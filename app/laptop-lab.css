@@ -1,0 +1,310 @@
+.laptop-lab {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr) 320px;
+  grid-template-rows: 72px minmax(0, 1fr);
+  color: #eef3f4;
+  background: #10171d;
+  overflow: hidden;
+}
+.laptop-topbar {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 0 22px;
+  border-bottom: 1px solid #2c3940;
+  background: #10161b;
+  z-index: 5;
+}
+.laptop-back,
+.laptop-view-switch button,
+.laptop-primary {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #3a4a52;
+  border-radius: 7px;
+  color: #c7d1d5;
+  background: #182127;
+}
+.laptop-back {
+  justify-self: start;
+  padding: 0 12px;
+}
+.laptop-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.laptop-brand > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+.laptop-brand strong {
+  font-size: 17px;
+}
+.laptop-brand small {
+  color: #81939b;
+  font: 9px/1.2 monospace;
+  letter-spacing: 1.35px;
+}
+.laptop-brand-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: #132128;
+  background: linear-gradient(135deg, #a3dce3, #b99bd2);
+}
+.laptop-view-switch {
+  justify-self: end;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #303d43;
+  border-radius: 8px;
+  background: #0e1418;
+}
+.laptop-view-switch button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 0;
+  color: #8fa0a7;
+  background: transparent;
+  font-size: 12px;
+}
+.laptop-view-switch button.active {
+  color: #e8fbfd;
+  background: #22363d;
+}
+.laptop-parts,
+.laptop-detail {
+  padding: 28px 22px;
+  background: #151d22;
+  overflow-y: auto;
+  z-index: 2;
+}
+.laptop-parts {
+  border-right: 1px solid #303b41;
+}
+.laptop-detail {
+  border-left: 1px solid #303b41;
+}
+.laptop-eyebrow {
+  margin: 0 0 11px;
+  color: #84acb4;
+  font: 10px/1.4 monospace;
+  letter-spacing: 1.5px;
+}
+.laptop-parts h1 {
+  margin: 0;
+  max-width: 230px;
+  font-size: clamp(28px, 3vw, 38px);
+  line-height: 1;
+}
+.laptop-intro {
+  margin: 17px 0 24px;
+  color: #acb9be;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.laptop-part-list {
+  display: grid;
+  gap: 7px;
+}
+.laptop-part-list button {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 1px solid #344148;
+  border-radius: 7px;
+  color: #b8c4c8;
+  background: #1b2429;
+  text-align: left;
+}
+.laptop-part-list button.active {
+  color: #edfcfd;
+  border-color: #6aaeb8;
+  background: #22383e;
+}
+.laptop-next {
+  margin-top: 24px;
+  padding: 13px;
+  border: 1px solid #303b41;
+  border-radius: 7px;
+  background: #10171b;
+}
+.laptop-next strong,
+.laptop-next span {
+  display: block;
+}
+.laptop-next strong {
+  font-size: 12px;
+}
+.laptop-next span {
+  margin-top: 5px;
+  color: #87969d;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.laptop-stage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(52, 83, 92, .46), transparent 48%),
+    linear-gradient(#10171d, #0c1216);
+}
+.laptop-stage canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+.laptop-stage-tip {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 11px;
+  border: 1px solid #3a474e;
+  border-radius: 999px;
+  color: #a7b4b9;
+  background: #10181dcc;
+  backdrop-filter: blur(8px);
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.laptop-detail h2 {
+  margin: 2px 0 12px;
+  font-size: 30px;
+}
+.laptop-detail > p:not(.laptop-eyebrow) {
+  color: #bec8cc;
+  font-size: 15px;
+  line-height: 1.62;
+}
+.laptop-why {
+  margin-top: 24px;
+  padding: 14px;
+  border-left: 3px solid #79c6d0;
+  background: #1a2429;
+}
+.laptop-why strong {
+  font-size: 12px;
+}
+.laptop-why p {
+  margin: 7px 0 0;
+  color: #adb9be;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.laptop-primary {
+  width: 100%;
+  margin-top: 22px;
+  justify-content: space-between;
+  padding: 0 14px;
+  border-color: #537780;
+  color: #e4fbfd;
+  background: #1d353b;
+  font-weight: 650;
+}
+@media (max-width: 980px) {
+  .laptop-lab {
+    grid-template-columns: 230px minmax(0, 1fr);
+  }
+  .laptop-detail {
+    position: absolute;
+    right: 14px;
+    bottom: 64px;
+    width: min(310px, calc(100vw - 270px));
+    max-height: 48vh;
+    border: 1px solid #39474e;
+    border-radius: 10px;
+    box-shadow: 0 16px 50px #0009;
+  }
+}
+@media (max-width: 680px) {
+  .laptop-lab {
+    grid-template-columns: 1fr;
+    grid-template-rows: 64px minmax(0, 1fr) auto;
+  }
+  .laptop-topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 0 10px;
+  }
+  .laptop-back {
+    width: 34px;
+    padding: 0;
+    font-size: 0;
+  }
+  .laptop-brand strong {
+    font-size: 13px;
+  }
+  .laptop-brand small {
+    display: none;
+  }
+  .laptop-brand-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .laptop-view-switch button {
+    width: 30px;
+    padding: 0;
+    font-size: 0;
+  }
+  .laptop-parts {
+    position: absolute;
+    left: 10px;
+    top: 76px;
+    width: 178px;
+    padding: 12px;
+    border: 1px solid #344148;
+    border-radius: 9px;
+    background: #121a1ee8;
+    backdrop-filter: blur(8px);
+  }
+  .laptop-parts h1,
+  .laptop-intro,
+  .laptop-next {
+    display: none;
+  }
+  .laptop-part-list button {
+    min-height: 40px;
+    font-size: 12px;
+  }
+  .laptop-stage {
+    grid-row: 2;
+  }
+  .laptop-detail {
+    position: static;
+    width: auto;
+    max-height: none;
+    grid-row: 3;
+    padding: 16px;
+    border: 0;
+    border-top: 1px solid #303b41;
+    border-radius: 0;
+  }
+  .laptop-detail h2 {
+    font-size: 22px;
+  }
+  .laptop-detail > p:not(.laptop-eyebrow) {
+    margin: 0;
+    font-size: 13px;
+  }
+  .laptop-why {
+    display: none;
+  }
+}
