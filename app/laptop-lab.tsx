@@ -125,6 +125,20 @@ const PARTS: LaptopPart[] = [
   },
 ];
 
+// Representative 15-inch-class laptop proportions.
+ // Scene units are proportional rather than tied to a brand-specific model.
+ const LAPTOP_DIMENSIONS = {
+   baseWidth: 7.6,
+   baseDepth: 5.05,
+   baseThickness: 0.34,
+   lidWidth: 7.32,
+   lidHeight: 4.5,
+   lidThickness: 0.22,
+   screenWidth: 6.92,
+   screenHeight: 3.89, // ~16:9
+   hingeZ: -2.34,
+ } as const;
+
 const COLORS = {
   background: 0x10171d,
   floor: 0x151c21,
@@ -232,11 +246,19 @@ function buildLaptop() {
   const outside = new THREE.Group();
   const inside = new THREE.Group();
 
-  const base = rounded(7.5, 0.32, 5.0, 0.2, COLORS.shell, 0.34, 0.54);
+  const base = rounded(
+    LAPTOP_DIMENSIONS.baseWidth,
+    LAPTOP_DIMENSIONS.baseThickness,
+    LAPTOP_DIMENSIONS.baseDepth,
+    0.2,
+    COLORS.shell,
+    0.34,
+    0.54,
+  );
   base.position.y = 0.86;
   outside.add(base);
 
-  const deck = rounded(7.08, 0.08, 4.58, 0.16, 0x9da8af, 0.42, 0.44);
+  const deck = rounded(7.18, 0.08, 4.63, 0.16, 0x9da8af, 0.42, 0.44);
   deck.position.y = 1.05;
   outside.add(deck);
 
@@ -262,8 +284,8 @@ function buildLaptop() {
   outside.add(tag(keyboard, 'keyboard'));
 
   const trackpad = new THREE.Group();
-  const trackpadSurface = rounded(2.65, 0.035, 1.55, 0.12, 0x87939a, 0.38, 0.38);
-  trackpadSurface.position.set(0, 1.115, 1.55);
+  const trackpadSurface = rounded(2.78, 0.035, 1.45, 0.12, 0x87939a, 0.38, 0.38);
+  trackpadSurface.position.set(0, 1.115, 1.58);
   trackpad.add(trackpadSurface);
   outside.add(tag(trackpad, 'trackpad'));
 
@@ -274,24 +296,43 @@ function buildLaptop() {
     0.52,
   );
   hinge.rotation.z = Math.PI / 2;
-  hinge.position.set(0, 1.02, -2.34);
+  hinge.position.set(0, 1.02, LAPTOP_DIMENSIONS.hingeZ);
   outside.add(hinge);
 
+  // The lid pivots from the hinge. The earlier prototype positioned the lid
+  // independently, which made it sit too far behind the base.
+  const displayPivot = new THREE.Group();
+  displayPivot.position.set(0, 1.04, LAPTOP_DIMENSIONS.hingeZ);
+  displayPivot.rotation.x = -0.14;
+
   const displayGroup = new THREE.Group();
-  const lidFrame = rounded(7.15, 4.55, 0.22, 0.2, COLORS.shell, 0.34, 0.52);
-  lidFrame.position.set(0, 3.0, -4.05);
-  lidFrame.rotation.x = -0.17;
+  const lidFrame = rounded(
+    LAPTOP_DIMENSIONS.lidWidth,
+    LAPTOP_DIMENSIONS.lidHeight,
+    LAPTOP_DIMENSIONS.lidThickness,
+    0.2,
+    COLORS.shell,
+    0.34,
+    0.52,
+  );
+  lidFrame.position.set(0, LAPTOP_DIMENSIONS.lidHeight / 2, 0);
   displayGroup.add(lidFrame);
 
   const screen = new THREE.Mesh(
-    new THREE.PlaneGeometry(6.62, 3.92),
+    new THREE.PlaneGeometry(
+      LAPTOP_DIMENSIONS.screenWidth,
+      LAPTOP_DIMENSIONS.screenHeight,
+    ),
     new THREE.MeshBasicMaterial({
       color: COLORS.screen,
       map: makeScreenTexture() ?? undefined,
     }),
   );
-  screen.position.set(0, 3.0, -3.91);
-  screen.rotation.x = -0.17;
+  screen.position.set(
+    0,
+    LAPTOP_DIMENSIONS.lidHeight / 2,
+    LAPTOP_DIMENSIONS.lidThickness / 2 + 0.006,
+  );
   displayGroup.add(screen);
 
   const webcam = mesh(
@@ -300,9 +341,14 @@ function buildLaptop() {
     0.28,
     0.12,
   );
-  webcam.position.set(0, 4.96, -4.25);
+  webcam.position.set(
+    0,
+    LAPTOP_DIMENSIONS.lidHeight - 0.19,
+    LAPTOP_DIMENSIONS.lidThickness / 2 + 0.018,
+  );
   displayGroup.add(webcam);
-  outside.add(tag(displayGroup, 'display'));
+  displayPivot.add(tag(displayGroup, 'display'));
+  outside.add(displayPivot);
 
   const portRail = rounded(0.08, 0.13, 3.35, 0.025, 0x424d54, 0.36, 0.38);
   portRail.position.set(-3.72, 0.98, 0.1);
@@ -318,7 +364,7 @@ function buildLaptop() {
     outside.add(p);
   }
 
-  const lowerShell = rounded(7.25, 0.28, 4.72, 0.2, 0x69747a, 0.4, 0.44);
+  const lowerShell = rounded(7.34, 0.28, 4.82, 0.2, 0x69747a, 0.4, 0.44);
   lowerShell.position.y = 0.6;
   inside.add(lowerShell);
 
@@ -377,7 +423,7 @@ function buildLaptop() {
 
   const fanGroup = new THREE.Group();
   const fanHousing = mesh(
-    new THREE.CylinderGeometry(0.72, 0.72, 0.18, 32),
+    new THREE.CylinderGeometry(0.56, 0.56, 0.18, 32),
     0x252d31,
     0.38,
     0.24,
@@ -386,10 +432,10 @@ function buildLaptop() {
   fanHousing.position.set(2.4, 1.08, -1.22);
   fanGroup.add(fanHousing);
   for (let index = 0; index < 8; index++) {
-    const blade = rounded(0.13, 0.04, 0.52, 0.04, 0x526068, 0.48, 0.1);
+    const blade = rounded(0.11, 0.04, 0.4, 0.04, 0x526068, 0.48, 0.1);
     blade.position.set(2.4, 1.18, -1.22);
     blade.rotation.y = (Math.PI * 2 * index) / 8;
-    blade.translateZ(0.23);
+    blade.translateZ(0.18);
     fanGroup.add(blade);
   }
   inside.add(tag(fanGroup, 'fan'));
