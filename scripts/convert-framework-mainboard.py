@@ -15,7 +15,7 @@ import ezdxf
 import numpy as np
 import trimesh
 from ezdxf.path import from_hatch, make_path
-from shapely.geometry import LineString
+from shapely.geometry import LineString, box
 from shapely.ops import polygonize, unary_union
 
 SOURCE = Path("asset-work/framework-laptop-13-mainboard.dxf")
@@ -99,7 +99,25 @@ def main() -> None:
     if not lines:
         raise RuntimeError("DXF produced no supported linework")
 
-    merged = unary_union(lines)
+    # The Framework mechanical sheet contains two mainboard views plus the
+    # drawing border and detail callouts. The left mainboard view occupies the
+    # official drawing region below. Cropping to that view prevents the A2
+    # border and mirrored second view from being polygonized as the PCB.
+    view = box(45.0, 155.0, 297.7, 275.0)
+    cropped = []
+    for line in lines:
+        geometry = line.intersection(view)
+        if geometry.is_empty:
+            continue
+        if geometry.geom_type == "LineString":
+            cropped.append(geometry)
+        elif geometry.geom_type == "MultiLineString":
+            cropped.extend(list(geometry.geoms))
+
+    if not cropped:
+        raise RuntimeError("Mainboard view crop produced no linework")
+
+    merged = unary_union(cropped)
     polygons = list(polygonize(merged))
     diagnostics = []
     candidates = []
@@ -120,9 +138,9 @@ def main() -> None:
         long_side = max(width, height)
         short_side = min(width, height)
         if (
-            150 <= long_side <= 320
-            and 45 <= short_side <= 180
-            and 5000 <= area <= 50000
+            180 <= long_side <= 270
+            and 70 <= short_side <= 125
+            and 8000 <= area <= 32000
         ):
             candidates.append(polygon)
 
@@ -183,7 +201,7 @@ def main() -> None:
         "source_blob": "4269a2ae1e934b397d9dd21f8d9044f199156dad",
         "license": "CC-BY-4.0",
         "modified": True,
-        "conversion": "DXF linework -> polygonized PCB silhouette -> 1.2 mm extruded GLB",
+        "conversion": "DXF left mechanical view -> polygonized PCB silhouette -> 1.2 mm extruded GLB",
         "selected_area_mm2": round(float(outline.area), 2),
         "output_faces": int(len(mesh.faces)),
         "output_vertices": int(len(mesh.vertices)),
