@@ -37,7 +37,7 @@ PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab i
 - [x] Enter the detailed PC explorer from the system unit
 - [x] Add classroom-visible USB, HDMI, Ethernet and power targets to the desktop scene
 - [x] Add keyboard, mouse and monitor cable connection feedback
-- [ ] Add guided “Meet the Computer” lesson
+- [x] Add guided “Meet the Computer” lesson
 
 ### Milestone B — Connections
 
@@ -45,7 +45,7 @@ PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab i
 - [x] HDMI monitor connection
 - [x] Ethernet
 - [x] Power
-- [ ] Headphones/audio
+- [x] Headphones/audio (Laptop Lab)
 - [x] Correct/incorrect port feedback
 
 ### Milestone C — Laptop
@@ -53,7 +53,7 @@ PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab i
 - [x] Use original procedural laptop geometry while external assets remain under review
 - [x] Exterior: display, keyboard, trackpad, webcam and starter port geometry
 - [x] Interior foundation: battery, motherboard, SSD, Wi-Fi, cooling and speakers
-- [ ] Laptop-specific guided lesson and port connection activity
+- [x] Laptop-specific guided lesson and port connection activity
 
 ### Milestone D — Build and Troubleshoot
 
