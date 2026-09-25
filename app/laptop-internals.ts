@@ -503,7 +503,7 @@ function buildBatteryFallback() {
   return tag(group, 'battery');
 }
 
-function buildRemovedBottomCover() {
+function buildBottomCover() {
   const cover = new THREE.Group();
 
   const panel = rounded(7.28, 0.12, 4.76, 0.16, 0x59646a, 0.42, 0.42);
@@ -537,10 +537,10 @@ function buildRemovedBottomCover() {
     cover.add(screw);
   }
 
-  // Park the removed panel beside the chassis so students can see both the
-  // actual internals and the part that was removed to access them.
-  cover.position.set(5.8, 1.25, 0.7);
-  cover.rotation.set(-0.1, 0.18, -0.08);
+  // Home position is the assembled underside of the chassis. The Laptop
+  // Anatomy teardown moves the whole cover aside as its first removal step.
+  cover.position.set(0, 0.59, 0);
+  cover.rotation.set(0, 0, 0);
   cover.traverse((object) => {
     if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
     const item = object as THREE.Mesh;
@@ -567,6 +567,63 @@ function ribbon(
   return cable;
 }
 
+export type LaptopTeardownPart = {
+  object: THREE.Object3D;
+  start: number;
+  end: number;
+  homePosition: THREE.Vector3;
+  homeRotation: THREE.Euler;
+  offset: THREE.Vector3;
+  rotationOffset: THREE.Vector3;
+};
+
+export function applyLaptopTeardown(
+  parts: readonly LaptopTeardownPart[],
+  amount: number,
+) {
+  const progress = Math.min(100, Math.max(0, amount));
+
+  for (const part of parts) {
+    const raw =
+      part.end === part.start
+        ? progress >= part.end
+          ? 1
+          : 0
+        : (progress - part.start) / (part.end - part.start);
+    const t = Math.min(1, Math.max(0, raw));
+    const eased = t * t * (3 - 2 * t);
+
+    part.object.position.set(
+      part.homePosition.x + part.offset.x * eased,
+      part.homePosition.y + part.offset.y * eased,
+      part.homePosition.z + part.offset.z * eased,
+    );
+    part.object.rotation.set(
+      part.homeRotation.x + part.rotationOffset.x * eased,
+      part.homeRotation.y + part.rotationOffset.y * eased,
+      part.homeRotation.z + part.rotationOffset.z * eased,
+    );
+  }
+}
+
+function teardownPart(
+  object: THREE.Object3D,
+  start: number,
+  end: number,
+  offset: [number, number, number],
+  rotationOffset: [number, number, number] = [0, 0, 0],
+): LaptopTeardownPart {
+  return {
+    object,
+    start,
+    end,
+    homePosition: object.position.clone(),
+    homeRotation: object.rotation.clone(),
+    offset: new THREE.Vector3(...offset),
+    rotationOffset: new THREE.Vector3(...rotationOffset),
+  };
+}
+
 export function buildRealisticLaptopInternals() {
   const inside = new THREE.Group();
 
@@ -586,7 +643,7 @@ export function buildRealisticLaptopInternals() {
     inside.add(rail);
   }
 
-  const removedBottomCover = buildRemovedBottomCover();
+  const removedBottomCover = buildBottomCover();
   const battery = buildBatteryFallback();
   const motherboard = buildMotherboard();
   const cpu = buildCpu();
@@ -630,11 +687,39 @@ export function buildRealisticLaptopInternals() {
     ),
   );
 
+  const teardownParts: LaptopTeardownPart[] = [
+    // The sequence mirrors a real service flow rather than a decorative
+    // radial explosion: cover, battery, serviceable cards/memory, cooling,
+    // processor, and finally the motherboard.
+    teardownPart(
+      removedBottomCover,
+      0,
+      18,
+      [5.7, 0.72, 0.65],
+      [-0.1, 0.18, -0.08],
+    ),
+    teardownPart(battery, 14, 32, [0, 1.55, 2.7], [-0.05, 0, 0]),
+    teardownPart(ssd, 27, 44, [2.25, 1.35, 0.45], [0, -0.08, 0.06]),
+    teardownPart(wifi, 32, 49, [-2.2, 1.25, 0.7], [0, 0.08, -0.06]),
+    teardownPart(ram, 40, 58, [0.45, 1.85, 0.2], [-0.12, 0, 0]),
+    teardownPart(speakers, 48, 66, [0, 1.0, 2.55], [0.04, 0, 0]),
+    teardownPart(fan, 56, 76, [-2.3, 1.45, -1.35], [-0.08, -0.08, 0]),
+    teardownPart(cpu, 70, 87, [-0.45, 2.05, -0.25], [0, 0.08, 0]),
+    teardownPart(
+      motherboard.group,
+      82,
+      100,
+      [0.15, 2.35, -1.0],
+      [-0.08, 0, 0.04],
+    ),
+  ];
+
   return {
     inside,
     batteryMount: battery,
     motherboardMount: motherboard.group,
     motherboardShell: motherboard.shell,
     removedBottomCover,
+    teardownParts,
   };
 }
