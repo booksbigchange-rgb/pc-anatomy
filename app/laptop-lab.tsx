@@ -745,6 +745,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     };
 
     const connectionCables = new Map<LaptopConnectionId, THREE.Mesh>();
+    const connectionMarkers: THREE.Mesh[] = [];
     for (const task of CONNECTION_TASKS) {
       const cable = connectionCable(
         new THREE.Vector3(...task.source),
@@ -757,6 +758,8 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       const sourceMarker = rounded(0.42, 0.16, 0.62, 0.06, 0x34434a, 0.48, 0.16);
       sourceMarker.position.set(...task.source);
       sourceMarker.position.y -= 0.04;
+      sourceMarker.visible = false;
+      connectionMarkers.push(sourceMarker);
       scene.add(sourceMarker);
     }
 
@@ -867,7 +870,10 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       }
 
       for (const [id, cable] of connectionCables)
-        cable.visible = connectedRef.current.includes(id);
+        cable.visible =
+          connectionMode && connectedRef.current.includes(id);
+      for (const marker of connectionMarkers)
+        marker.visible = connectionMode;
 
       const activeRoot = insideNow ? laptop.inside : laptop.outside;
       activeRoot.traverse((object) => {
