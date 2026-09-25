@@ -148,9 +148,9 @@ def main() -> None:
     extents_mm = [round(float(value * 1000), 3) for value in mesh.extents]
     metadata = {
         "source": "FrameworkComputer/Framework-Laptop-13",
-        "source_file": "Mainboard/2D/fw_main_pcb_generic_2_w_fan_1.dxf",
+        "source_file": "Mainboard/2D/fw_main_pcb_generic_2_w_fan_2.dxf",
         "source_commit": "57a01b214c70c924dcd60006c7fd4d753e94e86f",
-        "source_blob": "27a971d0988fbe5dc3479e0b5d6922cb9e138f13",
+        "source_blob": "4269a2ae1e934b397d9dd21f8d9044f199156dad",
         "license": "CC-BY-4.0",
         "modified": True,
         "conversion": "DXF linework -> polygonized PCB silhouette -> 1.2 mm extruded GLB",
