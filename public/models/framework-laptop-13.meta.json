@@ -1,0 +1,19 @@
+{
+  "source": "FrameworkComputer/Framework-Laptop-13",
+  "source_file": "Framework Laptop 13 CAD.stp",
+  "source_commit": "e5bd4da7a14611935891c867dc40ae83ea8f6297",
+  "source_blob": "5222d190375f14f182363d80b84c4211375bee9b",
+  "license": "CC-BY-4.0",
+  "modified": true,
+  "conversion": "STEP -> STL (CadQuery) -> optimized neutral-material GLB (trimesh)",
+  "source_faces": 249814,
+  "output_faces": 119726,
+  "output_vertices": 58483,
+  "extents_m": [
+    0.296649,
+    0.018451,
+    0.229372
+  ],
+  "glb_bytes": 2373460,
+  "release_status": "candidate-pending-visual-and-branding-review"
+}
