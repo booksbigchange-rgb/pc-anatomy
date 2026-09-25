@@ -520,6 +520,8 @@ function buildLaptop() {
     inside,
     ports,
     batteryMount: realisticInternals.batteryMount,
+    motherboardMount: realisticInternals.motherboardMount,
+    motherboardShell: realisticInternals.motherboardShell,
   };
 }
 
