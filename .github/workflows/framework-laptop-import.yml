@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   convert:
-    if: github.event.head_commit.message == 'Add Framework laptop CAD conversion gate' || github.event.head_commit.message == 'Retry Framework laptop CAD conversion' || github.event.head_commit.message == 'Build Framework realistic battery asset'
+    if: github.event.head_commit.message == 'Add Framework laptop CAD conversion gate' || github.event.head_commit.message == 'Retry Framework laptop CAD conversion' || github.event.head_commit.message == 'Build Framework realistic battery asset' || github.event.head_commit.message == 'Add Framework mainboard outline conversion'
     runs-on: ubuntu-latest
     steps:
       - name: Check out school branch
@@ -34,7 +34,10 @@ jobs:
             fast-simplification==0.1.12 \
             numpy==2.2.6 \
             scipy==1.16.2 \
-            networkx==3.5
+            networkx==3.5 \
+            ezdxf==1.4.2 \
+            shapely==2.1.2 \
+            mapbox-earcut==1.0.3
 
       - name: Download pinned official CAD
         run: |
@@ -47,11 +50,16 @@ jobs:
             'https://raw.githubusercontent.com/FrameworkComputer/Framework-Laptop-13/main/Battery/FWKNAQ9_G01_20210911.stp' \
             --output asset-work/framework-laptop-13-battery.step
           test "$(wc -c < asset-work/framework-laptop-13-battery.step)" -eq 11516814
+          curl --fail --location --retry 3 \
+            'https://raw.githubusercontent.com/FrameworkComputer/Framework-Laptop-13/57a01b214c70c924dcd60006c7fd4d753e94e86f/Mainboard/2D/fw_main_pcb_generic_2_w_fan_1.dxf' \
+            --output asset-work/framework-laptop-13-mainboard.dxf
+          test "$(wc -c < asset-work/framework-laptop-13-mainboard.dxf)" -eq 1750330
 
       - name: Convert and enforce geometry gates
         run: |
           python scripts/convert-framework-laptop.py
           python scripts/convert-framework-battery.py
+          python scripts/convert-framework-mainboard.py
 
       - name: Confirm no runtime dependencies were added
         run: git diff --exit-code package.json package-lock.json
@@ -64,6 +72,8 @@ jobs:
             public/models/framework-laptop-13.glb \
             public/models/framework-laptop-13.meta.json \
             public/models/framework-laptop-13-battery.glb \
-            public/models/framework-laptop-13-battery.meta.json
+            public/models/framework-laptop-13-battery.meta.json \
+            public/models/framework-laptop-13-mainboard.glb \
+            public/models/framework-laptop-13-mainboard.meta.json
           git commit -m "Add converted Framework realistic assets"
           git push origin HEAD:bigchange-school
