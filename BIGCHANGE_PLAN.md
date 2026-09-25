@@ -75,5 +75,18 @@ PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab i
 - [x] Add speaker enclosures and major internal cables
 - [x] Integrate official Framework battery CAD
 - [ ] Derive exact mainboard outline and connector coordinates from Framework's published 2D CAD
-- [ ] Add realistic bottom-cover removal / screw sequence
+- [x] Add staged Laptop Anatomy teardown: cover → battery → SSD/Wi-Fi → RAM/speakers → cooling/CPU → motherboard
+- [x] Add realistic bottom-cover removal transform / screw sequence foundation
 - [ ] Add detailed cable unplug/reconnect interactions
+
+
+### Laptop Anatomy teardown
+
+- [x] Reuse the PC Anatomy 0–100 playback model
+- [x] Auto-play / pause / reset controls
+- [x] Staged removal instead of radial explosion
+- [x] Keep the actual battery, motherboard, CPU, RAM, SSD, cooling, Wi-Fi and speaker groups as the animated parts
+- [x] Preserve component selection/highlighting while torn apart
+- [ ] Add cable disconnect states before components move
+- [ ] Add hinge/display removal stage
+- [ ] Replace remaining teaching geometry with approved Framework/KiCad-derived detail
