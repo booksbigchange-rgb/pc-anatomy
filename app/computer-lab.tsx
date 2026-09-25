@@ -170,6 +170,7 @@ function buildMouse() {
 
 export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const groupsRef = useRef<Map<LabPartId, THREE.Group> | null>(null);
   const [selected, setSelected] = useState<LabPartId>('tower');
   const selectedPart = PARTS.find((part) => part.id === selected)!;
 
@@ -228,6 +229,7 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
       groups.set(id, group);
       scene.add(group);
     }
+    groupsRef.current = groups;
 
     const applyHighlight = (id: LabPartId) => {
       for (const [partId, group] of groups) {
@@ -241,7 +243,7 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
         });
       }
     };
-    applyHighlight(selected);
+    applyHighlight('tower');
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
@@ -259,7 +261,6 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
       const id = current?.userData.labPart as LabPartId | undefined;
       if (!id) return;
       setSelected(id);
-      applyHighlight(id);
     };
 
     canvas.addEventListener('pointerup', pick);
@@ -289,6 +290,7 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
       observer.disconnect();
       canvas.removeEventListener('pointerup', pick);
       controls.dispose();
+      groupsRef.current = null;
       renderer.dispose();
       scene.traverse((object) => {
         if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
@@ -300,6 +302,21 @@ export default function ComputerLab({ onOpenPC }: { onOpenPC: () => void }) {
       });
     };
   }, []);
+
+  useEffect(() => {
+    const groups = groupsRef.current;
+    if (!groups) return;
+    for (const [partId, group] of groups) {
+      group.traverse((object) => {
+        if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
+        const material = (object as THREE.Mesh).material;
+        if (material instanceof THREE.MeshStandardMaterial) {
+          material.emissive.setHex(partId === selected ? 0x15343a : 0x000000);
+          material.emissiveIntensity = partId === selected ? 0.72 : 0;
+        }
+      });
+    }
+  }, [selected]);
 
   return (
     <main className="computer-lab">
