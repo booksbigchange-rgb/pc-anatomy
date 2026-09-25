@@ -707,6 +707,35 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       },
     );
 
+
+    gltfLoader.load(
+      `${import.meta.env.BASE_URL}models/framework-laptop-13-battery.glb`,
+      (gltf) => {
+        if (disposed) return;
+
+        // Replace the simplified fallback battery with Framework's official
+        // CC BY 4.0 battery CAD, converted to a local web GLB.
+        for (const child of laptop.batteryMount.children)
+          child.visible = false;
+
+        const batteryModel = gltf.scene;
+        batteryModel.scale.setScalar(25.5);
+        batteryModel.position.set(0, -0.1, 0);
+        batteryModel.traverse((object) => {
+          if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
+          const item = object as THREE.Mesh;
+          item.castShadow = true;
+          item.receiveShadow = true;
+          item.material = new THREE.MeshStandardMaterial({
+            color: 0x30383d,
+            roughness: 0.48,
+            metalness: 0.12,
+          });
+        });
+        laptop.batteryMount.add(batteryModel);
+      },
+    );
+
     scene.updateMatrixWorld(true);
 
     const portPosition = (id: LaptopPortId) => {
