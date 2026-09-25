@@ -28,6 +28,19 @@ MAX_GLB_BYTES = 5 * 1024 * 1024
 
 def linework_from_entity(entity):
     kind = entity.dxftype()
+
+    # Pro/ENGINEER exports the mechanical views as block INSERTs. Resolve
+    # those virtual entities recursively so we use the actual PCB geometry,
+    # not only the drawing sheet border and annotations.
+    if kind == "INSERT":
+        lines = []
+        try:
+            for child in entity.virtual_entities():
+                lines.extend(linework_from_entity(child))
+        except Exception:
+            return []
+        return lines
+
     if kind == "LINE":
         start = entity.dxf.start
         end = entity.dxf.end
