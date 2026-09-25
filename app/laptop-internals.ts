@@ -531,8 +531,6 @@ export function buildRealisticLaptopInternals() {
     ),
   );
 
-  inside.visible = false;
-
   return {
     inside,
     batteryMount: battery,
