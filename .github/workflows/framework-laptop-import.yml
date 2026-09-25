@@ -1,0 +1,57 @@
+name: Build realistic laptop candidate
+
+on:
+  push:
+    branches:
+      - bigchange-school
+    paths:
+      - .github/workflows/framework-laptop-import.yml
+
+permissions:
+  contents: write
+
+jobs:
+  convert:
+    if: github.event.head_commit.message == 'Add Framework laptop CAD conversion gate'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out school branch
+        uses: actions/checkout@v7
+        with:
+          ref: bigchange-school
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install conversion dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install \
+            cadquery==2.6.1 \
+            trimesh==4.8.3 \
+            fast-simplification==0.1.12 \
+            numpy==2.2.6
+
+      - name: Download pinned official CAD
+        run: |
+          mkdir -p asset-work public/models
+          curl --fail --location --retry 3 \
+            'https://raw.githubusercontent.com/FrameworkComputer/Framework-Laptop-13/e5bd4da7a14611935891c867dc40ae83ea8f6297/Framework%20Laptop%2013%20CAD.stp' \
+            --output asset-work/framework-laptop-13.step
+          test "$(wc -c < asset-work/framework-laptop-13.step)" -eq 21301844
+
+      - name: Convert and enforce geometry gates
+        run: python scripts/convert-framework-laptop.py
+
+      - name: Confirm no runtime dependencies were added
+        run: git diff --exit-code package.json package-lock.json
+
+      - name: Commit candidate GLB and metadata
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/models/framework-laptop-13.glb public/models/framework-laptop-13.meta.json
+          git commit -m "Add converted Framework laptop candidate"
+          git push origin HEAD:bigchange-school
