@@ -994,6 +994,14 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
         <div className="laptop-header-actions">
           <button
             type="button"
+            className={'laptop-guide-button' + (mode === 'connections' ? ' active' : '')}
+            onClick={startConnections}
+          >
+            <Cable size={15} />
+            Connections
+          </button>
+          <button
+            type="button"
             className={'laptop-guide-button' + (guided ? ' active' : '')}
             onClick={startGuide}
           >
@@ -1023,25 +1031,38 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
 
       <aside className="laptop-parts">
         <p className="laptop-eyebrow">
-          {guided
-            ? `GUIDED LESSON · ${lessonIndex + 1} / ${LESSON_ORDER.length}`
-            : view === 'outside'
-              ? '01 / LAPTOP EXTERIOR'
-              : '02 / LAPTOP INTERNALS'}
+          {mode === 'connections'
+            ? `03 / CONNECTIONS · ${Math.min(
+                connected.length + 1,
+                CONNECTION_TASKS.length,
+              )} / ${CONNECTION_TASKS.length}`
+            : guided
+              ? `GUIDED LESSON · ${lessonIndex + 1} / ${LESSON_ORDER.length}`
+              : view === 'outside'
+                ? '01 / LAPTOP EXTERIOR'
+                : '02 / LAPTOP INTERNALS'}
         </p>
         <h1>
-          {guided
-            ? lessonPart.name
-            : view === 'outside'
-              ? 'Start with what students touch.'
-              : 'Now look under the keyboard.'}
+          {mode === 'connections'
+            ? allConnectionsComplete
+              ? 'Laptop connected.'
+              : currentConnection.name
+            : guided
+              ? lessonPart.name
+              : view === 'outside'
+                ? 'Start with what students touch.'
+                : 'Now look under the keyboard.'}
         </h1>
         <p className="laptop-intro">
-          {guided
-            ? lessonPart.description
-            : view === 'outside'
-              ? 'Explore the screen, keyboard and trackpad before opening the machine.'
-              : 'Laptop parts are smaller and packed closer together than desktop components.'}
+          {mode === 'connections'
+            ? allConnectionsComplete
+              ? 'You connected power, USB, an external display and headphones.'
+              : currentConnection.instruction
+            : guided
+              ? lessonPart.description
+              : view === 'outside'
+                ? 'Explore the screen, keyboard and trackpad before opening the machine.'
+                : 'Laptop parts are smaller and packed closer together than desktop components.'}
         </p>
         {guided && (
           <div className="laptop-progress" aria-label="Laptop lesson progress">
@@ -1053,32 +1074,77 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
             />
           </div>
         )}
-        <div className="laptop-part-list">
-          {visibleParts.map((part) => {
-            const Icon = part.icon;
-            return (
-              <button
-                type="button"
-                key={part.id}
-                className={selected === part.id ? 'active' : ''}
-                onClick={() => {
-                  setGuided(false);
-                  selectedRef.current = part.id;
-                  setSelected(part.id);
-                }}
-              >
-                <Icon size={17} />
-                <span>{part.name}</span>
-              </button>
-            );
-          })}
-        </div>
+        {mode === 'connections' ? (
+          <div className="laptop-connection-list">
+            {CONNECTION_TASKS.map((task, index) => {
+              const done = connected.includes(task.id);
+              return (
+                <button
+                  type="button"
+                  key={task.id}
+                  className={
+                    (index === connectionTask && !done ? 'active ' : '') +
+                    (done ? 'done' : '')
+                  }
+                  onClick={() => {
+                    connectionTaskRef.current = index;
+                    setConnectionTask(index);
+                    setConnectionFeedback(
+                      done
+                        ? task.name + ' is already connected.'
+                        : task.instruction,
+                    );
+                  }}
+                >
+                  {done ? <span>✓</span> : <span>{index + 1}</span>}
+                  <strong>{task.name}</strong>
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              className="laptop-reset-connections"
+              onClick={resetConnections}
+            >
+              Reset connections
+            </button>
+          </div>
+        ) : (
+          <div className="laptop-part-list">
+            {visibleParts.map((part) => {
+              const Icon = part.icon;
+              return (
+                <button
+                  type="button"
+                  key={part.id}
+                  className={selected === part.id ? 'active' : ''}
+                  onClick={() => {
+                    setGuided(false);
+                    selectedRef.current = part.id;
+                    setSelected(part.id);
+                  }}
+                >
+                  <Icon size={17} />
+                  <span>{part.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
         <div className="laptop-next">
-          <strong>{guided ? 'Lesson path' : 'Next laptop milestone'}</strong>
+          <strong>
+            {mode === 'connections'
+              ? 'Connection tip'
+              : guided
+                ? 'Lesson path'
+                : 'Next laptop milestone'}
+          </strong>
           <span>
-            {guided
-              ? 'Outside first, then the main components inside.'
-              : 'Ports · charger · connection practice · improved exterior model'}
+            {mode === 'connections'
+              ? 'Rotate the laptop and look for the glowing port on either side.'
+              : guided
+                ? 'Outside first, then the main components inside.'
+                : 'Improved exterior model · troubleshooting · assembly'}
           </span>
         </div>
       </aside>
@@ -1090,65 +1156,105 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
         />
         <div className="laptop-stage-tip">
           <Rotate3D size={15} />
-          Drag to orbit · scroll to zoom · click a part
+          {mode === 'connections'
+            ? 'Drag to orbit · find the glowing port · click to connect'
+            : 'Drag to orbit · scroll to zoom · click a part'}
         </div>
       </section>
 
       <aside className="laptop-detail" aria-live="polite">
-        <p className="laptop-eyebrow">
-          {guided
-            ? `LESSON STEP ${lessonIndex + 1} / ${LESSON_ORDER.length}`
-            : 'SELECTED COMPONENT'}
-        </p>
-        <h2>{selectedPart.name}</h2>
-        <p>{selectedPart.description}</p>
-        <div className="laptop-why">
-          <strong>Why it matters</strong>
-          <p>{selectedPart.why}</p>
-        </div>
-        {guided ? (
-          <div className="laptop-guide-controls">
-            <button
-              type="button"
-              disabled={lessonIndex === 0}
-              onClick={() => moveGuide(-1)}
-            >
-              ← Back
-            </button>
-            {lessonIndex < LESSON_ORDER.length - 1 ? (
-              <button type="button" onClick={() => moveGuide(1)}>
-                Next →
+        {mode === 'connections' ? (
+          <>
+            <p className="laptop-eyebrow">CONNECTION PRACTICE</p>
+            <h2>
+              {allConnectionsComplete
+                ? 'All connected!'
+                : currentConnection.name}
+            </h2>
+            <p>
+              {allConnectionsComplete
+                ? 'The laptop now has power, USB, display and audio connections.'
+                : currentConnection.instruction}
+            </p>
+            <div className="laptop-why">
+              <strong>Feedback</strong>
+              <p>{connectionFeedback}</p>
+            </div>
+            <div className="laptop-port-key">
+              <span><i className="power" /> Power</span>
+              <span><i className="usb" /> USB</span>
+              <span><i className="hdmi" /> HDMI</span>
+              <span><i className="audio" /> Audio</span>
+            </div>
+            {allConnectionsComplete && (
+              <button
+                type="button"
+                className="laptop-primary"
+                onClick={resetConnections}
+              >
+                Practise again
+                <span>↻</span>
+              </button>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="laptop-eyebrow">
+              {guided
+                ? `LESSON STEP ${lessonIndex + 1} / ${LESSON_ORDER.length}`
+                : 'SELECTED COMPONENT'}
+            </p>
+            <h2>{selectedPart.name}</h2>
+            <p>{selectedPart.description}</p>
+            <div className="laptop-why">
+              <strong>Why it matters</strong>
+              <p>{selectedPart.why}</p>
+            </div>
+            {guided ? (
+              <div className="laptop-guide-controls">
+                <button
+                  type="button"
+                  disabled={lessonIndex === 0}
+                  onClick={() => moveGuide(-1)}
+                >
+                  ← Back
+                </button>
+                {lessonIndex < LESSON_ORDER.length - 1 ? (
+                  <button type="button" onClick={() => moveGuide(1)}>
+                    Next →
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGuided(false);
+                      selectPart('display');
+                    }}
+                  >
+                    Finish lesson ✓
+                  </button>
+                )}
+              </div>
+            ) : view === 'outside' ? (
+              <button
+                type="button"
+                className="laptop-primary"
+                onClick={() => changeView('inside')}
+              >
+                Open the laptop
+                <span>→</span>
               </button>
             ) : (
               <button
                 type="button"
-                onClick={() => {
-                  setGuided(false);
-                  selectPart('display');
-                }}
+                className="laptop-primary"
+                onClick={() => changeView('outside')}
               >
-                Finish lesson ✓
+                Put the laptop back together
+                <span>↻</span>
               </button>
             )}
-          </div>
-        ) : view === 'outside' ? (
-          <button
-            type="button"
-            className="laptop-primary"
-            onClick={() => changeView('inside')}
-          >
-            Open the laptop
-            <span>→</span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="laptop-primary"
-            onClick={() => changeView('outside')}
-          >
-            Put the laptop back together
-            <span>↻</span>
-          </button>
+          </>
         )}
       </aside>
     </main>
