@@ -62,3 +62,18 @@ PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab i
 - [x] Installation order for PSU → motherboard → CPU → RAM → SSD → GPU
 - [ ] Troubleshooting scenarios
 - [ ] Assessment hooks
+
+
+## Realistic laptop internals V1
+
+- [x] Replace solid placeholder motherboard slab with a shaped PCB and component population
+- [x] Add separate CPU package
+- [x] Add dual SODIMM-style RAM modules and sockets
+- [x] Add M.2 2280 SSD with controller/NAND/contact details
+- [x] Add M.2 2230 Wi-Fi card with antenna leads
+- [x] Add blower fan, fin stack, cold plate and dual heat pipes
+- [x] Add speaker enclosures and major internal cables
+- [x] Integrate official Framework battery CAD
+- [ ] Derive exact mainboard outline and connector coordinates from Framework's published 2D CAD
+- [ ] Add realistic bottom-cover removal / screw sequence
+- [ ] Add detailed cable unplug/reconnect interactions
