@@ -143,3 +143,35 @@
     display: none;
   }
 }
+
+.lab-progress {
+  height: 6px;
+  margin: 4px 0 20px;
+  border-radius: 999px;
+  background: #27333a;
+  overflow: hidden;
+}
+.lab-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #79cdd6, #a9d7bf);
+  transition: width 180ms ease;
+}
+.lab-guide-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 22px;
+}
+.lab-guide-controls button {
+  min-height: 38px;
+  border: 1px solid #4b6871;
+  border-radius: 7px;
+  color: #e5f9fb;
+  background: #1d3339;
+  font-weight: 650;
+}
+.lab-guide-controls button:disabled {
+  opacity: .35;
+}
