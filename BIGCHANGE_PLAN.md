@@ -50,10 +50,10 @@ PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab i
 
 ### Milestone C — Laptop
 
-- [ ] Select a reusable model or keep procedural geometry
-- [ ] Exterior: display, keyboard, trackpad, webcam and ports
-- [ ] Interior: battery, board, storage, memory where applicable, Wi-Fi and cooling
-- [ ] Laptop-specific guided lesson
+- [x] Use original procedural laptop geometry while external assets remain under review
+- [x] Exterior: display, keyboard, trackpad, webcam and starter port geometry
+- [x] Interior foundation: battery, motherboard, SSD, Wi-Fi, cooling and speakers
+- [ ] Laptop-specific guided lesson and port connection activity
 
 ### Milestone D — Build and Troubleshoot
 
