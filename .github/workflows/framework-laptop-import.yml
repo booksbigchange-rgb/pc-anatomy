@@ -73,6 +73,9 @@ jobs:
           git add \
             public/models/framework-laptop-13.glb \
             public/models/framework-laptop-13.meta.json \
+            public/models/framework-laptop-13-top-cover.glb \
+            public/models/framework-laptop-13-input-cover.glb \
+            public/models/framework-laptop-13-display-bezel.glb \
             public/models/framework-laptop-13-battery.glb \
             public/models/framework-laptop-13-battery.meta.json \
             public/models/framework-laptop-13-mainboard.glb \
