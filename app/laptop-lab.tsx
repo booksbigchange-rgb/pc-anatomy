@@ -245,7 +245,7 @@ const LAPTOP_DIMENSIONS = {
   // lower chassis and display lid at the same 25.5-units-per-metre scale.
   baseThickness: 0.31,
   lidWidth: 7.44,
-  lidHeight: 5.18,
+  lidHeight: 5.84,
   lidThickness: 0.16,
   // 13.5-inch 3:2 panel proportions at the same chassis scale.
   screenWidth: 7.22,
@@ -530,6 +530,12 @@ function buildLaptop() {
   deck.position.y = 1.07;
   outside.add(deck);
 
+  // Official CAD-derived input-cover geometry loads into this mount and
+  // replaces only the silver fallback deck. The keyboard, trackpad and
+  // interaction hit targets stay independent.
+  const inputCoverCadMount = new THREE.Group();
+  outside.add(inputCoverCadMount);
+
   // Rear exhaust slots make the silhouette read as a real cooled notebook.
   for (let index = 0; index < 24; index++) {
     const vent = rounded(0.17, 0.028, 0.055, 0.008, 0x1a2024, 0.7, 0.06);
@@ -650,6 +656,10 @@ function buildLaptop() {
   displayPivot.rotation.x = -0.14;
 
   const displayGroup = new THREE.Group();
+  const displayTopCoverCadMount = new THREE.Group();
+  const displayBezelCadMount = new THREE.Group();
+  displayGroup.add(displayTopCoverCadMount, displayBezelCadMount);
+
   const lidFrame = physicalRounded(
     LAPTOP_DIMENSIONS.lidWidth,
     LAPTOP_DIMENSIONS.lidHeight,
@@ -729,7 +739,7 @@ function buildLaptop() {
   );
   webcam.position.set(
     0,
-    LAPTOP_DIMENSIONS.lidHeight - 0.115,
+    LAPTOP_DIMENSIONS.lidHeight - 0.24,
     LAPTOP_DIMENSIONS.lidThickness / 2 + 0.045,
   );
   displayGroup.add(webcam);
@@ -743,7 +753,7 @@ function buildLaptop() {
     );
     microphone.position.set(
       x,
-      LAPTOP_DIMENSIONS.lidHeight - 0.115,
+      LAPTOP_DIMENSIONS.lidHeight - 0.24,
       LAPTOP_DIMENSIONS.lidThickness / 2 + 0.044,
     );
     displayGroup.add(microphone);
@@ -752,14 +762,14 @@ function buildLaptop() {
   const privacyTrack = rounded(0.34, 0.035, 0.07, 0.025, 0x31383c, 0.42, 0.18);
   privacyTrack.position.set(
     0.44,
-    LAPTOP_DIMENSIONS.lidHeight - 0.115,
+    LAPTOP_DIMENSIONS.lidHeight - 0.24,
     LAPTOP_DIMENSIONS.lidThickness / 2 + 0.045,
   );
   displayGroup.add(privacyTrack);
   const privacyDot = rounded(0.09, 0.045, 0.08, 0.025, 0xd77958, 0.4, 0.1);
   privacyDot.position.set(
     0.52,
-    LAPTOP_DIMENSIONS.lidHeight - 0.115,
+    LAPTOP_DIMENSIONS.lidHeight - 0.24,
     LAPTOP_DIMENSIONS.lidThickness / 2 + 0.048,
   );
   displayGroup.add(privacyDot);
@@ -939,6 +949,12 @@ function buildLaptop() {
     serviceHingeLeft,
     serviceHingeRight,
     serviceWebcam,
+    inputCoverCadMount,
+    displayTopCoverCadMount,
+    displayBezelCadMount,
+    deckFallback: deck,
+    lidFrameFallback: lidFrame,
+    bezelFallback: bezel,
     teardownParts: realisticInternals.teardownParts,
     disconnectCables: realisticInternals.disconnectCables,
   };
@@ -1179,6 +1195,83 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       },
     );
 
+
+    const loadOpenExteriorPart = (
+      file: string,
+      mount: THREE.Group,
+      fallback: THREE.Object3D,
+      position: [number, number, number],
+      rotation: [number, number, number],
+      color: number,
+      roughness: number,
+      metalness: number,
+    ) => {
+      gltfLoader.load(
+        `${import.meta.env.BASE_URL}models/${file}.glb`,
+        (gltf) => {
+          if (disposed) return;
+          const model = gltf.scene;
+          model.scale.setScalar(25.5);
+          model.position.set(...position);
+          model.rotation.set(...rotation);
+          model.traverse((object) => {
+            if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
+            const item = object as THREE.Mesh;
+            item.castShadow = true;
+            item.receiveShadow = true;
+            item.material = new THREE.MeshPhysicalMaterial({
+              color,
+              roughness,
+              metalness,
+              clearcoat: metalness > 0.5 ? 0.08 : 0.02,
+              clearcoatRoughness: 0.3,
+              envMapIntensity: 1.05,
+            });
+          });
+          fallback.visible = false;
+          mount.add(model);
+        },
+        undefined,
+        () => {
+          // The procedural shell remains visible if the extracted CAD piece
+          // has not been generated yet or fails to load.
+        },
+      );
+    };
+
+    // These shells were extracted from the same pinned official Framework
+    // assembly used by the closed CAD reference. They give the interactive
+    // open laptop real input-cover and display-frame geometry.
+    loadOpenExteriorPart(
+      'framework-laptop-13-input-cover',
+      laptop.inputCoverCadMount,
+      laptop.deckFallback,
+      [-0.05, 0.75, -0.49],
+      [0, 0, 0],
+      0xb5bdc1,
+      0.28,
+      0.74,
+    );
+    loadOpenExteriorPart(
+      'framework-laptop-13-top-cover',
+      laptop.displayTopCoverCadMount,
+      laptop.lidFrameFallback,
+      [0, 2.94, 0.52],
+      [-Math.PI / 2, 0, 0],
+      0xaeb7bc,
+      0.25,
+      0.8,
+    );
+    loadOpenExteriorPart(
+      'framework-laptop-13-display-bezel',
+      laptop.displayBezelCadMount,
+      laptop.bezelFallback,
+      [0, 2.86, 0.45],
+      [-Math.PI / 2, 0, 0],
+      0x171c1f,
+      0.44,
+      0.12,
+    );
 
     const loadFrameworkServicePart = (
       file: string,
