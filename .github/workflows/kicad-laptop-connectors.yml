@@ -73,4 +73,6 @@ jobs:
             exit 0
           fi
           git commit -m "Add converted KiCad laptop connector assets"
+          git fetch origin bigchange-school
+          git rebase origin/bigchange-school
           git push origin HEAD:bigchange-school
