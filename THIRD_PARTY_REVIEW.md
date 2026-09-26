@@ -31,11 +31,13 @@ The school edition treats public GitHub availability as **insufficient permissio
 - Git blob: `5222d190375f14f182363d80b84c4211375bee9b`
 - Source size: 21,301,844 bytes.
 - License: CC BY 4.0, confirmed by the official repository license metadata and LICENSE file.
-- Decision: **approved for conversion as a realistic laptop geometry candidate**.
+- Decision: **approved and integrated as the realistic laptop exterior source**.
 - School-safety rule: convert the STEP file locally/in CI; do not load CAD or assets from Framework servers at student runtime.
 - Branding rule: use neutral materials and do not rely on Framework trademarks/logos for the classroom UI. CC BY licenses copyright permissions but does not automatically grant trademark rights.
 - Attribution rule: retain Framework Computer attribution, source link, CC BY 4.0 link, and note that Big Change converts/optimizes the CAD.
-- Release gate: the converted GLB is a candidate until its geometry, orientation, file size, classroom performance, and visible branding have been reviewed.
+- Integrated derivatives: full closed reference GLB plus local input-cover, display-bezel and top-cover GLBs extracted from the same pinned source for the interactive open laptop.
+- Runtime: all converted geometry is served locally with neutral materials; no Framework network request is made in the student app.
+- Procedural geometry remains only as a resilient fallback and for teaching-specific interactive details such as keycaps and port targets.
 
 ### Framework Laptop 13 display, hinges and webcam
 
