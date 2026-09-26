@@ -686,27 +686,28 @@ export function buildRealisticLaptopInternals() {
     speakers,
   );
 
-  // Major internal cables students can recognize.
-  inside.add(
-    ribbon(
-      new THREE.Vector3(0.0, 1.23, 0.45),
-      new THREE.Vector3(0.0, 1.24, 0.9),
-      0.035,
-      0x202428,
-    ),
-    ribbon(
-      new THREE.Vector3(-1.0, 1.25, -1.65),
-      new THREE.Vector3(-1.5, 1.25, -2.2),
-      0.025,
-      0xd8c477,
-    ),
-    ribbon(
-      new THREE.Vector3(2.0, 1.2, -0.45),
-      new THREE.Vector3(3.0, 1.18, 0.55),
-      0.018,
-      0x202428,
-    ),
+  // Major internal cables terminate at the teaching-board connector mounts.
+  // Their removal thresholds mirror the teardown order so a component never
+  // appears to move away while its cable remains magically attached.
+  const batteryCable = ribbon(
+    new THREE.Vector3(0.12, 1.22, 0.28),
+    new THREE.Vector3(0.45, 1.16, -0.16),
+    0.035,
+    0x202428,
   );
+  const displayCable = ribbon(
+    new THREE.Vector3(1.23, 1.17, -0.38),
+    new THREE.Vector3(1.34, 1.22, -2.28),
+    0.025,
+    0xd8c477,
+  );
+  const speakerCable = ribbon(
+    new THREE.Vector3(2.25, 1.16, -0.72),
+    new THREE.Vector3(3.02, 1.18, 1.18),
+    0.018,
+    0x202428,
+  );
+  inside.add(batteryCable, displayCable, speakerCable);
 
   const teardownParts: LaptopTeardownPart[] = [
     // The sequence mirrors a real service flow rather than a decorative
@@ -742,5 +743,10 @@ export function buildRealisticLaptopInternals() {
     motherboardShell: motherboard.shell,
     removedBottomCover,
     teardownParts,
+    disconnectCables: [
+      { object: batteryCable, at: 14 },
+      { object: speakerCable, at: 48 },
+      { object: displayCable, at: 90 },
+    ],
   };
 }
