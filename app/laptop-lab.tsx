@@ -714,14 +714,14 @@ function buildLaptop() {
     ),
     new THREE.MeshPhysicalMaterial({
       color: 0xd8f4f7,
-      roughness: 0.08,
+      roughness: 0.24,
       metalness: 0,
       transparent: true,
-      opacity: 0.075,
-      clearcoat: 1,
-      clearcoatRoughness: 0.04,
+      opacity: 0.05,
+      clearcoat: 0.45,
+      clearcoatRoughness: 0.18,
       depthWrite: false,
-      envMapIntensity: 1.35,
+      envMapIntensity: 0.9,
     }),
   );
   glass.position.set(
