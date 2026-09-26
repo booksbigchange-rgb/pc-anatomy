@@ -1,0 +1,19 @@
+{
+  "source": "KiCad/kicad-packages3D",
+  "source_commit": "b8b3cfdfad88ba66f21002b3de51dc6f7d55ba5a",
+  "source_path": "Connector_JST.3dshapes/JST_GH_SM10B-GHS-TB_1x10-1MP_P1.25mm_Horizontal.step",
+  "source_blob": "382d3b3b4523a93714242cd4cbf765ef186d2f81",
+  "license": "CC-BY-SA-4.0-with-KiCad-library-exception",
+  "modified": true,
+  "conversion": "STEP -> STL (CadQuery) -> optimized neutral-material GLB (trimesh)",
+  "source_faces": 1484,
+  "output_faces": 1484,
+  "output_vertices": 742,
+  "extents_m": [
+    0.01575,
+    0.00425,
+    0.00495
+  ],
+  "glb_bytes": 30868,
+  "release_status": "approved-for-laptop-board-detail"
+}

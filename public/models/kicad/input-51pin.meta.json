@@ -1,0 +1,19 @@
+{
+  "source": "KiCad/kicad-packages3D",
+  "source_commit": "b8b3cfdfad88ba66f21002b3de51dc6f7d55ba5a",
+  "source_path": "Connector_FFC-FPC.3dshapes/Molex_502250-5191_2Rows-51Pins-1MP_P0.60mm_Horizontal.step",
+  "source_blob": "3cd4f59afaf2fff0665af6be7c693b3eaef81a7d",
+  "license": "CC-BY-SA-4.0-with-KiCad-library-exception",
+  "modified": true,
+  "conversion": "STEP -> STL (CadQuery) -> optimized neutral-material GLB (trimesh)",
+  "source_faces": 1860,
+  "output_faces": 1860,
+  "output_vertices": 930,
+  "extents_m": [
+    0.00419,
+    0.0009,
+    0.0171
+  ],
+  "glb_bytes": 38392,
+  "release_status": "approved-for-laptop-board-detail"
+}
