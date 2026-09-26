@@ -531,8 +531,48 @@ function buildLaptop() {
   const serviceHingeRight = new THREE.Group();
   const serviceWebcam = new THREE.Group();
 
+  // The official Framework STEP is primarily useful from the service/back
+  // side. Add a lightweight display face so the assembled anatomy view still
+  // reads as a real laptop screen from the front while the CAD remains visible
+  // when students orbit around it.
+  const serviceFront = new THREE.Group();
+  const serviceBezel = rounded(
+    LAPTOP_DIMENSIONS.lidWidth,
+    LAPTOP_DIMENSIONS.lidHeight,
+    0.07,
+    0.12,
+    0x242c30,
+    0.38,
+    0.28,
+  );
+  serviceBezel.position.set(
+    0,
+    LAPTOP_DIMENSIONS.lidHeight / 2,
+    0.12,
+  );
+  serviceFront.add(serviceBezel);
+
+  const serviceScreen = new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      LAPTOP_DIMENSIONS.screenWidth,
+      LAPTOP_DIMENSIONS.screenHeight,
+    ),
+    new THREE.MeshBasicMaterial({
+      color: COLORS.screen,
+      map: makeScreenTexture() ?? undefined,
+      side: THREE.DoubleSide,
+    }),
+  );
+  serviceScreen.position.set(
+    0,
+    LAPTOP_DIMENSIONS.lidHeight / 2,
+    0.162,
+  );
+  serviceFront.add(serviceScreen);
+
   serviceDisplayAssembly.add(
     serviceDisplayMount,
+    serviceFront,
     serviceHingeLeft,
     serviceHingeRight,
     serviceWebcam,
