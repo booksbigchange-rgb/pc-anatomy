@@ -75,12 +75,13 @@ PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab i
 - [x] Add speaker enclosures and major internal cables
 - [x] Integrate official Framework battery CAD
 - [x] Align mainboard outer envelope and five fastener locations to Framework's published 226.9 × 104.83 mm tray dimensions
-- [ ] Derive exact notched mainboard perimeter and connector coordinates from Framework's published 2D CAD
+- [x] Trace the Framework mainboard mechanical outline from the published 2D DXF (166-edge closed LINE/ARC cycle; 233.3 × 105.83 mm)
+- [ ] Snap remaining connector coordinates to the published 2D CAD
 - [x] Add staged Laptop Anatomy teardown: cover → battery → SSD/Wi-Fi → RAM/speakers → cooling/CPU → motherboard
 - [x] Add realistic bottom-cover removal transform / screw sequence foundation
 - [x] Route battery/display/speaker cables to board-side connector mounts
 - [x] Disconnect major cables before their related teardown stages
-- [ ] Add detailed click-to-unplug / reconnect interactions
+- [x] Add click-to-unplug / reconnect interactions for battery, speaker and display service cables
 
 
 ### Laptop Anatomy teardown
@@ -94,4 +95,5 @@ PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab i
 - [x] Add hinge/display removal stage using official Framework display, hinge and webcam CAD
 - [x] Real KiCad board connectors loaded for battery, fan/speaker, display, input-cover and audio
 - [x] Real Framework display, left/right hinges and webcam loaded into teardown
+- [x] Real Framework mainboard outline GLB loaded as the motherboard shell when available
 - [ ] Replace remaining teaching geometry with approved Framework/KiCad-derived detail
