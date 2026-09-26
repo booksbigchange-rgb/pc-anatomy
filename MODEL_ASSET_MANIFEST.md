@@ -97,3 +97,24 @@ Converted local GLBs:
 - Webcam module — 439,560 bytes, 21,831 faces
 
 The parts are converted from the official STEP files to optimized neutral-material GLBs. The display/hinge/webcam assembly is kept mechanically grouped in Laptop Anatomy and separates late in the teardown rather than exploding randomly.
+
+
+## Framework Laptop 13 mainboard mechanical outline
+
+| Field | Value |
+| --- | --- |
+| Owner / creator | Framework Computer Inc. |
+| Official repository | https://github.com/FrameworkComputer/Framework-Laptop-13 |
+| Source file | `Mainboard/2D/fw_main_pcb_generic_2_w_fan_2.dxf` |
+| Pinned source commit | `57a01b214c70c924dcd60006c7fd4d753e94e86f` |
+| Git blob SHA | `4269a2ae1e934b397d9dd21f8d9044f199156dad` |
+| License | CC BY 4.0 |
+| Trace method | Closed LINE/ARC mechanical-view cycle |
+| Source cycle | 166 edges / 537 flattened trace points |
+| Mechanical bounds | 233.3 × 105.83 mm |
+| Converted GLB | 22,228 bytes |
+| Output geometry | 1,060 faces / 532 vertices |
+| Runtime networking | None |
+| Status | Approved for Laptop Anatomy motherboard outline |
+
+The DXF contains multiple views, dimensions and annotation geometry. Big Change isolates the left mechanical view and traces the large closed LINE/ARC cycle rather than polygonizing the entire drawing sheet. The resulting silhouette is extruded to a representative 1.2 mm board thickness and replaces the procedural board shell when the local GLB loads successfully.
