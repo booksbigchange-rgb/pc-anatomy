@@ -40,8 +40,8 @@ type LaptopView = 'outside' | 'inside';
 type LaptopMode = 'explore' | 'connections';
 type LaptopPortType = 'usb' | 'hdmi' | 'power' | 'audio';
 type LaptopPortId =
-  | 'usb-left'
-  | 'usb-right'
+  | 'usb-rear-right'
+  | 'usb-front-right'
   | 'hdmi-left'
   | 'power-left'
   | 'audio-right';
@@ -190,17 +190,17 @@ const CONNECTION_TASKS: LaptopConnectionTask[] = [
     portType: 'power',
     targetPort: 'power-left',
     instruction:
-      'Connect the charger first. Find the small power port near the rear-left side.',
-    source: [4.85, 0.82, 2.9],
+      'Connect the charger first. Find the USB-C power card in the rear-left expansion bay.',
+    source: [-4.85, 0.82, -2.5],
   },
   {
     id: 'usb-device',
     name: 'USB device → USB',
     portType: 'usb',
-    targetPort: 'usb-left',
+    targetPort: 'usb-rear-right',
     instruction:
-      'Connect a USB device. Find the rectangular USB port on the left side.',
-    source: [-4.85, 0.82, 2.25],
+      'Connect a USB device. Find a rectangular USB-A port on the right side.',
+    source: [4.85, 0.82, -2.15],
   },
   {
     id: 'external-display',
@@ -208,8 +208,8 @@ const CONNECTION_TASKS: LaptopConnectionTask[] = [
     portType: 'hdmi',
     targetPort: 'hdmi-left',
     instruction:
-      'Connect an external display. Find the wider HDMI port on the left side.',
-    source: [-4.85, 0.82, -0.6],
+      'Connect an external display. Find the HDMI card in the front-left expansion bay.',
+    source: [-4.85, 0.82, 2.15],
   },
   {
     id: 'headphones-audio',
@@ -252,8 +252,8 @@ const LAPTOP_DIMENSIONS = {
 } as const;
 
 const PORT_TYPES: Record<LaptopPortId, LaptopPortType> = {
-  'usb-left': 'usb',
-  'usb-right': 'usb',
+  'usb-rear-right': 'usb',
+  'usb-front-right': 'usb',
   'hdmi-left': 'hdmi',
   'power-left': 'power',
   'audio-right': 'audio',
@@ -408,6 +408,26 @@ function laptopPort(
   item.userData.laptopPort = id;
   item.userData.portType = PORT_TYPES[id];
   item.userData.highlightColor = color;
+  return item;
+}
+
+function laptopRoundPort(
+  id: LaptopPortId,
+  radius: number,
+  position: [number, number, number],
+  highlightColor: number,
+) {
+  const item = mesh(
+    new THREE.CylinderGeometry(radius, radius, 0.07, 24),
+    0x0c1012,
+    0.3,
+    0.26,
+  );
+  item.rotation.z = Math.PI / 2;
+  item.position.set(...position);
+  item.userData.laptopPort = id;
+  item.userData.portType = PORT_TYPES[id];
+  item.userData.highlightColor = highlightColor;
   return item;
 }
 
@@ -747,31 +767,84 @@ function buildLaptop() {
 
   // Real port cavities stay neutral in Explore mode; the lesson highlights
   // only the target port instead of permanently color-coding the hardware.
+  // Four modular expansion-card bays: two on each side, plus the dedicated
+  // 3.5 mm headset jack. This matches the real Framework-style layout much
+  // better than the earlier five unrelated side openings.
   const ports: THREE.Mesh[] = [
-    laptopPort('usb-left', [0.07, 0.18, 0.5], [-3.815, 0.95, -1.05], 0x4e9db0),
-    laptopPort('usb-right', [0.07, 0.18, 0.5], [3.815, 0.95, -0.52], 0x4e9db0),
-    laptopPort('hdmi-left', [0.07, 0.19, 0.62], [-3.815, 0.95, -0.08], 0x927cad),
-    laptopPort('power-left', [0.07, 0.17, 0.3], [-3.815, 0.95, 1.2], 0xc48761),
-    laptopPort('audio-right', [0.07, 0.2, 0.2], [3.815, 0.95, 1.12], 0x78a184),
+    laptopPort(
+      'power-left',
+      [0.07, 0.13, 0.34],
+      [-3.835, 0.95, -1.32],
+      0xc48761,
+    ),
+    laptopPort(
+      'hdmi-left',
+      [0.07, 0.18, 0.61],
+      [-3.835, 0.95, 1.26],
+      0x927cad,
+    ),
+    laptopPort(
+      'usb-rear-right',
+      [0.07, 0.18, 0.5],
+      [3.835, 0.95, -1.32],
+      0x4e9db0,
+    ),
+    laptopPort(
+      'usb-front-right',
+      [0.07, 0.18, 0.5],
+      [3.835, 0.95, 1.26],
+      0x4e9db0,
+    ),
+    laptopRoundPort('audio-right', 0.09, [3.84, 0.96, 2.28], 0x78a184),
   ];
   outside.add(...ports);
 
-  // Framework-style expansion-card seams and metallic port surrounds.
   for (const [side, z] of [
-    [-1, -1.05],
-    [-1, -0.08],
-    [-1, 1.2],
-    [1, -0.52],
-    [1, 1.12],
+    [-1, -1.32],
+    [-1, 1.26],
+    [1, -1.32],
+    [1, 1.26],
   ] as const) {
-    const trim = rounded(0.055, 0.25, 0.76, 0.035, 0x68747a, 0.28, 0.68);
-    trim.position.set(side * 3.795, 0.95, z);
-    outside.add(trim);
+    const bay = rounded(0.052, 0.255, 1.03, 0.035, 0x68747a, 0.28, 0.68);
+    bay.position.set(side * 3.79, 0.95, z);
+    outside.add(bay);
+
+    const seamFront = rounded(0.058, 0.21, 0.018, 0.006, 0x30383c, 0.44, 0.32);
+    seamFront.position.set(side * 3.82, 0.95, z + 0.48);
+    outside.add(seamFront);
+    const seamBack = seamFront.clone();
+    seamBack.position.z = z - 0.48;
+    outside.add(seamBack);
   }
-  // Re-add the dark openings above the trim so they retain click targets.
-  for (const portItem of ports) {
-    portItem.position.x += Math.sign(portItem.position.x) * 0.035;
+
+  // Side-firing speaker vents, status LED and the visible audio-jack surround.
+  for (const side of [-1, 1] as const) {
+    for (let index = 0; index < 9; index++) {
+      const slot = rounded(0.045, 0.055, 0.105, 0.012, 0x20272b, 0.72, 0.04);
+      slot.position.set(side * 3.835, 0.84, 1.66 + index * 0.085);
+      outside.add(slot);
+    }
   }
+  const audioRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.105, 0.015, 8, 24),
+    new THREE.MeshStandardMaterial({
+      color: 0x626d72,
+      roughness: 0.32,
+      metalness: 0.62,
+    }),
+  );
+  audioRing.rotation.y = Math.PI / 2;
+  audioRing.position.set(3.842, 0.96, 2.28);
+  outside.add(audioRing);
+
+  const statusLed = mesh(
+    new THREE.SphereGeometry(0.024, 12, 8),
+    0x8ad7b2,
+    0.24,
+    0.08,
+  );
+  statusLed.position.set(-3.84, 0.91, -2.1);
+  outside.add(statusLed);
 
 
   const realisticInternals = buildRealisticLaptopInternals();
@@ -1664,7 +1737,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
             <Scan size={15} />
             {realisticExterior && realisticLoaded
               ? 'CAD reference'
-              : 'Open laptop'}
+              : 'Realistic open'}
           </button>
           <button
             type="button"
