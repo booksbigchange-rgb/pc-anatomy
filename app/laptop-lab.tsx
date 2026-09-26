@@ -235,19 +235,19 @@ const LESSON_ORDER: LaptopPartId[] = [
   'speakers',
 ];
 
-// Representative 15-inch-class laptop proportions.
- // Scene units are proportional rather than tied to a brand-specific model.
- const LAPTOP_DIMENSIONS = {
-   baseWidth: 7.6,
-   baseDepth: 5.05,
-   baseThickness: 0.34,
-   lidWidth: 7.32,
-   lidHeight: 4.5,
-   lidThickness: 0.22,
-   screenWidth: 6.92,
-   screenHeight: 3.89, // ~16:9
-   hingeZ: -2.34,
- } as const;
+// Teaching geometry follows the approved Framework Laptop 13 CAD proportions
+// so the clickable model and the realistic exterior read as the same machine.
+const LAPTOP_DIMENSIONS = {
+  baseWidth: 7.6,
+  baseDepth: 5.88,
+  baseThickness: 0.34,
+  lidWidth: 7.44,
+  lidHeight: 5.18,
+  lidThickness: 0.22,
+  screenWidth: 6.96,
+  screenHeight: 4.64, // 3:2
+  hingeZ: -2.72,
+} as const;
 
 const PORT_TYPES: Record<LaptopPortId, LaptopPortType> = {
   'usb-left': 'usb',
@@ -363,23 +363,23 @@ function connectionCable(start: THREE.Vector3, end: THREE.Vector3) {
 
 function makeScreenTexture() {
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 640;
+  canvas.width = 900;
+  canvas.height = 600;
   const context = canvas.getContext('2d');
   if (!context) return null;
 
-  const gradient = context.createLinearGradient(0, 0, 1024, 640);
+  const gradient = context.createLinearGradient(0, 0, 900, 600);
   gradient.addColorStop(0, '#0c2631');
   gradient.addColorStop(0.55, '#18414d');
   gradient.addColorStop(1, '#21545d');
   context.fillStyle = gradient;
-  context.fillRect(0, 0, 1024, 640);
+  context.fillRect(0, 0, 900, 600);
 
-  const glow = context.createRadialGradient(760, 170, 10, 760, 170, 420);
+  const glow = context.createRadialGradient(665, 155, 10, 665, 155, 360);
   glow.addColorStop(0, 'rgba(130,235,230,.48)');
   glow.addColorStop(1, 'rgba(130,235,230,0)');
   context.fillStyle = glow;
-  context.fillRect(0, 0, 1024, 640);
+  context.fillRect(0, 0, 900, 600);
 
   context.fillStyle = '#e5fbfd';
   context.font = '700 62px Segoe UI, Arial, sans-serif';
@@ -414,7 +414,7 @@ function buildLaptop() {
   base.position.y = 0.86;
   outside.add(base);
 
-  const deck = rounded(7.18, 0.08, 4.63, 0.16, 0x9da8af, 0.42, 0.44);
+  const deck = rounded(7.18, 0.08, 5.46, 0.16, 0x9da8af, 0.42, 0.44);
   deck.position.y = 1.05;
   outside.add(deck);
 
@@ -430,18 +430,18 @@ function buildLaptop() {
         0.62,
         0.08,
       );
-      key.position.set(-width / 2 + column * 0.42, 1.13, -1.42 + row * 0.48);
+      key.position.set(-width / 2 + column * 0.42, 1.13, -1.72 + row * 0.48);
       keyboard.add(key);
     }
   }
   const space = rounded(2.55, 0.08, 0.32, 0.05, COLORS.keys, 0.62, 0.08);
-  space.position.set(0, 1.13, 0.5);
+  space.position.set(0, 1.13, 0.38);
   keyboard.add(space);
   outside.add(tag(keyboard, 'keyboard'));
 
   const trackpad = new THREE.Group();
   const trackpadSurface = rounded(2.78, 0.035, 1.45, 0.12, 0x87939a, 0.38, 0.38);
-  trackpadSurface.position.set(0, 1.115, 1.58);
+  trackpadSurface.position.set(0, 1.115, 1.82);
   trackpad.add(trackpadSurface);
   outside.add(tag(trackpad, 'trackpad'));
 
