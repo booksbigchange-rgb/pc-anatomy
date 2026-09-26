@@ -77,6 +77,15 @@ export default function AboutDialog({ open, onOpenChange }: Props) {
         </a>
         <a
           className="about-source"
+          href="https://github.com/KiCad/kicad-packages3D"
+          target="_blank"
+          rel="noreferrer"
+        >
+          KiCad 3D component library · CC BY-SA 4.0 + library exception
+          <ArrowUpRight size={15} />
+        </a>
+        <a
+          className="about-source"
           href={UPSTREAM_REPOSITORY}
           target="_blank"
           rel="noreferrer"
@@ -106,7 +115,9 @@ export default function AboutDialog({ open, onOpenChange }: Props) {
           Big Change learning edition. Upstream PC Anatomy remains credited under
           its MIT License. Framework Laptop 13 CAD is converted and optimized
           under CC BY 4.0; its inclusion does not imply endorsement by Framework
-          Computer. No affiliation with NVIDIA, AMD or Intel.
+          Computer. Selected laptop connector geometry comes from the KiCad
+          3D component library under CC BY-SA 4.0 with KiCad's library
+          exception. No affiliation with NVIDIA, AMD or Intel.
         </p>
       </DialogContent>
     </Dialog>
