@@ -31,6 +31,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {
   applyLaptopTeardown,
   buildRealisticLaptopInternals,
+  type LaptopInternalCableId,
 } from './laptop-internals';
 import { useDisassemblyPlayback } from './use-disassembly-playback';
 
@@ -609,6 +610,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   const realisticRef = useRef(true);
   const connectionTaskRef = useRef(0);
   const connectedRef = useRef<LaptopConnectionId[]>([]);
+  const disconnectedInternalCablesRef = useRef<LaptopInternalCableId[]>([]);
   const explodeRef = useRef(18);
 
   const [view, setView] = useState<LaptopView>('outside');
@@ -623,6 +625,12 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   const [connectionFeedback, setConnectionFeedback] = useState(
     'Choose Connections to practise the ports on a laptop.',
   );
+  const [internalCableFeedback, setInternalCableFeedback] = useState(
+    'Click a visible internal cable to unplug it before removing its part.',
+  );
+  const [disconnectedInternalCables, setDisconnectedInternalCables] = useState<
+    LaptopInternalCableId[]
+  >([]);
   const [explode, setExplodeValue] = useState(18);
 
   const updateExplode = useCallback((value: number) => {
@@ -742,6 +750,8 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     addEnvironment(scene);
 
     const laptop = buildLaptop();
+    for (const cable of laptop.disconnectCables)
+      cable.object.userData.laptopCable = cable.id;
     scene.add(laptop.root);
 
     const realisticLaptop = new THREE.Group();
@@ -1066,6 +1076,39 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
         viewRef.current === 'outside';
       if (realisticNow) return;
 
+      if (
+        viewRef.current === 'inside' &&
+        modeRef.current === 'explore' &&
+        !guidedRef.current
+      ) {
+        const cableObjects = laptop.disconnectCables
+          .filter((cable) => explodeRef.current < cable.at)
+          .map((cable) => cable.object);
+        const cableHit = raycaster.intersectObjects(cableObjects, false)[0];
+        const cableId = cableHit?.object.userData.laptopCable as
+          | LaptopInternalCableId
+          | undefined;
+        if (cableId) {
+          const next = disconnectedInternalCablesRef.current.includes(cableId)
+            ? disconnectedInternalCablesRef.current.filter(
+                (id) => id !== cableId,
+              )
+            : [...disconnectedInternalCablesRef.current, cableId];
+          disconnectedInternalCablesRef.current = next;
+          setDisconnectedInternalCables(next);
+          setInternalCableFeedback(
+            next.includes(cableId)
+              ? cableId[0].toUpperCase() +
+                  cableId.slice(1) +
+                  ' cable unplugged. You can now continue the teardown.'
+              : cableId[0].toUpperCase() +
+                  cableId.slice(1) +
+                  ' cable reconnected.',
+          );
+          return;
+        }
+      }
+
       const target =
         viewRef.current === 'outside' ? laptop.outside : laptop.inside;
       const hit = raycaster.intersectObject(target, true)[0];
@@ -1128,8 +1171,19 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
 
       if (insideNow) {
         applyLaptopTeardown(laptop.teardownParts, explodeRef.current);
-        for (const cable of laptop.disconnectCables)
+        for (const cable of laptop.disconnectCables) {
+          const disconnected =
+            disconnectedInternalCablesRef.current.includes(cable.id);
           cable.object.visible = explodeRef.current < cable.at;
+          cable.object.position.copy(
+            disconnected ? cable.unplugOffset : new THREE.Vector3(),
+          );
+          const cableMaterial = cable.object.material;
+          if (cableMaterial instanceof THREE.MeshStandardMaterial) {
+            cableMaterial.emissive.setHex(disconnected ? 0x6a3414 : 0x000000);
+            cableMaterial.emissiveIntensity = disconnected ? 0.7 : 0;
+          }
+        }
       }
 
       const activeRoot = insideNow ? laptop.inside : laptop.outside;
@@ -1200,6 +1254,13 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     viewRef.current = next;
     setView(next);
     setExplode(next === 'inside' ? 18 : 0);
+    if (next === 'outside') {
+      disconnectedInternalCablesRef.current = [];
+      setDisconnectedInternalCables([]);
+      setInternalCableFeedback(
+        'Click a visible internal cable to unplug it before removing its part.',
+      );
+    }
     const first = PARTS.find((part) => part.view === next)!;
     selectedRef.current = first.id;
     setSelected(first.id);
@@ -1464,7 +1525,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
           {mode === 'connections'
             ? 'Drag to orbit · find the glowing port · click to connect'
             : view === 'inside' && !guided
-              ? 'Drag to orbit · use the teardown slider · click a part'
+              ? 'Drag to orbit · click cables to unplug · use teardown slider'
               : 'Drag to orbit · scroll to zoom · click a part'}
         </div>
 
@@ -1495,6 +1556,11 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
                 onClick={() => {
                   stopTeardown();
                   setExplode(0);
+                  disconnectedInternalCablesRef.current = [];
+                  setDisconnectedInternalCables([]);
+                  setInternalCableFeedback(
+                    'Laptop reassembled. Internal cables are connected again.',
+                  );
                 }}
                 aria-label="Reassemble laptop"
               >
@@ -1569,6 +1635,26 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
               <strong>Why it matters</strong>
               <p>{selectedPart.why}</p>
             </div>
+            {!guided && view === 'inside' && (
+              <div className="laptop-cable-status">
+                <strong>Service cables</strong>
+                <p>{internalCableFeedback}</p>
+                <div>
+                  {(['battery', 'speaker', 'display'] as const).map((id) => (
+                    <span
+                      key={id}
+                      className={
+                        disconnectedInternalCables.includes(id)
+                          ? 'disconnected'
+                          : 'connected'
+                      }
+                    >
+                      {id}: {disconnectedInternalCables.includes(id) ? 'unplugged' : 'connected'}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             {guided ? (
               <div className="laptop-guide-controls">
                 <button
