@@ -200,18 +200,22 @@ function addBoardDetails(group: THREE.Group) {
   // aligned to the current teaching layout and will be snapped to the official
   // DXF coordinates once the mechanical-view transform is validated.
   const batteryConnector = pinConnector(0.72, 0.2, 10, 0x202529);
+  batteryConnector.userData.connectorRole = 'battery';
   batteryConnector.position.set(0.3, 0.125, 0.76);
   group.add(batteryConnector);
 
   const fanConnector = pinConnector(0.34, 0.18, 4);
+  fanConnector.userData.connectorRole = 'fan';
   fanConnector.position.set(-2.2, 0.125, 0.42);
   group.add(fanConnector);
 
   const speakerConnector = pinConnector(0.34, 0.18, 4);
+  speakerConnector.userData.connectorRole = 'speaker';
   speakerConnector.position.set(2.1, 0.125, 0.2);
   group.add(speakerConnector);
 
   const displayConnector = pinConnector(0.92, 0.14, 40, 0xd7d9d4);
+  displayConnector.userData.connectorRole = 'display';
   displayConnector.position.set(1.08, 0.125, 0.54);
   group.add(displayConnector);
 
@@ -220,10 +224,12 @@ function addBoardDetails(group: THREE.Group) {
   group.add(webcamConnector);
 
   const inputCoverConnector = pinConnector(1.04, 0.16, 50, 0xd7d9d4);
+  inputCoverConnector.userData.connectorRole = 'input-cover';
   inputCoverConnector.position.set(0.12, 0.125, 0.16);
   group.add(inputCoverConnector);
 
   const audioZif = pinConnector(0.5, 0.14, 15, 0xe3e0d7);
+  audioZif.userData.connectorRole = 'audio';
   audioZif.position.set(2.42, 0.125, 0.56);
   group.add(audioZif);
 
