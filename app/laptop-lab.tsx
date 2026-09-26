@@ -781,6 +781,81 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     );
 
 
+    const loadFrameworkServicePart = (
+      file: string,
+      mount: THREE.Group,
+      position: [number, number, number],
+      rotation: [number, number, number],
+      color: number,
+      roughness: number,
+      metalness: number,
+    ) => {
+      gltfLoader.load(
+        `${import.meta.env.BASE_URL}models/framework-service/${file}.glb`,
+        (gltf) => {
+          if (disposed) return;
+          const model = gltf.scene;
+          model.scale.setScalar(25.5);
+          model.position.set(...position);
+          model.rotation.set(...rotation);
+          model.traverse((object) => {
+            if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
+            const item = object as THREE.Mesh;
+            item.castShadow = true;
+            item.receiveShadow = true;
+            item.material = new THREE.MeshStandardMaterial({
+              color,
+              roughness,
+              metalness,
+            });
+          });
+          mount.add(model);
+        },
+        undefined,
+        () => {
+          // Keep the rest of Laptop Anatomy functional if a candidate asset
+          // fails to load; service assets are visual accuracy upgrades.
+        },
+      );
+    };
+
+    loadFrameworkServicePart(
+      'display-assembly',
+      laptop.serviceDisplayMount,
+      [0, 2.86, 0],
+      [-Math.PI / 2, 0, 0],
+      0xaeb7bd,
+      0.34,
+      0.5,
+    );
+    loadFrameworkServicePart(
+      'hinge-left',
+      laptop.serviceHingeLeft,
+      [-2.82, 0.08, 0.02],
+      [-Math.PI / 2, 0, 0],
+      0x717b81,
+      0.3,
+      0.62,
+    );
+    loadFrameworkServicePart(
+      'hinge-right',
+      laptop.serviceHingeRight,
+      [2.82, 0.08, 0.02],
+      [-Math.PI / 2, Math.PI, 0],
+      0x717b81,
+      0.3,
+      0.62,
+    );
+    loadFrameworkServicePart(
+      'webcam',
+      laptop.serviceWebcam,
+      [0, 5.34, 0.16],
+      [-Math.PI / 2, 0, 0],
+      0x252c30,
+      0.42,
+      0.18,
+    );
+
     gltfLoader.load(
       `${import.meta.env.BASE_URL}models/framework-laptop-13-battery.glb`,
       (gltf) => {
