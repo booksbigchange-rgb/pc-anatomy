@@ -46,6 +46,25 @@ function mesh(
   return new THREE.Mesh(geometry, material(color, roughness, metalness));
 }
 
+function physicalMesh(
+  geometry: THREE.BufferGeometry,
+  color: number,
+  roughness = 0.32,
+  metalness = 0.7,
+) {
+  return new THREE.Mesh(
+    geometry,
+    new THREE.MeshPhysicalMaterial({
+      color,
+      roughness,
+      metalness,
+      clearcoat: 0.08,
+      clearcoatRoughness: 0.3,
+      envMapIntensity: 1.0,
+    }),
+  );
+}
+
 function rounded(
   width: number,
   height: number,
@@ -529,7 +548,12 @@ function buildBatteryFallback() {
 function buildBottomCover() {
   const cover = new THREE.Group();
 
-  const panel = rounded(7.28, 0.12, 5.56, 0.16, 0x59646a, 0.42, 0.42);
+  const panel = physicalMesh(
+    new RoundedBoxGeometry(7.28, 0.12, 5.56, 6, 0.16),
+    0x727d82,
+    0.3,
+    0.72,
+  );
   cover.add(panel);
 
   // Vent field near the cooling area.
@@ -660,7 +684,12 @@ export function buildRealisticLaptopInternals() {
   const inside = new THREE.Group();
 
   // Thin structural shell instead of one large solid block.
-  const bottom = rounded(7.34, 0.1, 5.62, 0.17, 0x5d696f, 0.42, 0.42);
+  const bottom = physicalMesh(
+    new RoundedBoxGeometry(7.34, 0.1, 5.62, 6, 0.17),
+    0x69747a,
+    0.32,
+    0.66,
+  );
   bottom.position.y = 0.68;
   inside.add(bottom);
 
