@@ -808,6 +808,57 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       },
     );
 
+    const replaceBoardConnector = (
+      role: string,
+      file: string,
+      color: number,
+      rotationY = 0,
+    ) => {
+      let mount: THREE.Object3D | null = null;
+      laptop.motherboardMount.traverse((object) => {
+        if (!mount && object.userData.connectorRole === role) mount = object;
+      });
+      if (!mount) return;
+
+      gltfLoader.load(
+        `${import.meta.env.BASE_URL}models/kicad/${file}.glb`,
+        (gltf) => {
+          if (disposed || !mount) return;
+
+          // Keep the procedural teaching connector as a fallback, but hide it
+          // once the pinned KiCad geometry has loaded successfully.
+          for (const child of mount.children) child.visible = false;
+
+          const model = gltf.scene;
+          model.scale.setScalar(25.5);
+          model.rotation.y = rotationY;
+          model.traverse((object) => {
+            if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
+            const item = object as THREE.Mesh;
+            item.castShadow = true;
+            item.receiveShadow = true;
+            item.material = new THREE.MeshStandardMaterial({
+              color,
+              roughness: 0.36,
+              metalness: 0.28,
+            });
+          });
+          mount.add(model);
+        },
+        undefined,
+        () => {
+          // Local converted asset missing: retain the procedural fallback.
+        },
+      );
+    };
+
+    replaceBoardConnector('battery', 'battery-10pin', 0xd6d8d2);
+    replaceBoardConnector('fan', 'fan-speaker-4pin', 0xd6d8d2);
+    replaceBoardConnector('speaker', 'fan-speaker-4pin', 0xd6d8d2, Math.PI);
+    replaceBoardConnector('display', 'display-41pin', 0xdedfd9);
+    replaceBoardConnector('input-cover', 'input-51pin', 0xdedfd9);
+    replaceBoardConnector('audio', 'audio-15pin', 0xe5e2da);
+
     scene.updateMatrixWorld(true);
 
     const portPosition = (id: LaptopPortId) => {
