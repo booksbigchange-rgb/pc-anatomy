@@ -324,8 +324,10 @@ function physicalRounded(
       roughness,
       metalness,
       clearcoat,
-      clearcoatRoughness: 0.28,
-      envMapIntensity: 1.05,
+      clearcoatRoughness: 0.24,
+      envMapIntensity: 1.18,
+      anisotropy: metalness > 0.5 ? 0.34 : 0,
+      anisotropyRotation: Math.PI / 2,
     }),
   );
 }
@@ -450,35 +452,113 @@ function connectionCable(start: THREE.Vector3, end: THREE.Vector3) {
   return cable;
 }
 
-function makeScreenTexture() {
+function makeContactShadowTexture() {
   const canvas = document.createElement('canvas');
-  canvas.width = 900;
-  canvas.height = 600;
+  canvas.width = 512;
+  canvas.height = 256;
   const context = canvas.getContext('2d');
   if (!context) return null;
 
-  const gradient = context.createLinearGradient(0, 0, 900, 600);
-  gradient.addColorStop(0, '#0c2631');
-  gradient.addColorStop(0.55, '#18414d');
-  gradient.addColorStop(1, '#21545d');
+  const gradient = context.createRadialGradient(256, 128, 12, 256, 128, 238);
+  gradient.addColorStop(0, 'rgba(0,0,0,.42)');
+  gradient.addColorStop(0.42, 'rgba(0,0,0,.22)');
+  gradient.addColorStop(0.78, 'rgba(0,0,0,.07)');
+  gradient.addColorStop(1, 'rgba(0,0,0,0)');
   context.fillStyle = gradient;
-  context.fillRect(0, 0, 900, 600);
+  context.fillRect(0, 0, canvas.width, canvas.height);
 
-  const glow = context.createRadialGradient(665, 155, 10, 665, 155, 360);
-  glow.addColorStop(0, 'rgba(130,235,230,.48)');
-  glow.addColorStop(1, 'rgba(130,235,230,0)');
+  return new THREE.CanvasTexture(canvas);
+}
+
+function makeScreenTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1200;
+  canvas.height = 800;
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+
+  const gradient = context.createLinearGradient(0, 0, 1200, 800);
+  gradient.addColorStop(0, '#071b25');
+  gradient.addColorStop(0.48, '#123847');
+  gradient.addColorStop(1, '#1f5862');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 1200, 800);
+
+  const glow = context.createRadialGradient(875, 170, 20, 875, 170, 520);
+  glow.addColorStop(0, 'rgba(129,231,226,.5)');
+  glow.addColorStop(1, 'rgba(129,231,226,0)');
   context.fillStyle = glow;
-  context.fillRect(0, 0, 900, 600);
+  context.fillRect(0, 0, 1200, 800);
 
-  context.fillStyle = '#e5fbfd';
-  context.font = '700 62px Segoe UI, Arial, sans-serif';
-  context.fillText('BIG CHANGE', 74, 248);
-  context.fillStyle = '#8ed8df';
-  context.font = '600 30px Segoe UI, Arial, sans-serif';
-  context.fillText('LAPTOP LAB', 76, 296);
+  // Desktop-like surface so the display reads as a real powered panel rather
+  // than a flat poster. It remains generic and school-safe.
+  context.fillStyle = 'rgba(5,14,20,.62)';
+  context.fillRect(0, 0, 1200, 52);
+  context.fillStyle = 'rgba(235,249,250,.72)';
+  context.font = '500 18px Segoe UI, Arial, sans-serif';
+  context.fillText('Big Change Lab', 28, 33);
+  context.textAlign = 'right';
+  context.fillText('10:24', 1165, 33);
+  context.textAlign = 'left';
+
+  context.fillStyle = 'rgba(8,22,29,.54)';
+  context.beginPath();
+  context.roundRect(78, 112, 520, 410, 22);
+  context.fill();
+  context.strokeStyle = 'rgba(188,231,234,.12)';
+  context.stroke();
+
+  context.fillStyle = '#e7fbfc';
+  context.font = '700 58px Segoe UI, Arial, sans-serif';
+  context.fillText('BIG CHANGE', 118, 248);
+  context.fillStyle = '#91dbe2';
+  context.font = '600 28px Segoe UI, Arial, sans-serif';
+  context.fillText('LAPTOP LAB', 120, 296);
   context.fillStyle = 'rgba(239,250,251,.72)';
-  context.font = '400 22px Segoe UI, Arial, sans-serif';
-  context.fillText('Outside → Inside → Understand', 76, 354);
+  context.font = '400 20px Segoe UI, Arial, sans-serif';
+  context.fillText('Outside → Inside → Understand', 120, 348);
+
+  const cards = [
+    ['Explore', 'Outside & ports'],
+    ['Anatomy', 'Battery · board · cooling'],
+    ['Practice', 'Connect & troubleshoot'],
+  ];
+  cards.forEach(([title, subtitle], index) => {
+    const x = 120 + index * 150;
+    const y = 406;
+    context.fillStyle = 'rgba(116,201,211,.13)';
+    context.beginPath();
+    context.roundRect(x, y, 134, 78, 12);
+    context.fill();
+    context.fillStyle = '#d5eef1';
+    context.font = '600 17px Segoe UI, Arial, sans-serif';
+    context.fillText(title, x + 14, y + 29);
+    context.fillStyle = 'rgba(222,240,242,.58)';
+    context.font = '400 12px Segoe UI, Arial, sans-serif';
+    context.fillText(subtitle, x + 14, y + 54);
+  });
+
+  context.fillStyle = 'rgba(5,14,20,.52)';
+  context.beginPath();
+  context.roundRect(452, 728, 296, 44, 22);
+  context.fill();
+  for (let index = 0; index < 6; index++) {
+    context.fillStyle =
+      index === 2 ? 'rgba(137,219,226,.95)' : 'rgba(235,246,247,.7)';
+    context.beginPath();
+    context.arc(486 + index * 46, 750, 10, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  // Gentle diagonal reflection makes the glass read as glass at a glance.
+  const reflection = context.createLinearGradient(580, 0, 900, 800);
+  reflection.addColorStop(0, 'rgba(255,255,255,0)');
+  reflection.addColorStop(0.42, 'rgba(255,255,255,.025)');
+  reflection.addColorStop(0.5, 'rgba(255,255,255,.11)');
+  reflection.addColorStop(0.58, 'rgba(255,255,255,.02)');
+  reflection.addColorStop(1, 'rgba(255,255,255,0)');
+  context.fillStyle = reflection;
+  context.fillRect(0, 0, 1200, 800);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -975,6 +1055,23 @@ function addEnvironment(scene: THREE.Scene) {
   table.receiveShadow = true;
   scene.add(table);
 
+  const contactTexture = makeContactShadowTexture();
+  if (contactTexture) {
+    const contactShadow = new THREE.Mesh(
+      new THREE.PlaneGeometry(9.6, 5.4),
+      new THREE.MeshBasicMaterial({
+        map: contactTexture,
+        transparent: true,
+        opacity: 0.82,
+        depthWrite: false,
+        toneMapped: false,
+      }),
+    );
+    contactShadow.rotation.x = -Math.PI / 2;
+    contactShadow.position.set(0, 0.565, 0.35);
+    scene.add(contactShadow);
+  }
+
   const mat = rounded(9.1, 0.035, 5.6, 0.12, 0x20282d, 0.84, 0.02);
   mat.position.set(0, 0.58, 0.1);
   scene.add(mat);
@@ -1159,6 +1256,18 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     rim.position.set(5, 7, -8);
     scene.add(rim);
 
+    // Large soft-box lights create long, readable highlights on the aluminum
+    // surfaces and screen glass, closer to a product render than a game prop.
+    const softbox = new THREE.RectAreaLight(0xfff3e8, 7.5, 7.5, 4.5);
+    softbox.position.set(-4.8, 7.8, 6.6);
+    softbox.lookAt(0, 1.2, 0);
+    scene.add(softbox);
+
+    const edgeSoftbox = new THREE.RectAreaLight(0xa8dce8, 4.0, 5.0, 3.0);
+    edgeSoftbox.position.set(5.8, 5.4, -5.2);
+    edgeSoftbox.lookAt(0, 1.4, -0.8);
+    scene.add(edgeSoftbox);
+
     addEnvironment(scene);
 
     const laptop = buildLaptop();
@@ -1186,9 +1295,11 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
             color: 0xaeb7bc,
             roughness: 0.27,
             metalness: 0.78,
-            clearcoat: 0.08,
-            clearcoatRoughness: 0.3,
-            envMapIntensity: 1.1,
+            clearcoat: 0.1,
+            clearcoatRoughness: 0.24,
+            envMapIntensity: 1.22,
+            anisotropy: 0.38,
+            anisotropyRotation: Math.PI / 2,
           });
         });
         model.scale.setScalar(25.5);
@@ -1234,9 +1345,11 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
               color,
               roughness,
               metalness,
-              clearcoat: metalness > 0.5 ? 0.08 : 0.02,
-              clearcoatRoughness: 0.3,
-              envMapIntensity: 1.05,
+              clearcoat: metalness > 0.5 ? 0.1 : 0.02,
+              clearcoatRoughness: 0.25,
+              envMapIntensity: 1.18,
+              anisotropy: metalness > 0.5 ? 0.34 : 0,
+              anisotropyRotation: Math.PI / 2,
             });
           });
           fallback.visible = false;
