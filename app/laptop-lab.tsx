@@ -517,6 +517,37 @@ function buildLaptop() {
   const realisticInternals = buildRealisticLaptopInternals();
   inside.add(realisticInternals.inside);
 
+  // Separate service display assembly for Laptop Anatomy. The real Framework
+  // display/hinges/webcam are loaded into these mounts at runtime; keeping the
+  // display as one parent lets the teardown move it as a mechanically related
+  // assembly instead of scattering the parts radially.
+  const serviceDisplayAssembly = new THREE.Group();
+  serviceDisplayAssembly.position.set(0, 1.04, LAPTOP_DIMENSIONS.hingeZ);
+  serviceDisplayAssembly.rotation.x = -0.14;
+
+  const serviceDisplayMount = new THREE.Group();
+  const serviceHingeLeft = new THREE.Group();
+  const serviceHingeRight = new THREE.Group();
+  const serviceWebcam = new THREE.Group();
+
+  serviceDisplayAssembly.add(
+    serviceDisplayMount,
+    serviceHingeLeft,
+    serviceHingeRight,
+    serviceWebcam,
+  );
+  inside.add(tag(serviceDisplayAssembly, 'display'));
+
+  realisticInternals.teardownParts.push({
+    object: serviceDisplayAssembly,
+    start: 90,
+    end: 100,
+    homePosition: serviceDisplayAssembly.position.clone(),
+    homeRotation: serviceDisplayAssembly.rotation.clone(),
+    offset: new THREE.Vector3(0, 2.8, -2.4),
+    rotationOffset: new THREE.Vector3(-0.14, 0, 0),
+  });
+
   inside.visible = false;
   root.add(outside, inside);
   root.position.set(0, -0.05, 0.2);
@@ -529,6 +560,10 @@ function buildLaptop() {
     batteryMount: realisticInternals.batteryMount,
     motherboardMount: realisticInternals.motherboardMount,
     motherboardShell: realisticInternals.motherboardShell,
+    serviceDisplayMount,
+    serviceHingeLeft,
+    serviceHingeRight,
+    serviceWebcam,
     teardownParts: realisticInternals.teardownParts,
   };
 }
@@ -619,7 +654,9 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
             ? 'Memory + speakers'
             : explode < 87
               ? 'Cooling + CPU'
-              : 'Motherboard';
+              : explode < 96
+                ? 'Motherboard'
+                : 'Display + hinges';
 
   useEffect(() => {
     selectedRef.current = selected;
