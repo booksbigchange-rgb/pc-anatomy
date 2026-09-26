@@ -565,6 +565,7 @@ function buildLaptop() {
     serviceHingeRight,
     serviceWebcam,
     teardownParts: realisticInternals.teardownParts,
+    disconnectCables: realisticInternals.disconnectCables,
   };
 }
 
@@ -1125,8 +1126,11 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       for (const marker of connectionMarkers)
         marker.visible = connectionMode;
 
-      if (insideNow)
+      if (insideNow) {
         applyLaptopTeardown(laptop.teardownParts, explodeRef.current);
+        for (const cable of laptop.disconnectCables)
+          cable.object.visible = explodeRef.current < cable.at;
+      }
 
       const activeRoot = insideNow ? laptop.inside : laptop.outside;
       activeRoot.traverse((object) => {
