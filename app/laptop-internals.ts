@@ -527,7 +527,7 @@ function buildBatteryFallback() {
 function buildBottomCover() {
   const cover = new THREE.Group();
 
-  const panel = rounded(7.28, 0.12, 4.76, 0.16, 0x59646a, 0.42, 0.42);
+  const panel = rounded(7.28, 0.12, 5.56, 0.16, 0x59646a, 0.42, 0.42);
   cover.add(panel);
 
   // Vent field near the cooling area.
@@ -539,14 +539,14 @@ function buildBottomCover() {
     }
   }
 
-  // Captive-screw positions communicate how a real service cover is removed.
+  // Framework's service procedure uses five captive T5 fasteners. Positions
+  // here are representative until the bottom-cover drawing is imported.
   for (const [x, z] of [
-    [-3.15, -2.0],
-    [0, -2.08],
-    [3.15, -2.0],
-    [-3.15, 1.96],
-    [0, 2.05],
-    [3.15, 1.96],
+    [-3.15, -2.42],
+    [0, -2.5],
+    [3.15, -2.42],
+    [-3.15, 2.38],
+    [3.15, 2.38],
   ] as const) {
     const screw = mesh(
       new THREE.CylinderGeometry(0.075, 0.075, 0.035, 20),
@@ -658,15 +658,15 @@ export function buildRealisticLaptopInternals() {
   const inside = new THREE.Group();
 
   // Thin structural shell instead of one large solid block.
-  const bottom = rounded(7.34, 0.1, 4.82, 0.17, 0x5d696f, 0.42, 0.42);
+  const bottom = rounded(7.34, 0.1, 5.62, 0.17, 0x5d696f, 0.42, 0.42);
   bottom.position.y = 0.68;
   inside.add(bottom);
 
   for (const [x, z, w, d] of [
-    [0, -2.33, 7.2, 0.12],
-    [0, 2.33, 7.2, 0.12],
-    [-3.57, 0, 0.12, 4.55],
-    [3.57, 0, 0.12, 4.55],
+    [0, -2.73, 7.2, 0.12],
+    [0, 2.73, 7.2, 0.12],
+    [-3.57, 0, 0.12, 5.35],
+    [3.57, 0, 0.12, 5.35],
   ] as const) {
     const rail = rounded(w, 0.22, d, 0.045, C.shellDark, 0.45, 0.38);
     rail.position.set(x, 0.82, z);
