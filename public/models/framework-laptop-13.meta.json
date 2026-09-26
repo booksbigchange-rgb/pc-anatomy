@@ -15,5 +15,88 @@
     0.229372
   ],
   "glb_bytes": 2373460,
-  "release_status": "candidate-pending-visual-and-branding-review"
+  "release_status": "candidate-pending-visual-and-branding-review",
+  "exterior_parts": {
+    "framework-laptop-13-top-cover.glb": {
+      "faces": 9706,
+      "vertices": 4843,
+      "extents_m": [
+        0.29663,
+        0.003444,
+        0.22898
+      ],
+      "centroid_m": [
+        -6e-06,
+        0.004631,
+        0.114636
+      ],
+      "bounds_m": [
+        [
+          -0.148315,
+          0.001656,
+          0.0
+        ],
+        [
+          0.148315,
+          0.005101,
+          0.22898
+        ]
+      ],
+      "glb_bytes": 194984
+    },
+    "framework-laptop-13-input-cover.glb": {
+      "faces": 4280,
+      "vertices": 2093,
+      "extents_m": [
+        0.29663,
+        0.001951,
+        0.229018
+      ],
+      "centroid_m": [
+        0.001964,
+        -0.00059,
+        0.133617
+      ],
+      "bounds_m": [
+        [
+          -0.148315,
+          -0.001846,
+          0.0
+        ],
+        [
+          0.148315,
+          0.000105,
+          0.229018
+        ]
+      ],
+      "glb_bytes": 85852
+    },
+    "framework-laptop-13-display-bezel.glb": {
+      "faces": 4158,
+      "vertices": 2065,
+      "extents_m": [
+        0.29603,
+        0.001623,
+        0.216145
+      ],
+      "centroid_m": [
+        7.2e-05,
+        0.000933,
+        0.110196
+      ],
+      "bounds_m": [
+        [
+          -0.148015,
+          -2.2e-05,
+          0.012535
+        ],
+        [
+          0.148015,
+          0.001601,
+          0.22868
+        ]
+      ],
+      "glb_bytes": 83960
+    }
+  }
 }
