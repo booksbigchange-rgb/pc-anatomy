@@ -37,6 +37,17 @@ The school edition treats public GitHub availability as **insufficient permissio
 - Attribution rule: retain Framework Computer attribution, source link, CC BY 4.0 link, and note that Big Change converts/optimizes the CAD.
 - Release gate: the converted GLB is a candidate until its geometry, orientation, file size, classroom performance, and visible branding have been reviewed.
 
+### Framework Laptop 13 display, hinges and webcam
+
+- Official source: https://github.com/FrameworkComputer/Framework-Laptop-13
+- Pinned source commit: `9680262347b80efe2314673bf1f26eb955165fca`.
+- Assets: display assembly with cable bracket, left/right hinge assemblies, and webcam module.
+- License: CC BY 4.0.
+- Decision: **approved and integrated for Laptop Anatomy teardown**.
+- Conversion: official STEP → optimized local GLB with neutral classroom materials.
+- Runtime: no third-party requests.
+- Interaction rule: the display, hinges and webcam remain one mechanical assembly until the late teardown stage.
+
 ### Framework Laptop 13 battery CAD
 
 - Official source: https://github.com/FrameworkComputer/Framework-Laptop-13
