@@ -116,7 +116,7 @@ export default function AboutDialog({ open, onOpenChange }: Props) {
           its MIT License. Framework Laptop 13 CAD is converted and optimized
           under CC BY 4.0; its inclusion does not imply endorsement by Framework
           Computer. Selected laptop connector geometry comes from the KiCad
-          3D component library under CC BY-SA 4.0 with KiCad's library
+          3D component library under CC BY-SA 4.0 with the KiCad library
           exception. No affiliation with NVIDIA, AMD or Intel.
         </p>
       </DialogContent>
