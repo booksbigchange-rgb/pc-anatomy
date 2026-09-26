@@ -1246,7 +1246,9 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       'framework-laptop-13-input-cover',
       laptop.inputCoverCadMount,
       laptop.deckFallback,
-      [-0.05, 0.75, -0.49],
+      // Extracted CAD keeps its original 0..228.98 mm depth axis. Centre it
+      // on the chassis and place its top surface at the interactive deck.
+      [0, 1.067, -2.92],
       [0, 0, 0],
       0xb5bdc1,
       0.28,
@@ -1256,7 +1258,9 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       'framework-laptop-13-top-cover',
       laptop.displayTopCoverCadMount,
       laptop.lidFrameFallback,
-      [0, 2.94, 0.52],
+      // Source Z becomes local display Y after the -90° X rotation, so the
+      // official 228.98 mm shell already rises from hinge to lid top.
+      [0, 0, 0],
       [-Math.PI / 2, 0, 0],
       0xaeb7bc,
       0.25,
@@ -1266,7 +1270,10 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       'framework-laptop-13-display-bezel',
       laptop.displayBezelCadMount,
       laptop.bezelFallback,
-      [0, 2.86, 0.45],
+      // The bezel starts ~12.5 mm above the hinge in the source CAD and
+      // reaches the real lid top. A small Z offset puts it just in front of
+      // the rear shell while leaving room for the screen plane.
+      [0, 0, 0.12],
       [-Math.PI / 2, 0, 0],
       0x171c1f,
       0.44,
