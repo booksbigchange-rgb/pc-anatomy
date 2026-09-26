@@ -418,9 +418,11 @@ function buildWifi() {
 function buildCooling() {
   const group = new THREE.Group();
 
-  const fanRadius = 0.64;
+  // Framework publishes a 65 x 5.5 mm cooling fan. At the Laptop Lab
+  // chassis scale this is roughly 1.66 units in diameter and 0.14 units thick.
+  const fanRadius = 0.83;
   const housing = mesh(
-    new THREE.CylinderGeometry(fanRadius, fanRadius, 0.16, 40),
+    new THREE.CylinderGeometry(fanRadius, fanRadius, 0.14, 48),
     0x242b2f,
     0.38,
     0.28,
@@ -429,7 +431,7 @@ function buildCooling() {
   group.add(housing);
 
   const hub = mesh(
-    new THREE.CylinderGeometry(0.16, 0.16, 0.18, 24),
+    new THREE.CylinderGeometry(0.18, 0.18, 0.15, 28),
     0x414b50,
     0.42,
     0.22,
@@ -438,9 +440,9 @@ function buildCooling() {
   group.add(hub);
 
   for (let index = 0; index < 12; index++) {
-    const blade = rounded(0.11, 0.035, 0.42, 0.035, 0x58666d, 0.42, 0.12);
+    const blade = rounded(0.12, 0.03, 0.56, 0.035, 0x58666d, 0.42, 0.12);
     blade.rotation.y = (Math.PI * 2 * index) / 12 + 0.24;
-    blade.translateZ(0.31);
+    blade.translateZ(0.4);
     blade.position.y = 0.09;
     group.add(blade);
   }
