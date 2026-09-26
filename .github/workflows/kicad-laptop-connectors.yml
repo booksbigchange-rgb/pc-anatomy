@@ -1,0 +1,76 @@
+name: Build KiCad laptop connector assets
+
+on:
+  push:
+    branches:
+      - bigchange-school
+    paths:
+      - .github/workflows/kicad-laptop-connectors.yml
+      - scripts/convert-kicad-laptop-connectors.py
+
+permissions:
+  contents: write
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out school branch
+        uses: actions/checkout@v7
+        with:
+          ref: bigchange-school
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install conversion dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install \
+            cadquery==2.6.1 \
+            trimesh==4.8.3 \
+            fast-simplification==0.1.12 \
+            numpy==2.2.6 \
+            scipy==1.16.2 \
+            networkx==3.5
+
+      - name: Download pinned KiCad STEP models
+        run: |
+          set -euo pipefail
+          mkdir -p asset-work/kicad public/models/kicad
+          base='https://raw.githubusercontent.com/KiCad/kicad-packages3D/b8b3cfdfad88ba66f21002b3de51dc6f7d55ba5a'
+
+          curl --fail --location --retry 3 "$base/Connector_JST.3dshapes/JST_GH_SM10B-GHS-TB_1x10-1MP_P1.25mm_Horizontal.step" -o asset-work/kicad/JST_GH_SM10B-GHS-TB_1x10-1MP_P1.25mm_Horizontal.step
+          test "$(wc -c < asset-work/kicad/JST_GH_SM10B-GHS-TB_1x10-1MP_P1.25mm_Horizontal.step)" -eq 658057
+
+          curl --fail --location --retry 3 "$base/Connector_JST.3dshapes/JST_GH_SM04B-GHS-TB_1x04-1MP_P1.25mm_Horizontal.step" -o asset-work/kicad/JST_GH_SM04B-GHS-TB_1x04-1MP_P1.25mm_Horizontal.step
+          test "$(wc -c < asset-work/kicad/JST_GH_SM04B-GHS-TB_1x04-1MP_P1.25mm_Horizontal.step)" -eq 329331
+
+          curl --fail --location --retry 3 "$base/Connector_FFC-FPC.3dshapes/Molex_502250-4191_2Rows-41Pins-1MP_P0.60mm_Horizontal.step" -o asset-work/kicad/Molex_502250-4191_2Rows-41Pins-1MP_P0.60mm_Horizontal.step
+          test "$(wc -c < asset-work/kicad/Molex_502250-4191_2Rows-41Pins-1MP_P0.60mm_Horizontal.step)" -eq 587344
+
+          curl --fail --location --retry 3 "$base/Connector_FFC-FPC.3dshapes/Molex_502250-5191_2Rows-51Pins-1MP_P0.60mm_Horizontal.step" -o asset-work/kicad/Molex_502250-5191_2Rows-51Pins-1MP_P0.60mm_Horizontal.step
+          test "$(wc -c < asset-work/kicad/Molex_502250-5191_2Rows-51Pins-1MP_P0.60mm_Horizontal.step)" -eq 710208
+
+          curl --fail --location --retry 3 "$base/Connector_FFC-FPC.3dshapes/TE_1-84952-5_1x15-1MP_P1.0mm_Horizontal.step" -o asset-work/kicad/TE_1-84952-5_1x15-1MP_P1.0mm_Horizontal.step
+          test "$(wc -c < asset-work/kicad/TE_1-84952-5_1x15-1MP_P1.0mm_Horizontal.step)" -eq 439613
+
+      - name: Convert and validate
+        run: python scripts/convert-kicad-laptop-connectors.py
+
+      - name: Confirm no runtime dependency changes
+        run: git diff --exit-code package.json package-lock.json
+
+      - name: Commit converted local assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/models/kicad
+          if git diff --cached --quiet; then
+            echo "No asset changes"
+            exit 0
+          fi
+          git commit -m "Add converted KiCad laptop connector assets"
+          git push origin HEAD:bigchange-school
