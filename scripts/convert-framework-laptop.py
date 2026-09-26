@@ -17,6 +17,9 @@ SOURCE = Path("asset-work/framework-laptop-13.step")
 STL = Path("asset-work/framework-laptop-13.stl")
 OUT = Path("public/models/framework-laptop-13.glb")
 META = Path("public/models/framework-laptop-13.meta.json")
+TOP_COVER_OUT = Path("public/models/framework-laptop-13-top-cover.glb")
+INPUT_COVER_OUT = Path("public/models/framework-laptop-13-input-cover.glb")
+DISPLAY_BEZEL_OUT = Path("public/models/framework-laptop-13-display-bezel.glb")
 
 MAX_FACES = 150_000
 TARGET_FACES = 120_000
@@ -67,6 +70,61 @@ def main() -> None:
         mesh.process(validate=True)
         mesh.remove_unreferenced_vertices()
 
+    # Keep a few mechanically meaningful exterior shells as separate local
+    # assets. The source STEP is a closed assembly, but these connected shells
+    # can be repositioned by the interactive app to build a realistic open
+    # laptop without inventing the input-cover or display-bezel geometry.
+    components = list(mesh.split(only_watertight=False))
+    thin_wide = [
+        component
+        for component in components
+        if component.extents[0] > 0.29
+        and component.extents[1] < 0.005
+        and component.extents[2] > 0.20
+        and len(component.faces) > 3000
+    ]
+    if len(thin_wide) < 3:
+        raise RuntimeError(
+            f"Expected at least three full-width exterior shells; got {len(thin_wide)}"
+        )
+
+    top_cover = max(thin_wide, key=lambda component: len(component.faces))
+    remaining = [component for component in thin_wide if component is not top_cover]
+    input_cover = max(remaining, key=lambda component: component.extents[2])
+    remaining = [component for component in remaining if component is not input_cover]
+    display_bezel = min(
+        remaining,
+        key=lambda component: abs(float(component.extents[2]) - 0.216),
+    )
+
+    exterior_parts = {
+        TOP_COVER_OUT: top_cover,
+        INPUT_COVER_OUT: input_cover,
+        DISPLAY_BEZEL_OUT: display_bezel,
+    }
+    exterior_metadata = {}
+    for path, component in exterior_parts.items():
+        part = component.copy()
+        part.visual = trimesh.visual.ColorVisuals(
+            mesh=part,
+            face_colors=np.tile(
+                np.array([166, 176, 182, 255], dtype=np.uint8),
+                (len(part.faces), 1),
+            ),
+        )
+        path.write_bytes(part.export(file_type="glb"))
+        exterior_metadata[path.name] = {
+            "faces": int(len(part.faces)),
+            "vertices": int(len(part.vertices)),
+            "extents_m": [round(float(v), 6) for v in part.extents],
+            "centroid_m": [round(float(v), 6) for v in part.centroid],
+            "bounds_m": [
+                [round(float(v), 6) for v in part.bounds[0]],
+                [round(float(v), 6) for v in part.bounds[1]],
+            ],
+            "glb_bytes": path.stat().st_size,
+        }
+
     # Neutral classroom material. Product branding/textures are not carried over.
     mesh.visual = trimesh.visual.ColorVisuals(
         mesh=mesh,
@@ -112,6 +170,7 @@ def main() -> None:
         "extents_m": [round(float(v), 6) for v in mesh.extents],
         "glb_bytes": size,
         "release_status": "candidate-pending-visual-and-branding-review",
+        "exterior_parts": exterior_metadata,
     }
     META.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(metadata, indent=2))
