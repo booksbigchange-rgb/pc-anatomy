@@ -58,9 +58,11 @@ function physicalMesh(
       color,
       roughness,
       metalness,
-      clearcoat: 0.08,
-      clearcoatRoughness: 0.3,
-      envMapIntensity: 1.0,
+      clearcoat: 0.1,
+      clearcoatRoughness: 0.24,
+      envMapIntensity: 1.14,
+      anisotropy: metalness > 0.5 ? 0.28 : 0,
+      anisotropyRotation: Math.PI / 2,
     }),
   );
 }
@@ -178,6 +180,45 @@ function addBoardDetails(group: THREE.Group) {
     const block = chip(0.22, 0.22, 0.15, 0x4a5053);
     block.position.set(x, 0.15, z);
     group.add(block);
+  }
+
+  // RF / controller shields give the board the mixed matte-metal finish seen
+  // on real notebook mainboards.
+  for (const [x, z, w, d] of [
+    [-0.15, -0.82, 0.72, 0.48],
+    [0.82, -0.36, 0.58, 0.42],
+    [1.62, -0.22, 0.52, 0.38],
+  ] as const) {
+    const shield = physicalMesh(
+      new RoundedBoxGeometry(w, 0.055, d, 3, 0.035),
+      0x9ea8ac,
+      0.32,
+      0.66,
+    );
+    shield.position.set(x, 0.125, z);
+    group.add(shield);
+  }
+
+  // A few visible copper/gold routing traces break up the flat PCB and make
+  // the board read as electronics at normal classroom zoom levels.
+  const traceMaterial = new THREE.LineBasicMaterial({
+    color: 0xa78952,
+    transparent: true,
+    opacity: 0.52,
+  });
+  for (let index = 0; index < 11; index++) {
+    const z = -1.08 + index * 0.18;
+    const points = [
+      new THREE.Vector3(-2.55, 0.106, z),
+      new THREE.Vector3(-1.75 + (index % 3) * 0.18, 0.108, z + 0.05),
+      new THREE.Vector3(-0.95 + (index % 4) * 0.2, 0.108, z - 0.04),
+    ];
+    group.add(
+      new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(points),
+        traceMaterial.clone(),
+      ),
+    );
   }
 
   // Embedded controller / I/O controller / power ICs.
@@ -369,6 +410,15 @@ function buildSsd() {
   controller.position.set(0.7, 0.08, 0);
   group.add(controller);
 
+  const label = rounded(0.72, 0.012, 0.34, 0.018, 0xd5d7d3, 0.72, 0.02);
+  label.position.set(0.12, 0.116, 0);
+  group.add(label);
+  for (const x of [-0.08, 0.08, 0.24]) {
+    const mark = rounded(0.025, 0.006, 0.2, 0.004, 0x6e777b, 0.7, 0.02);
+    mark.position.set(x, 0.126, 0);
+    group.add(mark);
+  }
+
   for (let index = 0; index < 10; index++) {
     const finger = rounded(0.035, 0.035, 0.3, 0.004, C.gold, 0.28, 0.6);
     finger.position.set(-1.0 + index * 0.047, 0.03, 0);
@@ -440,13 +490,26 @@ function buildCooling() {
   // Framework publishes a 65 x 5.5 mm cooling fan. At the Laptop Lab
   // chassis scale this is roughly 1.66 units in diameter and 0.14 units thick.
   const fanRadius = 0.83;
-  const housing = mesh(
-    new THREE.CylinderGeometry(fanRadius, fanRadius, 0.14, 48),
-    0x242b2f,
-    0.38,
-    0.28,
+  const fanPlate = mesh(
+    new THREE.CylinderGeometry(fanRadius * 0.96, fanRadius * 0.96, 0.055, 48),
+    0x20272b,
+    0.5,
+    0.18,
+  );
+  fanPlate.rotation.x = Math.PI / 2;
+  fanPlate.position.y = -0.015;
+  group.add(fanPlate);
+
+  const housing = new THREE.Mesh(
+    new THREE.TorusGeometry(fanRadius * 0.83, 0.1, 10, 56),
+    new THREE.MeshStandardMaterial({
+      color: 0x313a3f,
+      roughness: 0.4,
+      metalness: 0.3,
+    }),
   );
   housing.rotation.x = Math.PI / 2;
+  housing.position.y = 0.075;
   group.add(housing);
 
   const hub = mesh(
@@ -457,6 +520,16 @@ function buildCooling() {
   );
   hub.rotation.x = Math.PI / 2;
   group.add(hub);
+
+  const fanLabel = mesh(
+    new THREE.CylinderGeometry(0.125, 0.125, 0.012, 28),
+    0x75848a,
+    0.48,
+    0.08,
+  );
+  fanLabel.rotation.x = Math.PI / 2;
+  fanLabel.position.y = 0.09;
+  group.add(fanLabel);
 
   for (let index = 0; index < 12; index++) {
     const blade = rounded(0.12, 0.03, 0.56, 0.035, 0x58666d, 0.42, 0.12);
