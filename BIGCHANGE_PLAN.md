@@ -88,5 +88,7 @@ PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab i
 - [x] Keep the actual battery, motherboard, CPU, RAM, SSD, cooling, Wi-Fi and speaker groups as the animated parts
 - [x] Preserve component selection/highlighting while torn apart
 - [ ] Add cable disconnect states before components move
-- [ ] Add hinge/display removal stage
+- [x] Add hinge/display removal stage using official Framework display, hinge and webcam CAD
+- [x] Real KiCad board connectors loaded for battery, fan/speaker, display, input-cover and audio
+- [x] Real Framework display, left/right hinges and webcam loaded into teardown
 - [ ] Replace remaining teaching geometry with approved Framework/KiCad-derived detail
