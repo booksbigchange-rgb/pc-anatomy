@@ -74,7 +74,8 @@ PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab i
 - [x] Add blower fan, fin stack, cold plate and dual heat pipes
 - [x] Add speaker enclosures and major internal cables
 - [x] Integrate official Framework battery CAD
-- [ ] Derive exact mainboard outline and connector coordinates from Framework's published 2D CAD
+- [x] Align mainboard outer envelope and five fastener locations to Framework's published 226.9 × 104.83 mm tray dimensions
+- [ ] Derive exact notched mainboard perimeter and connector coordinates from Framework's published 2D CAD
 - [x] Add staged Laptop Anatomy teardown: cover → battery → SSD/Wi-Fi → RAM/speakers → cooling/CPU → motherboard
 - [x] Add realistic bottom-cover removal transform / screw sequence foundation
 - [ ] Add detailed cable unplug/reconnect interactions
