@@ -271,7 +271,7 @@ def main() -> None:
     mesh.apply_scale(0.001)
 
     transform = trimesh.transformations.rotation_matrix(
-        np.radians(-90.0),
+        np.radians(90.0),
         [1.0, 0.0, 0.0],
     )
     mesh.apply_transform(transform)
@@ -306,7 +306,7 @@ def main() -> None:
         "modified": True,
         "conversion": (
             "DXF left mechanical-view LINE/ARC cycle -> traced silhouette -> "
-            "1.2 mm extruded GLB"
+            "1.2 mm extruded GLB, oriented to Laptop Lab X/Z axes"
         ),
         "diagnostics": diagnostics,
         "output_faces": int(len(mesh.faces)),
