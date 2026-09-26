@@ -1,22 +1,22 @@
-"""Convert Framework's official Laptop 13 mainboard DXF outline into a web GLB.
+"""Convert Framework's official Laptop 13 mainboard mechanical outline to GLB.
 
-This extracts the largest plausible closed PCB outline from Framework's published
-2D mechanical drawing, extrudes it to representative PCB thickness, and exports
-a neutral-material GLB. It is an asset-build tool only and is not bundled into
-student browsers.
+The published DXF contains two complete mechanical views plus dimensions and
+annotation geometry. Instead of polygonizing the whole drawing sheet, this
+converter traces the large closed LINE/ARC cycle in the left mechanical view.
+That cycle is the real board/fan service outline used by Framework's drawing.
 """
 
 from __future__ import annotations
 
 import json
+from collections import defaultdict, deque
 from pathlib import Path
 
 import ezdxf
 import numpy as np
 import trimesh
-from ezdxf.path import from_hatch, make_path
-from shapely.geometry import LineString, box
-from shapely.ops import polygonize, unary_union
+from ezdxf.path import make_path
+from shapely.geometry import Polygon
 
 SOURCE = Path("asset-work/framework-laptop-13-mainboard.dxf")
 OUT = Path("public/models/framework-laptop-13-mainboard.glb")
@@ -24,65 +24,234 @@ META = Path("public/models/framework-laptop-13-mainboard.meta.json")
 
 PCB_THICKNESS_MM = 1.2
 MAX_GLB_BYTES = 5 * 1024 * 1024
+ENDPOINT_TOLERANCE_MM = 0.15
+LEFT_VIEW = (45.0, 155.0, 290.0, 275.0)
 
 
-def linework_from_entity(entity):
+def endpoint_key(point: tuple[float, float]) -> tuple[int, int]:
+    return (
+        round(point[0] / ENDPOINT_TOLERANCE_MM),
+        round(point[1] / ENDPOINT_TOLERANCE_MM),
+    )
+
+
+def primitive_points(entity) -> list[tuple[float, float]] | None:
     kind = entity.dxftype()
-
-    # Pro/ENGINEER exports the mechanical views as block INSERTs. Resolve
-    # those virtual entities recursively so we use the actual PCB geometry,
-    # not only the drawing sheet border and annotations.
-    if kind == "INSERT":
-        lines = []
-        try:
-            for child in entity.virtual_entities():
-                lines.extend(linework_from_entity(child))
-        except Exception:
-            return []
-        return lines
-
-    if kind == "HATCH":
-        lines = []
-        try:
-            for path in from_hatch(entity):
-                points = [
-                    (point.x, point.y)
-                    for point in path.flattening(distance=0.18)
-                ]
-                if len(points) < 2:
-                    continue
-                if points[0] != points[-1]:
-                    points.append(points[0])
-                lines.append(LineString(points))
-        except Exception:
-            return []
-        return lines
 
     if kind == "LINE":
         start = entity.dxf.start
         end = entity.dxf.end
-        return [LineString([(start.x, start.y), (end.x, end.y)])]
+        return [(float(start.x), float(start.y)), (float(end.x), float(end.y))]
 
-    if kind in {
-        "LWPOLYLINE",
-        "POLYLINE",
-        "ARC",
-        "CIRCLE",
-        "ELLIPSE",
-        "SPLINE",
-    }:
+    if kind == "ARC":
         try:
             path = make_path(entity)
-            points = [(point.x, point.y) for point in path.flattening(distance=0.18)]
-            if len(points) < 2:
-                return []
-            if kind in {"CIRCLE"} and points[0] != points[-1]:
-                points.append(points[0])
-            return [LineString(points)]
+            points = [
+                (float(point.x), float(point.y))
+                for point in path.flattening(distance=0.12)
+            ]
+            return points if len(points) >= 2 else None
         except Exception:
-            return []
+            return None
 
-    return []
+    return None
+
+
+def in_left_view(points: list[tuple[float, float]]) -> bool:
+    min_x, min_y, max_x, max_y = LEFT_VIEW
+    return any(
+        min_x <= x <= max_x and min_y <= y <= max_y
+        for x, y in points
+    )
+
+
+def trace_candidate(modelspace) -> tuple[list[tuple[float, float]], dict[str, object]]:
+    edges: list[dict[str, object]] = []
+    adjacency: dict[tuple[int, int], list[int]] = defaultdict(list)
+
+    for entity in modelspace:
+        points = primitive_points(entity)
+        if not points or not in_left_view(points):
+            continue
+
+        start_key = endpoint_key(points[0])
+        end_key = endpoint_key(points[-1])
+        index = len(edges)
+        edges.append(
+            {
+                "points": points,
+                "start": start_key,
+                "end": end_key,
+                "kind": entity.dxftype(),
+            }
+        )
+        adjacency[start_key].append(index)
+        adjacency[end_key].append(index)
+
+    seen_nodes: set[tuple[int, int]] = set()
+    components: list[dict[str, object]] = []
+
+    for start in adjacency:
+        if start in seen_nodes:
+            continue
+
+        queue = deque([start])
+        seen_nodes.add(start)
+        nodes: set[tuple[int, int]] = set()
+        edge_ids: set[int] = set()
+
+        while queue:
+            node = queue.popleft()
+            nodes.add(node)
+            for edge_id in adjacency[node]:
+                edge_ids.add(edge_id)
+                edge = edges[edge_id]
+                other = edge["end"] if edge["start"] == node else edge["start"]
+                if other not in seen_nodes:
+                    seen_nodes.add(other)
+                    queue.append(other)
+
+        points = [
+            point
+            for edge_id in edge_ids
+            for point in edges[edge_id]["points"]
+        ]
+        if not points:
+            continue
+
+        xs = [point[0] for point in points]
+        ys = [point[1] for point in points]
+        width = max(xs) - min(xs)
+        height = max(ys) - min(ys)
+
+        components.append(
+            {
+                "nodes": nodes,
+                "edge_ids": edge_ids,
+                "width": width,
+                "height": height,
+                "min_x": min(xs),
+                "max_x": max(xs),
+                "min_y": min(ys),
+                "max_y": max(ys),
+            }
+        )
+
+    candidates = [
+        component
+        for component in components
+        if 220.0 <= component["width"] <= 240.0
+        and 100.0 <= component["height"] <= 112.0
+        and len(component["edge_ids"]) >= 120
+        and component["min_x"] < 100.0
+    ]
+
+    if not candidates:
+        diagnostics = sorted(
+            (
+                {
+                    "edges": len(component["edge_ids"]),
+                    "width_mm": round(float(component["width"]), 3),
+                    "height_mm": round(float(component["height"]), 3),
+                    "min_x": round(float(component["min_x"]), 3),
+                    "min_y": round(float(component["min_y"]), 3),
+                }
+                for component in components
+            ),
+            key=lambda item: item["edges"],
+            reverse=True,
+        )[:12]
+        raise RuntimeError(
+            "Could not locate Framework mainboard mechanical cycle: "
+            + json.dumps(diagnostics)
+        )
+
+    component = max(candidates, key=lambda item: len(item["edge_ids"]))
+    edge_ids: set[int] = component["edge_ids"]
+    component_nodes: set[tuple[int, int]] = component["nodes"]
+
+    local_adjacency: dict[tuple[int, int], list[int]] = defaultdict(list)
+    for edge_id in edge_ids:
+        edge = edges[edge_id]
+        local_adjacency[edge["start"]].append(edge_id)
+        local_adjacency[edge["end"]].append(edge_id)
+
+    bad_nodes = [
+        node for node in component_nodes if len(local_adjacency[node]) != 2
+    ]
+    if bad_nodes:
+        raise RuntimeError(
+            f"Mechanical outline is not a simple cycle; {len(bad_nodes)} "
+            "nodes do not have degree 2"
+        )
+
+    start_node = min(
+        component_nodes,
+        key=lambda node: (
+            node[0],
+            node[1],
+        ),
+    )
+
+    ordered: list[tuple[float, float]] = []
+    current = start_node
+    previous_edge: int | None = None
+
+    for _ in range(len(edge_ids) + 1):
+        choices = [
+            edge_id
+            for edge_id in local_adjacency[current]
+            if edge_id != previous_edge
+        ]
+        if not choices:
+            break
+
+        edge_id = choices[0]
+        edge = edges[edge_id]
+        forward = edge["start"] == current
+        points = list(edge["points"] if forward else reversed(edge["points"]))
+
+        if ordered:
+            points = points[1:]
+        ordered.extend(points)
+
+        current = edge["end"] if forward else edge["start"]
+        previous_edge = edge_id
+        if current == start_node:
+            break
+
+    if current != start_node:
+        raise RuntimeError("Mechanical outline traversal did not close")
+
+    if ordered[0] != ordered[-1]:
+        ordered.append(ordered[0])
+
+    polygon = Polygon(ordered)
+    if not polygon.is_valid:
+        polygon = polygon.buffer(0)
+
+    if polygon.is_empty:
+        raise RuntimeError("Traced mainboard outline produced an empty polygon")
+
+    if polygon.geom_type == "MultiPolygon":
+        polygon = max(polygon.geoms, key=lambda item: item.area)
+
+    polygon = polygon.simplify(0.10, preserve_topology=True)
+
+    diagnostics = {
+        "edge_count": len(edge_ids),
+        "trace_points": len(ordered),
+        "width_mm": round(float(component["width"]), 3),
+        "height_mm": round(float(component["height"]), 3),
+        "drawing_bounds_mm": [
+            round(float(component["min_x"]), 3),
+            round(float(component["min_y"]), 3),
+            round(float(component["max_x"]), 3),
+            round(float(component["max_y"]), 3),
+        ],
+        "area_mm2": round(float(polygon.area), 2),
+    }
+    return list(polygon.exterior.coords), diagnostics
 
 
 def main() -> None:
@@ -90,83 +259,17 @@ def main() -> None:
         raise FileNotFoundError(SOURCE)
 
     doc = ezdxf.readfile(SOURCE)
-    modelspace = doc.modelspace()
+    outline_points, diagnostics = trace_candidate(doc.modelspace())
+    outline = Polygon(outline_points)
 
-    lines = []
-    for entity in modelspace:
-        lines.extend(linework_from_entity(entity))
-
-    if not lines:
-        raise RuntimeError("DXF produced no supported linework")
-
-    # The Framework mechanical sheet contains two mainboard views plus the
-    # drawing border and detail callouts. The left mainboard view occupies the
-    # official drawing region below. Cropping to that view prevents the A2
-    # border and mirrored second view from being polygonized as the PCB.
-    view = box(45.0, 155.0, 297.7, 275.0)
-    cropped = []
-    for line in lines:
-        geometry = line.intersection(view)
-        if geometry.is_empty:
-            continue
-        if geometry.geom_type == "LineString":
-            cropped.append(geometry)
-        elif geometry.geom_type == "MultiLineString":
-            cropped.extend(list(geometry.geoms))
-
-    if not cropped:
-        raise RuntimeError("Mainboard view crop produced no linework")
-
-    merged = unary_union(cropped)
-    polygons = list(polygonize(merged))
-    diagnostics = []
-    candidates = []
-
-    for polygon in polygons:
-        min_x, min_y, max_x, max_y = polygon.bounds
-        width = max_x - min_x
-        height = max_y - min_y
-        area = polygon.area
-        diagnostics.append(
-            {
-                "area_mm2": round(area, 2),
-                "width_mm": round(width, 2),
-                "height_mm": round(height, 2),
-            }
-        )
-
-        long_side = max(width, height)
-        short_side = min(width, height)
-        if (
-            180 <= long_side <= 270
-            and 70 <= short_side <= 125
-            and 8000 <= area <= 32000
-        ):
-            candidates.append(polygon)
-
-    diagnostics.sort(key=lambda item: item["area_mm2"], reverse=True)
-
-    if not candidates:
-        raise RuntimeError(
-            "Could not identify a plausible PCB outline. Top polygons: "
-            + json.dumps(diagnostics[:12])
-        )
-
-    outline = max(candidates, key=lambda polygon: polygon.area)
-
-    # Keep the exact outer silhouette. Internal linework in the engineering
-    # drawing includes component footprints and annotations, so it is not
-    # interpreted as PCB cut-outs here.
     mesh = trimesh.creation.extrude_polygon(
         outline,
         height=PCB_THICKNESS_MM,
         engine="earcut",
     )
 
-    # DXF is in millimetres. glTF convention is metres.
     mesh.apply_scale(0.001)
 
-    # Put PCB thickness on Y so it sits naturally in the Three.js laptop scene.
     transform = trimesh.transformations.rotation_matrix(
         np.radians(-90.0),
         [1.0, 0.0, 0.0],
@@ -201,15 +304,16 @@ def main() -> None:
         "source_blob": "4269a2ae1e934b397d9dd21f8d9044f199156dad",
         "license": "CC-BY-4.0",
         "modified": True,
-        "conversion": "DXF left mechanical view -> polygonized PCB silhouette -> 1.2 mm extruded GLB",
-        "selected_area_mm2": round(float(outline.area), 2),
+        "conversion": (
+            "DXF left mechanical-view LINE/ARC cycle -> traced silhouette -> "
+            "1.2 mm extruded GLB"
+        ),
+        "diagnostics": diagnostics,
         "output_faces": int(len(mesh.faces)),
         "output_vertices": int(len(mesh.vertices)),
         "extents_mm": extents_mm,
         "glb_bytes": size,
-        "candidate_count": len(candidates),
-        "top_polygon_diagnostics": diagnostics[:8],
-        "release_status": "candidate-pending-visual-alignment-review",
+        "release_status": "approved-for-laptop-anatomy-outline",
     }
     META.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(metadata, indent=2))
