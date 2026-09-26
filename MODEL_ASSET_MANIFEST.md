@@ -54,3 +54,25 @@ This attribution is for the CAD-derived geometry only and does not imply endorse
 | Status | Approved for Realistic Laptop Internals V1 |
 
 The converted battery uses neutral classroom materials and omits product artwork. Big Change modifies the source only for web conversion, optimization, orientation and materials.
+
+
+## KiCad laptop board connectors — realistic internal detail
+
+| Field | Value |
+| --- | --- |
+| Owner / creator | KiCad project / library contributors |
+| Official repository | https://github.com/KiCad/kicad-packages3D |
+| Pinned source commit | `b8b3cfdfad88ba66f21002b3de51dc6f7d55ba5a` |
+| License | CC BY-SA 4.0 with KiCad library exception |
+| Runtime networking | None; converted assets are committed locally |
+| Status | Approved for Realistic Laptop Internals V1 |
+
+Converted STEP models currently used:
+
+- 10-pin JST GH battery connector — 30,868 bytes
+- 4-pin JST GH fan/speaker connector — 16,308 bytes
+- 41-pin Molex FFC/FPC display connector — 32,872 bytes
+- 51-pin Molex FFC/FPC input-cover connector — 38,392 bytes
+- 15-pin TE FFC/FPC audio connector — 19,584 bytes
+
+All source files are downloaded from the pinned KiCad commit, converted in CI to neutral-material GLBs, and loaded locally in the Laptop Lab. The procedural connectors remain as runtime fallbacks if a converted asset is unavailable.
