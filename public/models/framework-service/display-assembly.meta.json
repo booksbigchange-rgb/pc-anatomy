@@ -1,0 +1,19 @@
+{
+  "source": "FrameworkComputer/Framework-Laptop-13",
+  "source_commit": "9680262347b80efe2314673bf1f26eb955165fca",
+  "source_path": "Display/FW_display_w_cable_bracket.stp",
+  "source_blob": "6174b7a3e88daf9dddb974f1d3252fbeb96d6355",
+  "license": "CC-BY-4.0",
+  "modified": true,
+  "conversion": "STEP -> STL (CadQuery) -> optimized neutral-material GLB (trimesh)",
+  "source_faces": 98112,
+  "output_faces": 89822,
+  "output_vertices": 45147,
+  "extents_m": [
+    0.29023,
+    0.011894,
+    0.224546
+  ],
+  "glb_bytes": 1801232,
+  "release_status": "candidate-for-laptop-anatomy-teardown"
+}
