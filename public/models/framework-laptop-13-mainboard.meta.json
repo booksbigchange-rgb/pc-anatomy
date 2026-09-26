@@ -5,7 +5,7 @@
   "source_blob": "4269a2ae1e934b397d9dd21f8d9044f199156dad",
   "license": "CC-BY-4.0",
   "modified": true,
-  "conversion": "DXF left mechanical-view LINE/ARC cycle -> traced silhouette -> 1.2 mm extruded GLB",
+  "conversion": "DXF left mechanical-view LINE/ARC cycle -> traced silhouette -> 1.2 mm extruded GLB, oriented to Laptop Lab X/Z axes",
   "diagnostics": {
     "edge_count": 166,
     "trace_points": 537,
