@@ -1640,18 +1640,36 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
                 <strong>Service cables</strong>
                 <p>{internalCableFeedback}</p>
                 <div>
-                  {(['battery', 'speaker', 'display'] as const).map((id) => (
-                    <span
-                      key={id}
-                      className={
-                        disconnectedInternalCables.includes(id)
-                          ? 'disconnected'
-                          : 'connected'
-                      }
-                    >
-                      {id}: {disconnectedInternalCables.includes(id) ? 'unplugged' : 'connected'}
-                    </span>
-                  ))}
+                  {(['battery', 'speaker', 'display'] as const).map((id) => {
+                    const unplugged = disconnectedInternalCables.includes(id);
+                    return (
+                      <button
+                        type="button"
+                        key={id}
+                        className={unplugged ? 'disconnected' : 'connected'}
+                        onClick={() => {
+                          const next = unplugged
+                            ? disconnectedInternalCables.filter(
+                                (candidate) => candidate !== id,
+                              )
+                            : [...disconnectedInternalCables, id];
+                          disconnectedInternalCablesRef.current = next;
+                          setDisconnectedInternalCables(next);
+                          setInternalCableFeedback(
+                            unplugged
+                              ? id[0].toUpperCase() +
+                                  id.slice(1) +
+                                  ' cable reconnected.'
+                              : id[0].toUpperCase() +
+                                  id.slice(1) +
+                                  ' cable unplugged.',
+                          );
+                        }}
+                      >
+                        {id}: {unplugged ? 'unplugged' : 'connected'}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
