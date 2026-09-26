@@ -76,3 +76,24 @@ Converted STEP models currently used:
 - 15-pin TE FFC/FPC audio connector — 19,584 bytes
 
 All source files are downloaded from the pinned KiCad commit, converted in CI to neutral-material GLBs, and loaded locally in the Laptop Lab. The procedural connectors remain as runtime fallbacks if a converted asset is unavailable.
+
+
+## Framework Laptop 13 service parts — teardown detail
+
+| Field | Value |
+| --- | --- |
+| Owner / creator | Framework Computer Inc. |
+| Official repository | https://github.com/FrameworkComputer/Framework-Laptop-13 |
+| Pinned source commit | `9680262347b80efe2314673bf1f26eb955165fca` |
+| License | CC BY 4.0 |
+| Runtime networking | None; converted assets are committed locally |
+| Status | Integrated into Laptop Anatomy teardown |
+
+Converted local GLBs:
+
+- Display assembly with cable bracket — 1,801,232 bytes, 89,822 faces
+- Left hinge assembly — 270,440 bytes, 13,578 faces
+- Right hinge assembly — 290,768 bytes, 14,592 faces
+- Webcam module — 439,560 bytes, 21,831 faces
+
+The parts are converted from the official STEP files to optimized neutral-material GLBs. The display/hinge/webcam assembly is kept mechanically grouped in Laptop Anatomy and separates late in the teardown rather than exploding randomly.
