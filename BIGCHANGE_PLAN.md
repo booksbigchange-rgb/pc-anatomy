@@ -64,6 +64,18 @@ PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab i
 - [ ] Assessment hooks
 
 
+## Realistic laptop exterior V2
+
+- [x] Match chassis width, depth and closed thickness to pinned official Framework CAD
+- [x] Use a 13.5-inch-class 3:2 display proportion
+- [x] Add physically based aluminum materials and local studio reflections
+- [x] Replace flat deck with official CAD-derived input cover
+- [x] Replace procedural display shell/bezel with official CAD-derived top cover and display bezel
+- [x] Rebuild keyboard spacing, recessed keyboard well, trackpad, power/fingerprint key and rear vents
+- [x] Use four modular side expansion bays plus dedicated 3.5 mm audio jack
+- [x] Add side vents, rubber feet, status LED, webcam, microphones and privacy control detail
+- [x] Keep realistic open laptop as the default; retain closed CAD reference as an optional comparison
+
 ## Realistic laptop internals V1
 
 - [x] Replace solid placeholder motherboard slab with a shaped PCB and component population
@@ -96,4 +108,4 @@ PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab i
 - [x] Real KiCad board connectors loaded for battery, fan/speaker, display, input-cover and audio
 - [x] Real Framework display, left/right hinges and webcam loaded into teardown
 - [x] Real Framework mainboard outline GLB loaded as the motherboard shell when available
-- [ ] Replace remaining teaching geometry with approved Framework/KiCad-derived detail
+- [ ] Replace remaining internal teaching geometry with approved Framework/KiCad-derived detail where it materially improves accuracy
