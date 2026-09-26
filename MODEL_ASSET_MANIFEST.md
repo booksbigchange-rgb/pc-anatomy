@@ -15,7 +15,7 @@ This file records assets before they are allowed into the student-facing build.
 | License | CC BY 4.0 |
 | Intended use | Realistic Laptop Lab exterior geometry |
 | Runtime networking | None; converted asset must be committed locally |
-| Status | Approved for conversion; not yet approved for student-facing release |
+| Status | Approved and integrated in the student-facing Laptop Lab |
 
 ### Required conversion gates
 
@@ -26,7 +26,17 @@ This file records assets before they are allowed into the student-facing build.
 5. Verify sane physical bounds before accepting the output.
 6. Check for visible trademarks/logos and remove or obscure them before release.
 7. Retain creator, source, license and modification notice in project credits.
-8. Keep the current procedural laptop as the fallback until the replacement passes visual review.
+8. Keep procedural fallbacks for resilience if a local CAD-derived part cannot load.
+
+### Derived open-laptop exterior shells
+
+The same pinned official assembly is split in CI into three lightweight local GLBs used by the interactive open laptop:
+
+- `framework-laptop-13-input-cover.glb` — 85,852 bytes, 4,280 faces; preserves the real keyboard and trackpad openings.
+- `framework-laptop-13-display-bezel.glb` — 83,960 bytes, 4,158 faces; preserves the real display opening and lower camera/sensor cutouts.
+- `framework-laptop-13-top-cover.glb` — 194,984 bytes, 9,706 faces; preserves the real formed display-shell geometry.
+
+All three are derived from the already-approved `Framework Laptop 13 CAD.stp`, use neutral Big Change materials at runtime, are served locally, and make no third-party network requests.
 
 ### Attribution draft
 
