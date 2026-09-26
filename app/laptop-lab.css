@@ -616,7 +616,7 @@
   gap: 6px;
 }
 
-.laptop-cable-status span {
+.laptop-cable-status button {
   padding: 5px 7px;
   border: 1px solid #3a4a51;
   border-radius: 999px;
@@ -624,13 +624,22 @@
   text-transform: uppercase;
 }
 
-.laptop-cable-status span.connected {
+.laptop-cable-status button.connected {
   color: #b9cbc9;
   background: #182521;
 }
 
-.laptop-cable-status span.disconnected {
+.laptop-cable-status button.disconnected {
   color: #f2c39d;
   border-color: #7d5235;
   background: #2a1d17;
+}
+
+
+.laptop-cable-status button {
+  cursor: pointer;
+}
+
+.laptop-cable-status button:hover {
+  border-color: #6b8790;
 }
