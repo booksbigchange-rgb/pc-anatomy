@@ -6,13 +6,15 @@ on:
       - bigchange-school
     paths:
       - .github/workflows/framework-laptop-import.yml
+      - scripts/convert-framework-laptop.py
+      - scripts/convert-framework-battery.py
+      - scripts/convert-framework-mainboard.py
 
 permissions:
   contents: write
 
 jobs:
   convert:
-    if: github.event.head_commit.message == 'Add Framework laptop CAD conversion gate' || github.event.head_commit.message == 'Retry Framework laptop CAD conversion' || github.event.head_commit.message == 'Build Framework realistic battery asset' || github.event.head_commit.message == 'Add Framework mainboard outline conversion' || github.event.head_commit.message == 'Retry Framework mainboard outline conversion' || github.event.head_commit.message == 'Resolve DXF insert geometry for mainboard' || github.event.head_commit.message == 'Extract Framework mainboard hatch boundaries' || github.event.head_commit.message == 'Crop Framework mainboard mechanical view'
     runs-on: ubuntu-latest
     steps:
       - name: Check out school branch
@@ -76,4 +78,6 @@ jobs:
             public/models/framework-laptop-13-mainboard.glb \
             public/models/framework-laptop-13-mainboard.meta.json
           git commit -m "Add converted Framework realistic assets"
+          git fetch origin bigchange-school
+          git rebase origin/bigchange-school
           git push origin HEAD:bigchange-school
