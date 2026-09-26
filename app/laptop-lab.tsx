@@ -241,10 +241,12 @@ const LESSON_ORDER: LaptopPartId[] = [
 const LAPTOP_DIMENSIONS = {
   baseWidth: 7.6,
   baseDepth: 5.88,
-  baseThickness: 0.34,
+  // Split the approved CAD's ~18.45 mm closed thickness between the formed
+  // lower chassis and display lid at the same 25.5-units-per-metre scale.
+  baseThickness: 0.31,
   lidWidth: 7.44,
   lidHeight: 5.18,
-  lidThickness: 0.22,
+  lidThickness: 0.16,
   // 13.5-inch 3:2 panel proportions at the same chassis scale.
   screenWidth: 7.22,
   screenHeight: 4.813, // 3:2
