@@ -873,7 +873,10 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     loadFrameworkServicePart(
       'display-assembly',
       laptop.serviceDisplayMount,
-      [0, 2.86, 0],
+      // The CAD includes the lower cable/bracket region, so centre it lower
+      // than the visible lid. This aligns the top edge with the front bezel
+      // and lets the extra service geometry extend naturally into the hinge.
+      [0, 2.32, 0],
       [-Math.PI / 2, 0, 0],
       0xaeb7bd,
       0.34,
@@ -900,7 +903,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     loadFrameworkServicePart(
       'webcam',
       laptop.serviceWebcam,
-      [0, 5.34, 0.16],
+      [0, 4.94, 0.16],
       [-Math.PI / 2, 0, 0],
       0x252c30,
       0.42,
