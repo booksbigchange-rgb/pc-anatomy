@@ -589,3 +589,48 @@
     font-size: 8px;
   }
 }
+
+
+.laptop-cable-status {
+  margin-top: 18px;
+  padding: 13px;
+  border: 1px solid #34454c;
+  border-radius: 8px;
+  background: #11191d;
+}
+
+.laptop-cable-status > strong {
+  font-size: 12px;
+}
+
+.laptop-cable-status > p {
+  margin: 7px 0 10px;
+  color: #9cabb1;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.laptop-cable-status > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.laptop-cable-status span {
+  padding: 5px 7px;
+  border: 1px solid #3a4a51;
+  border-radius: 999px;
+  font: 9px/1.2 monospace;
+  text-transform: uppercase;
+}
+
+.laptop-cable-status span.connected {
+  color: #b9cbc9;
+  background: #182521;
+}
+
+.laptop-cable-status span.disconnected {
+  color: #f2c39d;
+  border-color: #7d5235;
+  background: #2a1d17;
+}
