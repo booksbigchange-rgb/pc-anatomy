@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {
@@ -244,8 +245,9 @@ const LAPTOP_DIMENSIONS = {
   lidWidth: 7.44,
   lidHeight: 5.18,
   lidThickness: 0.22,
-  screenWidth: 6.96,
-  screenHeight: 4.64, // 3:2
+  // 13.5-inch 3:2 panel proportions at the same chassis scale.
+  screenWidth: 7.22,
+  screenHeight: 4.813, // 3:2
   hingeZ: -2.72,
 } as const;
 
@@ -303,6 +305,70 @@ function rounded(
   );
 }
 
+function physicalRounded(
+  width: number,
+  height: number,
+  depth: number,
+  radius: number,
+  color: number,
+  roughness = 0.3,
+  metalness = 0.72,
+  clearcoat = 0.12,
+) {
+  return new THREE.Mesh(
+    new RoundedBoxGeometry(width, height, depth, 6, radius),
+    new THREE.MeshPhysicalMaterial({
+      color,
+      roughness,
+      metalness,
+      clearcoat,
+      clearcoatRoughness: 0.28,
+      envMapIntensity: 1.05,
+    }),
+  );
+}
+
+function makeKeyboardLegendTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1400;
+  canvas.height = 520;
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillStyle = 'rgba(232,238,240,.78)';
+  context.font = '500 27px Segoe UI, Arial, sans-serif';
+
+  const rows = [
+    ['esc', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '⌫'],
+    ['tab', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\\'],
+    ['caps', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'", 'enter'],
+    ['shift', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 'shift'],
+    ['ctrl', 'fn', '◆', 'alt', '', 'alt', 'ctrl', '←', '↑', '↓', '→'],
+  ];
+
+  rows.forEach((row, rowIndex) => {
+    const y = 58 + rowIndex * 102;
+    const step = 1240 / Math.max(row.length - 1, 1);
+    row.forEach((label, column) => {
+      if (!label) return;
+      const x = 80 + column * step;
+      context.fillText(label, x, y);
+    });
+  });
+
+  context.font = '500 22px Segoe UI, Arial, sans-serif';
+  context.fillStyle = 'rgba(214,222,225,.58)';
+  context.fillText('space', 700, 466);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  return texture;
+}
+
 function tag(group: THREE.Group, id: LaptopPartId) {
   group.userData.laptopPart = id;
   group.traverse((object) => {
@@ -334,13 +400,14 @@ function laptopPort(
     size[1],
     size[2],
     Math.min(...size) * 0.22,
-    color,
+    0x111518,
+    0.3,
     0.28,
-    0.4,
   );
   item.position.set(...position);
   item.userData.laptopPort = id;
   item.userData.portType = PORT_TYPES[id];
+  item.userData.highlightColor = color;
   return item;
 }
 
@@ -402,77 +469,193 @@ function buildLaptop() {
   const outside = new THREE.Group();
   const inside = new THREE.Group();
 
-  const base = rounded(
+  const base = physicalRounded(
     LAPTOP_DIMENSIONS.baseWidth,
     LAPTOP_DIMENSIONS.baseThickness,
     LAPTOP_DIMENSIONS.baseDepth,
-    0.2,
-    COLORS.shell,
-    0.34,
-    0.54,
+    0.16,
+    0xaeb6bb,
+    0.26,
+    0.76,
+    0.1,
   );
   base.position.y = 0.86;
   outside.add(base);
 
-  const deck = rounded(7.18, 0.08, 5.46, 0.16, 0x9da8af, 0.42, 0.44);
-  deck.position.y = 1.05;
+  // Dark separation line between the formed lower shell and input cover.
+  const chassisSeam = rounded(
+    7.42,
+    0.045,
+    5.66,
+    0.13,
+    0x4b555b,
+    0.48,
+    0.3,
+  );
+  chassisSeam.position.y = 1.025;
+  outside.add(chassisSeam);
+
+  const deck = physicalRounded(
+    7.3,
+    0.075,
+    5.54,
+    0.14,
+    0xb7bec2,
+    0.3,
+    0.72,
+    0.08,
+  );
+  deck.position.y = 1.07;
   outside.add(deck);
 
+  // Rear exhaust slots make the silhouette read as a real cooled notebook.
+  for (let index = 0; index < 24; index++) {
+    const vent = rounded(0.17, 0.028, 0.055, 0.008, 0x1a2024, 0.7, 0.06);
+    vent.position.set(-2.55 + index * 0.222, 1.116, -2.6);
+    outside.add(vent);
+  }
+
   const keyboard = new THREE.Group();
-  const keyGeometry = new RoundedBoxGeometry(0.36, 0.08, 0.33, 3, 0.045);
-  for (let row = 0; row < 5; row++) {
-    const count = row === 4 ? 10 : 15;
-    const width = (count - 1) * 0.42;
-    for (let column = 0; column < count; column++) {
-      const key = mesh(
-        keyGeometry.clone(),
-        row === 0 && column === 0 ? COLORS.accent : COLORS.keys,
-        0.62,
+  const keyboardWell = rounded(6.62, 0.035, 2.52, 0.09, 0x151a1e, 0.62, 0.1);
+  keyboardWell.position.set(0, 1.106, -0.86);
+  keyboard.add(keyboardWell);
+
+  const keyUnit = 0.405;
+  const keyGap = 0.055;
+  const keyDepth = 0.36;
+  const keyHeight = 0.055;
+  const rowSpecs = [
+    { z: -1.78, widths: Array(14).fill(1) as number[] },
+    { z: -1.34, widths: [1.35, ...Array(12).fill(1), 1.35] as number[] },
+    { z: -0.9, widths: [1.55, ...Array(11).fill(1), 1.85] as number[] },
+    { z: -0.46, widths: [1.9, ...Array(10).fill(1), 2.25] as number[] },
+    { z: -0.02, widths: [1.35, 1.15, 1.15, 1.15, 5.15, 1.15, 1.15, 1.15] as number[] },
+  ];
+
+  for (const [rowIndex, row] of rowSpecs.entries()) {
+    const widths = row.widths.map((units) => units * keyUnit);
+    const total =
+      widths.reduce((sum, width) => sum + width, 0) +
+      keyGap * Math.max(widths.length - 1, 0);
+    let cursor = -total / 2;
+
+    for (const [column, width] of widths.entries()) {
+      const key = physicalRounded(
+        width,
+        keyHeight,
+        keyDepth,
+        0.045,
+        rowIndex === 0 && column === 0 ? 0x314a50 : COLORS.keys,
+        0.46,
         0.08,
+        0.18,
       );
-      key.position.set(-width / 2 + column * 0.42, 1.13, -1.72 + row * 0.48);
+      key.position.set(cursor + width / 2, 1.155, row.z);
+      cursor += width + keyGap;
       keyboard.add(key);
     }
   }
-  const space = rounded(2.55, 0.08, 0.32, 0.05, COLORS.keys, 0.62, 0.08);
-  space.position.set(0, 1.13, 0.38);
-  keyboard.add(space);
+
+  const legends = makeKeyboardLegendTexture();
+  if (legends) {
+    const legendPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(6.28, 2.18),
+      new THREE.MeshBasicMaterial({
+        map: legends,
+        transparent: true,
+        opacity: 0.86,
+        depthWrite: false,
+      }),
+    );
+    legendPlane.rotation.x = -Math.PI / 2;
+    legendPlane.position.set(0, 1.188, -0.9);
+    keyboard.add(legendPlane);
+  }
+
+  // Separate fingerprint/power key at the top-right corner.
+  const powerKey = physicalRounded(0.44, 0.065, 0.44, 0.08, 0x20272b, 0.36, 0.18);
+  powerKey.position.set(3.02, 1.16, -1.83);
+  keyboard.add(powerKey);
+  const powerRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.08, 0.012, 8, 24),
+    new THREE.MeshStandardMaterial({
+      color: 0x87949a,
+      roughness: 0.36,
+      metalness: 0.48,
+    }),
+  );
+  powerRing.rotation.x = Math.PI / 2;
+  powerRing.position.set(3.02, 1.196, -1.83);
+  keyboard.add(powerRing);
   outside.add(tag(keyboard, 'keyboard'));
 
   const trackpad = new THREE.Group();
-  const trackpadSurface = rounded(2.78, 0.035, 1.45, 0.12, 0x87939a, 0.38, 0.38);
-  trackpadSurface.position.set(0, 1.115, 1.82);
+  const trackpadRim = rounded(3.08, 0.025, 2.01, 0.13, 0x68747a, 0.38, 0.46);
+  trackpadRim.position.set(0, 1.111, 1.72);
+  trackpad.add(trackpadRim);
+  const trackpadSurface = physicalRounded(
+    3.0,
+    0.024,
+    1.93,
+    0.12,
+    0xabb3b7,
+    0.34,
+    0.58,
+    0.06,
+  );
+  trackpadSurface.position.set(0, 1.127, 1.72);
   trackpad.add(trackpadSurface);
   outside.add(tag(trackpad, 'trackpad'));
 
-  const hinge = mesh(
-    new THREE.CylinderGeometry(0.12, 0.12, 6.35, 24),
-    COLORS.shellDark,
-    0.32,
-    0.52,
-  );
-  hinge.rotation.z = Math.PI / 2;
-  hinge.position.set(0, 1.02, LAPTOP_DIMENSIONS.hingeZ);
+  // Four dark rubber feet are visible when students orbit below the chassis.
+  for (const [x, z] of [
+    [-3.0, -2.35],
+    [3.0, -2.35],
+    [-3.0, 2.35],
+    [3.0, 2.35],
+  ] as const) {
+    const foot = rounded(0.62, 0.055, 0.16, 0.05, 0x252b2e, 0.72, 0.04);
+    foot.position.set(x, 0.66, z);
+    outside.add(foot);
+  }
+
+  const hinge = physicalRounded(6.4, 0.2, 0.22, 0.09, 0x6e787d, 0.27, 0.78, 0.08);
+  hinge.position.set(0, 1.015, LAPTOP_DIMENSIONS.hingeZ);
   outside.add(hinge);
 
-  // The lid pivots from the hinge. The earlier prototype positioned the lid
-  // independently, which made it sit too far behind the base.
   const displayPivot = new THREE.Group();
   displayPivot.position.set(0, 1.04, LAPTOP_DIMENSIONS.hingeZ);
   displayPivot.rotation.x = -0.14;
 
   const displayGroup = new THREE.Group();
-  const lidFrame = rounded(
+  const lidFrame = physicalRounded(
     LAPTOP_DIMENSIONS.lidWidth,
     LAPTOP_DIMENSIONS.lidHeight,
     LAPTOP_DIMENSIONS.lidThickness,
-    0.2,
-    COLORS.shell,
-    0.34,
-    0.52,
+    0.15,
+    0xaeb6bb,
+    0.24,
+    0.8,
+    0.12,
   );
   lidFrame.position.set(0, LAPTOP_DIMENSIONS.lidHeight / 2, 0);
   displayGroup.add(lidFrame);
+
+  const bezel = rounded(
+    7.34,
+    5.02,
+    0.035,
+    0.11,
+    0x111619,
+    0.5,
+    0.12,
+  );
+  bezel.position.set(
+    0,
+    LAPTOP_DIMENSIONS.lidHeight / 2,
+    LAPTOP_DIMENSIONS.lidThickness / 2 + 0.012,
+  );
+  displayGroup.add(bezel);
 
   const screen = new THREE.Mesh(
     new THREE.PlaneGeometry(
@@ -482,38 +665,114 @@ function buildLaptop() {
     new THREE.MeshBasicMaterial({
       color: COLORS.screen,
       map: makeScreenTexture() ?? undefined,
+      toneMapped: false,
     }),
   );
   screen.position.set(
     0,
-    LAPTOP_DIMENSIONS.lidHeight / 2,
-    LAPTOP_DIMENSIONS.lidThickness / 2 + 0.006,
+    LAPTOP_DIMENSIONS.lidHeight / 2 - 0.015,
+    LAPTOP_DIMENSIONS.lidThickness / 2 + 0.033,
   );
   displayGroup.add(screen);
 
+  const glass = new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      LAPTOP_DIMENSIONS.screenWidth,
+      LAPTOP_DIMENSIONS.screenHeight,
+    ),
+    new THREE.MeshPhysicalMaterial({
+      color: 0xd8f4f7,
+      roughness: 0.08,
+      metalness: 0,
+      transparent: true,
+      opacity: 0.075,
+      clearcoat: 1,
+      clearcoatRoughness: 0.04,
+      depthWrite: false,
+      envMapIntensity: 1.35,
+    }),
+  );
+  glass.position.set(
+    0,
+    LAPTOP_DIMENSIONS.lidHeight / 2 - 0.015,
+    LAPTOP_DIMENSIONS.lidThickness / 2 + 0.038,
+  );
+  displayGroup.add(glass);
+
   const webcam = mesh(
-    new THREE.SphereGeometry(0.055, 16, 10),
-    0x111619,
+    new THREE.SphereGeometry(0.047, 18, 12),
+    0x07090a,
+    0.18,
     0.28,
-    0.12,
   );
   webcam.position.set(
     0,
-    LAPTOP_DIMENSIONS.lidHeight - 0.19,
-    LAPTOP_DIMENSIONS.lidThickness / 2 + 0.018,
+    LAPTOP_DIMENSIONS.lidHeight - 0.115,
+    LAPTOP_DIMENSIONS.lidThickness / 2 + 0.045,
   );
   displayGroup.add(webcam);
+
+  for (const x of [-0.18, 0.18]) {
+    const microphone = mesh(
+      new THREE.SphereGeometry(0.018, 12, 8),
+      0x050708,
+      0.34,
+      0.1,
+    );
+    microphone.position.set(
+      x,
+      LAPTOP_DIMENSIONS.lidHeight - 0.115,
+      LAPTOP_DIMENSIONS.lidThickness / 2 + 0.044,
+    );
+    displayGroup.add(microphone);
+  }
+
+  const privacyTrack = rounded(0.34, 0.035, 0.07, 0.025, 0x31383c, 0.42, 0.18);
+  privacyTrack.position.set(
+    0.44,
+    LAPTOP_DIMENSIONS.lidHeight - 0.115,
+    LAPTOP_DIMENSIONS.lidThickness / 2 + 0.045,
+  );
+  displayGroup.add(privacyTrack);
+  const privacyDot = rounded(0.09, 0.045, 0.08, 0.025, 0xd77958, 0.4, 0.1);
+  privacyDot.position.set(
+    0.52,
+    LAPTOP_DIMENSIONS.lidHeight - 0.115,
+    LAPTOP_DIMENSIONS.lidThickness / 2 + 0.048,
+  );
+  displayGroup.add(privacyDot);
+
   displayPivot.add(tag(displayGroup, 'display'));
   outside.add(displayPivot);
 
+  // Real port cavities stay neutral in Explore mode; the lesson highlights
+  // only the target port instead of permanently color-coding the hardware.
   const ports: THREE.Mesh[] = [
-    laptopPort('usb-left', [0.06, 0.16, 0.48], [-3.82, 0.96, -0.95], 0x4e8394),
-    laptopPort('usb-right', [0.06, 0.16, 0.48], [3.82, 0.96, -0.45], 0x4e8394),
-    laptopPort('hdmi-left', [0.06, 0.18, 0.58], [-3.82, 0.96, 0.02], 0x8e7ca8),
-    laptopPort('power-left', [0.06, 0.16, 0.28], [-3.82, 0.96, 1.25], 0xa98265),
-    laptopPort('audio-right', [0.06, 0.2, 0.2], [3.82, 0.96, 1.12], 0x8aa08e),
+    laptopPort('usb-left', [0.07, 0.18, 0.5], [-3.815, 0.95, -1.05], 0x4e9db0),
+    laptopPort('usb-right', [0.07, 0.18, 0.5], [3.815, 0.95, -0.52], 0x4e9db0),
+    laptopPort('hdmi-left', [0.07, 0.19, 0.62], [-3.815, 0.95, -0.08], 0x927cad),
+    laptopPort('power-left', [0.07, 0.17, 0.3], [-3.815, 0.95, 1.2], 0xc48761),
+    laptopPort('audio-right', [0.07, 0.2, 0.2], [3.815, 0.95, 1.12], 0x78a184),
   ];
   outside.add(...ports);
+
+  // Framework-style expansion-card seams and metallic port surrounds.
+  for (const [side, z] of [
+    [-1, -1.05],
+    [-1, -0.08],
+    [-1, 1.2],
+    [1, -0.52],
+    [1, 1.12],
+  ] as const) {
+    const trim = rounded(0.055, 0.25, 0.76, 0.035, 0x68747a, 0.28, 0.68);
+    trim.position.set(side * 3.795, 0.95, z);
+    outside.add(trim);
+  }
+  // Re-add the dark openings above the trim so they retain click targets.
+  for (const portItem of ports) {
+    portItem.position.x += Math.sign(portItem.position.x) * 0.035;
+  }
+
 
   const realisticInternals = buildRealisticLaptopInternals();
   inside.add(realisticInternals.inside);
@@ -647,7 +906,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   const viewRef = useRef<LaptopView>('outside');
   const modeRef = useRef<LaptopMode>('explore');
   const guidedRef = useRef(false);
-  const realisticRef = useRef(true);
+  const realisticRef = useRef(false);
   const connectionTaskRef = useRef(0);
   const connectedRef = useRef<LaptopConnectionId[]>([]);
   const disconnectedInternalCablesRef = useRef<LaptopInternalCableId[]>([]);
@@ -656,7 +915,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   const [view, setView] = useState<LaptopView>('outside');
   const [selected, setSelected] = useState<LaptopPartId>('display');
   const [guided, setGuided] = useState(false);
-  const [realisticExterior, setRealisticExterior] = useState(true);
+  const [realisticExterior, setRealisticExterior] = useState(false);
   const [realisticLoaded, setRealisticLoaded] = useState(false);
   const [lessonIndex, setLessonIndex] = useState(0);
   const [mode, setMode] = useState<LaptopMode>('explore');
@@ -743,8 +1002,8 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     scene.background = new THREE.Color(COLORS.background);
     scene.fog = new THREE.Fog(COLORS.background, 16, 34);
 
-    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-    camera.position.set(10.8, 7.7, 12.4);
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+    camera.position.set(10.3, 6.6, 12.1);
 
     const renderer = new THREE.WebGLRenderer({
       canvas,
@@ -756,7 +1015,16 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.16;
+    renderer.toneMappingExposure = 1.08;
+
+    // A local studio environment gives the aluminum chassis realistic
+    // reflections without any runtime network dependency.
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    const roomEnvironment = new RoomEnvironment();
+    const environmentTarget = pmremGenerator.fromScene(roomEnvironment, 0.04);
+    scene.environment = environmentTarget.texture;
+    roomEnvironment.dispose();
+    pmremGenerator.dispose();
 
     const controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true;
@@ -766,24 +1034,26 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     controls.maxDistance = 22;
     controls.minPolarAngle = 0.3;
     controls.maxPolarAngle = Math.PI / 2.02;
-    controls.target.set(0, 1.65, -0.25);
+    controls.target.set(0, 1.6, -0.35);
 
     scene.add(new THREE.HemisphereLight(0xd8efff, 0x3a312d, 1.85));
-    const key = new THREE.DirectionalLight(0xfff4e9, 3.6);
-    key.position.set(7, 10, 8);
+    const key = new THREE.DirectionalLight(0xfff5ea, 3.25);
+    key.position.set(7.5, 10.5, 8.5);
     key.castShadow = true;
-    key.shadow.mapSize.set(1536, 1536);
+    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.bias = -0.00035;
+    key.shadow.normalBias = 0.02;
     key.shadow.camera.left = -10;
     key.shadow.camera.right = 10;
     key.shadow.camera.top = 10;
     key.shadow.camera.bottom = -10;
     scene.add(key);
 
-    const fill = new THREE.DirectionalLight(0x8eb8ff, 1.0);
+    const fill = new THREE.DirectionalLight(0xa8c7ff, 0.72);
     fill.position.set(-8, 5, 5);
     scene.add(fill);
 
-    const rim = new THREE.DirectionalLight(0x82e0db, 0.95);
+    const rim = new THREE.DirectionalLight(0x82e0db, 0.78);
     rim.position.set(5, 7, -8);
     scene.add(rim);
 
@@ -810,10 +1080,13 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
           const item = object as THREE.Mesh;
           item.castShadow = true;
           item.receiveShadow = true;
-          item.material = new THREE.MeshStandardMaterial({
-            color: 0xaab4ba,
-            roughness: 0.38,
-            metalness: 0.46,
+          item.material = new THREE.MeshPhysicalMaterial({
+            color: 0xaeb7bc,
+            roughness: 0.27,
+            metalness: 0.78,
+            clearcoat: 0.08,
+            clearcoatRoughness: 0.3,
+            envMapIntensity: 1.1,
           });
         });
         model.scale.setScalar(25.5);
@@ -1200,8 +1473,10 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
         if (!(material instanceof THREE.MeshStandardMaterial)) continue;
         const target =
           connectionMode && item.userData.laptopPort === activeTask.targetPort;
-        material.emissive.setHex(target ? 0x1d5d66 : 0x000000);
-        material.emissiveIntensity = target ? 1.5 : 0;
+        const highlightColor =
+          (item.userData.highlightColor as number | undefined) ?? 0x1d5d66;
+        material.emissive.setHex(target ? highlightColor : 0x000000);
+        material.emissiveIntensity = target ? 1.35 : 0;
         const pulse = 1 + Math.sin(performance.now() * 0.006) * 0.05;
         item.scale.setScalar(target ? pulse : 1);
       }
@@ -1259,6 +1534,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       observer.disconnect();
       canvas.removeEventListener('pointerup', pick);
       controls.dispose();
+      environmentTarget.dispose();
       renderer.dispose();
       scene.traverse((object) => {
         if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
@@ -1387,8 +1663,8 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
           >
             <Scan size={15} />
             {realisticExterior && realisticLoaded
-              ? 'Realistic exterior'
-              : 'Teaching model'}
+              ? 'CAD reference'
+              : 'Open laptop'}
           </button>
           <button
             type="button"
@@ -1449,8 +1725,8 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
               ? lessonPart.name
               : view === 'outside'
                 ? realisticExterior && realisticLoaded
-                  ? 'Review the realistic exterior.'
-                  : 'Start with what students touch.'
+                  ? 'Check the closed CAD reference.'
+                  : 'Explore the realistic open laptop.'
                 : 'Now look under the keyboard.'}
         </h1>
         <p className="laptop-intro">
@@ -1462,8 +1738,8 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
               ? lessonPart.description
               : view === 'outside'
                 ? realisticExterior && realisticLoaded
-                  ? 'This preview uses converted official Framework Laptop 13 CAD. Switch to the Teaching model for clickable screen, keyboard, trackpad and ports.'
-                  : 'Explore the screen, keyboard and trackpad before opening the machine.'
+                  ? 'This closed CAD reference preserves the approved Framework Laptop 13 exterior proportions. Switch back to the open laptop for interactive controls and ports.'
+                  : 'The open model now uses the same real-world proportions with aluminum materials, recessed keys, display glass, realistic bezels and neutral port cavities.'
                 : 'Laptop parts are smaller and packed closer together than desktop components.'}
         </p>
         {guided && (
