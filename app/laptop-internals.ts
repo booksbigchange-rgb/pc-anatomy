@@ -97,20 +97,23 @@ function boardShape() {
   // published 2D mechanical drawing: wide rear edge, port cut-ins and a
   // forward-right step around the battery/storage region.
   const shape = new THREE.Shape();
-  shape.moveTo(-3.05, -1.22);
-  shape.lineTo(2.95, -1.22);
-  shape.lineTo(2.95, -0.45);
-  shape.lineTo(2.55, -0.45);
-  shape.lineTo(2.55, 0.42);
-  shape.lineTo(1.55, 0.42);
-  shape.lineTo(1.55, 1.12);
-  shape.lineTo(0.15, 1.12);
-  shape.lineTo(0.15, 0.78);
-  shape.lineTo(-1.15, 0.78);
-  shape.lineTo(-1.15, 1.15);
-  shape.lineTo(-2.35, 1.15);
-  shape.lineTo(-2.35, 0.58);
-  shape.lineTo(-3.05, 0.58);
+  // Overall envelope follows Framework's published tray dimensions:
+  // 226.9 mm wide x 104.83 mm deep. The perimeter notches remain a
+  // teaching approximation until the DXF extraction is accepted.
+  shape.moveTo(-3.0, -1.385);
+  shape.lineTo(3.0, -1.385);
+  shape.lineTo(3.0, -0.526);
+  shape.lineTo(2.6, -0.526);
+  shape.lineTo(2.6, 0.491);
+  shape.lineTo(1.55, 0.491);
+  shape.lineTo(1.55, 1.309);
+  shape.lineTo(0.15, 1.309);
+  shape.lineTo(0.15, 0.912);
+  shape.lineTo(-1.15, 0.912);
+  shape.lineTo(-1.15, 1.344);
+  shape.lineTo(-2.35, 1.344);
+  shape.lineTo(-2.35, 0.678);
+  shape.lineTo(-3.0, 0.678);
   shape.closePath();
 
   const geometry = new THREE.ExtrudeGeometry(shape, {
@@ -233,21 +236,33 @@ function addBoardDetails(group: THREE.Group) {
   audioZif.position.set(2.42, 0.125, 0.56);
   group.add(audioZif);
 
-  // Gold mounting pads.
+  // Framework publishes five mainboard fastener locations in
+  // Mainboard/OpenSCAD/tray.scad. These are mapped into the teaching board
+  // using the official 226.9 x 104.83 mm envelope.
   for (const [x, z] of [
-    [-2.75, -0.93],
-    [2.65, -0.93],
-    [-2.05, 0.87],
-    [1.25, 0.82],
+    [0.753, -1.325],
+    [-2.939, 1.101],
+    [-2.939, -0.591],
+    [2.922, 1.228],
+    [2.935, -0.562],
   ] as const) {
     const pad = mesh(
-      new THREE.CylinderGeometry(0.07, 0.07, 0.025, 20),
+      new THREE.CylinderGeometry(0.075, 0.075, 0.028, 20),
       C.gold,
       0.28,
       0.6,
     );
     pad.position.set(x, 0.105, z);
     group.add(pad);
+
+    const screw = mesh(
+      new THREE.CylinderGeometry(0.034, 0.034, 0.034, 18),
+      0xb8bec1,
+      0.24,
+      0.7,
+    );
+    screw.position.set(x, 0.135, z);
+    group.add(screw);
   }
 }
 
