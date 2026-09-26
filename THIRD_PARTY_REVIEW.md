@@ -71,6 +71,18 @@ The school edition treats public GitHub availability as **insufficient permissio
 - Decision: **approved for optional lighting/material resources** after individual asset-size review.
 - Usage rule: prefer small, local files; do not add a runtime dependency on the Poly Haven API.
 
+### KiCad / kicad-packages3D
+
+- Official source: https://github.com/KiCad/kicad-packages3D
+- License: CC BY-SA 4.0 with KiCad's published library exception.
+- Decision: **approved and integrated for selected laptop board connectors**.
+- Scope: 10-pin battery, 4-pin fan/speaker, 41-pin display FFC/FPC, 51-pin input-cover FFC/FPC, and 15-pin audio FFC/FPC connector geometry.
+- Source commit is pinned and every source blob is recorded in the generated metadata.
+- Conversion: STEP → optimized local GLB with neutral classroom materials.
+- Runtime: no third-party request; models are served locally.
+- Safety rule: only individually reviewed components may be added. Do not mirror the KiCad library wholesale into the school repository.
+- Attribution/license metadata is retained in MODEL_ASSET_MANIFEST.md and per-model metadata.
+
 ## Donor review
 
 ### Vincexodus/PCBUILD3R
