@@ -961,7 +961,16 @@ function buildLaptop() {
 }
 
 function addEnvironment(scene: THREE.Scene) {
-  const table = rounded(12.5, 0.5, 7.3, 0.18, 0x846f5e, 0.72, 0.04);
+  const table = physicalRounded(
+    12.5,
+    0.5,
+    7.3,
+    0.18,
+    0x76685d,
+    0.58,
+    0.04,
+    0.04,
+  );
   table.position.set(0, 0.3, 0.2);
   table.receiveShadow = true;
   scene.add(table);
@@ -1091,7 +1100,9 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(COLORS.background);
-    scene.fog = new THREE.Fog(COLORS.background, 16, 34);
+    // Keep the model crisp at the default camera distance. Fog is reserved
+    // for the far room only rather than washing out laptop surface detail.
+    scene.fog = new THREE.Fog(COLORS.background, 24, 46);
 
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
     camera.position.set(10.3, 6.6, 12.1);
