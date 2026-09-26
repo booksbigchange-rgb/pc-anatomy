@@ -1,0 +1,31 @@
+{
+  "source": "FrameworkComputer/Framework-Laptop-13",
+  "source_file": "Mainboard/2D/fw_main_pcb_generic_2_w_fan_2.dxf",
+  "source_commit": "57a01b214c70c924dcd60006c7fd4d753e94e86f",
+  "source_blob": "4269a2ae1e934b397d9dd21f8d9044f199156dad",
+  "license": "CC-BY-4.0",
+  "modified": true,
+  "conversion": "DXF left mechanical-view LINE/ARC cycle -> traced silhouette -> 1.2 mm extruded GLB",
+  "diagnostics": {
+    "edge_count": 166,
+    "trace_points": 537,
+    "width_mm": 233.3,
+    "height_mm": 105.83,
+    "drawing_bounds_mm": [
+      49.697,
+      163.349,
+      282.997,
+      269.179
+    ],
+    "area_mm2": 18773.92
+  },
+  "output_faces": 1060,
+  "output_vertices": 532,
+  "extents_mm": [
+    233.3,
+    1.2,
+    105.83
+  ],
+  "glb_bytes": 22228,
+  "release_status": "approved-for-laptop-anatomy-outline"
+}
