@@ -588,6 +588,15 @@ function ribbon(
   return cable;
 }
 
+export type LaptopInternalCableId = 'battery' | 'speaker' | 'display';
+
+export type LaptopInternalCable = {
+  id: LaptopInternalCableId;
+  object: THREE.Mesh;
+  at: number;
+  unplugOffset: THREE.Vector3;
+};
+
 export type LaptopTeardownPart = {
   object: THREE.Object3D;
   start: number;
@@ -744,9 +753,24 @@ export function buildRealisticLaptopInternals() {
     removedBottomCover,
     teardownParts,
     disconnectCables: [
-      { object: batteryCable, at: 14 },
-      { object: speakerCable, at: 48 },
-      { object: displayCable, at: 90 },
-    ],
+      {
+        id: 'battery' as const,
+        object: batteryCable,
+        at: 14,
+        unplugOffset: new THREE.Vector3(0.18, 0.16, 0.16),
+      },
+      {
+        id: 'speaker' as const,
+        object: speakerCable,
+        at: 48,
+        unplugOffset: new THREE.Vector3(-0.14, 0.14, 0.12),
+      },
+      {
+        id: 'display' as const,
+        object: displayCable,
+        at: 90,
+        unplugOffset: new THREE.Vector3(0.12, 0.18, -0.18),
+      },
+    ] satisfies LaptopInternalCable[],
   };
 }
