@@ -117,6 +117,55 @@ await test('Framework cooling assembly stays flat and within a laptop-scale enve
 });
 
 
+await test('removable modules leave their sockets and retainers on the motherboard', () => {
+  const laptop = buildRealisticLaptopInternals();
+
+  for (const name of ['ram', 'ssd', 'wifi'] as const) {
+    assert.equal(
+      laptop.parts[name].userData.removableHardwareVersion,
+      2,
+      name + ' is not using the refined removable-hardware model',
+    );
+  }
+
+  const fixtureNames = new Set<string>();
+  laptop.parts.motherboard.traverse((object) => {
+    if (object.userData.boardFixture) fixtureNames.add(object.name);
+  });
+
+  for (const required of [
+    'RAM socket A',
+    'RAM socket B',
+    'M.2 SSD socket',
+    'SSD standoff',
+    'M.2 Wi-Fi socket',
+    'Wi-Fi standoff',
+  ]) {
+    assert.ok(fixtureNames.has(required), 'missing fixed motherboard fixture: ' + required);
+  }
+
+  let wifiEmbeddedCables = 0;
+  laptop.parts.wifi.traverse((object) => {
+    if (object.userData.cableKind) wifiEmbeddedCables++;
+  });
+  assert.equal(wifiEmbeddedCables, 0, 'Wi-Fi antenna cables incorrectly move with the card');
+});
+
+await test('internal cabling distinguishes flat flex ribbons from wire harnesses', () => {
+  const laptop = buildRealisticLaptopInternals();
+  let ribbons = 0;
+  let wires = 0;
+
+  laptop.serviceInterior.traverse((object) => {
+    if (object.userData.cableKind === 'ribbon') ribbons++;
+    if (object.userData.cableKind === 'wire') wires++;
+  });
+
+  assert.ok(ribbons >= 3, `expected at least 3 flat flex ribbons, found ${ribbons}`);
+  assert.ok(wires >= 4, `expected at least 4 wire/coax runs, found ${wires}`);
+});
+
+
 await test('100% service layout stays planar enough to read like a technician mat', () => {
   const laptop = buildRealisticLaptopInternals();
   applyLaptopTeardown(laptop.teardownParts, 100);

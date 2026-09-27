@@ -348,6 +348,62 @@ function addBoardDetails(group: THREE.Group) {
   addPassiveBank(1.64, 0.52, 5, 3, 0.1, 0.1);
   addPassiveBank(-1.72, 0.53, 5, 3, 0.1, 0.1);
 
+  // --- Removable-module sockets and retainers ----------------------------
+  // These stay on the motherboard when RAM / SSD / Wi-Fi are removed.
+  // Coordinates are board-local and aligned to the current installed modules.
+  for (const [slotName, x] of [
+    ['RAM socket A', 0.7],
+    ['RAM socket B', 1.56],
+  ] as const) {
+    const socket = rounded(0.11, 0.065, 1.64, 0.025, 0x22282b, 0.5, 0.16);
+    socket.name = slotName;
+    socket.userData.boardFixture = 'ram-socket';
+    socket.position.set(x - 0.31, 0.13, 0.14);
+    group.add(socket);
+
+    for (const z of [-0.72, 0.72]) {
+      const clip = rounded(0.11, 0.07, 0.16, 0.022, 0x9ba3a6, 0.32, 0.5);
+      clip.name = slotName + ' retaining clip';
+      clip.userData.boardFixture = 'ram-retainer';
+      clip.position.set(x, 0.14, z + 0.14);
+      group.add(clip);
+    }
+  }
+
+  const ssdSocket = rounded(0.16, 0.07, 0.58, 0.025, 0x22282b, 0.48, 0.18);
+  ssdSocket.name = 'M.2 SSD socket';
+  ssdSocket.userData.boardFixture = 'm2-ssd-socket';
+  ssdSocket.position.set(-1.84, 0.14, 0.94);
+  group.add(ssdSocket);
+
+  const ssdStandoff = mesh(
+    new THREE.CylinderGeometry(0.065, 0.07, 0.075, 20),
+    0xb4bbbe,
+    0.26,
+    0.68,
+  );
+  ssdStandoff.name = 'SSD standoff';
+  ssdStandoff.userData.boardFixture = 'm2-ssd-standoff';
+  ssdStandoff.position.set(0.18, 0.15, 0.94);
+  group.add(ssdStandoff);
+
+  const wifiSocket = rounded(0.14, 0.07, 0.56, 0.025, 0x22282b, 0.48, 0.18);
+  wifiSocket.name = 'M.2 Wi-Fi socket';
+  wifiSocket.userData.boardFixture = 'm2-wifi-socket';
+  wifiSocket.position.set(1.98, 0.14, 1.1);
+  group.add(wifiSocket);
+
+  const wifiStandoff = mesh(
+    new THREE.CylinderGeometry(0.055, 0.06, 0.07, 20),
+    0xb4bbbe,
+    0.26,
+    0.68,
+  );
+  wifiStandoff.name = 'Wi-Fi standoff';
+  wifiStandoff.userData.boardFixture = 'm2-wifi-standoff';
+  wifiStandoff.position.set(2.72, 0.15, 1.1);
+  group.add(wifiStandoff);
+
   // --- Board-level connectors -------------------------------------------
   // Framework publishes these connector families and pinouts. Runtime GLBs
   // replace these procedural fallbacks with pinned KiCad geometry when loaded.
@@ -500,42 +556,40 @@ function buildCpu() {
 
 function buildRam() {
   const group = new THREE.Group();
+  group.userData.removableHardwareVersion = 2;
 
-  // Framework Laptop 13 SODIMMs lie flat and run front-to-back beside the
-  // heatsink. The earlier model made them look like thick upright cartridges.
+  // Two low-profile SODIMMs. The sockets and retaining clips belong to the
+  // motherboard and are intentionally NOT children of this removable group.
   for (const x of [-0.43, 0.43]) {
-    const slot = rounded(0.78, 0.075, 1.82, 0.025, 0x292f32, 0.5, 0.14);
-    slot.position.set(x, 0.01, 0);
-    group.add(slot);
+    const module = rounded(0.68, 0.035, 1.58, 0.018, 0x31594f, 0.56, 0.04);
+    module.position.set(x, 0.035, 0);
+    group.add(module);
 
-    const ramModule = rounded(0.7, 0.055, 1.7, 0.025, C.ram, 0.52, 0.06);
-    ramModule.position.set(x, 0.075, 0);
-    group.add(ramModule);
-
-    for (const z of [-0.58, -0.2, 0.2, 0.58]) {
-      const memoryChip = chip(0.46, 0.28, 0.055);
-      memoryChip.position.set(x, 0.135, z);
+    for (const z of [-0.56, -0.19, 0.19, 0.56]) {
+      const memoryChip = chip(0.42, 0.24, 0.052, 0x202529);
+      memoryChip.position.set(x + 0.05, 0.088, z);
       group.add(memoryChip);
     }
 
-    // Gold contact edge where each SODIMM enters its socket.
-    for (let index = 0; index < 16; index++) {
-      const contact = rounded(0.018, 0.012, 0.065, 0.003, C.gold, 0.3, 0.55);
+    const spd = chip(0.16, 0.14, 0.045, 0x2a3033);
+    spd.position.set(x - 0.18, 0.082, 0);
+    group.add(spd);
+
+    // Visible contact fingers run along the socketed long edge.
+    for (let index = 0; index < 14; index++) {
+      const contact = rounded(0.055, 0.01, 0.028, 0.003, C.gold, 0.28, 0.62);
       contact.position.set(
-        x - 0.31 + (index % 2) * 0.62,
-        0.112,
-        -0.66 + Math.floor(index / 2) * 0.19,
+        x - 0.312,
+        0.058,
+        -0.62 + index * (1.24 / 13),
       );
       group.add(contact);
     }
 
-    // Retaining clips on the outer edges make the modules read as socketed
-    // parts rather than loose boards placed on the motherboard.
-    for (const z of [-0.78, 0.78]) {
-      const clip = rounded(0.12, 0.09, 0.16, 0.025, 0x9ba3a6, 0.32, 0.5);
-      clip.position.set(x, 0.09, z);
-      group.add(clip);
-    }
+    // Small center notch makes the insertion edge read like a keyed SODIMM.
+    const notch = rounded(0.07, 0.012, 0.06, 0.008, 0x1f2628, 0.7, 0.02);
+    notch.position.set(x - 0.325, 0.06, 0.08);
+    group.add(notch);
   }
 
   group.position.set(...LAPTOP_INTERNAL_LAYOUT.ram.home);
@@ -544,46 +598,48 @@ function buildRam() {
 
 function buildSsd() {
   const group = new THREE.Group();
+  group.userData.removableHardwareVersion = 2;
 
-  // 22 x 80 mm M.2 2280 proportions scaled to the Laptop Lab chassis.
-  const pcb = rounded(2.03, 0.055, 0.56, 0.025, C.ssd, 0.52, 0.05);
+  // M.2 2280: thin PCB, controller, NAND, DRAM/cache and keyed contacts.
+  const pcb = rounded(2.03, 0.035, 0.56, 0.02, 0x34564f, 0.56, 0.04);
   group.add(pcb);
 
-  for (const x of [-0.55, -0.12, 0.32]) {
-    const nand = chip(0.34, 0.38, 0.09);
-    nand.position.set(x, 0.08, 0);
+  for (const x of [-0.48, -0.05, 0.38]) {
+    const nand = chip(0.35, 0.36, 0.065, 0x202529);
+    nand.position.set(x, 0.068, 0);
     group.add(nand);
   }
-  const controller = chip(0.28, 0.28, 0.1, 0x1d2326);
-  controller.position.set(0.7, 0.08, 0);
+
+  const controller = chip(0.26, 0.27, 0.075, 0x171d20);
+  controller.position.set(0.72, 0.074, 0);
   group.add(controller);
 
-  const label = rounded(0.72, 0.012, 0.34, 0.018, 0xd5d7d3, 0.72, 0.02);
-  label.position.set(0.12, 0.116, 0);
-  group.add(label);
-  for (const x of [-0.08, 0.08, 0.24]) {
-    const mark = rounded(0.025, 0.006, 0.2, 0.004, 0x6e777b, 0.7, 0.02);
-    mark.position.set(x, 0.126, 0);
-    group.add(mark);
-  }
+  const dram = chip(0.18, 0.2, 0.055, 0x252b2e);
+  dram.position.set(0.58, 0.066, -0.16);
+  group.add(dram);
 
-  for (let index = 0; index < 10; index++) {
-    const finger = rounded(0.035, 0.035, 0.3, 0.004, C.gold, 0.28, 0.6);
-    finger.position.set(-1.0 + index * 0.047, 0.03, 0);
+  // Subtle identification label instead of a large toy-like white slab.
+  const label = rounded(0.62, 0.008, 0.25, 0.012, 0xb8bebc, 0.78, 0.01);
+  label.position.set(0.02, 0.077, 0.04);
+  group.add(label);
+
+  // Gold edge fingers at the socket end with an M-key gap.
+  for (let index = 0; index < 12; index++) {
+    if (index === 8 || index === 9) continue;
+    const finger = rounded(0.15, 0.009, 0.022, 0.003, C.gold, 0.26, 0.64);
+    finger.position.set(-0.95, 0.028, -0.22 + index * 0.04);
     group.add(finger);
   }
 
-  const screw = mesh(
-    new THREE.CylinderGeometry(0.07, 0.07, 0.035, 18),
-    0xb8bec1,
-    0.25,
-    0.66,
+  // Mounting hole belongs to the PCB; the screw/standoff stays on the board.
+  const mountingRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.052, 0.012, 8, 20),
+    material(0xb8bec1, 0.28, 0.62),
   );
-  screw.position.set(0.97, 0.08, 0);
-  group.add(screw);
+  mountingRing.rotation.x = Math.PI / 2;
+  mountingRing.position.set(0.94, 0.045, 0);
+  group.add(mountingRing);
 
-  // The M.2 2280 storage sits horizontally below the cooling assembly and
-  // above the battery, matching the Framework DIY/service photographs.
   group.position.set(...LAPTOP_INTERNAL_LAYOUT.ssd.home);
   group.rotation.y = LAPTOP_INTERNAL_LAYOUT.ssd.rotationY;
   return tag(group, 'ssd');
@@ -591,47 +647,62 @@ function buildSsd() {
 
 function buildWifi() {
   const group = new THREE.Group();
+  group.userData.removableHardwareVersion = 2;
 
-  // 22 x 30 mm M.2 2230 proportions.
-  const pcb = rounded(0.76, 0.055, 0.56, 0.025, C.wifi, 0.52, 0.05);
+  // M.2 2230 Wi-Fi module. Chassis antenna leads are modeled separately so
+  // they do not travel away with the card during teardown.
+  const pcb = rounded(0.76, 0.035, 0.56, 0.02, 0x3a5e54, 0.56, 0.04);
   group.add(pcb);
 
-  const shield = rounded(0.48, 0.055, 0.36, 0.025, C.shield, 0.3, 0.58);
-  shield.position.y = 0.065;
+  const shield = physicalMesh(
+    new RoundedBoxGeometry(0.46, 0.045, 0.34, 3, 0.022),
+    0xaeb5b8,
+    0.32,
+    0.56,
+  );
+  shield.position.set(0.06, 0.065, 0.02);
   group.add(shield);
 
+  const controller = chip(0.16, 0.16, 0.045, 0x252b2e);
+  controller.position.set(-0.22, 0.065, 0.1);
+  group.add(controller);
+
   for (const x of [-0.18, 0.18]) {
-    const antennaSocket = mesh(
-      new THREE.CylinderGeometry(0.045, 0.045, 0.025, 16),
-      C.gold,
-      0.25,
-      0.6,
+    const socketBase = mesh(
+      new THREE.CylinderGeometry(0.052, 0.052, 0.024, 18),
+      0xd6c277,
+      0.24,
+      0.62,
     );
-    antennaSocket.position.set(x, 0.105, -0.2);
-    group.add(antennaSocket);
+    socketBase.position.set(x, 0.075, -0.2);
+    group.add(socketBase);
+
+    const socketCore = mesh(
+      new THREE.CylinderGeometry(0.022, 0.022, 0.029, 16),
+      0x30373a,
+      0.42,
+      0.2,
+    );
+    socketCore.position.set(x, 0.09, -0.2);
+    group.add(socketCore);
   }
 
-  const antennaMaterial = material(0xd1d4d5, 0.55, 0.22);
-  for (const offset of [-0.18, 0.18]) {
-    const cable = new THREE.Mesh(
-      new THREE.TubeGeometry(
-        new THREE.CatmullRomCurve3([
-          new THREE.Vector3(offset, 0.11, -0.2),
-          new THREE.Vector3(offset - 0.4, 0.15, -0.62),
-          new THREE.Vector3(offset - 0.72, 0.16, -1.32),
-        ]),
-        20,
-        0.012,
-        6,
-        false,
-      ),
-      antennaMaterial.clone(),
-    );
-    group.add(cable);
+  // Keyed M.2 contact edge.
+  for (let index = 0; index < 9; index++) {
+    if (index === 6) continue;
+    const finger = rounded(0.1, 0.009, 0.022, 0.003, C.gold, 0.26, 0.64);
+    finger.position.set(-0.34, 0.027, -0.18 + index * 0.045);
+    group.add(finger);
   }
 
-  // Wi-Fi occupies the front-right corner of the mainboard beside the right
-  // speaker/battery edge, with its antenna leads routed along that side.
+  const mountingRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.045, 0.01, 8, 18),
+    material(0xb8bec1, 0.28, 0.62),
+  );
+  mountingRing.rotation.x = Math.PI / 2;
+  mountingRing.position.set(0.34, 0.043, 0);
+  group.add(mountingRing);
+
   group.position.set(...LAPTOP_INTERNAL_LAYOUT.wifi.home);
   return tag(group, 'wifi');
 }
@@ -859,19 +930,72 @@ function buildBatteryFallback() {
   return tag(group, 'battery');
 }
 
-function ribbon(
+function wireCable(
+  start: THREE.Vector3,
+  end: THREE.Vector3,
+  radius: number,
+  color: number,
+) {
+  const middle = start.clone().lerp(end, 0.5);
+  middle.y += 0.055;
+  const curve = new THREE.CatmullRomCurve3([start, middle, end]);
+  const cable = new THREE.Mesh(
+    new THREE.TubeGeometry(curve, 24, radius, 7, false),
+    material(color, 0.62, 0.05),
+  );
+  cable.userData.cableKind = 'wire';
+  cable.castShadow = true;
+  return cable;
+}
+
+function flatRibbon(
   start: THREE.Vector3,
   end: THREE.Vector3,
   width: number,
   color: number,
+  lift = 0.06,
 ) {
   const middle = start.clone().lerp(end, 0.5);
-  middle.y += 0.08;
+  middle.y += lift;
   const curve = new THREE.CatmullRomCurve3([start, middle, end]);
+
+  const segments = 28;
+  const positions: number[] = [];
+  const indices: number[] = [];
+
+  for (let index = 0; index <= segments; index++) {
+    const t = index / segments;
+    const point = curve.getPoint(t);
+    const tangent = curve.getTangent(t).normalize();
+    const side = new THREE.Vector3(-tangent.z, 0, tangent.x);
+    if (side.lengthSq() < 1e-8) side.set(1, 0, 0);
+    side.normalize().multiplyScalar(width / 2);
+
+    const left = point.clone().add(side);
+    const right = point.clone().sub(side);
+    positions.push(left.x, left.y, left.z, right.x, right.y, right.z);
+
+    if (index < segments) {
+      const base = index * 2;
+      indices.push(base, base + 2, base + 1, base + 1, base + 2, base + 3);
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+
   const cable = new THREE.Mesh(
-    new THREE.TubeGeometry(curve, 20, width, 6, false),
-    material(color, 0.62, 0.05),
+    geometry,
+    new THREE.MeshStandardMaterial({
+      color,
+      roughness: 0.58,
+      metalness: 0.04,
+      side: THREE.DoubleSide,
+    }),
   );
+  cable.userData.cableKind = 'ribbon';
   cable.castShadow = true;
   return cable;
 }
@@ -1066,48 +1190,51 @@ export function buildRealisticLaptopInternals() {
   // Major internal cables terminate at the teaching-board connector mounts.
   // Their removal thresholds mirror the teardown order so a component never
   // appears to move away while its cable remains magically attached.
-  const batteryCable = ribbon(
+  const batteryCable = wireCable(
     new THREE.Vector3(0.12, 1.22, 0.28),
     new THREE.Vector3(0.45, 1.16, -0.16),
     0.035,
     0x202428,
   );
-  const displayCable = ribbon(
+  const displayCable = flatRibbon(
     new THREE.Vector3(1.23, 1.17, -0.38),
-    new THREE.Vector3(1.34, 1.22, -2.28),
-    0.025,
-    0xd8c477,
+    new THREE.Vector3(1.34, 1.19, -2.28),
+    0.12,
+    0x23292c,
+    0.045,
   );
-  const speakerCable = ribbon(
+  const speakerCable = wireCable(
     new THREE.Vector3(2.25, 1.16, -0.72),
     new THREE.Vector3(3.02, 1.18, 1.18),
     0.018,
     0x202428,
   );
 
-  const wifiAntennaBlack = ribbon(
-    new THREE.Vector3(2.5, 1.24, 0.0),
+  const wifiAntennaBlack = wireCable(
+    new THREE.Vector3(2.32, 1.25, -0.02),
     new THREE.Vector3(3.12, 1.03, -2.2),
     0.01,
     0x111416,
   );
-  const wifiAntennaWhite = ribbon(
-    new THREE.Vector3(2.62, 1.24, 0.14),
+  const wifiAntennaWhite = wireCable(
+    new THREE.Vector3(2.68, 1.25, -0.02),
     new THREE.Vector3(2.82, 1.05, -2.4),
     0.01,
     0xd4d6d4,
   );
-  const keyboardRibbon = ribbon(
+  const keyboardRibbon = flatRibbon(
     new THREE.Vector3(0.08, 1.17, -0.8),
     new THREE.Vector3(0.16, 1.12, 0.12),
+    0.18,
+    0xb7864a,
     0.045,
-    0xc69a52,
   );
-  const touchpadRibbon = ribbon(
+  const touchpadRibbon = flatRibbon(
     new THREE.Vector3(0.72, 1.13, 0.2),
     new THREE.Vector3(0.38, 1.08, 1.62),
+    0.16,
+    0xb98b50,
     0.04,
-    0xc8a05a,
   );
 
   serviceInterior.add(
