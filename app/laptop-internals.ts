@@ -1061,6 +1061,7 @@ function buildChassisDetails() {
     base.rotation.y = clip.rotation;
     base.userData.retentionKind = 'clip';
     base.userData.cableRole = clip.role;
+    base.userData.cableOwner = 'chassis';
     group.add(base);
 
     const bridge = rounded(0.11, 0.045, 0.05, 0.018, 0x7a8488, 0.38, 0.46);
@@ -1068,6 +1069,7 @@ function buildChassisDetails() {
     bridge.rotation.y = clip.rotation;
     bridge.userData.retentionKind = 'clip';
     bridge.userData.cableRole = clip.role;
+    bridge.userData.cableOwner = 'chassis';
     group.add(bridge);
   }
 
@@ -1088,6 +1090,7 @@ function buildChassisDetails() {
     object.rotation.y = tape.rotation;
     object.userData.retentionKind = 'tape';
     object.userData.cableRole = tape.role;
+    object.userData.cableOwner = 'chassis';
     group.add(object);
   }
 
