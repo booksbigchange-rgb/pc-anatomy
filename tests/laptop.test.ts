@@ -117,6 +117,21 @@ await test('Framework cooling assembly stays flat and within a laptop-scale enve
 });
 
 
+await test('100% service layout stays planar enough to read like a technician mat', () => {
+  const laptop = buildRealisticLaptopInternals();
+  applyLaptopTeardown(laptop.teardownParts, 100);
+
+  const staged = ['battery', 'ssd', 'wifi', 'ram', 'cooling', 'cpu'] as const;
+  const heights = staged.map((name) => laptop.parts[name].position.y);
+  const spread = Math.max(...heights) - Math.min(...heights);
+
+  assert.ok(
+    spread < 0.38,
+    `service parts are stacked vertically instead of staged on a mat: ${spread}`,
+  );
+});
+
+
 await test('100% teardown separates service parts from the motherboard staging area', () => {
   const laptop = buildRealisticLaptopInternals();
   applyLaptopTeardown(laptop.teardownParts, 100);

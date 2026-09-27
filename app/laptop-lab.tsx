@@ -1106,6 +1106,7 @@ function buildLaptop() {
     serviceHingeLeft,
     serviceHingeRight,
     serviceWebcam,
+    serviceInputCoverAssembly,
     serviceInputCoverCadMount,
     serviceInputCoverFallback,
     serviceInputCoverKeyboard: serviceKeyboard,
@@ -1271,8 +1272,8 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     // for the far room only rather than washing out laptop surface detail.
     scene.fog = new THREE.Fog(COLORS.background, 24, 46);
 
-    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-    camera.position.set(10.3, 6.6, 12.1);
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+    camera.position.set(9.2, 8.4, 11.8);
 
     const renderer = new THREE.WebGLRenderer({
       canvas,
@@ -1297,13 +1298,18 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
 
     const controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true;
+    let cameraManuallyMoved = false;
+    const markCameraManual = () => {
+      cameraManuallyMoved = true;
+    };
+    controls.addEventListener('start', markCameraManual);
     controls.dampingFactor = 0.065;
     controls.enablePan = false;
     controls.minDistance = 8;
     controls.maxDistance = 22;
     controls.minPolarAngle = 0.3;
     controls.maxPolarAngle = Math.PI / 2.02;
-    controls.target.set(0, 1.6, -0.35);
+    controls.target.set(0, 1.15, 0.15);
 
     scene.add(new THREE.HemisphereLight(0xd8efff, 0x3a312d, 1.85));
     const key = new THREE.DirectionalLight(0xfff5ea, 3.25);
@@ -1875,6 +1881,8 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
         // controls and reveal the underside plate so they cannot show through
         // the real CAD openings.
         const inputCoverFlipped = explodeRef.current >= LAPTOP_INPUT_COVER_SERVICE.flippedAt;
+        laptop.serviceInputCoverAssembly.visible =
+          explodeRef.current < LAPTOP_INPUT_COVER_SERVICE.visibleUntil;
         laptop.serviceInputCoverKeyboard.visible = !inputCoverFlipped;
         laptop.serviceInputCoverTrackpad.visible = !inputCoverFlipped;
         laptop.serviceInputCoverUnderside.visible = inputCoverFlipped;
@@ -1899,6 +1907,24 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
         }
       }
 
+      if (insideNow && !cameraManuallyMoved) {
+        const rawService =
+          (explodeRef.current - 72) / 28;
+        const serviceT = Math.min(1, Math.max(0, rawService));
+        const easedService = serviceT * serviceT * (3 - 2 * serviceT);
+
+        camera.position.lerpVectors(
+          new THREE.Vector3(9.2, 8.4, 11.8),
+          new THREE.Vector3(7.6, 10.8, 12.6),
+          easedService,
+        );
+        controls.target.lerpVectors(
+          new THREE.Vector3(0, 1.15, 0.15),
+          new THREE.Vector3(0, 1.15, 0.8),
+          easedService,
+        );
+      }
+
       const activeRoot = insideNow ? laptop.inside : laptop.outside;
       activeRoot.traverse((object) => {
         if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
@@ -1913,8 +1939,8 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
           owner?.userData.laptopPart === selectedRef.current;
         for (const material of materials) {
           if (!(material instanceof THREE.MeshStandardMaterial)) continue;
-          material.emissive.setHex(selectedNow ? 0x10353b : 0x000000);
-          material.emissiveIntensity = selectedNow ? 0.5 : 0;
+          material.emissive.setHex(selectedNow ? 0x0b2428 : 0x000000);
+          material.emissiveIntensity = selectedNow ? 0.16 : 0;
         }
       });
 
@@ -1928,6 +1954,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       cancelAnimationFrame(frame);
       observer.disconnect();
       canvas.removeEventListener('pointerup', pick);
+      controls.removeEventListener('start', markCameraManual);
       controls.dispose();
       environmentTarget.dispose();
       renderer.dispose();

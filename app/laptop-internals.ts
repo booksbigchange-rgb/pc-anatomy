@@ -1095,7 +1095,6 @@ export function buildRealisticLaptopInternals() {
     serviceInterior.add(tape);
   }
 
-  const removedBottomCover = buildBottomCover();
   const battery = buildBatteryFallback();
   const motherboard = buildMotherboard();
   const cpu = buildCpu();
@@ -1105,7 +1104,6 @@ export function buildRealisticLaptopInternals() {
   const wifi = buildWifi();
   const speakers = buildSpeakers();
 
-  inside.add(removedBottomCover);
   serviceInterior.add(
     battery,
     motherboard.group,
