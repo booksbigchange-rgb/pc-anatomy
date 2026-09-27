@@ -24,7 +24,7 @@ const assertVec = (
   close(actual.z, expected[2], label + '.z');
 };
 
-test('laptop internal home positions stay inside the Framework chassis envelope', () => {
+await test('laptop internal home positions stay inside the Framework chassis envelope', () => {
   for (const [name, item] of Object.entries(LAPTOP_INTERNAL_LAYOUT)) {
     const [x, y, z] = item.home;
     assert.ok(Math.abs(x) <= 3.7, name + ' leaves chassis width');
@@ -33,7 +33,7 @@ test('laptop internal home positions stay inside the Framework chassis envelope'
   }
 });
 
-test('0% teardown preserves every installed internal home transform', () => {
+await test('0% teardown preserves every installed internal home transform', () => {
   const laptop = buildRealisticLaptopInternals();
   applyLaptopTeardown(laptop.teardownParts, 0);
 
@@ -46,7 +46,7 @@ test('0% teardown preserves every installed internal home transform', () => {
   assert.equal(laptopTeardownStage(0), 'Assembled');
 });
 
-test('18% exposes the chassis without moving installed internals yet', () => {
+await test('18% exposes the chassis without moving installed internals yet', () => {
   const laptop = buildRealisticLaptopInternals();
   applyLaptopTeardown(laptop.teardownParts, LAPTOP_INPUT_COVER_SERVICE.end);
 
@@ -67,7 +67,7 @@ test('18% exposes the chassis without moving installed internals yet', () => {
   assert.equal(laptopTeardownStage(18), 'Battery + service parts');
 });
 
-test('100% teardown separates service parts from the motherboard staging area', () => {
+await test('100% teardown separates service parts from the motherboard staging area', () => {
   const laptop = buildRealisticLaptopInternals();
   applyLaptopTeardown(laptop.teardownParts, 100);
   laptop.inside.updateMatrixWorld(true);
