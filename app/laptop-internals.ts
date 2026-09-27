@@ -561,9 +561,9 @@ function buildRam() {
   // Two low-profile SODIMMs. The sockets and retaining clips belong to the
   // motherboard and are intentionally NOT children of this removable group.
   for (const x of [-0.43, 0.43]) {
-    const module = rounded(0.68, 0.035, 1.58, 0.018, 0x31594f, 0.56, 0.04);
-    module.position.set(x, 0.035, 0);
-    group.add(module);
+    const ramBoard = rounded(0.68, 0.035, 1.58, 0.018, 0x31594f, 0.56, 0.04);
+    ramBoard.position.set(x, 0.035, 0);
+    group.add(ramBoard);
 
     for (const z of [-0.56, -0.19, 0.19, 0.56]) {
       const memoryChip = chip(0.42, 0.24, 0.052, 0x202529);
