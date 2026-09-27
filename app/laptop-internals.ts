@@ -1252,7 +1252,6 @@ export function buildRealisticLaptopInternals() {
     batteryMount: battery,
     motherboardMount: motherboard.group,
     motherboardShell: motherboard.shell,
-    removedBottomCover,
     teardownParts,
     disconnectCables: [
       {
