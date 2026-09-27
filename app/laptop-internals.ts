@@ -360,37 +360,53 @@ function buildCpu() {
   die.position.y = 0.13;
   group.add(die);
 
-  group.position.set(-0.95, 1.18, -1.28);
+  // The processor sits under the cooling cold plate, just to the right of
+  // the fan in the Framework service orientation.
+  group.position.set(0.56, 1.18, -1.49);
   return tag(group, 'cpu');
 }
 
 function buildRam() {
   const group = new THREE.Group();
 
-  for (const z of [-0.22, 0.36]) {
-    const slot = rounded(1.95, 0.12, 0.17, 0.025, 0x292f32, 0.5, 0.14);
-    slot.position.set(0, 0.02, z);
+  // Framework Laptop 13 SODIMMs lie flat and run front-to-back beside the
+  // heatsink. The earlier model made them look like thick upright cartridges.
+  for (const x of [-0.43, 0.43]) {
+    const slot = rounded(0.78, 0.075, 1.82, 0.025, 0x292f32, 0.5, 0.14);
+    slot.position.set(x, 0.01, 0);
     group.add(slot);
 
-    const ramModule = rounded(1.78, 0.43, 0.07, 0.025, C.ram, 0.52, 0.06);
-    ramModule.position.set(0, 0.24, z);
+    const ramModule = rounded(0.7, 0.055, 1.7, 0.025, C.ram, 0.52, 0.06);
+    ramModule.position.set(x, 0.075, 0);
     group.add(ramModule);
 
-    for (const x of [-0.6, -0.2, 0.2, 0.6]) {
-      const memoryChip = chip(0.29, 0.045, 0.23);
-      memoryChip.rotation.x = Math.PI / 2;
-      memoryChip.position.set(x, 0.25, z + 0.04);
+    for (const z of [-0.58, -0.2, 0.2, 0.58]) {
+      const memoryChip = chip(0.46, 0.28, 0.055);
+      memoryChip.position.set(x, 0.135, z);
       group.add(memoryChip);
     }
 
-    for (let index = 0; index < 18; index++) {
-      const contact = rounded(0.035, 0.18, 0.014, 0.003, C.gold, 0.3, 0.55);
-      contact.position.set(-0.72 + index * 0.085, 0.04, z - 0.04);
+    // Gold contact edge where each SODIMM enters its socket.
+    for (let index = 0; index < 16; index++) {
+      const contact = rounded(0.018, 0.012, 0.065, 0.003, C.gold, 0.3, 0.55);
+      contact.position.set(
+        x - 0.31 + (index % 2) * 0.62,
+        0.112,
+        -0.66 + Math.floor(index / 2) * 0.19,
+      );
       group.add(contact);
+    }
+
+    // Retaining clips on the outer edges make the modules read as socketed
+    // parts rather than loose boards placed on the motherboard.
+    for (const z of [-0.78, 0.78]) {
+      const clip = rounded(0.12, 0.09, 0.16, 0.025, 0x9ba3a6, 0.32, 0.5);
+      clip.position.set(x, 0.09, z);
+      group.add(clip);
     }
   }
 
-  group.position.set(0.65, 1.18, -0.88);
+  group.position.set(1.28, 1.16, -0.78);
   return tag(group, 'ram');
 }
 
@@ -434,8 +450,10 @@ function buildSsd() {
   screw.position.set(0.97, 0.08, 0);
   group.add(screw);
 
-  group.position.set(1.95, 1.17, 0.12);
-  group.rotation.y = -0.08;
+  // The M.2 2280 storage sits horizontally below the cooling assembly and
+  // above the battery, matching the Framework DIY/service photographs.
+  group.position.set(-0.68, 1.16, 0.02);
+  group.rotation.y = -0.03;
   return tag(group, 'ssd');
 }
 
@@ -480,7 +498,9 @@ function buildWifi() {
     group.add(cable);
   }
 
-  group.position.set(-2.3, 1.15, 0.05);
+  // Wi-Fi occupies the front-right corner of the mainboard beside the right
+  // speaker/battery edge, with its antenna leads routed along that side.
+  group.position.set(2.5, 1.15, 0.18);
   return tag(group, 'wifi');
 }
 
@@ -544,10 +564,10 @@ function buildCooling() {
     const heatPipe = new THREE.Mesh(
       new THREE.TubeGeometry(
         new THREE.CatmullRomCurve3([
-          new THREE.Vector3(-2.0, 0.14 + offset, -0.15),
-          new THREE.Vector3(-1.35, 0.18 + offset, -0.12),
-          new THREE.Vector3(-0.7, 0.16 + offset, 0),
-          new THREE.Vector3(-0.1, 0.13 + offset, 0.02),
+          new THREE.Vector3(2.0, 0.14 + offset, -0.15),
+          new THREE.Vector3(1.35, 0.18 + offset, -0.12),
+          new THREE.Vector3(0.7, 0.16 + offset, 0),
+          new THREE.Vector3(0.1, 0.13 + offset, 0.02),
         ]),
         32,
         0.045,
@@ -560,14 +580,14 @@ function buildCooling() {
   }
 
   const coldPlate = rounded(0.95, 0.07, 0.95, 0.07, C.copper, 0.3, 0.72);
-  coldPlate.position.set(-2.08, 0.15, -0.14);
+  coldPlate.position.set(2.08, 0.15, -0.14);
   group.add(coldPlate);
 
   for (const [x, z] of [
-    [-2.38, -0.44],
-    [-1.78, -0.44],
-    [-2.38, 0.16],
-    [-1.78, 0.16],
+    [2.38, -0.44],
+    [1.78, -0.44],
+    [2.38, 0.16],
+    [1.78, 0.16],
   ] as const) {
     const bracketScrew = mesh(
       new THREE.CylinderGeometry(0.045, 0.045, 0.035, 18),
@@ -582,11 +602,13 @@ function buildCooling() {
   const finGeometry = new THREE.BoxGeometry(0.03, 0.18, 0.8);
   for (let index = 0; index < 18; index++) {
     const fin = mesh(finGeometry.clone(), 0x8c979c, 0.32, 0.55);
-    fin.position.set(0.72 + index * 0.045, 0.08, -0.02);
+    fin.position.set(-0.72 - index * 0.045, 0.08, -0.02);
     group.add(fin);
   }
 
-  group.position.set(1.12, 1.17, -1.55);
+  // Fan sits left of centre near the hinge; heat pipes run rightward across
+  // the processor to the fin/cold-plate assembly.
+  group.position.set(-1.52, 1.17, -1.35);
   return tag(group, 'fan');
 }
 
@@ -630,7 +652,9 @@ function buildBatteryFallback() {
     group.add(seam);
   }
 
-  group.position.set(0, 1.02, 1.12);
+  // The battery fills most of the lower half of the chassis while leaving
+  // narrow side channels for the speakers and cabling.
+  group.position.set(0, 1.02, 1.38);
   return tag(group, 'battery');
 }
 
@@ -915,14 +939,14 @@ export function buildRealisticLaptopInternals() {
   );
 
   const wifiAntennaBlack = ribbon(
-    new THREE.Vector3(-2.25, 1.24, -0.12),
-    new THREE.Vector3(-3.15, 1.03, -2.25),
+    new THREE.Vector3(2.5, 1.24, 0.0),
+    new THREE.Vector3(3.12, 1.03, -2.2),
     0.01,
     0x111416,
   );
   const wifiAntennaWhite = ribbon(
-    new THREE.Vector3(-2.38, 1.24, 0.02),
-    new THREE.Vector3(-2.75, 1.05, -2.42),
+    new THREE.Vector3(2.62, 1.24, 0.14),
+    new THREE.Vector3(2.82, 1.05, -2.4),
     0.01,
     0xd4d6d4,
   );
@@ -954,11 +978,11 @@ export function buildRealisticLaptopInternals() {
     // sequence begins. Framework service guides keep the Bottom Cover as the
     // chassis while the Input Cover is lifted/flipped to expose the internals.
     teardownPart(battery, 18, 34, [0, 0.82, 1.0], [-0.04, 0, 0]),
-    teardownPart(ssd, 30, 46, [0.9, 0.82, 0.22], [0, -0.06, 0.04]),
-    teardownPart(wifi, 34, 50, [-0.85, 0.78, 0.3], [0, 0.06, -0.04]),
-    teardownPart(ram, 42, 60, [0.3, 0.96, 0.12], [-0.08, 0, 0]),
-    teardownPart(speakers, 50, 68, [0, 0.72, 1.0], [0.03, 0, 0]),
-    teardownPart(fan, 58, 78, [-0.8, 0.92, -0.55], [-0.06, -0.06, 0]),
+    teardownPart(ssd, 30, 46, [-0.55, 0.82, 0.2], [0, -0.04, 0.03]),
+    teardownPart(wifi, 34, 50, [0.62, 0.78, 0.22], [0, 0.05, -0.03]),
+    teardownPart(ram, 42, 60, [0.36, 0.92, 0.1], [-0.06, 0, 0]),
+    teardownPart(speakers, 50, 68, [0, 0.72, 0.9], [0.03, 0, 0]),
+    teardownPart(fan, 58, 78, [-0.55, 0.9, -0.38], [-0.05, -0.04, 0]),
     teardownPart(cpu, 72, 88, [-0.2, 1.08, -0.12], [0, 0.06, 0]),
     teardownPart(
       motherboard.group,
