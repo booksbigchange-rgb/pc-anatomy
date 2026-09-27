@@ -972,8 +972,11 @@ function buildLaptop() {
     end: 18,
     homePosition: serviceInputCoverAssembly.position.clone(),
     homeRotation: serviceInputCoverAssembly.rotation.clone(),
-    offset: new THREE.Vector3(0, 1.15, 4.65),
-    rotationOffset: new THREE.Vector3(Math.PI * 0.92, 0, 0),
+    // Framework instructs users to flip the cover keyboard-side down and
+    // rest it about halfway on the Bottom Cover. Keep it close to the chassis
+    // instead of treating it like an exploded-view part.
+    offset: new THREE.Vector3(0, -0.12, 2.2),
+    rotationOffset: new THREE.Vector3(Math.PI, 0, 0),
   });
 
   // Separate service display assembly for Laptop Anatomy. The real Framework
@@ -1043,8 +1046,8 @@ function buildLaptop() {
     end: 100,
     homePosition: serviceDisplayAssembly.position.clone(),
     homeRotation: serviceDisplayAssembly.rotation.clone(),
-    offset: new THREE.Vector3(0, 2.8, -2.4),
-    rotationOffset: new THREE.Vector3(-0.14, 0, 0),
+    offset: new THREE.Vector3(0, 1.1, -0.6),
+    rotationOffset: new THREE.Vector3(-0.08, 0, 0),
   });
 
   inside.visible = false;
@@ -1065,6 +1068,7 @@ function buildLaptop() {
     serviceWebcam,
     serviceInputCoverCadMount,
     serviceInputCoverFallback,
+    serviceInterior: realisticInternals.serviceInterior,
     inputCoverCadMount,
     displayTopCoverCadMount,
     displayBezelCadMount,
@@ -1739,6 +1743,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
 
       if (
         viewRef.current === 'inside' &&
+        explodeRef.current >= 12 &&
         modeRef.current === 'explore' &&
         !guidedRef.current
       ) {
@@ -1834,6 +1839,12 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
 
       if (insideNow) {
         applyLaptopTeardown(laptop.teardownParts, explodeRef.current);
+
+        // At 0% the Input Cover is still installed, so the motherboard and
+        // service parts must not render through the keyboard. Reveal the
+        // internals only after the cover has substantially lifted.
+        laptop.serviceInterior.visible = explodeRef.current >= 12;
+
         for (const cable of laptop.disconnectCables) {
           const disconnected =
             disconnectedInternalCablesRef.current.includes(cable.id);

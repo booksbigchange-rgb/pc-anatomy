@@ -771,6 +771,8 @@ function teardownPart(
 
 export function buildRealisticLaptopInternals() {
   const inside = new THREE.Group();
+  const serviceInterior = new THREE.Group();
+  inside.add(serviceInterior);
 
   // Thin structural shell instead of one large solid block.
   const bottom = physicalMesh(
@@ -798,7 +800,7 @@ export function buildRealisticLaptopInternals() {
   // strips keep the inside from reading like parts floating on a flat tray.
   const liner = rounded(6.92, 0.018, 5.16, 0.13, 0x202529, 0.78, 0.04);
   liner.position.set(0, 0.742, 0.02);
-  inside.add(liner);
+  serviceInterior.add(liner);
 
   for (const [x, z] of [
     [-3.05, -2.34],
@@ -817,7 +819,7 @@ export function buildRealisticLaptopInternals() {
       0.58,
     );
     boss.position.set(x, 0.82, z);
-    inside.add(boss);
+    serviceInterior.add(boss);
 
     const screw = mesh(
       new THREE.CylinderGeometry(0.048, 0.048, 0.035, 20),
@@ -826,7 +828,7 @@ export function buildRealisticLaptopInternals() {
       0.72,
     );
     screw.position.set(x, 0.895, z);
-    inside.add(screw);
+    serviceInterior.add(screw);
   }
 
   for (const [x, z, w, d] of [
@@ -837,7 +839,7 @@ export function buildRealisticLaptopInternals() {
   ] as const) {
     const foam = rounded(w, 0.045, d, 0.035, 0x14191c, 0.86, 0.02);
     foam.position.set(x, 0.82, z);
-    inside.add(foam);
+    serviceInterior.add(foam);
   }
 
   for (const [x, z, w, d, rotation] of [
@@ -853,7 +855,7 @@ export function buildRealisticLaptopInternals() {
     );
     foil.position.set(x, 0.84, z);
     foil.rotation.y = rotation;
-    inside.add(foil);
+    serviceInterior.add(foil);
   }
 
   // Adhesive tape is common around delicate cable runs and connectors.
@@ -865,7 +867,7 @@ export function buildRealisticLaptopInternals() {
     const tape = rounded(w, 0.022, d, 0.025, 0x15191b, 0.9, 0.01);
     tape.position.set(x, 0.86, z);
     tape.rotation.y = rotation;
-    inside.add(tape);
+    serviceInterior.add(tape);
   }
 
   const removedBottomCover = buildBottomCover();
@@ -878,8 +880,8 @@ export function buildRealisticLaptopInternals() {
   const wifi = buildWifi();
   const speakers = buildSpeakers();
 
-  inside.add(
-    removedBottomCover,
+  inside.add(removedBottomCover);
+  serviceInterior.add(
     battery,
     motherboard.group,
     cpu,
@@ -937,7 +939,7 @@ export function buildRealisticLaptopInternals() {
     0xc8a05a,
   );
 
-  inside.add(
+  serviceInterior.add(
     batteryCable,
     displayCable,
     speakerCable,
@@ -951,24 +953,25 @@ export function buildRealisticLaptopInternals() {
     // The Input Cover is animated by Laptop Lab before this internal service
     // sequence begins. Framework service guides keep the Bottom Cover as the
     // chassis while the Input Cover is lifted/flipped to expose the internals.
-    teardownPart(battery, 18, 34, [0, 1.55, 2.7], [-0.05, 0, 0]),
-    teardownPart(ssd, 30, 46, [2.25, 1.35, 0.45], [0, -0.08, 0.06]),
-    teardownPart(wifi, 34, 50, [-2.2, 1.25, 0.7], [0, 0.08, -0.06]),
-    teardownPart(ram, 42, 60, [0.45, 1.85, 0.2], [-0.12, 0, 0]),
-    teardownPart(speakers, 50, 68, [0, 1.0, 2.55], [0.04, 0, 0]),
-    teardownPart(fan, 58, 78, [-2.3, 1.45, -1.35], [-0.08, -0.08, 0]),
-    teardownPart(cpu, 72, 88, [-0.45, 2.05, -0.25], [0, 0.08, 0]),
+    teardownPart(battery, 18, 34, [0, 0.82, 1.0], [-0.04, 0, 0]),
+    teardownPart(ssd, 30, 46, [0.9, 0.82, 0.22], [0, -0.06, 0.04]),
+    teardownPart(wifi, 34, 50, [-0.85, 0.78, 0.3], [0, 0.06, -0.04]),
+    teardownPart(ram, 42, 60, [0.3, 0.96, 0.12], [-0.08, 0, 0]),
+    teardownPart(speakers, 50, 68, [0, 0.72, 1.0], [0.03, 0, 0]),
+    teardownPart(fan, 58, 78, [-0.8, 0.92, -0.55], [-0.06, -0.06, 0]),
+    teardownPart(cpu, 72, 88, [-0.2, 1.08, -0.12], [0, 0.06, 0]),
     teardownPart(
       motherboard.group,
       84,
       100,
-      [0.15, 2.35, -1.0],
-      [-0.08, 0, 0.04],
+      [0, 1.18, -0.32],
+      [-0.05, 0, 0.025],
     ),
   ];
 
   return {
     inside,
+    serviceInterior,
     batteryMount: battery,
     motherboardMount: motherboard.group,
     motherboardShell: motherboard.shell,
