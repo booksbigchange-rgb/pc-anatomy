@@ -563,6 +563,22 @@ function buildCooling() {
   coldPlate.position.set(-2.08, 0.15, -0.14);
   group.add(coldPlate);
 
+  for (const [x, z] of [
+    [-2.38, -0.44],
+    [-1.78, -0.44],
+    [-2.38, 0.16],
+    [-1.78, 0.16],
+  ] as const) {
+    const bracketScrew = mesh(
+      new THREE.CylinderGeometry(0.045, 0.045, 0.035, 18),
+      0xc1c7c9,
+      0.22,
+      0.72,
+    );
+    bracketScrew.position.set(x, 0.205, z);
+    group.add(bracketScrew);
+  }
+
   const finGeometry = new THREE.BoxGeometry(0.03, 0.18, 0.8);
   for (let index = 0; index < 18; index++) {
     const fin = mesh(finGeometry.clone(), 0x8c979c, 0.32, 0.55);
@@ -777,6 +793,81 @@ export function buildRealisticLaptopInternals() {
     inside.add(rail);
   }
 
+  // Real laptops have a lot of small structural detail between the large
+  // components. These dark liners, screw bosses, foam pads and grounding
+  // strips keep the inside from reading like parts floating on a flat tray.
+  const liner = rounded(6.92, 0.018, 5.16, 0.13, 0x202529, 0.78, 0.04);
+  liner.position.set(0, 0.742, 0.02);
+  inside.add(liner);
+
+  for (const [x, z] of [
+    [-3.05, -2.34],
+    [0, -2.45],
+    [3.05, -2.34],
+    [-3.12, -0.55],
+    [3.12, -0.55],
+    [-3.1, 2.22],
+    [0, 2.36],
+    [3.1, 2.22],
+  ] as const) {
+    const boss = mesh(
+      new THREE.CylinderGeometry(0.105, 0.12, 0.12, 24),
+      0x555f64,
+      0.34,
+      0.58,
+    );
+    boss.position.set(x, 0.82, z);
+    inside.add(boss);
+
+    const screw = mesh(
+      new THREE.CylinderGeometry(0.048, 0.048, 0.035, 20),
+      0xb6bdc0,
+      0.22,
+      0.72,
+    );
+    screw.position.set(x, 0.895, z);
+    inside.add(screw);
+  }
+
+  for (const [x, z, w, d] of [
+    [-2.55, 1.82, 0.7, 0.24],
+    [2.55, 1.82, 0.7, 0.24],
+    [-2.75, -1.8, 0.54, 0.2],
+    [2.72, -1.84, 0.54, 0.2],
+  ] as const) {
+    const foam = rounded(w, 0.045, d, 0.035, 0x14191c, 0.86, 0.02);
+    foam.position.set(x, 0.82, z);
+    inside.add(foam);
+  }
+
+  for (const [x, z, w, d, rotation] of [
+    [-1.78, 1.78, 1.05, 0.16, -0.16],
+    [1.58, 1.9, 0.92, 0.15, 0.12],
+    [2.28, -1.98, 0.72, 0.14, -0.1],
+  ] as const) {
+    const foil = physicalMesh(
+      new RoundedBoxGeometry(w, 0.025, d, 3, 0.025),
+      0xb8a98b,
+      0.38,
+      0.56,
+    );
+    foil.position.set(x, 0.84, z);
+    foil.rotation.y = rotation;
+    inside.add(foil);
+  }
+
+  // Adhesive tape is common around delicate cable runs and connectors.
+  for (const [x, z, w, d, rotation] of [
+    [0.48, 0.34, 0.72, 0.22, 0.08],
+    [2.6, 0.82, 0.5, 0.18, -0.2],
+    [-1.95, -1.78, 0.62, 0.18, 0.14],
+  ] as const) {
+    const tape = rounded(w, 0.022, d, 0.025, 0x15191b, 0.9, 0.01);
+    tape.position.set(x, 0.86, z);
+    tape.rotation.y = rotation;
+    inside.add(tape);
+  }
+
   const removedBottomCover = buildBottomCover();
   const battery = buildBatteryFallback();
   const motherboard = buildMotherboard();
@@ -820,7 +911,41 @@ export function buildRealisticLaptopInternals() {
     0.018,
     0x202428,
   );
-  inside.add(batteryCable, displayCable, speakerCable);
+
+  const wifiAntennaBlack = ribbon(
+    new THREE.Vector3(-2.25, 1.24, -0.12),
+    new THREE.Vector3(-3.15, 1.03, -2.25),
+    0.01,
+    0x111416,
+  );
+  const wifiAntennaWhite = ribbon(
+    new THREE.Vector3(-2.38, 1.24, 0.02),
+    new THREE.Vector3(-2.75, 1.05, -2.42),
+    0.01,
+    0xd4d6d4,
+  );
+  const keyboardRibbon = ribbon(
+    new THREE.Vector3(0.08, 1.17, -0.8),
+    new THREE.Vector3(0.16, 1.12, 0.12),
+    0.045,
+    0xc69a52,
+  );
+  const touchpadRibbon = ribbon(
+    new THREE.Vector3(0.72, 1.13, 0.2),
+    new THREE.Vector3(0.38, 1.08, 1.62),
+    0.04,
+    0xc8a05a,
+  );
+
+  inside.add(
+    batteryCable,
+    displayCable,
+    speakerCable,
+    wifiAntennaBlack,
+    wifiAntennaWhite,
+    keyboardRibbon,
+    touchpadRibbon,
+  );
 
   const teardownParts: LaptopTeardownPart[] = [
     // The sequence mirrors a real service flow rather than a decorative
