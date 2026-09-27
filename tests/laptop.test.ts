@@ -166,6 +166,30 @@ await test('internal cabling distinguishes flat flex ribbons from wire harnesses
 });
 
 
+await test('18% teaching state removes the Input Cover from the active work area', () => {
+  assert.equal(
+    LAPTOP_INPUT_COVER_SERVICE.visibleUntil,
+    LAPTOP_INPUT_COVER_SERVICE.end,
+  );
+});
+
+await test('100% service row keeps removable modules compact around the chassis', () => {
+  const laptop = buildRealisticLaptopInternals();
+  applyLaptopTeardown(laptop.teardownParts, 100);
+
+  const names = ['battery', 'ssd', 'wifi', 'ram', 'cooling', 'cpu'] as const;
+  const positions = names.map((name) => laptop.parts[name].position);
+
+  const minX = Math.min(...positions.map((p) => p.x));
+  const maxX = Math.max(...positions.map((p) => p.x));
+  const minZ = Math.min(...positions.map((p) => p.z));
+  const maxZ = Math.max(...positions.map((p) => p.z));
+
+  assert.ok(maxX - minX < 8.2, 'service row is spread too widely across X');
+  assert.ok(maxZ - minZ < 5.2, 'service row is spread too widely across Z');
+});
+
+
 await test('100% service layout stays planar enough to read like a technician mat', () => {
   const laptop = buildRealisticLaptopInternals();
   applyLaptopTeardown(laptop.teardownParts, 100);

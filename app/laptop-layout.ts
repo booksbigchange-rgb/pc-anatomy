@@ -15,7 +15,7 @@ export const LAPTOP_INTERNAL_LAYOUT = {
     teardown: {
       start: 72,
       end: 88,
-      offset: [3.18, 0.18, -0.02] as LaptopVec3,
+      offset: [2.92, 0.16, 0.18] as LaptopVec3,
       rotation: [0, 0.04, 0] as LaptopVec3,
     },
   },
@@ -24,7 +24,7 @@ export const LAPTOP_INTERNAL_LAYOUT = {
     teardown: {
       start: 42,
       end: 60,
-      offset: [0.62, 0.18, 3.08] as LaptopVec3,
+      offset: [0.34, 0.16, 2.62] as LaptopVec3,
       rotation: [-0.035, 0, 0] as LaptopVec3,
     },
   },
@@ -34,7 +34,7 @@ export const LAPTOP_INTERNAL_LAYOUT = {
     teardown: {
       start: 30,
       end: 46,
-      offset: [-2.74, 0.16, 2.2] as LaptopVec3,
+      offset: [-2.28, 0.15, 1.94] as LaptopVec3,
       rotation: [0, -0.03, 0.025] as LaptopVec3,
     },
   },
@@ -43,7 +43,7 @@ export const LAPTOP_INTERNAL_LAYOUT = {
     teardown: {
       start: 34,
       end: 50,
-      offset: [1.02, 0.16, 2.0] as LaptopVec3,
+      offset: [1.28, 0.15, 1.94] as LaptopVec3,
       rotation: [0, 0.04, -0.025] as LaptopVec3,
     },
   },
@@ -52,7 +52,7 @@ export const LAPTOP_INTERNAL_LAYOUT = {
     teardown: {
       start: 58,
       end: 78,
-      offset: [-3.15, 0.32, -0.18] as LaptopVec3,
+      offset: [-2.88, 0.24, -0.06] as LaptopVec3,
       rotation: [-0.03, -0.035, 0] as LaptopVec3,
     },
   },
@@ -70,7 +70,7 @@ export const LAPTOP_INTERNAL_LAYOUT = {
     teardown: {
       start: 18,
       end: 34,
-      offset: [0, 0.12, 2.34] as LaptopVec3,
+      offset: [0, 0.1, 2.18] as LaptopVec3,
       rotation: [-0.025, -0.04, 0] as LaptopVec3,
     },
   },
@@ -86,7 +86,7 @@ export const LAPTOP_INPUT_COVER_SERVICE = {
   internalsVisibleAt: 18,
   // After the first service operations begin, the removed Input Cover is
   // placed off the technician's active mat instead of dominating the view.
-  visibleUntil: 34,
+  visibleUntil: 18,
 } as const;
 
 export const LAPTOP_DISPLAY_SERVICE = {
