@@ -35,6 +35,11 @@ import {
   type LaptopInternalCableId,
 } from './laptop-internals';
 import { useDisassemblyPlayback } from './use-disassembly-playback';
+import {
+  LAPTOP_DISPLAY_SERVICE,
+  LAPTOP_INPUT_COVER_SERVICE,
+  laptopTeardownStage,
+} from './laptop-layout';
 
 type LaptopView = 'outside' | 'inside';
 type LaptopMode = 'explore' | 'connections';
@@ -947,7 +952,7 @@ function buildLaptop() {
   // keyboard and trackpad in the Anatomy scene so the first teardown motion
   // matches the official repair flow.
   const serviceInputCoverAssembly = new THREE.Group();
-  serviceInputCoverAssembly.position.set(0, 1.07, 0);
+  serviceInputCoverAssembly.position.set(...LAPTOP_INPUT_COVER_SERVICE.home);
 
   const serviceInputCoverCadMount = new THREE.Group();
   const serviceInputCoverFallback = deck.clone(true);
@@ -998,8 +1003,8 @@ function buildLaptop() {
 
   realisticInternals.teardownParts.unshift({
     object: serviceInputCoverAssembly,
-    start: 0,
-    end: 18,
+    start: LAPTOP_INPUT_COVER_SERVICE.start,
+    end: LAPTOP_INPUT_COVER_SERVICE.end,
     homePosition: serviceInputCoverAssembly.position.clone(),
     homeRotation: serviceInputCoverAssembly.rotation.clone(),
     // Framework instructs users to flip the cover keyboard-side down and
@@ -1007,8 +1012,8 @@ function buildLaptop() {
     // cover below the battery/board plane, making internals draw through it.
     // Move the centre by roughly half a chassis depth so the cover overlaps
     // about half of the Bottom Cover, matching the intended service-rest pose.
-    offset: new THREE.Vector3(0, 0.44, 2.72),
-    rotationOffset: new THREE.Vector3(Math.PI, 0, 0),
+    offset: new THREE.Vector3(...LAPTOP_INPUT_COVER_SERVICE.offset),
+    rotationOffset: new THREE.Vector3(...LAPTOP_INPUT_COVER_SERVICE.rotation),
   });
 
   // Separate service display assembly for Laptop Anatomy. The real Framework
@@ -1074,15 +1079,15 @@ function buildLaptop() {
 
   realisticInternals.teardownParts.push({
     object: serviceDisplayAssembly,
-    start: 90,
-    end: 100,
+    start: LAPTOP_DISPLAY_SERVICE.start,
+    end: LAPTOP_DISPLAY_SERVICE.end,
     homePosition: serviceDisplayAssembly.position.clone(),
     homeRotation: serviceDisplayAssembly.rotation.clone(),
     // Keep the display close to its hinge line at the end of the teaching
     // teardown. A small separation shows the hinge relationship without
     // sending the whole display assembly floating above the laptop.
-    offset: new THREE.Vector3(0, 0.42, -0.24),
-    rotationOffset: new THREE.Vector3(-0.04, 0, 0),
+    offset: new THREE.Vector3(...LAPTOP_DISPLAY_SERVICE.offset),
+    rotationOffset: new THREE.Vector3(...LAPTOP_DISPLAY_SERVICE.rotation),
   });
 
   inside.visible = false;
@@ -1226,20 +1231,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     PARTS.find((part) => part.id === LESSON_ORDER[lessonIndex]) ?? PARTS[0];
   const currentConnection = CONNECTION_TASKS[connectionTask];
   const allConnectionsComplete = connected.length === CONNECTION_TASKS.length;
-  const teardownStage =
-    explode < 1
-      ? 'Assembled'
-      : explode < 20
-        ? 'Input cover'
-        : explode < 50
-          ? 'Battery + service parts'
-          : explode < 68
-            ? 'Memory + speakers'
-            : explode < 88
-              ? 'Cooling + CPU'
-              : explode < 96
-                ? 'Motherboard'
-                : 'Service layout';
+  const teardownStage = laptopTeardownStage(explode);
 
   useEffect(() => {
     selectedRef.current = selected;
@@ -1781,7 +1773,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
 
       if (
         viewRef.current === 'inside' &&
-        explodeRef.current >= 18 &&
+        explodeRef.current >= LAPTOP_INPUT_COVER_SERVICE.internalsVisibleAt &&
         modeRef.current === 'explore' &&
         !guidedRef.current
       ) {
@@ -1882,7 +1874,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
         // keyboard/trackpad side. Once the cover turns over, hide those cloned
         // controls and reveal the underside plate so they cannot show through
         // the real CAD openings.
-        const inputCoverFlipped = explodeRef.current >= 9;
+        const inputCoverFlipped = explodeRef.current >= LAPTOP_INPUT_COVER_SERVICE.flippedAt;
         laptop.serviceInputCoverKeyboard.visible = !inputCoverFlipped;
         laptop.serviceInputCoverTrackpad.visible = !inputCoverFlipped;
         laptop.serviceInputCoverUnderside.visible = inputCoverFlipped;
@@ -1890,7 +1882,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
         // At 0% the Input Cover is still installed, so the motherboard and
         // service parts must not render through the keyboard. Reveal them only
         // after the cover has completed its service flip.
-        laptop.serviceInterior.visible = explodeRef.current >= 18;
+        laptop.serviceInterior.visible = explodeRef.current >= LAPTOP_INPUT_COVER_SERVICE.internalsVisibleAt;
 
         for (const cable of laptop.disconnectCables) {
           const disconnected =
@@ -1962,7 +1954,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     setMode('explore');
     viewRef.current = part.view;
     setView(part.view);
-    if (part.view === 'inside' && explodeRef.current < 18)
+    if (part.view === 'inside' && explodeRef.current < LAPTOP_INPUT_COVER_SERVICE.internalsVisibleAt)
       setExplode(18);
     selectedRef.current = part.id;
     setSelected(part.id);

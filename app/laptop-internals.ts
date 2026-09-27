@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { LAPTOP_INTERNAL_LAYOUT } from './laptop-layout';
 
 export type RealisticLaptopInternalId =
   | 'battery'
@@ -342,7 +343,7 @@ function buildMotherboard() {
 
   group.add(shell);
   addBoardDetails(group);
-  group.position.set(0.15, 1.02, -0.92);
+  group.position.set(...LAPTOP_INTERNAL_LAYOUT.motherboard.home);
   return { group: tag(group, 'motherboard'), shell };
 }
 
@@ -362,7 +363,7 @@ function buildCpu() {
 
   // The processor sits under the cooling cold plate, just to the right of
   // the fan in the Framework service orientation.
-  group.position.set(0.56, 1.18, -1.49);
+  group.position.set(...LAPTOP_INTERNAL_LAYOUT.cpu.home);
   return tag(group, 'cpu');
 }
 
@@ -406,7 +407,7 @@ function buildRam() {
     }
   }
 
-  group.position.set(1.28, 1.16, -0.78);
+  group.position.set(...LAPTOP_INTERNAL_LAYOUT.ram.home);
   return tag(group, 'ram');
 }
 
@@ -452,8 +453,8 @@ function buildSsd() {
 
   // The M.2 2280 storage sits horizontally below the cooling assembly and
   // above the battery, matching the Framework DIY/service photographs.
-  group.position.set(-0.68, 1.16, 0.02);
-  group.rotation.y = -0.03;
+  group.position.set(...LAPTOP_INTERNAL_LAYOUT.ssd.home);
+  group.rotation.y = LAPTOP_INTERNAL_LAYOUT.ssd.rotationY;
   return tag(group, 'ssd');
 }
 
@@ -500,7 +501,7 @@ function buildWifi() {
 
   // Wi-Fi occupies the front-right corner of the mainboard beside the right
   // speaker/battery edge, with its antenna leads routed along that side.
-  group.position.set(2.5, 1.15, 0.18);
+  group.position.set(...LAPTOP_INTERNAL_LAYOUT.wifi.home);
   return tag(group, 'wifi');
 }
 
@@ -608,7 +609,7 @@ function buildCooling() {
 
   // Fan sits left of centre near the hinge; heat pipes run rightward across
   // the processor to the fin/cold-plate assembly.
-  group.position.set(-1.52, 1.17, -1.35);
+  group.position.set(...LAPTOP_INTERNAL_LAYOUT.cooling.home);
   return tag(group, 'fan');
 }
 
@@ -635,7 +636,7 @@ function buildSpeakers() {
     }
   }
 
-  group.position.set(0, 1.08, 0.7);
+  group.position.set(...LAPTOP_INTERNAL_LAYOUT.speakers.home);
   return tag(group, 'speakers');
 }
 
@@ -654,7 +655,7 @@ function buildBatteryFallback() {
 
   // The battery fills most of the lower half of the chassis while leaving
   // narrow side channels for the speakers and cabling.
-  group.position.set(0, 1.02, 1.38);
+  group.position.set(...LAPTOP_INTERNAL_LAYOUT.battery.home);
   return tag(group, 'battery');
 }
 
@@ -979,25 +980,77 @@ export function buildRealisticLaptopInternals() {
     // chassis while the Input Cover is lifted/flipped to expose the internals.
     // Final positions form a readable service layout around the chassis
     // instead of stacking every removed part vertically over the board.
-    teardownPart(battery, 18, 34, [-4.15, 0.34, 0.72], [-0.025, -0.04, 0]),
-    teardownPart(ssd, 30, 46, [-2.95, 0.42, 1.42], [0, -0.03, 0.025]),
-    teardownPart(wifi, 34, 50, [1.08, 0.4, 1.4], [0, 0.04, -0.025]),
-    teardownPart(ram, 42, 60, [1.0, 0.46, 2.0], [-0.035, 0, 0]),
-    teardownPart(speakers, 50, 68, [0, 0.3, 0.18], [0.015, 0, 0]),
-    teardownPart(fan, 58, 78, [-2.62, 0.48, -0.04], [-0.03, -0.035, 0]),
-    teardownPart(cpu, 72, 88, [3.25, 0.48, 0.22], [0, 0.04, 0]),
+    teardownPart(
+      battery,
+      LAPTOP_INTERNAL_LAYOUT.battery.teardown.start,
+      LAPTOP_INTERNAL_LAYOUT.battery.teardown.end,
+      [...LAPTOP_INTERNAL_LAYOUT.battery.teardown.offset],
+      [...LAPTOP_INTERNAL_LAYOUT.battery.teardown.rotation],
+    ),
+    teardownPart(
+      ssd,
+      LAPTOP_INTERNAL_LAYOUT.ssd.teardown.start,
+      LAPTOP_INTERNAL_LAYOUT.ssd.teardown.end,
+      [...LAPTOP_INTERNAL_LAYOUT.ssd.teardown.offset],
+      [...LAPTOP_INTERNAL_LAYOUT.ssd.teardown.rotation],
+    ),
+    teardownPart(
+      wifi,
+      LAPTOP_INTERNAL_LAYOUT.wifi.teardown.start,
+      LAPTOP_INTERNAL_LAYOUT.wifi.teardown.end,
+      [...LAPTOP_INTERNAL_LAYOUT.wifi.teardown.offset],
+      [...LAPTOP_INTERNAL_LAYOUT.wifi.teardown.rotation],
+    ),
+    teardownPart(
+      ram,
+      LAPTOP_INTERNAL_LAYOUT.ram.teardown.start,
+      LAPTOP_INTERNAL_LAYOUT.ram.teardown.end,
+      [...LAPTOP_INTERNAL_LAYOUT.ram.teardown.offset],
+      [...LAPTOP_INTERNAL_LAYOUT.ram.teardown.rotation],
+    ),
+    teardownPart(
+      speakers,
+      LAPTOP_INTERNAL_LAYOUT.speakers.teardown.start,
+      LAPTOP_INTERNAL_LAYOUT.speakers.teardown.end,
+      [...LAPTOP_INTERNAL_LAYOUT.speakers.teardown.offset],
+      [...LAPTOP_INTERNAL_LAYOUT.speakers.teardown.rotation],
+    ),
+    teardownPart(
+      fan,
+      LAPTOP_INTERNAL_LAYOUT.cooling.teardown.start,
+      LAPTOP_INTERNAL_LAYOUT.cooling.teardown.end,
+      [...LAPTOP_INTERNAL_LAYOUT.cooling.teardown.offset],
+      [...LAPTOP_INTERNAL_LAYOUT.cooling.teardown.rotation],
+    ),
+    teardownPart(
+      cpu,
+      LAPTOP_INTERNAL_LAYOUT.cpu.teardown.start,
+      LAPTOP_INTERNAL_LAYOUT.cpu.teardown.end,
+      [...LAPTOP_INTERNAL_LAYOUT.cpu.teardown.offset],
+      [...LAPTOP_INTERNAL_LAYOUT.cpu.teardown.rotation],
+    ),
     teardownPart(
       motherboard.group,
-      84,
-      100,
-      [0, 0.62, -0.34],
-      [-0.025, 0, 0.012],
+      LAPTOP_INTERNAL_LAYOUT.motherboard.teardown.start,
+      LAPTOP_INTERNAL_LAYOUT.motherboard.teardown.end,
+      [...LAPTOP_INTERNAL_LAYOUT.motherboard.teardown.offset],
+      [...LAPTOP_INTERNAL_LAYOUT.motherboard.teardown.rotation],
     ),
   ];
 
   return {
     inside,
     serviceInterior,
+    parts: {
+      battery,
+      motherboard: motherboard.group,
+      cpu,
+      ram,
+      ssd,
+      cooling: fan,
+      wifi,
+      speakers,
+    },
     batteryMount: battery,
     motherboardMount: motherboard.group,
     motherboardShell: motherboard.shell,
