@@ -958,11 +958,41 @@ function buildLaptop() {
   const serviceTrackpad = trackpad.clone(true);
   serviceTrackpad.position.y -= 1.07;
 
+  // The CAD Input Cover is a thin shell with keyboard/trackpad openings.
+  // When the cover is flipped for service, the student should see its
+  // underside rather than the cloned keys through those openings.
+  const serviceInputCoverUnderside = physicalRounded(
+    7.08,
+    0.055,
+    5.3,
+    0.13,
+    0x68747a,
+    0.42,
+    0.48,
+    0.04,
+  );
+  serviceInputCoverUnderside.position.set(0, -0.075, 0);
+  serviceInputCoverUnderside.visible = false;
+
+  // A few underside details keep the flipped cover from reading as one flat
+  // slab without pretending to reproduce electronics that are not modeled.
+  for (const [x, z, w, d] of [
+    [-2.55, -1.9, 0.54, 0.18],
+    [2.55, -1.9, 0.54, 0.18],
+    [-2.45, 1.8, 0.64, 0.2],
+    [2.45, 1.8, 0.64, 0.2],
+  ] as const) {
+    const pad = rounded(w, 0.035, d, 0.03, 0x20272b, 0.72, 0.04);
+    pad.position.set(x, -0.115, z);
+    serviceInputCoverUnderside.add(pad);
+  }
+
   serviceInputCoverAssembly.add(
     serviceInputCoverCadMount,
     serviceInputCoverFallback,
     serviceKeyboard,
     serviceTrackpad,
+    serviceInputCoverUnderside,
   );
   inside.add(serviceInputCoverAssembly);
 
@@ -975,9 +1005,9 @@ function buildLaptop() {
     // Framework instructs users to flip the cover keyboard-side down and
     // rest it about halfway on the Bottom Cover. The earlier Y offset put the
     // cover below the battery/board plane, making internals draw through it.
-    // Raise it just above the installed components while keeping it close to
-    // the lower half of the chassis.
-    offset: new THREE.Vector3(0, 0.48, 2.05),
+    // Move the centre by roughly half a chassis depth so the cover overlaps
+    // about half of the Bottom Cover, matching the intended service-rest pose.
+    offset: new THREE.Vector3(0, 0.44, 2.72),
     rotationOffset: new THREE.Vector3(Math.PI, 0, 0),
   });
 
@@ -1073,6 +1103,9 @@ function buildLaptop() {
     serviceWebcam,
     serviceInputCoverCadMount,
     serviceInputCoverFallback,
+    serviceInputCoverKeyboard: serviceKeyboard,
+    serviceInputCoverTrackpad: serviceTrackpad,
+    serviceInputCoverUnderside,
     serviceInterior: realisticInternals.serviceInterior,
     inputCoverCadMount,
     displayTopCoverCadMount,
@@ -1845,9 +1878,18 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       if (insideNow) {
         applyLaptopTeardown(laptop.teardownParts, explodeRef.current);
 
+        // During the first half of the flip students still see the normal
+        // keyboard/trackpad side. Once the cover turns over, hide those cloned
+        // controls and reveal the underside plate so they cannot show through
+        // the real CAD openings.
+        const inputCoverFlipped = explodeRef.current >= 9;
+        laptop.serviceInputCoverKeyboard.visible = !inputCoverFlipped;
+        laptop.serviceInputCoverTrackpad.visible = !inputCoverFlipped;
+        laptop.serviceInputCoverUnderside.visible = inputCoverFlipped;
+
         // At 0% the Input Cover is still installed, so the motherboard and
-        // service parts must not render through the keyboard. Reveal the
-        // internals only after the cover has substantially lifted.
+        // service parts must not render through the keyboard. Reveal them only
+        // after the cover has completed its service flip.
         laptop.serviceInterior.visible = explodeRef.current >= 18;
 
         for (const cable of laptop.disconnectCables) {
