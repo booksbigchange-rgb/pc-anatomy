@@ -52,7 +52,7 @@ export const LAPTOP_INTERNAL_LAYOUT = {
     teardown: {
       start: 58,
       end: 78,
-      offset: [-2.62, 0.48, -0.04] as LaptopVec3,
+      offset: [-3.35, 0.52, -0.08] as LaptopVec3,
       rotation: [-0.03, -0.035, 0] as LaptopVec3,
     },
   },
