@@ -973,9 +973,11 @@ function buildLaptop() {
     homePosition: serviceInputCoverAssembly.position.clone(),
     homeRotation: serviceInputCoverAssembly.rotation.clone(),
     // Framework instructs users to flip the cover keyboard-side down and
-    // rest it about halfway on the Bottom Cover. Keep it close to the chassis
-    // instead of treating it like an exploded-view part.
-    offset: new THREE.Vector3(0, -0.12, 2.2),
+    // rest it about halfway on the Bottom Cover. The earlier Y offset put the
+    // cover below the battery/board plane, making internals draw through it.
+    // Raise it just above the installed components while keeping it close to
+    // the lower half of the chassis.
+    offset: new THREE.Vector3(0, 0.48, 2.05),
     rotationOffset: new THREE.Vector3(Math.PI, 0, 0),
   });
 
@@ -1743,7 +1745,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
 
       if (
         viewRef.current === 'inside' &&
-        explodeRef.current >= 12 &&
+        explodeRef.current >= 18 &&
         modeRef.current === 'explore' &&
         !guidedRef.current
       ) {
@@ -1843,7 +1845,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
         // At 0% the Input Cover is still installed, so the motherboard and
         // service parts must not render through the keyboard. Reveal the
         // internals only after the cover has substantially lifted.
-        laptop.serviceInterior.visible = explodeRef.current >= 12;
+        laptop.serviceInterior.visible = explodeRef.current >= 18;
 
         for (const cable of laptop.disconnectCables) {
           const disconnected =
