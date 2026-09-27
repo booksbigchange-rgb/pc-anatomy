@@ -517,7 +517,6 @@ function buildCooling() {
     0.5,
     0.18,
   );
-  fanPlate.rotation.x = Math.PI / 2;
   fanPlate.position.y = -0.015;
   group.add(fanPlate);
 
@@ -539,7 +538,6 @@ function buildCooling() {
     0.42,
     0.22,
   );
-  hub.rotation.x = Math.PI / 2;
   group.add(hub);
 
   const fanLabel = mesh(
@@ -548,7 +546,6 @@ function buildCooling() {
     0.48,
     0.08,
   );
-  fanLabel.rotation.x = Math.PI / 2;
   fanLabel.position.y = 0.09;
   group.add(fanLabel);
 
