@@ -859,58 +859,6 @@ function buildBatteryFallback() {
   return tag(group, 'battery');
 }
 
-function buildBottomCover() {
-  const cover = new THREE.Group();
-
-  const panel = physicalMesh(
-    new RoundedBoxGeometry(7.28, 0.12, 5.56, 6, 0.16),
-    0x727d82,
-    0.3,
-    0.72,
-  );
-  cover.add(panel);
-
-  // Vent field near the cooling area.
-  for (let row = 0; row < 4; row++) {
-    for (let column = 0; column < 12; column++) {
-      const vent = rounded(0.26, 0.022, 0.055, 0.015, 0x20272b, 0.72, 0.05);
-      vent.position.set(-1.55 + column * 0.3, 0.07, -1.25 + row * 0.16);
-      cover.add(vent);
-    }
-  }
-
-  // Framework's service procedure uses five captive T5 fasteners. Positions
-  // here are representative until the bottom-cover drawing is imported.
-  for (const [x, z] of [
-    [-3.15, -2.42],
-    [0, -2.5],
-    [3.15, -2.42],
-    [-3.15, 2.38],
-    [3.15, 2.38],
-  ] as const) {
-    const screw = mesh(
-      new THREE.CylinderGeometry(0.075, 0.075, 0.035, 20),
-      0x9aa4a9,
-      0.28,
-      0.62,
-    );
-    screw.position.set(x, 0.08, z);
-    cover.add(screw);
-  }
-
-  // Home position is the assembled underside of the chassis. The Laptop
-  // Anatomy teardown moves the whole cover aside as its first removal step.
-  cover.position.set(0, 0.59, 0);
-  cover.rotation.set(0, 0, 0);
-  cover.traverse((object) => {
-    if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
-    const item = object as THREE.Mesh;
-    item.castShadow = true;
-    item.receiveShadow = true;
-  });
-  return cover;
-}
-
 function ribbon(
   start: THREE.Vector3,
   end: THREE.Vector3,
