@@ -15,7 +15,7 @@ export const LAPTOP_INTERNAL_LAYOUT = {
     teardown: {
       start: 72,
       end: 88,
-      offset: [2.5, 0.16, 0.18] as LaptopVec3,
+      offset: [2.4, 0.16, 2.35] as LaptopVec3,
       rotation: [0, 0.04, 0] as LaptopVec3,
     },
   },
@@ -43,7 +43,7 @@ export const LAPTOP_INTERNAL_LAYOUT = {
     teardown: {
       start: 34,
       end: 50,
-      offset: [1.28, 0.15, 1.94] as LaptopVec3,
+      offset: [0.3, 0.15, 1.94] as LaptopVec3,
       rotation: [0, 0.04, -0.025] as LaptopVec3,
     },
   },
