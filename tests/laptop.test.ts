@@ -67,6 +67,25 @@ await test('18% exposes the chassis without moving installed internals yet', () 
   assert.equal(laptopTeardownStage(18), 'Battery + service parts');
 });
 
+await test('Framework cooling assembly stays flat and within a laptop-scale envelope', () => {
+  const laptop = buildRealisticLaptopInternals();
+  laptop.inside.updateMatrixWorld(true);
+
+  const box = new THREE.Box3().setFromObject(laptop.parts.cooling);
+  const size = box.getSize(new THREE.Vector3());
+
+  assert.ok(size.y < 0.5, `cooling assembly is too tall: ${size.y}`);
+  assert.ok(
+    size.x >= 2.5 && size.x <= 3.6,
+    `cooling width is outside the expected 120 mm-class envelope: ${size.x}`,
+  );
+  assert.ok(
+    size.z >= 1.5 && size.z <= 2.35,
+    `cooling depth is outside the expected 85 mm-class envelope: ${size.z}`,
+  );
+});
+
+
 await test('100% teardown separates service parts from the motherboard staging area', () => {
   const laptop = buildRealisticLaptopInternals();
   applyLaptopTeardown(laptop.teardownParts, 100);

@@ -508,104 +508,176 @@ function buildWifi() {
 function buildCooling() {
   const group = new THREE.Group();
 
-  // Framework publishes a 65 x 5.5 mm cooling fan. At the Laptop Lab
-  // chassis scale this is roughly 1.66 units in diameter and 0.14 units thick.
-  const fanRadius = 0.83;
+  // Framework Laptop 13 (Intel-era HSF) published dimensions:
+  // 120 x 85 x 6 mm module, 65 x 5.5 mm blower fan, dual 5 mm heat pipes.
+  // The interactive chassis is 7.34 units for the real 296.63 mm width.
+  const unitPerMm = 7.34 / 296.63;
+  const fanRadius = (65 * unitPerMm) / 2;
+  const fanThickness = 5.5 * unitPerMm;
+  const heatPipeRadius = 2.5 * unitPerMm;
+  const fanX = -0.58;
+  const fanZ = -0.15;
+
+  // Centrifugal-blower shroud. The dark base is deliberately not circular:
+  // notebook fans use a scroll housing and a short exhaust throat.
+  const shroud = rounded(1.76, 0.07, 1.7, 0.17, 0x252d31, 0.5, 0.24);
+  shroud.position.set(fanX, 0.025, fanZ);
+  group.add(shroud);
+
+  const exhaust = rounded(0.5, 0.11, 0.92, 0.07, 0x2b3438, 0.45, 0.3);
+  exhaust.position.set(-1.36, 0.065, fanZ);
+  group.add(exhaust);
+
   const fanPlate = mesh(
-    new THREE.CylinderGeometry(fanRadius * 0.96, fanRadius * 0.96, 0.055, 48),
-    0x20272b,
-    0.5,
-    0.18,
+    new THREE.CylinderGeometry(
+      fanRadius * 0.91,
+      fanRadius * 0.91,
+      fanThickness * 0.28,
+      56,
+    ),
+    0x1b2226,
+    0.55,
+    0.14,
   );
-  fanPlate.position.y = -0.015;
+  fanPlate.position.set(fanX, fanThickness * 0.25, fanZ);
   group.add(fanPlate);
 
   const housing = new THREE.Mesh(
-    new THREE.TorusGeometry(fanRadius * 0.83, 0.1, 10, 56),
+    new THREE.TorusGeometry(fanRadius * 0.8, 0.065, 10, 64),
     new THREE.MeshStandardMaterial({
-      color: 0x313a3f,
-      roughness: 0.4,
-      metalness: 0.3,
+      color: 0x465157,
+      roughness: 0.38,
+      metalness: 0.28,
     }),
   );
   housing.rotation.x = Math.PI / 2;
-  housing.position.y = 0.075;
+  housing.position.set(fanX, fanThickness * 0.86, fanZ);
   group.add(housing);
 
   const hub = mesh(
-    new THREE.CylinderGeometry(0.18, 0.18, 0.15, 28),
-    0x414b50,
-    0.42,
-    0.22,
+    new THREE.CylinderGeometry(0.18, 0.18, fanThickness * 0.74, 32),
+    0x3a4449,
+    0.4,
+    0.2,
   );
+  hub.position.set(fanX, fanThickness * 0.67, fanZ);
   group.add(hub);
 
   const fanLabel = mesh(
-    new THREE.CylinderGeometry(0.125, 0.125, 0.012, 28),
-    0x75848a,
-    0.48,
+    new THREE.CylinderGeometry(0.115, 0.115, 0.012, 28),
+    0x77868c,
+    0.52,
     0.08,
   );
-  fanLabel.position.y = 0.09;
+  fanLabel.position.set(fanX, fanThickness * 1.08, fanZ);
   group.add(fanLabel);
 
-  for (let index = 0; index < 12; index++) {
-    const blade = rounded(0.12, 0.03, 0.56, 0.035, 0x58666d, 0.42, 0.12);
-    blade.rotation.y = (Math.PI * 2 * index) / 12 + 0.24;
-    blade.translateZ(0.4);
-    blade.position.y = 0.09;
+  for (let index = 0; index < 15; index++) {
+    const blade = rounded(0.1, 0.025, 0.52, 0.03, 0x59676d, 0.4, 0.12);
+    blade.position.set(fanX, fanThickness * 0.76, fanZ);
+    blade.rotation.y = (Math.PI * 2 * index) / 15 + 0.2;
+    blade.translateZ(fanRadius * 0.47);
     group.add(blade);
   }
 
-  // Dual heat-pipe path from CPU area to fin stack.
-  for (const offset of [-0.07, 0.07]) {
+  // Copper fin pack at the exhaust side. Thin repeated fins make the outlet
+  // read as a real heatsink instead of one solid silver block.
+  const finGeometry = new THREE.BoxGeometry(0.018, 0.15, 0.94);
+  for (let index = 0; index < 24; index++) {
+    const fin = mesh(finGeometry.clone(), 0xb17a52, 0.3, 0.68);
+    fin.position.set(-1.62 + index * 0.025, 0.095, fanZ);
+    group.add(fin);
+  }
+
+  // Cold plate over the processor.
+  const coldPlate = physicalMesh(
+    new RoundedBoxGeometry(0.92, 0.07, 0.84, 4, 0.055),
+    C.copper,
+    0.26,
+    0.76,
+  );
+  coldPlate.position.set(1.0, 0.145, -0.06);
+  group.add(coldPlate);
+
+  const pressurePlate = rounded(1.08, 0.035, 0.97, 0.06, 0x747e83, 0.34, 0.58);
+  pressurePlate.position.set(1.0, 0.1, -0.06);
+  group.add(pressurePlate);
+
+  // Dual 5 mm heat pipes are side-by-side in plan view, not stacked
+  // vertically. Each runs from the CPU plate toward the fan/fin outlet.
+  for (const zOffset of [-0.075, 0.075]) {
     const heatPipe = new THREE.Mesh(
       new THREE.TubeGeometry(
         new THREE.CatmullRomCurve3([
-          new THREE.Vector3(2.0, 0.14 + offset, -0.15),
-          new THREE.Vector3(1.35, 0.18 + offset, -0.12),
-          new THREE.Vector3(0.7, 0.16 + offset, 0),
-          new THREE.Vector3(0.1, 0.13 + offset, 0.02),
+          new THREE.Vector3(1.02, 0.17, -0.08 + zOffset),
+          new THREE.Vector3(0.62, 0.18, -0.1 + zOffset),
+          new THREE.Vector3(0.08, 0.17, -0.14 + zOffset),
+          new THREE.Vector3(-0.66, 0.155, fanZ + zOffset),
+          new THREE.Vector3(-1.28, 0.145, fanZ + zOffset),
         ]),
-        32,
-        0.045,
-        10,
+        40,
+        heatPipeRadius,
+        12,
         false,
       ),
-      material(C.copper, 0.28, 0.68),
+      material(C.copper, 0.24, 0.76),
     );
     group.add(heatPipe);
   }
 
-  const coldPlate = rounded(0.95, 0.07, 0.95, 0.07, C.copper, 0.3, 0.72);
-  coldPlate.position.set(2.08, 0.15, -0.14);
-  group.add(coldPlate);
-
-  for (const [x, z] of [
-    [2.38, -0.44],
-    [1.78, -0.44],
-    [2.38, 0.16],
-    [1.78, 0.16],
+  // Framework's service guide removes two fan fasteners first.
+  for (const [index, x, z] of [
+    [1, -1.06, -0.69],
+    [2, -0.15, 0.46],
   ] as const) {
-    const bracketScrew = mesh(
-      new THREE.CylinderGeometry(0.045, 0.045, 0.035, 18),
-      0xc1c7c9,
+    const screw = mesh(
+      new THREE.CylinderGeometry(0.047, 0.047, 0.04, 20),
+      0xc5cbce,
       0.22,
       0.72,
     );
-    bracketScrew.position.set(x, 0.205, z);
-    group.add(bracketScrew);
+    screw.position.set(x, 0.155, z);
+    screw.name = `Fan fastener ${index}`;
+    screw.userData.serviceOrder = index;
+    group.add(screw);
   }
 
-  const finGeometry = new THREE.BoxGeometry(0.03, 0.18, 0.8);
-  for (let index = 0; index < 18; index++) {
-    const fin = mesh(finGeometry.clone(), 0x8c979c, 0.32, 0.55);
-    fin.position.set(-0.72 - index * 0.045, 0.08, -0.02);
-    group.add(fin);
+  // The heatsink itself uses three captive fasteners, serviced 3 -> 2 -> 1
+  // during removal according to Framework's guide.
+  for (const [label, x, z] of [
+    [1, 0.7, -0.38],
+    [2, 1.34, -0.24],
+    [3, 1.08, 0.34],
+  ] as const) {
+    const screw = mesh(
+      new THREE.CylinderGeometry(0.05, 0.05, 0.045, 20),
+      0xc5cbce,
+      0.22,
+      0.72,
+    );
+    screw.position.set(x, 0.205, z);
+    screw.name = `Heatsink fastener ${label}`;
+    screw.userData.heatsinkFastener = label;
+    group.add(screw);
   }
 
-  // Fan sits left of centre near the hinge; heat pipes run rightward across
-  // the processor to the fin/cold-plate assembly.
+  // Short fan lead toward the mainboard connector.
+  const fanLead = new THREE.Mesh(
+    new THREE.TubeGeometry(
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.05, 0.11, 0.48),
+        new THREE.Vector3(0.12, 0.12, 0.56),
+        new THREE.Vector3(0.34, 0.12, 0.5),
+      ]),
+      16,
+      0.018,
+      6,
+      false,
+    ),
+    material(0x1c2225, 0.65, 0.04),
+  );
+  group.add(fanLead);
+
   group.position.set(...LAPTOP_INTERNAL_LAYOUT.cooling.home);
   return tag(group, 'fan');
 }
