@@ -67,6 +67,37 @@ await test('18% exposes the chassis without moving installed internals yet', () 
   assert.equal(laptopTeardownStage(18), 'Battery + service parts');
 });
 
+await test('Framework motherboard population is dense, shallow and keeps removable-module zones readable', () => {
+  const laptop = buildRealisticLaptopInternals();
+  const board = laptop.parts.motherboard;
+  board.updateMatrixWorld(true);
+
+  let meshCount = 0;
+  let maxLocalY = -Infinity;
+  board.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    meshCount++;
+    const box = new THREE.Box3().setFromObject(object);
+    const localTop = box.max.y - board.position.y;
+    maxLocalY = Math.max(maxLocalY, localTop);
+  });
+
+  assert.ok(meshCount >= 180, `motherboard is visually under-populated: ${meshCount} meshes`);
+  assert.ok(maxLocalY < 0.55, `motherboard components are implausibly tall: ${maxLocalY}`);
+
+  const boardBox = new THREE.Box3().setFromObject(board);
+  for (const name of ['ram', 'ssd', 'wifi'] as const) {
+    const moduleBox = new THREE.Box3().setFromObject(laptop.parts[name]);
+    assert.ok(
+      boardBox.intersectsBox(moduleBox),
+      `${name} no longer reads as installed on the motherboard`,
+    );
+  }
+
+  assert.equal(board.userData.boardDetailVersion, 2);
+});
+
+
 await test('Framework cooling assembly stays flat and within a laptop-scale envelope', () => {
   const laptop = buildRealisticLaptopInternals();
   laptop.inside.updateMatrixWorld(true);

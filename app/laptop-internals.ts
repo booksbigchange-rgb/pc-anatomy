@@ -170,99 +170,187 @@ function pinConnector(
 }
 
 function addBoardDetails(group: THREE.Group) {
-  // CPU-side VRM stages / inductors.
+  group.userData.boardDetailVersion = 2;
+
+  const addChip = (
+    name: string,
+    x: number,
+    z: number,
+    width: number,
+    depth: number,
+    height = 0.09,
+    color = C.chip,
+  ) => {
+    const item = chip(width, depth, height, color);
+    item.name = name;
+    item.position.set(x, 0.115 + height / 2, z);
+    group.add(item);
+    return item;
+  };
+
+  const addCap = (
+    x: number,
+    z: number,
+    radius = 0.045,
+    height = 0.075,
+    color = 0x8d9294,
+  ) => {
+    const body = mesh(
+      new THREE.CylinderGeometry(radius, radius, height, 14),
+      color,
+      0.44,
+      0.3,
+    );
+    body.position.set(x, 0.11 + height / 2, z);
+    group.add(body);
+    return body;
+  };
+
+  const addPassiveBank = (
+    x: number,
+    z: number,
+    columns: number,
+    rows: number,
+    spacingX: number,
+    spacingZ: number,
+    rotation = 0,
+  ) => {
+    const geometry = new RoundedBoxGeometry(0.062, 0.038, 0.034, 2, 0.007);
+    for (let row = 0; row < rows; row++) {
+      for (let column = 0; column < columns; column++) {
+        const passive = mesh(
+          geometry.clone(),
+          (row + column) % 4 === 0 ? 0xb6a17b : 0x4a4f52,
+          0.56,
+          0.08,
+        );
+        passive.position.set(
+          x + (column - (columns - 1) / 2) * spacingX,
+          0.125,
+          z + (row - (rows - 1) / 2) * spacingZ,
+        );
+        passive.rotation.y = rotation + ((row + column) % 2) * Math.PI / 2;
+        group.add(passive);
+      }
+    }
+  };
+
+  // --- CPU / VRM zone ----------------------------------------------------
+  // Leave the CPU keepout itself open: the processor and cooling assembly are
+  // separate selectable objects. Populate the surrounding power-delivery ring.
   for (const [x, z] of [
-    [-1.42, -0.55],
-    [-1.08, -0.55],
-    [-0.74, -0.55],
-    [-1.42, -0.2],
-    [-1.08, -0.2],
+    [-0.52, -0.92],
+    [-0.22, -0.94],
+    [0.1, -0.93],
+    [-0.52, -0.63],
+    [-0.22, -0.64],
+    [0.11, -0.64],
   ] as const) {
-    const block = chip(0.22, 0.22, 0.15, 0x4a5053);
-    block.position.set(x, 0.15, z);
-    group.add(block);
+    const inductor = rounded(0.24, 0.15, 0.22, 0.035, 0x555c60, 0.5, 0.24);
+    inductor.position.set(x, 0.18, z);
+    group.add(inductor);
   }
 
-  // RF / controller shields give the board the mixed matte-metal finish seen
-  // on real notebook mainboards.
+  for (const [x, z] of [
+    [-0.64, -1.14],
+    [-0.36, -1.15],
+    [-0.08, -1.15],
+    [0.2, -1.14],
+    [-0.68, -0.42],
+    [-0.4, -0.42],
+    [-0.12, -0.42],
+    [0.16, -0.42],
+  ] as const) {
+    addChip('VRM power stage', x, z, 0.16, 0.11, 0.065, 0x252a2d);
+  }
+
+  for (const [x, z] of [
+    [-0.78, -0.88],
+    [-0.76, -0.68],
+    [0.33, -0.88],
+    [0.34, -0.68],
+  ] as const) {
+    addCap(x, z, 0.045, 0.085, 0x9a9fa1);
+  }
+
+  addPassiveBank(-0.18, -1.23, 11, 2, 0.12, 0.1);
+  addPassiveBank(-0.16, -0.27, 10, 2, 0.13, 0.1);
+
+  // --- Controller / shield zone -----------------------------------------
+  for (const [name, x, z, w, d] of [
+    ['Embedded controller', 0.35, -0.06, 0.43, 0.39],
+    ['Platform controller', 0.82, -0.48, 0.38, 0.34],
+    ['USB-C controller A', -2.48, -0.75, 0.3, 0.28],
+    ['USB-C controller B', -1.82, -0.76, 0.3, 0.28],
+    ['USB-C controller C', 1.82, -0.76, 0.3, 0.28],
+    ['USB-C controller D', 2.44, -0.75, 0.3, 0.28],
+    ['BIOS flash', -1.22, 0.42, 0.24, 0.18],
+    ['Audio codec', 2.3, 0.3, 0.28, 0.24],
+  ] as const) {
+    addChip(name, x, z, w, d, 0.085);
+  }
+
   for (const [x, z, w, d] of [
-    [-0.15, -0.82, 0.72, 0.48],
-    [0.82, -0.36, 0.58, 0.42],
-    [1.62, -0.22, 0.52, 0.38],
+    [0.92, -0.08, 0.62, 0.45],
+    [1.62, 0.2, 0.52, 0.38],
+    [-1.48, 0.26, 0.58, 0.4],
   ] as const) {
     const shield = physicalMesh(
       new RoundedBoxGeometry(w, 0.055, d, 3, 0.035),
-      0x9ea8ac,
-      0.32,
-      0.66,
+      0xa8b0b3,
+      0.33,
+      0.62,
     );
-    shield.position.set(x, 0.125, z);
+    shield.position.set(x, 0.14, z);
     group.add(shield);
   }
 
-  // A few visible copper/gold routing traces break up the flat PCB and make
-  // the board read as electronics at normal classroom zoom levels.
-  const traceMaterial = new THREE.LineBasicMaterial({
-    color: 0xa78952,
-    transparent: true,
-    opacity: 0.52,
-  });
-  for (let index = 0; index < 11; index++) {
-    const z = -1.08 + index * 0.18;
-    const points = [
-      new THREE.Vector3(-2.55, 0.106, z),
-      new THREE.Vector3(-1.75 + (index % 3) * 0.18, 0.108, z + 0.05),
-      new THREE.Vector3(-0.95 + (index % 4) * 0.2, 0.108, z - 0.04),
-    ];
-    group.add(
-      new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints(points),
-        traceMaterial.clone(),
-      ),
-    );
-  }
+  // --- Memory / storage supporting components ---------------------------
+  // Keep the actual RAM, SSD and Wi-Fi footprints mostly clear so those
+  // removable modules read as installed parts rather than interpenetrating.
+  addPassiveBank(0.84, 0.56, 4, 4, 0.12, 0.11);
+  addPassiveBank(-0.62, 0.72, 7, 2, 0.12, 0.1);
+  addPassiveBank(2.18, 0.75, 4, 2, 0.11, 0.1);
 
-  // Embedded controller / I/O controller / power ICs.
-  for (const [x, z, w, d] of [
-    [0.45, -0.78, 0.36, 0.32],
-    [1.15, -0.75, 0.28, 0.28],
-    [1.85, -0.72, 0.33, 0.31],
-    [2.25, -0.7, 0.24, 0.24],
-    [-2.35, -0.55, 0.3, 0.26],
-    [-2.72, -0.2, 0.22, 0.22],
+  for (const [x, z] of [
+    [-1.04, 0.55],
+    [-0.88, 0.55],
+    [1.72, 0.58],
+    [1.88, 0.58],
+    [2.06, 0.58],
   ] as const) {
-    const item = chip(w, d, 0.1);
-    item.position.set(x, 0.13, z);
-    group.add(item);
+    addCap(x, z, 0.035, 0.065, 0x8e9598);
   }
 
-  // Small passive component banks. These are intentionally individual
-  // components so the board reads like real electronics rather than a slab.
-  const passiveGeometry = new RoundedBoxGeometry(0.075, 0.055, 0.035, 2, 0.008);
-  for (let row = 0; row < 6; row++) {
-    for (let column = 0; column < 10; column++) {
-      const passive = mesh(
-        passiveGeometry.clone(),
-        (row + column) % 3 === 0 ? 0xa99779 : 0x343b3f,
-        0.55,
-        0.08,
-      );
-      passive.position.set(-2.35 + column * 0.46, 0.115, -0.98 + row * 0.34);
-      passive.rotation.y = (column % 2) * Math.PI / 2;
-      group.add(passive);
-    }
-  }
-
-  // USB-C / expansion-card edge connectors.
+  // --- Edge I/O ----------------------------------------------------------
+  // Framework's expansion-card system exposes four USB-C receptacles.
+  // Build each as a metal shell with a dark inner cavity instead of one block.
   for (const x of [-2.72, -1.96, 1.98, 2.72]) {
-    const connector = rounded(0.48, 0.19, 0.28, 0.045, 0xb5bdc0, 0.28, 0.58);
-    connector.position.set(x, 0.12, -1.24);
-    group.add(connector);
+    const port = new THREE.Group();
+    const shell = rounded(0.48, 0.18, 0.3, 0.045, 0xb8c0c3, 0.28, 0.64);
+    port.add(shell);
+
+    const cavity = rounded(0.34, 0.07, 0.22, 0.03, 0x202629, 0.54, 0.12);
+    cavity.position.set(0, 0.035, -0.045);
+    port.add(cavity);
+
+    const tongue = rounded(0.22, 0.025, 0.12, 0.018, 0x252c30, 0.55, 0.08);
+    tongue.position.set(0, 0.055, -0.04);
+    port.add(tongue);
+
+    port.position.set(x, 0.115, -1.235);
+    group.add(port);
   }
 
-  // Framework publishes the connector families and pin counts. Positions are
-  // aligned to the current teaching layout and will be snapped to the official
-  // DXF coordinates once the mechanical-view transform is validated.
+  // --- Fine passives around edge controllers ----------------------------
+  addPassiveBank(-2.18, -0.46, 5, 3, 0.1, 0.1);
+  addPassiveBank(2.1, -0.46, 5, 3, 0.1, 0.1);
+  addPassiveBank(1.64, 0.52, 5, 3, 0.1, 0.1);
+  addPassiveBank(-1.72, 0.53, 5, 3, 0.1, 0.1);
+
+  // --- Board-level connectors -------------------------------------------
+  // Framework publishes these connector families and pinouts. Runtime GLBs
+  // replace these procedural fallbacks with pinned KiCad geometry when loaded.
   const batteryConnector = pinConnector(0.72, 0.2, 10, 0x202529);
   batteryConnector.userData.connectorRole = 'battery';
   batteryConnector.position.set(0.3, 0.125, 0.76);
@@ -284,6 +372,7 @@ function addBoardDetails(group: THREE.Group) {
   group.add(displayConnector);
 
   const webcamConnector = pinConnector(0.72, 0.14, 30, 0xd7d9d4);
+  webcamConnector.userData.connectorRole = 'webcam';
   webcamConnector.position.set(-0.95, 0.125, 0.48);
   group.add(webcamConnector);
 
@@ -297,9 +386,51 @@ function addBoardDetails(group: THREE.Group) {
   audioZif.position.set(2.42, 0.125, 0.56);
   group.add(audioZif);
 
-  // Framework publishes five mainboard fastener locations in
-  // Mainboard/OpenSCAD/tray.scad. These are mapped into the teaching board
-  // using the official 226.9 x 104.83 mm envelope.
+  // --- Board routing / silkscreen cues ----------------------------------
+  // Keep routing subtle; this is visual structure, not an electrical diagram.
+  const traceMaterial = new THREE.LineBasicMaterial({
+    color: 0xa78952,
+    transparent: true,
+    opacity: 0.34,
+  });
+  const traceSets = [
+    [
+      [-2.5, -1.04],
+      [-1.7, -0.98],
+      [-0.86, -0.86],
+      [-0.3, -0.7],
+    ],
+    [
+      [2.52, -1.04],
+      [1.72, -0.98],
+      [1.02, -0.75],
+      [0.55, -0.52],
+    ],
+    [
+      [2.25, 0.47],
+      [1.64, 0.38],
+      [1.2, 0.28],
+      [0.72, 0.12],
+    ],
+    [
+      [-2.18, 0.42],
+      [-1.66, 0.36],
+      [-1.18, 0.24],
+      [-0.72, 0.08],
+    ],
+  ] as const;
+  for (const trace of traceSets) {
+    group.add(
+      new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(
+          trace.map(([x, z]) => new THREE.Vector3(x, 0.108, z)),
+        ),
+        traceMaterial.clone(),
+      ),
+    );
+  }
+
+  // Framework publishes five mainboard fastener locations in tray.scad.
   for (const [x, z] of [
     [0.753, -1.325],
     [-2.939, 1.101],
