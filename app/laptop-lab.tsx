@@ -39,7 +39,7 @@ import {
   LAPTOP_DISPLAY_SERVICE,
   LAPTOP_INPUT_COVER_SERVICE,
   laptopTeardownStage,
-} from './laptop-layout';
+} from './laptop-layout.ts';
 
 type LaptopView = 'outside' | 'inside';
 type LaptopMode = 'explore' | 'connections';

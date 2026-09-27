@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { LAPTOP_INTERNAL_LAYOUT } from './laptop-layout';
+import { LAPTOP_INTERNAL_LAYOUT } from './laptop-layout.ts';
 
 export type RealisticLaptopInternalId =
   | 'battery'
