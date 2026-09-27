@@ -1211,8 +1211,6 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     PARTS.find((part) => part.id === selected) ?? visibleParts[0];
   const lessonStep =
     LAPTOP_LESSON_STEPS[lessonIndex] ?? LAPTOP_LESSON_STEPS[0];
-  const lessonPart =
-    PARTS.find((part) => part.id === lessonStep.part) ?? PARTS[0];
   const lessonStepComplete =
     !lessonStep.requiredCable ||
     disconnectedInternalCables.includes(lessonStep.requiredCable);
@@ -1965,18 +1963,6 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     };
   }, []);
 
-  const selectPart = (id: LaptopPartId) => {
-    const part = PARTS.find((candidate) => candidate.id === id);
-    if (!part) return;
-    modeRef.current = 'explore';
-    setMode('explore');
-    viewRef.current = part.view;
-    setView(part.view);
-    if (part.view === 'inside' && explodeRef.current < LAPTOP_INPUT_COVER_SERVICE.internalsVisibleAt)
-      setExplode(18);
-    selectedRef.current = part.id;
-    setSelected(part.id);
-  };
 
   const changeView = (next: LaptopView) => {
     setGuided(false);
