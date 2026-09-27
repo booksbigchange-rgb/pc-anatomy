@@ -977,19 +977,21 @@ export function buildRealisticLaptopInternals() {
     // The Input Cover is animated by Laptop Lab before this internal service
     // sequence begins. Framework service guides keep the Bottom Cover as the
     // chassis while the Input Cover is lifted/flipped to expose the internals.
-    teardownPart(battery, 18, 34, [0, 0.82, 1.0], [-0.04, 0, 0]),
-    teardownPart(ssd, 30, 46, [-0.55, 0.82, 0.2], [0, -0.04, 0.03]),
-    teardownPart(wifi, 34, 50, [0.62, 0.78, 0.22], [0, 0.05, -0.03]),
-    teardownPart(ram, 42, 60, [0.36, 0.92, 0.1], [-0.06, 0, 0]),
-    teardownPart(speakers, 50, 68, [0, 0.72, 0.9], [0.03, 0, 0]),
-    teardownPart(fan, 58, 78, [-0.55, 0.9, -0.38], [-0.05, -0.04, 0]),
-    teardownPart(cpu, 72, 88, [-0.2, 1.08, -0.12], [0, 0.06, 0]),
+    // Final positions form a readable service layout around the chassis
+    // instead of stacking every removed part vertically over the board.
+    teardownPart(battery, 18, 34, [-4.15, 0.34, 0.72], [-0.025, -0.04, 0]),
+    teardownPart(ssd, 30, 46, [-2.95, 0.42, 1.42], [0, -0.03, 0.025]),
+    teardownPart(wifi, 34, 50, [1.08, 0.4, 1.4], [0, 0.04, -0.025]),
+    teardownPart(ram, 42, 60, [1.0, 0.46, 2.0], [-0.035, 0, 0]),
+    teardownPart(speakers, 50, 68, [0, 0.3, 0.18], [0.015, 0, 0]),
+    teardownPart(fan, 58, 78, [-2.62, 0.48, -0.04], [-0.03, -0.035, 0]),
+    teardownPart(cpu, 72, 88, [3.25, 0.48, 0.22], [0, 0.04, 0]),
     teardownPart(
       motherboard.group,
       84,
       100,
-      [0, 1.18, -0.32],
-      [-0.05, 0, 0.025],
+      [0, 0.62, -0.34],
+      [-0.025, 0, 0.012],
     ),
   ];
 

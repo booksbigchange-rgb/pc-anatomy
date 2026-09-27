@@ -1048,8 +1048,11 @@ function buildLaptop() {
     end: 100,
     homePosition: serviceDisplayAssembly.position.clone(),
     homeRotation: serviceDisplayAssembly.rotation.clone(),
-    offset: new THREE.Vector3(0, 1.1, -0.6),
-    rotationOffset: new THREE.Vector3(-0.08, 0, 0),
+    // Keep the display close to its hinge line at the end of the teaching
+    // teardown. A small separation shows the hinge relationship without
+    // sending the whole display assembly floating above the laptop.
+    offset: new THREE.Vector3(0, 0.42, -0.24),
+    rotationOffset: new THREE.Vector3(-0.04, 0, 0),
   });
 
   inside.visible = false;
@@ -1203,7 +1206,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
               ? 'Cooling + CPU'
               : explode < 96
                 ? 'Motherboard'
-                : 'Display + hinges';
+                : 'Service layout';
 
   useEffect(() => {
     selectedRef.current = selected;
