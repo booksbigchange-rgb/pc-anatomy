@@ -166,6 +166,51 @@ await test('internal cabling distinguishes flat flex ribbons from wire harnesses
 });
 
 
+await test('internal material palette preserves distinct real-world surface classes', () => {
+  const laptop = buildRealisticLaptopInternals();
+  const roles = new Set<string>();
+  const roleMaterials = new Map<string, THREE.MeshStandardMaterial>();
+
+  laptop.inside.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    const materials = Array.isArray(object.material)
+      ? object.material
+      : [object.material];
+
+    for (const value of materials) {
+      if (!(value instanceof THREE.MeshStandardMaterial)) continue;
+      const role =
+        (object.userData.materialRole as string | undefined) ??
+        (value.userData.materialRole as string | undefined);
+      if (!role) continue;
+      roles.add(role);
+      roleMaterials.set(role, value);
+    }
+  });
+
+  for (const role of [
+    'pcb',
+    'ic-package',
+    'battery-wrap',
+    'copper',
+    'gold-contact',
+    'metal-shield',
+    'speaker-plastic',
+    'tape',
+    'aluminum',
+  ]) {
+    assert.ok(roles.has(role), 'missing material class: ' + role);
+  }
+
+  const battery = roleMaterials.get('battery-wrap');
+  const copper = roleMaterials.get('copper');
+  const pcb = roleMaterials.get('pcb');
+  assert.ok(battery && battery.roughness >= 0.7 && battery.metalness <= 0.05);
+  assert.ok(copper && copper.metalness >= 0.8);
+  assert.ok(pcb && pcb.metalness <= 0.08 && pcb.roughness >= 0.55);
+});
+
+
 await test('chassis realism includes rails, speaker pockets, hinge routing and retention hardware', () => {
   const laptop = buildRealisticLaptopInternals();
   assert.equal(laptop.chassisDetails.userData.chassisDetailVersion, 1);

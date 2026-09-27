@@ -1285,7 +1285,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
+    renderer.toneMappingExposure = 0.98;
 
     // A local studio environment gives the aluminum chassis realistic
     // reflections without any runtime network dependency.
@@ -1311,35 +1311,36 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     controls.maxPolarAngle = Math.PI / 2.02;
     controls.target.set(0, 1.15, 0.15);
 
-    scene.add(new THREE.HemisphereLight(0xd8efff, 0x3a312d, 1.85));
-    const key = new THREE.DirectionalLight(0xfff5ea, 3.25);
+    scene.add(new THREE.HemisphereLight(0xd8efff, 0x2f2926, 1.25));
+    const key = new THREE.DirectionalLight(0xfff5ea, 2.85);
     key.position.set(7.5, 10.5, 8.5);
     key.castShadow = true;
     key.shadow.mapSize.set(2048, 2048);
     key.shadow.bias = -0.00035;
-    key.shadow.normalBias = 0.02;
+    key.shadow.normalBias = 0.018;
+    key.shadow.radius = 3;
     key.shadow.camera.left = -10;
     key.shadow.camera.right = 10;
     key.shadow.camera.top = 10;
     key.shadow.camera.bottom = -10;
     scene.add(key);
 
-    const fill = new THREE.DirectionalLight(0xa8c7ff, 0.72);
+    const fill = new THREE.DirectionalLight(0xa8c7ff, 0.44);
     fill.position.set(-8, 5, 5);
     scene.add(fill);
 
-    const rim = new THREE.DirectionalLight(0x82e0db, 0.78);
+    const rim = new THREE.DirectionalLight(0x82e0db, 0.52);
     rim.position.set(5, 7, -8);
     scene.add(rim);
 
     // Large soft-box lights create long, readable highlights on the aluminum
     // surfaces and screen glass, closer to a product render than a game prop.
-    const softbox = new THREE.RectAreaLight(0xfff3e8, 7.5, 7.5, 4.5);
+    const softbox = new THREE.RectAreaLight(0xfff3e8, 5.6, 7.5, 4.5);
     softbox.position.set(-4.8, 7.8, 6.6);
     softbox.lookAt(0, 1.2, 0);
     scene.add(softbox);
 
-    const edgeSoftbox = new THREE.RectAreaLight(0xa8dce8, 4.0, 5.0, 3.0);
+    const edgeSoftbox = new THREE.RectAreaLight(0xa8dce8, 2.7, 5.0, 3.0);
     edgeSoftbox.position.set(5.8, 5.4, -5.2);
     edgeSoftbox.lookAt(0, 1.4, -0.8);
     scene.add(edgeSoftbox);
@@ -1862,7 +1863,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
         const highlightColor =
           (item.userData.highlightColor as number | undefined) ?? 0x1d5d66;
         material.emissive.setHex(target ? highlightColor : 0x000000);
-        material.emissiveIntensity = target ? 1.35 : 0;
+        material.emissiveIntensity = target ? 0.92 : 0;
         const pulse = 1 + Math.sin(performance.now() * 0.006) * 0.05;
         item.scale.setScalar(target ? pulse : 1);
       }
@@ -1902,7 +1903,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
           const cableMaterial = cable.object.material;
           if (cableMaterial instanceof THREE.MeshStandardMaterial) {
             cableMaterial.emissive.setHex(disconnected ? 0x6a3414 : 0x000000);
-            cableMaterial.emissiveIntensity = disconnected ? 0.7 : 0;
+            cableMaterial.emissiveIntensity = disconnected ? 0.46 : 0;
           }
         }
       }
@@ -1940,7 +1941,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
         for (const material of materials) {
           if (!(material instanceof THREE.MeshStandardMaterial)) continue;
           material.emissive.setHex(selectedNow ? 0x0b2428 : 0x000000);
-          material.emissiveIntensity = selectedNow ? 0.16 : 0;
+          material.emissiveIntensity = selectedNow ? 0.1 : 0;
         }
       });
 

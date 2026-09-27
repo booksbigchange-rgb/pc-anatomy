@@ -18,20 +18,20 @@ export type RealisticLaptopInternalId =
   | 'speakers';
 
 const C = {
-  shell: 0x69747a,
-  shellDark: 0x343d42,
-  pcb: 0x24594e,
-  pcbEdge: 0x1d473f,
-  chip: 0x171c1f,
-  chipSoft: 0x2b3236,
-  shield: 0xadb4b7,
-  copper: 0xba794a,
-  gold: 0xc6a15a,
-  battery: 0x30383d,
-  ram: 0x31594f,
-  ssd: 0x3a5b52,
-  wifi: 0x3e6257,
-  speaker: 0x22292d,
+  shell: 0x727c81,
+  shellDark: 0x30383c,
+  pcb: 0x1f5046,
+  pcbEdge: 0x173c35,
+  chip: 0x14191c,
+  chipSoft: 0x272e32,
+  shield: 0xa9b1b4,
+  copper: 0xb87345,
+  gold: 0xb9964e,
+  battery: 0x252c30,
+  ram: 0x2b5147,
+  ssd: 0x31554b,
+  wifi: 0x365a4f,
+  speaker: 0x1d2327,
   connector: 0xe2e4df,
 };
 
@@ -39,8 +39,11 @@ function material(
   color: number,
   roughness = 0.5,
   metalness = 0.15,
+  role?: string,
 ) {
-  return new THREE.MeshStandardMaterial({ color, roughness, metalness });
+  const value = new THREE.MeshStandardMaterial({ color, roughness, metalness });
+  if (role) value.userData.materialRole = role;
+  return value;
 }
 
 function mesh(
@@ -48,8 +51,14 @@ function mesh(
   color: number,
   roughness = 0.5,
   metalness = 0.15,
+  role?: string,
 ) {
-  return new THREE.Mesh(geometry, material(color, roughness, metalness));
+  const item = new THREE.Mesh(
+    geometry,
+    material(color, roughness, metalness, role),
+  );
+  if (role) item.userData.materialRole = role;
+  return item;
 }
 
 function physicalMesh(
@@ -57,20 +66,23 @@ function physicalMesh(
   color: number,
   roughness = 0.32,
   metalness = 0.7,
+  role?: string,
 ) {
-  return new THREE.Mesh(
-    geometry,
-    new THREE.MeshPhysicalMaterial({
-      color,
-      roughness,
-      metalness,
-      clearcoat: 0.1,
-      clearcoatRoughness: 0.24,
-      envMapIntensity: 1.14,
-      anisotropy: metalness > 0.5 ? 0.28 : 0,
-      anisotropyRotation: Math.PI / 2,
-    }),
-  );
+  const value = new THREE.MeshPhysicalMaterial({
+    color,
+    roughness,
+    metalness,
+    clearcoat: metalness > 0.5 ? 0.04 : 0.02,
+    clearcoatRoughness: 0.34,
+    envMapIntensity: metalness > 0.5 ? 0.92 : 0.72,
+    anisotropy: metalness > 0.5 ? 0.24 : 0,
+    anisotropyRotation: Math.PI / 2,
+  });
+  if (role) value.userData.materialRole = role;
+
+  const item = new THREE.Mesh(geometry, value);
+  if (role) item.userData.materialRole = role;
+  return item;
 }
 
 function rounded(
@@ -81,12 +93,14 @@ function rounded(
   color: number,
   roughness = 0.5,
   metalness = 0.15,
+  role?: string,
 ) {
   return mesh(
     new RoundedBoxGeometry(width, height, depth, 4, radius),
     color,
     roughness,
     metalness,
+    role,
   );
 }
 
@@ -116,7 +130,16 @@ function chip(
   height = 0.12,
   color = C.chip,
 ) {
-  return rounded(width, height, depth, 0.035, color, 0.45, 0.18);
+  return rounded(
+    width,
+    height,
+    depth,
+    0.035,
+    color,
+    0.56,
+    0.06,
+    'ic-package',
+  );
 }
 
 function boardShape() {
@@ -167,7 +190,16 @@ function pinConnector(
   for (let index = 0; index < pins; index++) {
     const x =
       pins === 1 ? 0 : -span / 2 + (span * index) / Math.max(pins - 1, 1);
-    const pin = rounded(0.018, 0.018, depth * 0.62, 0.003, C.gold, 0.26, 0.62);
+    const pin = rounded(
+      0.018,
+      0.018,
+      depth * 0.62,
+      0.003,
+      C.gold,
+      0.24,
+      0.78,
+      'gold-contact',
+    );
     pin.position.set(x, 0.05, 0);
     connector.add(pin);
   }
@@ -523,7 +555,7 @@ function buildMotherboard() {
   const group = new THREE.Group();
   const shell = new THREE.Group();
 
-  const pcb = mesh(boardShape(), C.pcb, 0.56, 0.06);
+  const pcb = mesh(boardShape(), C.pcb, 0.62, 0.035, 'pcb');
   shell.add(pcb);
 
   const edge = new THREE.LineSegments(
@@ -566,7 +598,16 @@ function buildRam() {
   // Two low-profile SODIMMs. The sockets and retaining clips belong to the
   // motherboard and are intentionally NOT children of this removable group.
   for (const x of [-0.43, 0.43]) {
-    const ramBoard = rounded(0.68, 0.035, 1.58, 0.018, 0x31594f, 0.56, 0.04);
+    const ramBoard = rounded(
+      0.68,
+      0.035,
+      1.58,
+      0.018,
+      C.ram,
+      0.62,
+      0.035,
+      'pcb',
+    );
     ramBoard.position.set(x, 0.035, 0);
     group.add(ramBoard);
 
@@ -582,7 +623,7 @@ function buildRam() {
 
     // Visible contact fingers run along the socketed long edge.
     for (let index = 0; index < 14; index++) {
-      const contact = rounded(0.055, 0.01, 0.028, 0.003, C.gold, 0.28, 0.62);
+      const contact = rounded(0.055, 0.01, 0.028, 0.003, C.gold, 0.24, 0.78, 'gold-contact');
       contact.position.set(
         x - 0.312,
         0.058,
@@ -606,7 +647,16 @@ function buildSsd() {
   group.userData.removableHardwareVersion = 2;
 
   // M.2 2280: thin PCB, controller, NAND, DRAM/cache and keyed contacts.
-  const pcb = rounded(2.03, 0.035, 0.56, 0.02, 0x34564f, 0.56, 0.04);
+  const pcb = rounded(
+    2.03,
+    0.035,
+    0.56,
+    0.02,
+    C.ssd,
+    0.62,
+    0.035,
+    'pcb',
+  );
   group.add(pcb);
 
   for (const x of [-0.48, -0.05, 0.38]) {
@@ -631,7 +681,7 @@ function buildSsd() {
   // Gold edge fingers at the socket end with an M-key gap.
   for (let index = 0; index < 12; index++) {
     if (index === 8 || index === 9) continue;
-    const finger = rounded(0.15, 0.009, 0.022, 0.003, C.gold, 0.26, 0.64);
+    const finger = rounded(0.15, 0.009, 0.022, 0.003, C.gold, 0.24, 0.78, 'gold-contact');
     finger.position.set(-0.95, 0.028, -0.22 + index * 0.04);
     group.add(finger);
   }
@@ -656,14 +706,24 @@ function buildWifi() {
 
   // M.2 2230 Wi-Fi module. Chassis antenna leads are modeled separately so
   // they do not travel away with the card during teardown.
-  const pcb = rounded(0.76, 0.035, 0.56, 0.02, 0x3a5e54, 0.56, 0.04);
+  const pcb = rounded(
+    0.76,
+    0.035,
+    0.56,
+    0.02,
+    C.wifi,
+    0.62,
+    0.035,
+    'pcb',
+  );
   group.add(pcb);
 
   const shield = physicalMesh(
     new RoundedBoxGeometry(0.46, 0.045, 0.34, 3, 0.022),
     0xaeb5b8,
-    0.32,
-    0.56,
+    0.28,
+    0.72,
+    'metal-shield',
   );
   shield.position.set(0.06, 0.065, 0.02);
   group.add(shield);
@@ -695,7 +755,7 @@ function buildWifi() {
   // Keyed M.2 contact edge.
   for (let index = 0; index < 9; index++) {
     if (index === 6) continue;
-    const finger = rounded(0.1, 0.009, 0.022, 0.003, C.gold, 0.26, 0.64);
+    const finger = rounded(0.1, 0.009, 0.022, 0.003, C.gold, 0.24, 0.78, 'gold-contact');
     finger.position.set(-0.34, 0.027, -0.18 + index * 0.045);
     group.add(finger);
   }
@@ -791,7 +851,13 @@ function buildCooling() {
   // read as a real heatsink instead of one solid silver block.
   const finGeometry = new THREE.BoxGeometry(0.018, 0.15, 0.94);
   for (let index = 0; index < 24; index++) {
-    const fin = mesh(finGeometry.clone(), 0xb17a52, 0.3, 0.68);
+    const fin = mesh(
+      finGeometry.clone(),
+      C.copper,
+      0.3,
+      0.82,
+      'copper',
+    );
     fin.position.set(-1.62 + index * 0.025, 0.095, fanZ);
     group.add(fin);
   }
@@ -800,8 +866,9 @@ function buildCooling() {
   const coldPlate = physicalMesh(
     new RoundedBoxGeometry(0.92, 0.07, 0.84, 4, 0.055),
     C.copper,
-    0.26,
-    0.76,
+    0.28,
+    0.86,
+    'copper',
   );
   coldPlate.position.set(1.0, 0.145, -0.06);
   group.add(coldPlate);
@@ -827,7 +894,7 @@ function buildCooling() {
         12,
         false,
       ),
-      material(C.copper, 0.24, 0.76),
+      material(C.copper, 0.28, 0.86, 'copper'),
     );
     group.add(heatPipe);
   }
@@ -893,7 +960,16 @@ function buildSpeakers() {
   const group = new THREE.Group();
 
   for (const x of [-3.1, 3.1]) {
-    const body = rounded(0.56, 0.18, 1.46, 0.16, C.speaker, 0.6, 0.06);
+    const body = rounded(
+      0.56,
+      0.18,
+      1.46,
+      0.16,
+      C.speaker,
+      0.72,
+      0.025,
+      'speaker-plastic',
+    );
     body.position.set(x, 0, 0.62);
     group.add(body);
 
@@ -920,11 +996,29 @@ function buildBatteryFallback() {
   const group = new THREE.Group();
 
   // Fallback used only until the official Framework battery GLB is loaded.
-  const body = rounded(5.75, 0.28, 2.45, 0.13, C.battery, 0.5, 0.12);
+  const body = rounded(
+    5.75,
+    0.28,
+    2.45,
+    0.13,
+    C.battery,
+    0.78,
+    0.018,
+    'battery-wrap',
+  );
   group.add(body);
 
   for (const x of [-2.1, -1.05, 0, 1.05, 2.1]) {
-    const seam = rounded(0.018, 0.02, 2.12, 0.005, 0x495258, 0.7, 0.02);
+    const seam = rounded(
+      0.018,
+      0.02,
+      2.12,
+      0.005,
+      0x454d51,
+      0.82,
+      0.01,
+      'battery-seam',
+    );
     seam.position.set(x, 0.15, 0);
     group.add(seam);
   }
@@ -1083,8 +1177,9 @@ function buildChassisDetails() {
         0.02,
       ),
       tape.role === 'display' ? 0x343a3d : 0xb39a6a,
-      0.72,
-      0.06,
+      0.82,
+      0.025,
+      'tape',
     );
     object.position.set(...tape.position);
     object.rotation.y = tape.rotation;
@@ -1171,9 +1266,10 @@ export function buildRealisticLaptopInternals() {
   // Thin structural shell instead of one large solid block.
   const bottom = physicalMesh(
     new RoundedBoxGeometry(7.34, 0.1, 5.62, 6, 0.17),
-    0x69747a,
-    0.32,
-    0.66,
+    C.shell,
+    0.34,
+    0.76,
+    'aluminum',
   );
   bottom.position.y = 0.68;
   inside.add(bottom);
@@ -1258,7 +1354,16 @@ export function buildRealisticLaptopInternals() {
     [2.6, 0.82, 0.5, 0.18, -0.2],
     [-1.95, -1.78, 0.62, 0.18, 0.14],
   ] as const) {
-    const tape = rounded(w, 0.022, d, 0.025, 0x15191b, 0.9, 0.01);
+    const tape = rounded(
+      w,
+      0.022,
+      d,
+      0.025,
+      0x15191b,
+      0.9,
+      0.005,
+      'tape',
+    );
     tape.position.set(x, 0.86, z);
     tape.rotation.y = rotation;
     serviceInterior.add(tape);
