@@ -6,6 +6,7 @@ import {
   LAPTOP_INTERNAL_LAYOUT,
   laptopTeardownStage,
 } from '../app/laptop-layout.ts';
+import { LAPTOP_LESSON_STEPS } from '../app/laptop-lesson.ts';
 import {
   applyLaptopTeardown,
   buildRealisticLaptopInternals,
@@ -23,6 +24,53 @@ const assertVec = (
   close(actual.y, expected[1], label + '.y');
   close(actual.z, expected[2], label + '.z');
 };
+
+await test('guided laptop lesson follows the stabilized service sequence', () => {
+  assert.equal(LAPTOP_LESSON_STEPS[0].view, 'outside');
+  assert.equal(LAPTOP_LESSON_STEPS[0].explode, 0);
+  assert.equal(
+    LAPTOP_LESSON_STEPS[LAPTOP_LESSON_STEPS.length - 1].explode,
+    100,
+  );
+
+  for (let index = 1; index < LAPTOP_LESSON_STEPS.length; index++) {
+    assert.ok(
+      LAPTOP_LESSON_STEPS[index].explode >=
+        LAPTOP_LESSON_STEPS[index - 1].explode,
+      'lesson teardown moves backwards at step ' + index,
+    );
+  }
+
+  const cableThresholds = {
+    battery: 24,
+    speaker: 50,
+    display: 90,
+  } as const;
+
+  for (const step of LAPTOP_LESSON_STEPS) {
+    if (!step.requiredCable) continue;
+    assert.ok(
+      step.explode < cableThresholds[step.requiredCable],
+      step.requiredCable + ' lesson asks for a cable after it is hidden',
+    );
+  }
+});
+
+await test('guided lesson covers the major removable and thermal components', () => {
+  const parts = new Set(LAPTOP_LESSON_STEPS.map((step) => step.part));
+  for (const required of [
+    'battery',
+    'ssd',
+    'wifi',
+    'ram',
+    'fan',
+    'cpu',
+    'motherboard',
+  ]) {
+    assert.ok(parts.has(required as never), 'lesson misses component: ' + required);
+  }
+});
+
 
 await test('laptop internal home positions stay inside the Framework chassis envelope', () => {
   for (const [name, item] of Object.entries(LAPTOP_INTERNAL_LAYOUT)) {

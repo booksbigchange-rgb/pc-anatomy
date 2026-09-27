@@ -40,6 +40,10 @@ import {
   LAPTOP_INPUT_COVER_SERVICE,
   laptopTeardownStage,
 } from './laptop-layout.ts';
+import {
+  LAPTOP_LESSON_STEPS,
+  type LaptopLessonPartId,
+} from './laptop-lesson.ts';
 
 type LaptopView = 'outside' | 'inside';
 type LaptopMode = 'explore' | 'connections';
@@ -55,18 +59,7 @@ type LaptopConnectionId =
   | 'usb-device'
   | 'external-display'
   | 'headphones-audio';
-type LaptopPartId =
-  | 'display'
-  | 'keyboard'
-  | 'trackpad'
-  | 'battery'
-  | 'motherboard'
-  | 'cpu'
-  | 'ram'
-  | 'ssd'
-  | 'fan'
-  | 'wifi'
-  | 'speakers';
+type LaptopPartId = LaptopLessonPartId;
 
 type LaptopConnectionTask = {
   id: LaptopConnectionId;
@@ -227,19 +220,7 @@ const CONNECTION_TASKS: LaptopConnectionTask[] = [
   },
 ];
 
-const LESSON_ORDER: LaptopPartId[] = [
-  'display',
-  'keyboard',
-  'trackpad',
-  'battery',
-  'motherboard',
-  'cpu',
-  'ram',
-  'ssd',
-  'fan',
-  'wifi',
-  'speakers',
-];
+
 
 // Teaching geometry follows the approved Framework Laptop 13 CAD proportions
 // so the clickable model and the realistic exterior read as the same machine.
@@ -1228,8 +1209,13 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   const visibleParts = PARTS.filter((part) => part.view === view);
   const selectedPart =
     PARTS.find((part) => part.id === selected) ?? visibleParts[0];
+  const lessonStep =
+    LAPTOP_LESSON_STEPS[lessonIndex] ?? LAPTOP_LESSON_STEPS[0];
   const lessonPart =
-    PARTS.find((part) => part.id === LESSON_ORDER[lessonIndex]) ?? PARTS[0];
+    PARTS.find((part) => part.id === lessonStep.part) ?? PARTS[0];
+  const lessonStepComplete =
+    !lessonStep.requiredCable ||
+    disconnectedInternalCables.includes(lessonStep.requiredCable);
   const currentConnection = CONNECTION_TASKS[connectionTask];
   const allConnectionsComplete = connected.length === CONNECTION_TASKS.length;
   const teardownStage = laptopTeardownStage(explode);
@@ -1941,7 +1927,11 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
         for (const material of materials) {
           if (!(material instanceof THREE.MeshStandardMaterial)) continue;
           material.emissive.setHex(selectedNow ? 0x0b2428 : 0x000000);
-          material.emissiveIntensity = selectedNow ? 0.1 : 0;
+          material.emissiveIntensity = selectedNow
+            ? guidedRef.current
+              ? 0.18
+              : 0.1
+            : 0;
         }
       });
 
@@ -2008,23 +1998,51 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     setSelected(first.id);
   };
 
-  const startGuide = () => {
+  const applyLessonStep = (index: number) => {
+    const step = LAPTOP_LESSON_STEPS[index];
+    if (!step) return;
+
     stopTeardown();
-    setExplode(0);
     modeRef.current = 'explore';
     setMode('explore');
+    viewRef.current = step.view;
+    setView(step.view);
+    realisticRef.current = false;
+    setRealisticExterior(false);
+    setExplode(step.explode);
+    selectedRef.current = step.part;
+    setSelected(step.part);
+    setLessonIndex(index);
+
+    if (step.requiredCable) {
+      const done = disconnectedInternalCablesRef.current.includes(
+        step.requiredCable,
+      );
+      setInternalCableFeedback(
+        done
+          ? step.requiredCable[0].toUpperCase() +
+              step.requiredCable.slice(1) +
+              ' cable is unplugged. Continue when ready.'
+          : step.action,
+      );
+    }
+  };
+
+  const startGuide = () => {
+    disconnectedInternalCablesRef.current = [];
+    setDisconnectedInternalCables([]);
     setGuided(true);
-    setLessonIndex(0);
-    selectPart(LESSON_ORDER[0]);
+    guidedRef.current = true;
+    applyLessonStep(0);
   };
 
   const moveGuide = (direction: -1 | 1) => {
+    if (direction === 1 && !lessonStepComplete) return;
     const next = Math.min(
-      LESSON_ORDER.length - 1,
+      LAPTOP_LESSON_STEPS.length - 1,
       Math.max(0, lessonIndex + direction),
     );
-    setLessonIndex(next);
-    selectPart(LESSON_ORDER[next]);
+    applyLessonStep(next);
   };
 
   const startConnections = () => {
@@ -2134,7 +2152,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
                 CONNECTION_TASKS.length,
               )} / ${CONNECTION_TASKS.length}`
             : guided
-              ? `GUIDED LESSON · ${lessonIndex + 1} / ${LESSON_ORDER.length}`
+              ? `GUIDED LESSON · ${lessonIndex + 1} / ${LAPTOP_LESSON_STEPS.length}`
               : view === 'outside'
                 ? '01 / LAPTOP EXTERIOR'
                 : '02 / LAPTOP INTERNALS'}
@@ -2145,7 +2163,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
               ? 'Laptop connected.'
               : currentConnection.name
             : guided
-              ? lessonPart.name
+              ? lessonStep.title
               : view === 'outside'
                 ? realisticExterior && realisticLoaded
                   ? 'Check the closed CAD reference.'
@@ -2158,7 +2176,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
               ? 'You connected power, USB, an external display and headphones.'
               : currentConnection.instruction
             : guided
-              ? lessonPart.description
+              ? lessonStep.action
               : view === 'outside'
                 ? realisticExterior && realisticLoaded
                   ? 'This closed CAD reference preserves the approved Framework Laptop 13 exterior proportions. Switch back to the open laptop for interactive controls and ports.'
@@ -2170,7 +2188,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
             <span
               style={{
                 width:
-                  ((lessonIndex + 1) / LESSON_ORDER.length) * 100 + '%',
+                  ((lessonIndex + 1) / LAPTOP_LESSON_STEPS.length) * 100 + '%',
               }}
             />
           </div>
@@ -2210,6 +2228,24 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
               Reset connections
             </button>
           </div>
+        ) : guided ? (
+          <div className="laptop-lesson-list" aria-label="Guided lesson steps">
+            {LAPTOP_LESSON_STEPS.map((step, index) => (
+              <div
+                key={step.id}
+                className={
+                  index === lessonIndex
+                    ? 'current'
+                    : index < lessonIndex
+                      ? 'done'
+                      : ''
+                }
+              >
+                <span>{index < lessonIndex ? '✓' : index + 1}</span>
+                <strong>{step.title}</strong>
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="laptop-part-list">
             {visibleParts.map((part) => {
@@ -2237,15 +2273,17 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
             {mode === 'connections'
               ? 'Connection tip'
               : guided
-                ? 'Lesson path'
-                : 'Next laptop milestone'}
+                ? 'What to notice'
+                : 'Learning goal'}
           </strong>
           <span>
             {mode === 'connections'
               ? 'Rotate the laptop and look for the glowing port on either side.'
               : guided
-                ? 'Outside first, then the main components inside.'
-                : 'Improved exterior model · troubleshooting · assembly'}
+                ? lessonStep.notice
+                : view === 'outside'
+                  ? 'Identify the display, keyboard, trackpad and the ports around the chassis.'
+                  : 'Trace how power, storage, memory, cooling and cables fit inside one laptop.'}
           </span>
         </div>
       </aside>
@@ -2260,15 +2298,18 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
             'laptop-stage-tip' +
             (view === 'inside' && mode === 'explore' && !guided
               ? ' teardown-open'
-              : '')
+              : '') +
+            (guided ? ' guided' : '')
           }
         >
           <Rotate3D size={15} />
           {mode === 'connections'
             ? 'Drag to orbit · find the glowing port · click to connect'
-            : view === 'inside' && !guided
-              ? 'Drag to orbit · click cables to unplug · use teardown slider'
-              : 'Drag to orbit · scroll to zoom · click a part'}
+            : guided
+              ? lessonStep.action
+              : view === 'inside'
+                ? 'Drag to orbit · click cables to unplug · use teardown slider'
+                : 'Drag to orbit · scroll to zoom · click a part'}
         </div>
 
         {view === 'inside' && mode === 'explore' && !guided && (
@@ -2368,7 +2409,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
           <>
             <p className="laptop-eyebrow">
               {guided
-                ? `LESSON STEP ${lessonIndex + 1} / ${LESSON_ORDER.length}`
+                ? `LESSON STEP ${lessonIndex + 1} / ${LAPTOP_LESSON_STEPS.length}`
                 : 'SELECTED COMPONENT'}
             </p>
             <h2>{selectedPart.name}</h2>
@@ -2377,6 +2418,34 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
               <strong>Why it matters</strong>
               <p>{selectedPart.why}</p>
             </div>
+            {guided && (
+              <div
+                className={
+                  'laptop-lesson-task' +
+                  (lessonStep.requiredCable
+                    ? lessonStepComplete
+                      ? ' complete'
+                      : ' action'
+                    : '')
+                }
+              >
+                <span>
+                  {lessonStep.requiredCable
+                    ? lessonStepComplete
+                      ? 'ACTION COMPLETE'
+                      : 'DO THIS NOW'
+                    : 'LOOK & NOTICE'}
+                </span>
+                <strong>{lessonStep.action}</strong>
+                {lessonStep.requiredCable && (
+                  <small>
+                    {lessonStepComplete
+                      ? 'Cable unplugged — you can continue.'
+                      : 'Next unlocks after you unplug this cable in the 3D view.'}
+                  </small>
+                )}
+              </div>
+            )}
             {!guided && view === 'inside' && (
               <div className="laptop-cable-status">
                 <strong>Service cables</strong>
@@ -2424,16 +2493,20 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
                 >
                   ← Back
                 </button>
-                {lessonIndex < LESSON_ORDER.length - 1 ? (
-                  <button type="button" onClick={() => moveGuide(1)}>
-                    Next →
+                {lessonIndex < LAPTOP_LESSON_STEPS.length - 1 ? (
+                  <button
+                    type="button"
+                    disabled={!lessonStepComplete}
+                    onClick={() => moveGuide(1)}
+                  >
+                    {lessonStepComplete ? 'Next →' : 'Complete action first'}
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={() => {
                       setGuided(false);
-                      selectPart('display');
+                      guidedRef.current = false;
                     }}
                   >
                     Finish lesson ✓
