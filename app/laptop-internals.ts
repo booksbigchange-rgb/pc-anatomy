@@ -1,6 +1,11 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { LAPTOP_INTERNAL_LAYOUT } from './laptop-layout.ts';
+import {
+  LAPTOP_CABLE_LAYOUT,
+  LAPTOP_CHASSIS_FEATURES,
+  LAPTOP_INTERNAL_LAYOUT,
+  type LaptopVec3,
+} from './laptop-layout.ts';
 
 export type RealisticLaptopInternalId =
   | 'battery'
@@ -930,36 +935,37 @@ function buildBatteryFallback() {
   return tag(group, 'battery');
 }
 
-function wireCable(
-  start: THREE.Vector3,
-  end: THREE.Vector3,
+function vectorPath(points: readonly LaptopVec3[]) {
+  return points.map(([x, y, z]) => new THREE.Vector3(x, y, z));
+}
+
+function wireCablePath(
+  points: readonly LaptopVec3[],
   radius: number,
   color: number,
+  role: string,
 ) {
-  const middle = start.clone().lerp(end, 0.5);
-  middle.y += 0.055;
-  const curve = new THREE.CatmullRomCurve3([start, middle, end]);
+  const curve = new THREE.CatmullRomCurve3(vectorPath(points));
   const cable = new THREE.Mesh(
-    new THREE.TubeGeometry(curve, 24, radius, 7, false),
+    new THREE.TubeGeometry(curve, Math.max(24, points.length * 10), radius, 7, false),
     material(color, 0.62, 0.05),
   );
   cable.userData.cableKind = 'wire';
+  cable.userData.cableRole = role;
+  cable.userData.cableOwner = 'chassis';
   cable.castShadow = true;
   return cable;
 }
 
-function flatRibbon(
-  start: THREE.Vector3,
-  end: THREE.Vector3,
+function flatRibbonPath(
+  points: readonly LaptopVec3[],
   width: number,
   color: number,
-  lift = 0.06,
+  role: string,
 ) {
-  const middle = start.clone().lerp(end, 0.5);
-  middle.y += lift;
-  const curve = new THREE.CatmullRomCurve3([start, middle, end]);
+  const curve = new THREE.CatmullRomCurve3(vectorPath(points));
 
-  const segments = 28;
+  const segments = Math.max(28, points.length * 10);
   const positions: number[] = [];
   const indices: number[] = [];
 
@@ -996,8 +1002,96 @@ function flatRibbon(
     }),
   );
   cable.userData.cableKind = 'ribbon';
+  cable.userData.cableRole = role;
+  cable.userData.cableOwner = 'chassis';
   cable.castShadow = true;
   return cable;
+}
+
+function buildChassisDetails() {
+  const group = new THREE.Group();
+  group.userData.chassisDetailVersion = 1;
+
+  for (const rail of LAPTOP_CHASSIS_FEATURES.batteryRails) {
+    const object = rounded(
+      rail.size[0],
+      rail.size[1],
+      rail.size[2],
+      0.025,
+      0x424b50,
+      0.56,
+      0.18,
+    );
+    object.position.set(...rail.position);
+    object.userData.detailKind = 'battery-rail';
+    group.add(object);
+  }
+
+  for (const pocket of LAPTOP_CHASSIS_FEATURES.speakerPockets) {
+    const object = rounded(
+      pocket.size[0],
+      pocket.size[1],
+      pocket.size[2],
+      0.08,
+      0x171d20,
+      0.8,
+      0.03,
+    );
+    object.position.set(...pocket.position);
+    object.userData.detailKind = 'speaker-pocket';
+    group.add(object);
+  }
+
+  const hingeLane = rounded(
+    LAPTOP_CHASSIS_FEATURES.hingeLane.size[0],
+    LAPTOP_CHASSIS_FEATURES.hingeLane.size[1],
+    LAPTOP_CHASSIS_FEATURES.hingeLane.size[2],
+    0.035,
+    0x252d31,
+    0.64,
+    0.16,
+  );
+  hingeLane.position.set(...LAPTOP_CHASSIS_FEATURES.hingeLane.position);
+  hingeLane.userData.detailKind = 'hinge-routing-lane';
+  group.add(hingeLane);
+
+  for (const clip of LAPTOP_CHASSIS_FEATURES.clips) {
+    const base = rounded(0.18, 0.035, 0.12, 0.025, 0x596268, 0.46, 0.34);
+    base.position.set(...clip.position);
+    base.rotation.y = clip.rotation;
+    base.userData.retentionKind = 'clip';
+    base.userData.cableRole = clip.role;
+    group.add(base);
+
+    const bridge = rounded(0.11, 0.045, 0.05, 0.018, 0x7a8488, 0.38, 0.46);
+    bridge.position.set(clip.position[0], clip.position[1] + 0.035, clip.position[2]);
+    bridge.rotation.y = clip.rotation;
+    bridge.userData.retentionKind = 'clip';
+    bridge.userData.cableRole = clip.role;
+    group.add(bridge);
+  }
+
+  for (const tape of LAPTOP_CHASSIS_FEATURES.tape) {
+    const object = physicalMesh(
+      new RoundedBoxGeometry(
+        tape.size[0],
+        tape.size[1],
+        tape.size[2],
+        3,
+        0.02,
+      ),
+      tape.role === 'display' ? 0x343a3d : 0xb39a6a,
+      0.72,
+      0.06,
+    );
+    object.position.set(...tape.position);
+    object.rotation.y = tape.rotation;
+    object.userData.retentionKind = 'tape';
+    object.userData.cableRole = tape.role;
+    group.add(object);
+  }
+
+  return group;
 }
 
 export type LaptopInternalCableId = 'battery' | 'speaker' | 'display';
@@ -1167,6 +1261,9 @@ export function buildRealisticLaptopInternals() {
     serviceInterior.add(tape);
   }
 
+  const chassisDetails = buildChassisDetails();
+  serviceInterior.add(chassisDetails);
+
   const battery = buildBatteryFallback();
   const motherboard = buildMotherboard();
   const cpu = buildCpu();
@@ -1190,57 +1287,67 @@ export function buildRealisticLaptopInternals() {
   // Major internal cables terminate at the teaching-board connector mounts.
   // Their removal thresholds mirror the teardown order so a component never
   // appears to move away while its cable remains magically attached.
-  const batteryCable = wireCable(
-    new THREE.Vector3(0.12, 1.22, 0.28),
-    new THREE.Vector3(0.45, 1.16, -0.16),
+  const batteryCable = wireCablePath(
+    LAPTOP_CABLE_LAYOUT.battery,
     0.035,
     0x202428,
+    'battery',
   );
-  const displayCable = flatRibbon(
-    new THREE.Vector3(1.23, 1.17, -0.38),
-    new THREE.Vector3(1.34, 1.19, -2.28),
+  const displayCable = flatRibbonPath(
+    LAPTOP_CABLE_LAYOUT.display,
     0.12,
     0x23292c,
-    0.045,
+    'display',
   );
-  const speakerCable = wireCable(
-    new THREE.Vector3(2.25, 1.16, -0.72),
-    new THREE.Vector3(3.02, 1.18, 1.18),
+  const speakerCable = wireCablePath(
+    LAPTOP_CABLE_LAYOUT.speakerHarness,
     0.018,
     0x202428,
+    'speaker',
   );
-
-  const wifiAntennaBlack = wireCable(
-    new THREE.Vector3(2.32, 1.25, -0.02),
-    new THREE.Vector3(3.12, 1.03, -2.2),
+  const speakerWireLeft = wireCablePath(
+    LAPTOP_CABLE_LAYOUT.speakerLeft,
+    0.012,
+    0x30363a,
+    'speaker-left',
+  );
+  const speakerWireRight = wireCablePath(
+    LAPTOP_CABLE_LAYOUT.speakerRight,
+    0.012,
+    0x30363a,
+    'speaker-right',
+  );
+  const wifiAntennaBlack = wireCablePath(
+    LAPTOP_CABLE_LAYOUT.wifiBlack,
     0.01,
     0x111416,
+    'wifi-black',
   );
-  const wifiAntennaWhite = wireCable(
-    new THREE.Vector3(2.68, 1.25, -0.02),
-    new THREE.Vector3(2.82, 1.05, -2.4),
+  const wifiAntennaWhite = wireCablePath(
+    LAPTOP_CABLE_LAYOUT.wifiWhite,
     0.01,
     0xd4d6d4,
+    'wifi-white',
   );
-  const keyboardRibbon = flatRibbon(
-    new THREE.Vector3(0.08, 1.17, -0.8),
-    new THREE.Vector3(0.16, 1.12, 0.12),
+  const keyboardRibbon = flatRibbonPath(
+    LAPTOP_CABLE_LAYOUT.keyboard,
     0.18,
     0xb7864a,
-    0.045,
+    'keyboard',
   );
-  const touchpadRibbon = flatRibbon(
-    new THREE.Vector3(0.72, 1.13, 0.2),
-    new THREE.Vector3(0.38, 1.08, 1.62),
+  const touchpadRibbon = flatRibbonPath(
+    LAPTOP_CABLE_LAYOUT.touchpad,
     0.16,
     0xb98b50,
-    0.04,
+    'touchpad',
   );
 
   serviceInterior.add(
     batteryCable,
     displayCable,
     speakerCable,
+    speakerWireLeft,
+    speakerWireRight,
     wifiAntennaBlack,
     wifiAntennaWhite,
     keyboardRibbon,
@@ -1314,6 +1421,7 @@ export function buildRealisticLaptopInternals() {
   return {
     inside,
     serviceInterior,
+    chassisDetails,
     parts: {
       battery,
       motherboard: motherboard.group,
@@ -1332,7 +1440,7 @@ export function buildRealisticLaptopInternals() {
       {
         id: 'battery' as const,
         object: batteryCable,
-        at: 18,
+        at: 24,
         unplugOffset: new THREE.Vector3(0.18, 0.16, 0.16),
       },
       {

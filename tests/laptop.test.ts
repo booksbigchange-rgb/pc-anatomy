@@ -166,6 +166,70 @@ await test('internal cabling distinguishes flat flex ribbons from wire harnesses
 });
 
 
+await test('chassis realism includes rails, speaker pockets, hinge routing and retention hardware', () => {
+  const laptop = buildRealisticLaptopInternals();
+  assert.equal(laptop.chassisDetails.userData.chassisDetailVersion, 1);
+
+  let batteryRails = 0;
+  let speakerPockets = 0;
+  let hingeLanes = 0;
+  let clips = 0;
+  let tape = 0;
+
+  laptop.chassisDetails.traverse((object) => {
+    if (object.userData.detailKind === 'battery-rail') batteryRails++;
+    if (object.userData.detailKind === 'speaker-pocket') speakerPockets++;
+    if (object.userData.detailKind === 'hinge-routing-lane') hingeLanes++;
+    if (object.userData.retentionKind === 'clip') clips++;
+    if (object.userData.retentionKind === 'tape') tape++;
+  });
+
+  assert.ok(batteryRails >= 3, `expected battery-bay rails, found ${batteryRails}`);
+  assert.ok(speakerPockets >= 2, `expected speaker pockets, found ${speakerPockets}`);
+  assert.ok(hingeLanes >= 1, 'missing hinge routing lane');
+  assert.ok(clips >= 8, `expected cable-retention clips, found ${clips}`);
+  assert.ok(tape >= 6, `expected cable-retention tape, found ${tape}`);
+});
+
+await test('routed chassis cables have roles and remain low inside the laptop envelope', () => {
+  const laptop = buildRealisticLaptopInternals();
+  const roles = new Set<string>();
+  let maxY = -Infinity;
+
+  laptop.serviceInterior.traverse((object) => {
+    if (!object.userData.cableRole) return;
+    roles.add(object.userData.cableRole as string);
+    assert.equal(object.userData.cableOwner, 'chassis');
+
+    const box = new THREE.Box3().setFromObject(object);
+    maxY = Math.max(maxY, box.max.y);
+  });
+
+  for (const role of [
+    'battery',
+    'display',
+    'speaker',
+    'speaker-left',
+    'speaker-right',
+    'wifi-black',
+    'wifi-white',
+    'keyboard',
+    'touchpad',
+  ]) {
+    assert.ok(roles.has(role), 'missing routed cable role: ' + role);
+  }
+
+  assert.ok(maxY < 1.45, `cable routing floats too high above chassis: ${maxY}`);
+});
+
+await test('battery cable is visible after the cover opens and before battery removal begins', () => {
+  assert.ok(
+    LAPTOP_INTERNAL_LAYOUT.battery.teardown.start > LAPTOP_INPUT_COVER_SERVICE.end,
+    'battery begins moving before the student can inspect its cable',
+  );
+});
+
+
 await test('18% teaching state removes the Input Cover from the active work area', () => {
   assert.equal(
     LAPTOP_INPUT_COVER_SERVICE.visibleUntil,
