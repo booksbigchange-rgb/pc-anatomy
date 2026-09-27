@@ -942,6 +942,40 @@ function buildLaptop() {
   const realisticInternals = buildRealisticLaptopInternals();
   inside.add(realisticInternals.inside);
 
+  // Framework service access starts by lifting and flipping the Input Cover,
+  // not by removing the Bottom Cover. Reuse the same input-cover geometry,
+  // keyboard and trackpad in the Anatomy scene so the first teardown motion
+  // matches the official repair flow.
+  const serviceInputCoverAssembly = new THREE.Group();
+  serviceInputCoverAssembly.position.set(0, 1.07, 0);
+
+  const serviceInputCoverCadMount = new THREE.Group();
+  const serviceInputCoverFallback = deck.clone(true);
+  serviceInputCoverFallback.position.y -= 1.07;
+
+  const serviceKeyboard = keyboard.clone(true);
+  serviceKeyboard.position.y -= 1.07;
+  const serviceTrackpad = trackpad.clone(true);
+  serviceTrackpad.position.y -= 1.07;
+
+  serviceInputCoverAssembly.add(
+    serviceInputCoverCadMount,
+    serviceInputCoverFallback,
+    serviceKeyboard,
+    serviceTrackpad,
+  );
+  inside.add(serviceInputCoverAssembly);
+
+  realisticInternals.teardownParts.unshift({
+    object: serviceInputCoverAssembly,
+    start: 0,
+    end: 18,
+    homePosition: serviceInputCoverAssembly.position.clone(),
+    homeRotation: serviceInputCoverAssembly.rotation.clone(),
+    offset: new THREE.Vector3(0, 1.15, 4.65),
+    rotationOffset: new THREE.Vector3(Math.PI * 0.92, 0, 0),
+  });
+
   // Separate service display assembly for Laptop Anatomy. The real Framework
   // display/hinges/webcam are loaded into these mounts at runtime; keeping the
   // display as one parent lets the teardown move it as a mechanically related
@@ -1029,6 +1063,8 @@ function buildLaptop() {
     serviceHingeLeft,
     serviceHingeRight,
     serviceWebcam,
+    serviceInputCoverCadMount,
+    serviceInputCoverFallback,
     inputCoverCadMount,
     displayTopCoverCadMount,
     displayBezelCadMount,
@@ -1149,15 +1185,15 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   const currentConnection = CONNECTION_TASKS[connectionTask];
   const allConnectionsComplete = connected.length === CONNECTION_TASKS.length;
   const teardownStage =
-    explode < 14
+    explode < 1
       ? 'Assembled'
-      : explode < 32
-        ? 'Bottom cover'
+      : explode < 20
+        ? 'Input cover'
         : explode < 50
           ? 'Battery + service parts'
           : explode < 68
             ? 'Memory + speakers'
-            : explode < 87
+            : explode < 88
               ? 'Cooling + CPU'
               : explode < 96
                 ? 'Motherboard'
@@ -1373,6 +1409,16 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       // Extracted CAD keeps its original 0..228.98 mm depth axis. Centre it
       // on the chassis and place its top surface at the interactive deck.
       [0, 1.067, -2.92],
+      [0, 0, 0],
+      0xb5bdc1,
+      0.28,
+      0.74,
+    );
+    loadOpenExteriorPart(
+      'framework-laptop-13-input-cover',
+      laptop.serviceInputCoverCadMount,
+      laptop.serviceInputCoverFallback,
+      [0, -0.003, -2.92],
       [0, 0, 0],
       0xb5bdc1,
       0.28,

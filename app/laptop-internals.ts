@@ -948,26 +948,19 @@ export function buildRealisticLaptopInternals() {
   );
 
   const teardownParts: LaptopTeardownPart[] = [
-    // The sequence mirrors a real service flow rather than a decorative
-    // radial explosion: cover, battery, serviceable cards/memory, cooling,
-    // processor, and finally the motherboard.
-    teardownPart(
-      removedBottomCover,
-      0,
-      18,
-      [7.85, 0.62, 1.2],
-      [-0.12, 0.3, -0.08],
-    ),
-    teardownPart(battery, 14, 32, [0, 1.55, 2.7], [-0.05, 0, 0]),
-    teardownPart(ssd, 27, 44, [2.25, 1.35, 0.45], [0, -0.08, 0.06]),
-    teardownPart(wifi, 32, 49, [-2.2, 1.25, 0.7], [0, 0.08, -0.06]),
-    teardownPart(ram, 40, 58, [0.45, 1.85, 0.2], [-0.12, 0, 0]),
-    teardownPart(speakers, 48, 66, [0, 1.0, 2.55], [0.04, 0, 0]),
-    teardownPart(fan, 56, 76, [-2.3, 1.45, -1.35], [-0.08, -0.08, 0]),
-    teardownPart(cpu, 70, 87, [-0.45, 2.05, -0.25], [0, 0.08, 0]),
+    // The Input Cover is animated by Laptop Lab before this internal service
+    // sequence begins. Framework service guides keep the Bottom Cover as the
+    // chassis while the Input Cover is lifted/flipped to expose the internals.
+    teardownPart(battery, 18, 34, [0, 1.55, 2.7], [-0.05, 0, 0]),
+    teardownPart(ssd, 30, 46, [2.25, 1.35, 0.45], [0, -0.08, 0.06]),
+    teardownPart(wifi, 34, 50, [-2.2, 1.25, 0.7], [0, 0.08, -0.06]),
+    teardownPart(ram, 42, 60, [0.45, 1.85, 0.2], [-0.12, 0, 0]),
+    teardownPart(speakers, 50, 68, [0, 1.0, 2.55], [0.04, 0, 0]),
+    teardownPart(fan, 58, 78, [-2.3, 1.45, -1.35], [-0.08, -0.08, 0]),
+    teardownPart(cpu, 72, 88, [-0.45, 2.05, -0.25], [0, 0.08, 0]),
     teardownPart(
       motherboard.group,
-      82,
+      84,
       100,
       [0.15, 2.35, -1.0],
       [-0.08, 0, 0.04],
@@ -985,13 +978,13 @@ export function buildRealisticLaptopInternals() {
       {
         id: 'battery' as const,
         object: batteryCable,
-        at: 14,
+        at: 18,
         unplugOffset: new THREE.Vector3(0.18, 0.16, 0.16),
       },
       {
         id: 'speaker' as const,
         object: speakerCable,
-        at: 48,
+        at: 50,
         unplugOffset: new THREE.Vector3(-0.14, 0.14, 0.12),
       },
       {
