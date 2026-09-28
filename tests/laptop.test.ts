@@ -8,6 +8,7 @@ import {
 } from '../app/laptop-layout.ts';
 import { LAPTOP_LESSON_STEPS } from '../app/laptop-lesson.ts';
 import { LAPTOP_TROUBLESHOOTING_SCENARIOS } from '../app/laptop-troubleshooting.ts';
+import { LAPTOP_ASSESSMENT_QUESTIONS } from '../app/laptop-assessment.ts';
 import {
   applyLaptopTeardown,
   buildRealisticLaptopInternals,
@@ -97,6 +98,43 @@ await test('troubleshooting covers power, cooling, memory, storage, wireless and
   );
   for (const required of ['battery', 'fan', 'ram', 'ssd', 'wifi', 'display']) {
     assert.ok(answers.has(required as never), 'missing troubleshooting path: ' + required);
+  }
+});
+
+
+await test('knowledge check has valid answers and visible 3D reference states', () => {
+  assert.ok(LAPTOP_ASSESSMENT_QUESTIONS.length >= 8);
+
+  const ids = new Set<string>();
+  for (const question of LAPTOP_ASSESSMENT_QUESTIONS) {
+    assert.ok(!ids.has(question.id), 'duplicate assessment question: ' + question.id);
+    ids.add(question.id);
+    assert.ok(
+      question.options.some((option) => option.id === question.answer),
+      question.id + ' answer is not present in its options',
+    );
+    assert.ok(
+      question.explode >= LAPTOP_INPUT_COVER_SERVICE.internalsVisibleAt,
+      question.id + ' references internals before they are visible',
+    );
+    assert.ok(question.review.length > 0, question.id + ' has no review topic');
+  }
+});
+
+await test('knowledge check covers core laptop concepts', () => {
+  const parts = new Set(
+    LAPTOP_ASSESSMENT_QUESTIONS.map((question) => question.part),
+  );
+  for (const required of [
+    'battery',
+    'ram',
+    'ssd',
+    'fan',
+    'wifi',
+    'motherboard',
+    'display',
+  ]) {
+    assert.ok(parts.has(required as never), 'assessment misses component: ' + required);
   }
 });
 

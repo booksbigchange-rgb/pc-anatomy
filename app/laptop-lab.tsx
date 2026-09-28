@@ -27,6 +27,8 @@ import {
   Crosshair,
   EyeOff,
   Eye,
+  ClipboardCheck,
+  Trophy,
 } from 'lucide-react';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
@@ -49,9 +51,14 @@ import {
   type LaptopLessonPartId,
 } from './laptop-lesson.ts';
 import { LAPTOP_TROUBLESHOOTING_SCENARIOS } from './laptop-troubleshooting.ts';
+import { LAPTOP_ASSESSMENT_QUESTIONS } from './laptop-assessment.ts';
 
 type LaptopView = 'outside' | 'inside';
-type LaptopMode = 'explore' | 'connections' | 'troubleshooting';
+type LaptopMode =
+  | 'explore'
+  | 'connections'
+  | 'troubleshooting'
+  | 'assessment';
 type LaptopPortType = 'usb' | 'hdmi' | 'power' | 'audio';
 type LaptopPortId =
   | 'usb-rear-right'
@@ -1182,6 +1189,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   const focusTargetRef = useRef<LaptopPartId | null>(null);
   const troubleshootingScenarioRef = useRef(0);
   const troubleshootingSolvedRef = useRef(false);
+  const assessmentIndexRef = useRef(0);
   const explodeRef = useRef(18);
 
   const [view, setView] = useState<LaptopView>('outside');
@@ -1208,6 +1216,11 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   const [troubleshootingFeedback, setTroubleshootingFeedback] = useState(
     'Choose Troubleshoot, read the symptom, then click the component you would inspect first.',
   );
+  const [assessmentIndex, setAssessmentIndex] = useState(0);
+  const [assessmentAnswers, setAssessmentAnswers] = useState<
+    Record<string, string>
+  >({});
+  const [assessmentComplete, setAssessmentComplete] = useState(false);
   const [explode, setExplodeValue] = useState(18);
 
   const updateExplode = useCallback((value: number) => {
@@ -1235,6 +1248,26 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   const currentTroubleshooting =
     LAPTOP_TROUBLESHOOTING_SCENARIOS[troubleshootingScenario] ??
     LAPTOP_TROUBLESHOOTING_SCENARIOS[0];
+  const currentAssessment =
+    LAPTOP_ASSESSMENT_QUESTIONS[assessmentIndex] ??
+    LAPTOP_ASSESSMENT_QUESTIONS[0];
+  const currentAssessmentAnswer =
+    assessmentAnswers[currentAssessment.id];
+  const currentAssessmentCorrect =
+    currentAssessmentAnswer === currentAssessment.answer;
+  const assessmentScore = LAPTOP_ASSESSMENT_QUESTIONS.reduce(
+    (score, question) =>
+      score + (assessmentAnswers[question.id] === question.answer ? 1 : 0),
+    0,
+  );
+  const assessmentPercent = Math.round(
+    (assessmentScore / LAPTOP_ASSESSMENT_QUESTIONS.length) * 100,
+  );
+  const assessmentReview = LAPTOP_ASSESSMENT_QUESTIONS.filter(
+    (question) =>
+      assessmentAnswers[question.id] &&
+      assessmentAnswers[question.id] !== question.answer,
+  );
   const teardownStage = laptopTeardownStage(explode);
 
   useEffect(() => {
@@ -1264,6 +1297,10 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     troubleshootingSolvedRef.current = troubleshootingSolved;
   }, [troubleshootingSolved]);
+
+  useEffect(() => {
+    assessmentIndexRef.current = assessmentIndex;
+  }, [assessmentIndex]);
 
   useEffect(() => {
     realisticRef.current = realisticExterior;
@@ -2152,6 +2189,49 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     isolateRef.current = false;
   };
 
+  const applyAssessmentQuestion = (index: number) => {
+    const question = LAPTOP_ASSESSMENT_QUESTIONS[index];
+    if (!question) return;
+    assessmentIndexRef.current = index;
+    setAssessmentIndex(index);
+    setExplode(question.explode);
+    viewRef.current = 'inside';
+    setView('inside');
+    selectedRef.current = question.part;
+    setSelected(question.part);
+    focusTargetRef.current = question.part;
+    setIsolated(false);
+    isolateRef.current = false;
+  };
+
+  const startAssessment = () => {
+    stopTeardown();
+    setGuided(false);
+    guidedRef.current = false;
+    setAssessmentAnswers({});
+    setAssessmentComplete(false);
+    modeRef.current = 'assessment';
+    setMode('assessment');
+    applyAssessmentQuestion(0);
+  };
+
+  const answerAssessment = (optionId: string) => {
+    if (assessmentComplete || currentAssessmentAnswer) return;
+    setAssessmentAnswers((answers) => ({
+      ...answers,
+      [currentAssessment.id]: optionId,
+    }));
+  };
+
+  const nextAssessment = () => {
+    if (!currentAssessmentAnswer) return;
+    if (assessmentIndex >= LAPTOP_ASSESSMENT_QUESTIONS.length - 1) {
+      setAssessmentComplete(true);
+      return;
+    }
+    applyAssessmentQuestion(assessmentIndex + 1);
+  };
+
   const startConnections = () => {
     stopTeardown();
     setExplode(0);
@@ -2226,6 +2306,17 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
             type="button"
             className={
               'laptop-guide-button' +
+              (mode === 'assessment' ? ' active' : '')
+            }
+            onClick={startAssessment}
+          >
+            <ClipboardCheck size={15} />
+            Knowledge check
+          </button>
+          <button
+            type="button"
+            className={
+              'laptop-guide-button' +
               (mode === 'troubleshooting' ? ' active' : '')
             }
             onClick={startTroubleshooting}
@@ -2269,6 +2360,10 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
                 connected.length + 1,
                 CONNECTION_TASKS.length,
               )} / ${CONNECTION_TASKS.length}`
+            : mode === 'assessment'
+              ? assessmentComplete
+                ? 'KNOWLEDGE CHECK · COMPLETE'
+                : `KNOWLEDGE CHECK · ${assessmentIndex + 1} / ${LAPTOP_ASSESSMENT_QUESTIONS.length}`
             : mode === 'troubleshooting'
               ? `TROUBLESHOOT · ${troubleshootingScenario + 1} / ${LAPTOP_TROUBLESHOOTING_SCENARIOS.length}`
             : guided
@@ -2282,6 +2377,10 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
             ? allConnectionsComplete
               ? 'Laptop connected.'
               : currentConnection.name
+            : mode === 'assessment'
+              ? assessmentComplete
+                ? 'Knowledge check complete.'
+                : currentAssessment.title
             : mode === 'troubleshooting'
               ? currentTroubleshooting.title
             : guided
@@ -2297,6 +2396,10 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
             ? allConnectionsComplete
               ? 'You connected power, USB, an external display and headphones.'
               : currentConnection.instruction
+            : mode === 'assessment'
+              ? assessmentComplete
+                ? `You answered ${assessmentScore} of ${LAPTOP_ASSESSMENT_QUESTIONS.length} correctly (${assessmentPercent}%).`
+                : currentAssessment.prompt
             : mode === 'troubleshooting'
               ? currentTroubleshooting.symptom
             : guided
@@ -2307,12 +2410,23 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
                   : 'The open model now uses the same real-world proportions with aluminum materials, recessed keys, display glass, realistic bezels and neutral port cavities.'
                 : 'Laptop parts are smaller and packed closer together than desktop components.'}
         </p>
-        {guided && (
-          <div className="laptop-progress" aria-label="Laptop lesson progress">
+        {(guided || mode === 'assessment') && (
+          <div
+            className="laptop-progress"
+            aria-label={
+              guided ? 'Laptop lesson progress' : 'Knowledge check progress'
+            }
+          >
             <span
               style={{
-                width:
-                  ((lessonIndex + 1) / LAPTOP_LESSON_STEPS.length) * 100 + '%',
+                width: guided
+                  ? ((lessonIndex + 1) / LAPTOP_LESSON_STEPS.length) * 100 + '%'
+                  : assessmentComplete
+                    ? '100%'
+                    : ((assessmentIndex + 1) /
+                        LAPTOP_ASSESSMENT_QUESTIONS.length) *
+                        100 +
+                      '%',
               }}
             />
           </div>
@@ -2352,6 +2466,55 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
               Reset connections
             </button>
           </div>
+        ) : mode === 'assessment' ? (
+          assessmentComplete ? (
+            <div className="laptop-assessment-summary">
+              <Trophy size={24} />
+              <strong>
+                {assessmentScore} / {LAPTOP_ASSESSMENT_QUESTIONS.length}
+              </strong>
+              <span>{assessmentPercent}% correct</span>
+              <small>
+                {assessmentReview.length
+                  ? 'Review: ' +
+                    assessmentReview.map((question) => question.review).join(' · ')
+                  : 'All topics answered correctly.'}
+              </small>
+            </div>
+          ) : (
+            <div className="laptop-assessment-options">
+              {currentAssessment.options.map((option) => {
+                const chosen = currentAssessmentAnswer === option.id;
+                const correct = option.id === currentAssessment.answer;
+                return (
+                  <button
+                    type="button"
+                    key={option.id}
+                    disabled={Boolean(currentAssessmentAnswer)}
+                    className={
+                      currentAssessmentAnswer
+                        ? correct
+                          ? 'correct'
+                          : chosen
+                            ? 'incorrect'
+                            : ''
+                        : ''
+                    }
+                    onClick={() => answerAssessment(option.id)}
+                  >
+                    <span>
+                      {currentAssessmentAnswer && correct
+                        ? '✓'
+                        : currentAssessmentAnswer && chosen
+                          ? '×'
+                          : '○'}
+                    </span>
+                    <strong>{option.label}</strong>
+                  </button>
+                );
+              })}
+            </div>
+          )
         ) : mode === 'troubleshooting' ? (
           <div className="laptop-troubleshoot-options">
             <p>{currentTroubleshooting.clue}</p>
@@ -2433,6 +2596,10 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
           <strong>
             {mode === 'connections'
               ? 'Connection tip'
+              : mode === 'assessment'
+                ? assessmentComplete
+                  ? 'Completion summary'
+                  : 'Assessment tip'
               : mode === 'troubleshooting'
                 ? 'Diagnostic clue'
                 : guided
@@ -2442,6 +2609,12 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
           <span>
             {mode === 'connections'
               ? 'Rotate the laptop and look for the glowing port on either side.'
+              : mode === 'assessment'
+                ? assessmentComplete
+                  ? assessmentReview.length
+                    ? 'Review the topics listed above, then try the knowledge check again.'
+                    : 'You answered every knowledge-check question correctly.'
+                  : 'Use the 3D model as a reference before choosing an answer.'
               : mode === 'troubleshooting'
                 ? currentTroubleshooting.clue
               : guided
@@ -2470,6 +2643,10 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
           <Rotate3D size={15} />
           {mode === 'connections'
             ? 'Drag to orbit · find the glowing port · click to connect'
+            : mode === 'assessment'
+              ? assessmentComplete
+                ? 'Assessment complete · review your result or try again'
+                : 'Orbit the hardware · use the model as evidence · choose an answer'
             : mode === 'troubleshooting'
               ? 'Read the symptom · inspect the hardware · click your first suspect'
             : guided
@@ -2575,8 +2752,12 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
         ) : (
           <>
             <p className="laptop-eyebrow">
-              {mode === 'troubleshooting'
-                ? `TROUBLESHOOT ${troubleshootingScenario + 1} / ${LAPTOP_TROUBLESHOOTING_SCENARIOS.length}`
+              {mode === 'assessment'
+                ? assessmentComplete
+                  ? 'KNOWLEDGE CHECK COMPLETE'
+                  : `QUESTION ${assessmentIndex + 1} / ${LAPTOP_ASSESSMENT_QUESTIONS.length}`
+                : mode === 'troubleshooting'
+                  ? `TROUBLESHOOT ${troubleshootingScenario + 1} / ${LAPTOP_TROUBLESHOOTING_SCENARIOS.length}`
                 : guided
                   ? `LESSON STEP ${lessonIndex + 1} / ${LAPTOP_LESSON_STEPS.length}`
                   : 'SELECTED COMPONENT'}
@@ -2587,6 +2768,81 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
               <strong>Why it matters</strong>
               <p>{selectedPart.why}</p>
             </div>
+            {mode === 'assessment' && (
+              <div
+                className={
+                  'laptop-assessment-card' +
+                  (assessmentComplete
+                    ? ' complete'
+                    : currentAssessmentAnswer
+                      ? currentAssessmentCorrect
+                        ? ' correct'
+                        : ' incorrect'
+                      : '')
+                }
+              >
+                {assessmentComplete ? (
+                  <>
+                    <span>RESULT</span>
+                    <strong>
+                      {assessmentScore} / {LAPTOP_ASSESSMENT_QUESTIONS.length} ·{' '}
+                      {assessmentPercent}%
+                    </strong>
+                    <p>
+                      {assessmentReview.length
+                        ? 'Topics to review: ' +
+                          assessmentReview
+                            .map((question) => question.review)
+                            .join(' · ')
+                        : 'No review topics — every answer was correct.'}
+                    </p>
+                    <div>
+                      <button type="button" onClick={startAssessment}>
+                        Try again ↻
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          modeRef.current = 'explore';
+                          setMode('explore');
+                          setAssessmentComplete(false);
+                        }}
+                      >
+                        Back to explore
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <span>
+                      {!currentAssessmentAnswer
+                        ? 'CHOOSE ONE'
+                        : currentAssessmentCorrect
+                          ? 'CORRECT'
+                          : 'REVIEW THIS'}
+                    </span>
+                    <strong>{currentAssessment.prompt}</strong>
+                    {currentAssessmentAnswer && (
+                      <p>{currentAssessment.explanation}</p>
+                    )}
+                    <button
+                      type="button"
+                      disabled={!currentAssessmentAnswer}
+                      onClick={nextAssessment}
+                    >
+                      {assessmentIndex <
+                      LAPTOP_ASSESSMENT_QUESTIONS.length - 1
+                        ? currentAssessmentAnswer
+                          ? 'Next question →'
+                          : 'Choose an answer'
+                        : currentAssessmentAnswer
+                          ? 'See results →'
+                          : 'Choose an answer'}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
             {mode === 'troubleshooting' && (
               <div
                 className={
@@ -2756,7 +3012,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
                   </button>
                 )}
               </div>
-            ) : mode === 'troubleshooting' ? null : view === 'outside' ? (
+            ) : mode === 'troubleshooting' || mode === 'assessment' ? null : view === 'outside' ? (
               <button
                 type="button"
                 className="laptop-primary"
