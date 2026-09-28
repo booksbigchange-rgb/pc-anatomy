@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Activity,
   ArrowLeft,
   BatteryCharging,
   BookOpen,
@@ -1184,7 +1185,7 @@ function addEnvironment(scene: THREE.Scene) {
   scene.add(grid);
 }
 
-export default function LaptopLab({ onBack }: { onBack: () => void }) {
+export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () => void; onOpenTaskManager: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const selectedRef = useRef<LaptopPartId>('display');
   const viewRef = useRef<LaptopView>('outside');
@@ -2307,6 +2308,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
           </span>
         </div>
         <div className="laptop-header-actions">
+          <button type="button" className="laptop-guide-button" aria-label="Task Manager" onClick={onOpenTaskManager}><Activity size={16} /> Task Manager</button>
           <button
             type="button"
             className={

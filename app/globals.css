@@ -4,6 +4,7 @@
 @import './computer-lab-connections.css';
 @import './laptop-lab.css';
 @import './assembly-lab.css';
+@import './task-manager-lab.css';
 @custom-variant dark (&:is(.dark *));
 @theme inline {
   --color-background: var(--background);

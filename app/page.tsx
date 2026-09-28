@@ -18,6 +18,7 @@ import ComparisonWorkbench from './comparison-workbench';
 import ComputerLab from './computer-lab';
 import LaptopLab from './laptop-lab';
 import AssemblyLab from './assembly-lab';
+import TaskManagerLab from './task-manager-lab';
 
 export default function Home() {
   const explorer = useExplorer();
@@ -28,7 +29,7 @@ export default function Home() {
     [about, setAbout] = useState(false),
     [studentMode, setStudentMode] = useState(true),
     [mode, setMode] = useState<
-      'lab' | 'laptop' | 'assembly' | 'explorer' | 'comparison'
+      'lab' | 'laptop' | 'assembly' | 'explorer' | 'comparison' | 'task-manager-pc' | 'task-manager-laptop'
     >('lab'),
     // `null` until the viewer has reported for the first time. Zero means the
     // viewer is running and nothing is switched on, which is a different thing
@@ -81,11 +82,15 @@ export default function Home() {
         onOpenPC={() => setMode('explorer')}
         onOpenLaptop={() => setMode('laptop')}
         onOpenAssembly={() => setMode('assembly')}
+        onOpenTaskManager={() => setMode('task-manager-pc')}
       />
     );
 
   if (mode === 'laptop')
-    return <LaptopLab onBack={() => setMode('lab')} />;
+    return <LaptopLab onBack={() => setMode('lab')} onOpenTaskManager={() => setMode('task-manager-laptop')} />;
+
+  if (mode === 'task-manager-pc' || mode === 'task-manager-laptop')
+    return <TaskManagerLab device={mode === 'task-manager-laptop' ? 'laptop' : 'pc'} onBack={() => setMode(mode === 'task-manager-laptop' ? 'laptop' : 'lab')} />;
 
   if (mode === 'assembly')
     return <AssemblyLab onBack={() => setMode('lab')} />;
