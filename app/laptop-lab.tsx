@@ -1874,7 +1874,6 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     const draw = () => {
       frame = requestAnimationFrame(draw);
       const connectionMode = modeRef.current === 'connections';
-      const troubleshootingMode = modeRef.current === 'troubleshooting';
       const insideNow = !connectionMode && viewRef.current === 'inside';
       const realisticNow =
         realisticRef.current &&
