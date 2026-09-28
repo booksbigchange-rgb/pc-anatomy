@@ -1099,6 +1099,7 @@ function buildLaptop() {
     serviceInputCoverTrackpad: serviceTrackpad,
     serviceInputCoverUnderside,
     serviceInterior: realisticInternals.serviceInterior,
+    parts: realisticInternals.parts,
     inputCoverCadMount,
     displayTopCoverCadMount,
     displayBezelCadMount,
@@ -2626,7 +2627,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
                 </div>
               </div>
             )}
-            {!guided && view === 'inside' && mode !== 'connections' && (
+            {!guided && view === 'inside' && (
               <div className="laptop-focus-actions">
                 <button
                   type="button"
