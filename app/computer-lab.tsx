@@ -1,10 +1,10 @@
 'use client';
+import AcademyLogo from './academy-logo';
 
 import { useEffect, useRef, useState } from 'react';
 import {
   Activity,
   BookOpen,
-  Box,
   Cable,
   CheckCircle2,
   Circle,
@@ -1104,9 +1104,7 @@ export default function ComputerLab({
     <main className="computer-lab">
       <header className="lab-topbar">
         <div className="lab-brand">
-          <span className="lab-brand-icon">
-            <Box size={20} />
-          </span>
+          <AcademyLogo />
           <span>
             <strong>Big Change Computer Lab</strong>
             <small>LEARN THE WHOLE COMPUTER</small>

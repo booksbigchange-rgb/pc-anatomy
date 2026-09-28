@@ -1,8 +1,8 @@
 'use client';
+import AcademyLogo from './academy-logo';
 
 import { useEffect, useReducer, useState } from 'react';
 import {
-  Activity,
   ArrowLeft,
   Cpu,
   HardDrive,
@@ -265,9 +265,7 @@ export default function TaskManagerLab({
           {device === 'laptop' ? 'Laptop Lab' : 'Computer Lab'}
         </button>
         <div className="tm-brand">
-          <span>
-            <Activity size={23} />
-          </span>
+          <AcademyLogo />
           <div>
             <strong>BigChange Academy</strong>
             <small>COMPUTER LAB · TASK MANAGER</small>

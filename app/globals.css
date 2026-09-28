@@ -24,3 +24,25 @@
   --font-heading: var(--font-sans);
   --radius-lg: 8px;
 }
+
+/* Viewport onto the selected top-centre shield in the supplied logo sheet.
+   The source artwork remains byte-for-byte unchanged. */
+.academy-logo,
+.tm-brand > .academy-logo {
+  position: relative;
+  display: block;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 48px;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 5px;
+}
+.academy-logo img {
+  position: absolute;
+  width: 357.2093%;
+  max-width: none;
+  height: auto;
+  left: -128.8372%;
+  top: -7.6087%;
+}

@@ -1,4 +1,5 @@
 'use client';
+import AcademyLogo from './academy-logo';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -2299,9 +2300,7 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
           Desktop setup
         </button>
         <div className="laptop-brand">
-          <span className="laptop-brand-icon">
-            <Laptop size={20} />
-          </span>
+          <AcademyLogo />
           <span>
             <strong>Big Change Laptop Lab</strong>
             <small>OUTSIDE → INSIDE</small>
