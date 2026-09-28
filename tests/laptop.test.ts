@@ -448,3 +448,47 @@ await test('100% teardown separates service parts from the motherboard staging a
   }
   assert.equal(laptopTeardownStage(100), 'Service layout');
 });
+
+await test('local module explode composes with global poses without moving fixtures or other modules', () => {
+  for (const stage of [18, 60, 78, 100]) {
+    for (const id of ['ssd', 'ram', 'wifi'] as const) {
+      const laptop = buildRealisticLaptopInternals();
+      applyLaptopTeardown(laptop.teardownParts, stage);
+      laptop.inside.updateMatrixWorld(true);
+      const poses = laptop.teardownParts.map(p => ({ p: p.object.position.clone(), r: p.object.rotation.clone() }));
+      const fixtures: { object: THREE.Object3D; matrix: THREE.Matrix4 }[] = [];
+      laptop.parts.motherboard.traverse(object => {
+        if (object.userData.boardFixture) fixtures.push({ object, matrix: object.matrixWorld.clone() });
+      });
+      assert.ok(fixtures.length >= 8);
+      laptop.parts[id].traverse(object => assert.ok(!object.userData.boardFixture));
+      applyLaptopTeardown(laptop.teardownParts, stage, id, 1);
+      laptop.inside.updateMatrixWorld(true);
+      fixtures.forEach(({ object, matrix }) => assert.deepEqual(object.matrixWorld.elements, matrix.elements));
+      laptop.teardownParts.forEach((part, index) => {
+        if (part.object === laptop.parts[id]) {
+          assert.ok(part.object.position.y > poses[index].p.y + 0.6);
+          assert.notDeepEqual(part.object.rotation.toArray(), poses[index].r.toArray());
+        } else {
+          assert.deepEqual(part.object.position.toArray(), poses[index].p.toArray());
+          assert.deepEqual(part.object.rotation.toArray(), poses[index].r.toArray());
+        }
+      });
+      const expanded = laptop.parts[id].position.clone();
+      for (let frame = 0; frame < 30; frame++) applyLaptopTeardown(laptop.teardownParts, stage, id, 1);
+      assert.deepEqual(laptop.parts[id].position.toArray(), expanded.toArray(), 'local offsets must not accumulate');
+      for (const local of [null, id] as const) {
+        applyLaptopTeardown(laptop.teardownParts, stage, local, 0);
+        laptop.teardownParts.forEach((part, index) => {
+          assert.deepEqual(part.object.position.toArray(), poses[index].p.toArray());
+          assert.deepEqual(part.object.rotation.toArray(), poses[index].r.toArray());
+        });
+      }
+      applyLaptopTeardown(laptop.teardownParts, 0, id, 1);
+      laptop.teardownParts.forEach(part => {
+        assert.deepEqual(part.object.position.toArray(), part.homePosition.toArray());
+        assert.deepEqual(part.object.rotation.toArray(), part.homeRotation.toArray());
+      });
+    }
+  }
+});

@@ -1031,3 +1031,29 @@
   grid-template-columns: 1fr 1fr;
   gap: 7px;
 }
+
+/* Let panel content shrink within the grid instead of pushing it off screen. */
+.laptop-lab { height: 100dvh; }
+.laptop-lab > *, .laptop-detail > *, .laptop-header-actions { min-width: 0; min-height: 0; }
+.laptop-detail { overflow-wrap: anywhere; scrollbar-gutter: stable; }
+.laptop-primary { white-space: normal; padding: 10px 12px; text-align: left; }
+.laptop-header-actions { flex-wrap: wrap; justify-content: flex-end; }
+.laptop-topbar { grid-template-columns: auto auto minmax(0, 1fr); }
+.laptop-focus-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.laptop-focus-actions button { padding: 8px; }
+.laptop-local-help { grid-column: 1 / -1; margin: 4px 0 0; color: #a9c0c5; font-size: 12px; line-height: 1.5; }
+@media (max-width: 1100px) and (min-width: 681px) {
+  .laptop-topbar { padding: 8px 12px; }
+  .laptop-lab { grid-template-rows: auto minmax(0, 1fr); }
+}
+@media (max-width: 680px) {
+  .laptop-lab { height: auto; grid-template-rows: auto minmax(400px, 58dvh) auto; }
+  .laptop-topbar { padding: 8px; }
+  .laptop-parts { max-height: 40dvh; overflow-y: auto; }
+}
+@media (min-width: 681px) and (max-width: 980px) {
+  .laptop-lab { height: auto; grid-template-rows: auto minmax(520px, 68dvh) auto; }
+  .laptop-parts { grid-row: 2; max-height: 68dvh; }
+  .laptop-stage { grid-row: 2; }
+  .laptop-detail { position: static; grid-column: 1 / -1; grid-row: 3; width: auto; max-height: none; border-radius: 0; }
+}

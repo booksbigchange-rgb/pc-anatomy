@@ -1211,9 +1211,22 @@ export type LaptopTeardownPart = {
   rotationOffset: THREE.Vector3;
 };
 
+export type LaptopLocalPart = 'ssd' | 'ram' | 'wifi';
+export const LAPTOP_LOCAL_EXPLODE = {
+  ssd: { offset: [0.32, 0.85, 0], rotation: [0, 0, 0.16] },
+  ram: { offset: [0.28, 0.85, 0], rotation: [0, 0, 0.2] },
+  wifi: { offset: [0.24, 0.7, 0], rotation: [0, 0, 0.16] },
+} as const;
+
+export function isLaptopLocalPart(id: string): id is LaptopLocalPart {
+  return id === 'ssd' || id === 'ram' || id === 'wifi';
+}
+
 export function applyLaptopTeardown(
   parts: readonly LaptopTeardownPart[],
   amount: number,
+  localPart: LaptopLocalPart | null = null,
+  localAmount = 1,
 ) {
   const progress = Math.min(100, Math.max(0, amount));
 
@@ -1237,6 +1250,17 @@ export function applyLaptopTeardown(
       part.homeRotation.y + part.rotationOffset.y * eased,
       part.homeRotation.z + part.rotationOffset.z * eased,
     );
+    // Compose from the global pose every frame, never from the last local pose.
+    // Fixtures are children of the motherboard and never enter this branch.
+    if (progress >= 18 && part.object.userData.laptopPart === localPart && localPart) {
+      const local = LAPTOP_LOCAL_EXPLODE[localPart];
+      const t = Math.min(1, Math.max(0, localAmount));
+      const lift = t * t * (3 - 2 * t);
+      part.object.position.addScaledVector(new THREE.Vector3(...local.offset), lift);
+      part.object.rotation.x += local.rotation[0] * lift;
+      part.object.rotation.y += local.rotation[1] * lift;
+      part.object.rotation.z += local.rotation[2] * lift;
+    }
   }
 }
 

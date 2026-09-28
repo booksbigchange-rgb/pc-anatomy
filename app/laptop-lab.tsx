@@ -37,6 +37,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {
   applyLaptopTeardown,
+  isLaptopLocalPart,
+  type LaptopLocalPart,
   buildRealisticLaptopInternals,
   type LaptopInternalCableId,
 } from './laptop-internals';
@@ -773,7 +775,7 @@ function buildLaptop() {
       LAPTOP_DIMENSIONS.screenHeight,
     ),
     new THREE.MeshBasicMaterial({
-      color: COLORS.screen,
+      color: 0xffffff,
       map: makeScreenTexture() ?? undefined,
       toneMapped: false,
     }),
@@ -1049,9 +1051,10 @@ function buildLaptop() {
       LAPTOP_DIMENSIONS.screenHeight,
     ),
     new THREE.MeshBasicMaterial({
-      color: COLORS.screen,
+      color: 0xffffff,
       map: makeScreenTexture() ?? undefined,
       side: THREE.DoubleSide,
+      toneMapped: false,
     }),
   );
   serviceScreen.position.set(
@@ -1060,6 +1063,11 @@ function buildLaptop() {
     0.162,
   );
   serviceFront.add(serviceScreen);
+  const serviceGlass = glass.clone();
+  serviceGlass.material = glass.material.clone();
+  serviceGlass.position.copy(serviceScreen.position);
+  serviceGlass.position.z += 0.006;
+  serviceFront.add(serviceGlass);
 
   serviceDisplayAssembly.add(
     serviceDisplayMount,
@@ -1124,7 +1132,7 @@ function addEnvironment(scene: THREE.Scene) {
     0.5,
     7.3,
     0.18,
-    0x76685d,
+    0x554d46,
     0.58,
     0.04,
     0.04,
@@ -1152,6 +1160,7 @@ function addEnvironment(scene: THREE.Scene) {
 
   const mat = rounded(9.1, 0.035, 5.6, 0.12, 0x20282d, 0.84, 0.02);
   mat.position.set(0, 0.58, 0.1);
+  mat.receiveShadow = true;
   scene.add(mat);
 
   const floor = mesh(
@@ -1170,7 +1179,7 @@ function addEnvironment(scene: THREE.Scene) {
   const materials = Array.isArray(grid.material) ? grid.material : [grid.material];
   for (const material of materials) {
     material.transparent = true;
-    material.opacity = 0.18;
+    material.opacity = 0.045;
   }
   scene.add(grid);
 }
@@ -1221,12 +1230,30 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     Record<string, string>
   >({});
   const [assessmentComplete, setAssessmentComplete] = useState(false);
+  const localPartRef = useRef<LaptopLocalPart | null>(null);
+  const localProgressRef = useRef(0);
+  const localStartedRef = useRef(0);
+  const localContext = `${selected}:${view}:${mode}:${guided}:${lessonIndex}`;
+  const [localSelection, setLocalSelection] = useState<{ id: LaptopLocalPart; context: string } | null>(null);
+  const localPart = localSelection?.context === localContext ? localSelection.id : null;
+  // Discard a previous selection so returning to it cannot revive an old lift.
+  if (localSelection && localSelection.context !== localContext) setLocalSelection(null);
+  const resetLocalPart = useCallback(() => {
+    localPartRef.current = null;
+    localProgressRef.current = 0;
+    setLocalSelection(null);
+  }, []);
+  useEffect(() => {
+    localPartRef.current = null;
+    localProgressRef.current = 0;
+  }, [localContext]);
   const [explode, setExplodeValue] = useState(18);
 
   const updateExplode = useCallback((value: number) => {
+    resetLocalPart();
     explodeRef.current = value;
     setExplodeValue(value);
-  }, []);
+  }, [resetLocalPart]);
 
   const {
     playing: teardownPlaying,
@@ -1345,6 +1372,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     const roomEnvironment = new RoomEnvironment();
     const environmentTarget = pmremGenerator.fromScene(roomEnvironment, 0.04);
     scene.environment = environmentTarget.texture;
+    scene.environmentIntensity = 0.45;
     roomEnvironment.dispose();
     pmremGenerator.dispose();
 
@@ -1363,18 +1391,20 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     controls.maxPolarAngle = Math.PI / 2.02;
     controls.target.set(0, 1.15, 0.15);
 
-    scene.add(new THREE.HemisphereLight(0xd8efff, 0x2f2926, 1.25));
-    const key = new THREE.DirectionalLight(0xfff5ea, 2.85);
+    scene.add(new THREE.HemisphereLight(0xd8efff, 0x2f2926, 0.65));
+    const key = new THREE.DirectionalLight(0xfff5ea, 2.4);
     key.position.set(7.5, 10.5, 8.5);
     key.castShadow = true;
     key.shadow.mapSize.set(2048, 2048);
-    key.shadow.bias = -0.00035;
-    key.shadow.normalBias = 0.018;
+    key.shadow.bias = -0.00008;
+    key.shadow.normalBias = 0.006;
     key.shadow.radius = 3;
     key.shadow.camera.left = -10;
     key.shadow.camera.right = 10;
     key.shadow.camera.top = 10;
     key.shadow.camera.bottom = -10;
+    key.shadow.camera.near = 0.5;
+    key.shadow.camera.far = 35;
     scene.add(key);
 
     const fill = new THREE.DirectionalLight(0xa8c7ff, 0.44);
@@ -1640,9 +1670,9 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
           item.castShadow = true;
           item.receiveShadow = true;
           item.material = new THREE.MeshStandardMaterial({
-            color: 0x30383d,
-            roughness: 0.48,
-            metalness: 0.12,
+            color: 0x171c20,
+            roughness: 0.86,
+            metalness: 0.02,
           });
         });
         laptop.batteryMount.add(batteryModel);
@@ -1671,8 +1701,8 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
           item.castShadow = true;
           item.receiveShadow = true;
           item.material = new THREE.MeshStandardMaterial({
-            color: 0x24594e,
-            roughness: 0.54,
+            color: 0x153e31,
+            roughness: 0.68,
             metalness: 0.06,
           });
         });
@@ -1948,11 +1978,16 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
         object.visible =
           !insideNow ||
           !isolateRef.current ||
-          key === selectedInternalKey;
+          key === selectedInternalKey ||
+          (key === 'motherboard' && isLaptopLocalPart(selectedInternalKey));
       }
 
       if (insideNow) {
-        applyLaptopTeardown(laptop.teardownParts, explodeRef.current);
+        const local = localPartRef.current === selectedRef.current ? localPartRef.current : null;
+        localProgressRef.current = local
+          ? Math.max(localProgressRef.current, Math.min(1, (performance.now() - localStartedRef.current) / 400))
+          : 0;
+        applyLaptopTeardown(laptop.teardownParts, explodeRef.current, local, localProgressRef.current);
 
         // During the first half of the flip students still see the normal
         // keyboard/trackpad side. Once the cover turns over, hide those cloned
@@ -2915,6 +2950,29 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
                   {isolated ? <Eye size={14} /> : <EyeOff size={14} />}
                   {isolated ? 'Show all' : 'Isolate'}
                 </button>
+                {isLaptopLocalPart(selected) && mode === 'explore' && (
+                  <>
+                    <button type="button" disabled={explode < 18 || localPart === selected}
+                      onClick={() => {
+                        stopTeardown();
+                        localPartRef.current = selected;
+                        localStartedRef.current = performance.now();
+                        localProgressRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 0;
+                        setLocalSelection({ id: selected, context: localContext });
+                      }}>
+                      <PanelTopOpen size={14} /> Explode part
+                    </button>
+                    <button type="button" disabled={!localPart} onClick={resetLocalPart}>
+                      <RotateCcw size={14} /> Reset part
+                    </button>
+                    <output className="laptop-local-help">
+                      {explode < 18 ? 'Open the service view to inspect this module.' : localPart
+                        ? 'Module lifted. Its socket and retainers stay on the motherboard. Reset returns it to the current teardown position.'
+                        : 'Lift only this module to see how it connects. The whole-laptop slider stays where it is.'}
+                      {selected === 'wifi' && ' Antenna leads stay routed in the chassis.'}
+                    </output>
+                  </>
+                )}
               </div>
             )}
             {guided && (
