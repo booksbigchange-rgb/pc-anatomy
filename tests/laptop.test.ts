@@ -7,6 +7,7 @@ import {
   laptopTeardownStage,
 } from '../app/laptop-layout.ts';
 import { LAPTOP_LESSON_STEPS } from '../app/laptop-lesson.ts';
+import { LAPTOP_TROUBLESHOOTING_SCENARIOS } from '../app/laptop-troubleshooting.ts';
 import {
   applyLaptopTeardown,
   buildRealisticLaptopInternals,
@@ -68,6 +69,34 @@ await test('guided lesson covers the major removable and thermal components', ()
     'motherboard',
   ]) {
     assert.ok(parts.has(required as never), 'lesson misses component: ' + required);
+  }
+});
+
+
+await test('troubleshooting scenarios are actionable and use visible components', () => {
+  assert.ok(LAPTOP_TROUBLESHOOTING_SCENARIOS.length >= 5);
+
+  const ids = new Set<string>();
+  for (const scenario of LAPTOP_TROUBLESHOOTING_SCENARIOS) {
+    assert.ok(!ids.has(scenario.id), 'duplicate troubleshooting scenario: ' + scenario.id);
+    ids.add(scenario.id);
+    assert.ok(
+      scenario.options.includes(scenario.answer),
+      scenario.id + ' answer is not one of the student choices',
+    );
+    assert.ok(
+      scenario.explode >= LAPTOP_INPUT_COVER_SERVICE.internalsVisibleAt,
+      scenario.id + ' is shown before the internals are visible',
+    );
+  }
+});
+
+await test('troubleshooting covers power, cooling, memory, storage, wireless and display paths', () => {
+  const answers = new Set(
+    LAPTOP_TROUBLESHOOTING_SCENARIOS.map((scenario) => scenario.answer),
+  );
+  for (const required of ['battery', 'fan', 'ram', 'ssd', 'wifi', 'display']) {
+    assert.ok(answers.has(required as never), 'missing troubleshooting path: ' + required);
   }
 });
 

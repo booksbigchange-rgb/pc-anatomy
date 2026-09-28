@@ -23,6 +23,10 @@ import {
   RotateCcw,
   Volume2,
   Wifi,
+  Wrench,
+  Crosshair,
+  EyeOff,
+  Eye,
 } from 'lucide-react';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
@@ -44,9 +48,10 @@ import {
   LAPTOP_LESSON_STEPS,
   type LaptopLessonPartId,
 } from './laptop-lesson.ts';
+import { LAPTOP_TROUBLESHOOTING_SCENARIOS } from './laptop-troubleshooting.ts';
 
 type LaptopView = 'outside' | 'inside';
-type LaptopMode = 'explore' | 'connections';
+type LaptopMode = 'explore' | 'connections' | 'troubleshooting';
 type LaptopPortType = 'usb' | 'hdmi' | 'power' | 'audio';
 type LaptopPortId =
   | 'usb-rear-right'
@@ -1172,6 +1177,10 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   const connectionTaskRef = useRef(0);
   const connectedRef = useRef<LaptopConnectionId[]>([]);
   const disconnectedInternalCablesRef = useRef<LaptopInternalCableId[]>([]);
+  const isolateRef = useRef(false);
+  const focusTargetRef = useRef<LaptopPartId | null>(null);
+  const troubleshootingScenarioRef = useRef(0);
+  const troubleshootingSolvedRef = useRef(false);
   const explodeRef = useRef(18);
 
   const [view, setView] = useState<LaptopView>('outside');
@@ -1192,6 +1201,12 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   const [disconnectedInternalCables, setDisconnectedInternalCables] = useState<
     LaptopInternalCableId[]
   >([]);
+  const [isolated, setIsolated] = useState(false);
+  const [troubleshootingScenario, setTroubleshootingScenario] = useState(0);
+  const [troubleshootingSolved, setTroubleshootingSolved] = useState(false);
+  const [troubleshootingFeedback, setTroubleshootingFeedback] = useState(
+    'Choose Troubleshoot, read the symptom, then click the component you would inspect first.',
+  );
   const [explode, setExplodeValue] = useState(18);
 
   const updateExplode = useCallback((value: number) => {
@@ -1216,6 +1231,9 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     disconnectedInternalCables.includes(lessonStep.requiredCable);
   const currentConnection = CONNECTION_TASKS[connectionTask];
   const allConnectionsComplete = connected.length === CONNECTION_TASKS.length;
+  const currentTroubleshooting =
+    LAPTOP_TROUBLESHOOTING_SCENARIOS[troubleshootingScenario] ??
+    LAPTOP_TROUBLESHOOTING_SCENARIOS[0];
   const teardownStage = laptopTeardownStage(explode);
 
   useEffect(() => {
@@ -1233,6 +1251,18 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     guidedRef.current = guided;
   }, [guided]);
+
+  useEffect(() => {
+    isolateRef.current = isolated;
+  }, [isolated]);
+
+  useEffect(() => {
+    troubleshootingScenarioRef.current = troubleshootingScenario;
+  }, [troubleshootingScenario]);
+
+  useEffect(() => {
+    troubleshootingSolvedRef.current = troubleshootingSolved;
+  }, [troubleshootingSolved]);
 
   useEffect(() => {
     realisticRef.current = realisticExterior;
@@ -1807,6 +1837,22 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
       if (!id) return;
       selectedRef.current = id;
       setSelected(id);
+
+      if (modeRef.current === 'troubleshooting') {
+        const scenario =
+          LAPTOP_TROUBLESHOOTING_SCENARIOS[
+            troubleshootingScenarioRef.current
+          ] ?? LAPTOP_TROUBLESHOOTING_SCENARIOS[0];
+        const correct = id === scenario.answer;
+        troubleshootingSolvedRef.current = correct;
+        setTroubleshootingSolved(correct);
+        setTroubleshootingFeedback(
+          correct
+            ? 'Correct — ' + scenario.explanation
+            : 'Not quite. ' + scenario.clue,
+        );
+        if (correct) focusTargetRef.current = id;
+      }
     };
 
     canvas.addEventListener('pointerup', pick);
@@ -1827,6 +1873,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     const draw = () => {
       frame = requestAnimationFrame(draw);
       const connectionMode = modeRef.current === 'connections';
+      const troubleshootingMode = modeRef.current === 'troubleshooting';
       const insideNow = !connectionMode && viewRef.current === 'inside';
       const realisticNow =
         realisticRef.current &&
@@ -1857,6 +1904,15 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
           connectionMode && connectedRef.current.includes(id);
       for (const marker of connectionMarkers)
         marker.visible = connectionMode;
+
+      const selectedInternalKey =
+        selectedRef.current === 'fan' ? 'cooling' : selectedRef.current;
+      for (const [key, object] of Object.entries(laptop.parts)) {
+        object.visible =
+          !insideNow ||
+          !isolateRef.current ||
+          key === selectedInternalKey;
+      }
 
       if (insideNow) {
         applyLaptopTeardown(laptop.teardownParts, explodeRef.current);
@@ -1890,6 +1946,28 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
             cableMaterial.emissiveIntensity = disconnected ? 0.46 : 0;
           }
         }
+      }
+
+      if (insideNow && focusTargetRef.current) {
+        const focusKey =
+          focusTargetRef.current === 'fan'
+            ? 'cooling'
+            : focusTargetRef.current;
+        const focusObject =
+          laptop.parts[focusKey as keyof typeof laptop.parts];
+        if (focusObject) {
+          laptop.inside.updateMatrixWorld(true);
+          const box = new THREE.Box3().setFromObject(focusObject);
+          const center = box.getCenter(new THREE.Vector3());
+          const size = box.getSize(new THREE.Vector3());
+          const distance = Math.max(2.8, size.length() * 2.2);
+          controls.target.copy(center);
+          camera.position
+            .copy(center)
+            .add(new THREE.Vector3(distance * 0.72, distance * 0.62, distance));
+          cameraManuallyMoved = true;
+        }
+        focusTargetRef.current = null;
       }
 
       if (insideNow && !cameraManuallyMoved) {
@@ -2031,6 +2109,49 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
     applyLessonStep(next);
   };
 
+  const startTroubleshooting = () => {
+    stopTeardown();
+    setGuided(false);
+    guidedRef.current = false;
+    setIsolated(false);
+    isolateRef.current = false;
+    troubleshootingScenarioRef.current = 0;
+    troubleshootingSolvedRef.current = false;
+    setTroubleshootingScenario(0);
+    setTroubleshootingSolved(false);
+    setTroubleshootingFeedback(
+      'Read the symptom and click the component you would inspect first.',
+    );
+    modeRef.current = 'troubleshooting';
+    setMode('troubleshooting');
+    viewRef.current = 'inside';
+    setView('inside');
+    setExplode(LAPTOP_TROUBLESHOOTING_SCENARIOS[0].explode);
+    selectedRef.current = 'motherboard';
+    setSelected('motherboard');
+  };
+
+  const moveTroubleshooting = (direction: -1 | 1) => {
+    if (direction === 1 && !troubleshootingSolved) return;
+    const next = Math.min(
+      LAPTOP_TROUBLESHOOTING_SCENARIOS.length - 1,
+      Math.max(0, troubleshootingScenario + direction),
+    );
+    const scenario = LAPTOP_TROUBLESHOOTING_SCENARIOS[next];
+    troubleshootingScenarioRef.current = next;
+    troubleshootingSolvedRef.current = false;
+    setTroubleshootingScenario(next);
+    setTroubleshootingSolved(false);
+    setTroubleshootingFeedback(
+      'Read the symptom and click the component you would inspect first.',
+    );
+    setExplode(scenario.explode);
+    selectedRef.current = 'motherboard';
+    setSelected('motherboard');
+    setIsolated(false);
+    isolateRef.current = false;
+  };
+
   const startConnections = () => {
     stopTeardown();
     setExplode(0);
@@ -2103,6 +2224,17 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
           </button>
           <button
             type="button"
+            className={
+              'laptop-guide-button' +
+              (mode === 'troubleshooting' ? ' active' : '')
+            }
+            onClick={startTroubleshooting}
+          >
+            <Wrench size={15} />
+            Troubleshoot
+          </button>
+          <button
+            type="button"
             className={'laptop-guide-button' + (guided ? ' active' : '')}
             onClick={startGuide}
           >
@@ -2137,6 +2269,8 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
                 connected.length + 1,
                 CONNECTION_TASKS.length,
               )} / ${CONNECTION_TASKS.length}`
+            : mode === 'troubleshooting'
+              ? `TROUBLESHOOT · ${troubleshootingScenario + 1} / ${LAPTOP_TROUBLESHOOTING_SCENARIOS.length}`
             : guided
               ? `GUIDED LESSON · ${lessonIndex + 1} / ${LAPTOP_LESSON_STEPS.length}`
               : view === 'outside'
@@ -2148,6 +2282,8 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
             ? allConnectionsComplete
               ? 'Laptop connected.'
               : currentConnection.name
+            : mode === 'troubleshooting'
+              ? currentTroubleshooting.title
             : guided
               ? lessonStep.title
               : view === 'outside'
@@ -2161,6 +2297,8 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
             ? allConnectionsComplete
               ? 'You connected power, USB, an external display and headphones.'
               : currentConnection.instruction
+            : mode === 'troubleshooting'
+              ? currentTroubleshooting.symptom
             : guided
               ? lessonStep.action
               : view === 'outside'
@@ -2214,6 +2352,43 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
               Reset connections
             </button>
           </div>
+        ) : mode === 'troubleshooting' ? (
+          <div className="laptop-troubleshoot-options">
+            <p>{currentTroubleshooting.clue}</p>
+            {currentTroubleshooting.options.map((id) => {
+              const part = PARTS.find((candidate) => candidate.id === id)!;
+              const Icon = part.icon;
+              return (
+                <button
+                  type="button"
+                  key={id}
+                  className={
+                    troubleshootingSolved && id === currentTroubleshooting.answer
+                      ? 'correct'
+                      : selected === id
+                        ? 'selected'
+                        : ''
+                  }
+                  onClick={() => {
+                    selectedRef.current = id;
+                    setSelected(id);
+                    const correct = id === currentTroubleshooting.answer;
+                    troubleshootingSolvedRef.current = correct;
+                    setTroubleshootingSolved(correct);
+                    setTroubleshootingFeedback(
+                      correct
+                        ? 'Correct — ' + currentTroubleshooting.explanation
+                        : 'Not quite. ' + currentTroubleshooting.clue,
+                    );
+                    if (correct) focusTargetRef.current = id;
+                  }}
+                >
+                  <Icon size={16} />
+                  <span>{part.name}</span>
+                </button>
+              );
+            })}
+          </div>
         ) : guided ? (
           <div className="laptop-lesson-list" aria-label="Guided lesson steps">
             {LAPTOP_LESSON_STEPS.map((step, index) => (
@@ -2258,13 +2433,17 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
           <strong>
             {mode === 'connections'
               ? 'Connection tip'
-              : guided
-                ? 'What to notice'
-                : 'Learning goal'}
+              : mode === 'troubleshooting'
+                ? 'Diagnostic clue'
+                : guided
+                  ? 'What to notice'
+                  : 'Learning goal'}
           </strong>
           <span>
             {mode === 'connections'
               ? 'Rotate the laptop and look for the glowing port on either side.'
+              : mode === 'troubleshooting'
+                ? currentTroubleshooting.clue
               : guided
                 ? lessonStep.notice
                 : view === 'outside'
@@ -2291,6 +2470,8 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
           <Rotate3D size={15} />
           {mode === 'connections'
             ? 'Drag to orbit · find the glowing port · click to connect'
+            : mode === 'troubleshooting'
+              ? 'Read the symptom · inspect the hardware · click your first suspect'
             : guided
               ? lessonStep.action
               : view === 'inside'
@@ -2394,9 +2575,11 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
         ) : (
           <>
             <p className="laptop-eyebrow">
-              {guided
-                ? `LESSON STEP ${lessonIndex + 1} / ${LAPTOP_LESSON_STEPS.length}`
-                : 'SELECTED COMPONENT'}
+              {mode === 'troubleshooting'
+                ? `TROUBLESHOOT ${troubleshootingScenario + 1} / ${LAPTOP_TROUBLESHOOTING_SCENARIOS.length}`
+                : guided
+                  ? `LESSON STEP ${lessonIndex + 1} / ${LAPTOP_LESSON_STEPS.length}`
+                  : 'SELECTED COMPONENT'}
             </p>
             <h2>{selectedPart.name}</h2>
             <p>{selectedPart.description}</p>
@@ -2404,6 +2587,80 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
               <strong>Why it matters</strong>
               <p>{selectedPart.why}</p>
             </div>
+            {mode === 'troubleshooting' && (
+              <div
+                className={
+                  'laptop-troubleshoot-card' +
+                  (troubleshootingSolved ? ' solved' : '')
+                }
+              >
+                <span>{troubleshootingSolved ? 'FOUND IT' : 'SYMPTOM'}</span>
+                <strong>{currentTroubleshooting.symptom}</strong>
+                <p>{troubleshootingFeedback}</p>
+                <div>
+                  <button
+                    type="button"
+                    disabled={troubleshootingScenario === 0}
+                    onClick={() => moveTroubleshooting(-1)}
+                  >
+                    ← Previous
+                  </button>
+                  {troubleshootingScenario <
+                  LAPTOP_TROUBLESHOOTING_SCENARIOS.length - 1 ? (
+                    <button
+                      type="button"
+                      disabled={!troubleshootingSolved}
+                      onClick={() => moveTroubleshooting(1)}
+                    >
+                      {troubleshootingSolved ? 'Next case →' : 'Find the component'}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={!troubleshootingSolved}
+                      onClick={startTroubleshooting}
+                    >
+                      Practise again ↻
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            {!guided && view === 'inside' && mode !== 'connections' && (
+              <div className="laptop-focus-actions">
+                <button
+                  type="button"
+                  onClick={() => {
+                    focusTargetRef.current = selected;
+                  }}
+                  disabled={
+                    !['battery', 'motherboard', 'cpu', 'ram', 'ssd', 'fan', 'wifi', 'speakers'].includes(
+                      selected,
+                    )
+                  }
+                >
+                  <Crosshair size={14} />
+                  Focus
+                </button>
+                <button
+                  type="button"
+                  className={isolated ? 'active' : ''}
+                  onClick={() => {
+                    const next = !isolated;
+                    isolateRef.current = next;
+                    setIsolated(next);
+                  }}
+                  disabled={
+                    !['battery', 'motherboard', 'cpu', 'ram', 'ssd', 'fan', 'wifi', 'speakers'].includes(
+                      selected,
+                    )
+                  }
+                >
+                  {isolated ? <Eye size={14} /> : <EyeOff size={14} />}
+                  {isolated ? 'Show all' : 'Isolate'}
+                </button>
+              </div>
+            )}
             {guided && (
               <div
                 className={
@@ -2432,7 +2689,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
                 )}
               </div>
             )}
-            {!guided && view === 'inside' && (
+            {!guided && view === 'inside' && mode === 'explore' && (
               <div className="laptop-cable-status">
                 <strong>Service cables</strong>
                 <p>{internalCableFeedback}</p>
@@ -2499,7 +2756,7 @@ export default function LaptopLab({ onBack }: { onBack: () => void }) {
                   </button>
                 )}
               </div>
-            ) : view === 'outside' ? (
+            ) : mode === 'troubleshooting' ? null : view === 'outside' ? (
               <button
                 type="button"
                 className="laptop-primary"

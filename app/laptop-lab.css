@@ -771,3 +771,113 @@
     bottom: 14px;
   }
 }
+
+
+.laptop-troubleshoot-options {
+  display: grid;
+  gap: 7px;
+}
+
+.laptop-troubleshoot-options > p {
+  margin: 0 0 6px;
+  color: #9aaab0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.laptop-troubleshoot-options button {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 11px;
+  border: 1px solid #344148;
+  border-radius: 7px;
+  color: #b8c4c8;
+  background: #1b2429;
+  text-align: left;
+}
+
+.laptop-troubleshoot-options button.selected {
+  border-color: #7b6750;
+  background: #2b251f;
+}
+
+.laptop-troubleshoot-options button.correct {
+  color: #d8efe5;
+  border-color: #4f806d;
+  background: #182922;
+}
+
+.laptop-troubleshoot-card {
+  margin-top: 16px;
+  display: grid;
+  gap: 8px;
+  padding: 13px;
+  border: 1px solid #6e573e;
+  border-radius: 8px;
+  background: #211b16;
+}
+
+.laptop-troubleshoot-card.solved {
+  border-color: #41695a;
+  background: #15231e;
+}
+
+.laptop-troubleshoot-card > span {
+  color: #e1b47c;
+  font: 9px/1.2 monospace;
+  letter-spacing: 1px;
+}
+
+.laptop-troubleshoot-card.solved > span {
+  color: #9ed2b9;
+}
+
+.laptop-troubleshoot-card > strong {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.laptop-troubleshoot-card > p {
+  margin: 0;
+  color: #a7b3b8;
+  font-size: 11px;
+  line-height: 1.48;
+}
+
+.laptop-troubleshoot-card > div,
+.laptop-focus-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.laptop-troubleshoot-card button,
+.laptop-focus-actions button {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #465b64;
+  border-radius: 7px;
+  color: #d4e4e8;
+  background: #19272d;
+  font-size: 11px;
+}
+
+.laptop-troubleshoot-card button:disabled,
+.laptop-focus-actions button:disabled {
+  opacity: .35;
+}
+
+.laptop-focus-actions {
+  margin-top: 14px;
+}
+
+.laptop-focus-actions button.active {
+  color: #e7fbfd;
+  border-color: #6aaeb8;
+  background: #20363d;
+}
