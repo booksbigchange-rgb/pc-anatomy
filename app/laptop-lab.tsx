@@ -327,7 +327,7 @@ function physicalRounded(
       metalness,
       clearcoat,
       clearcoatRoughness: 0.24,
-      envMapIntensity: 1.18,
+      envMapIntensity: 0.28,
       anisotropy: metalness > 0.5 ? 0.34 : 0,
       anisotropyRotation: Math.PI / 2,
     }),
@@ -1394,7 +1394,7 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
     controls.target.set(0, 1.15, 0.15);
 
     scene.add(new THREE.HemisphereLight(0xd8efff, 0x2f2926, 0.65));
-    const key = new THREE.DirectionalLight(0xfff5ea, 2.4);
+    const key = new THREE.DirectionalLight(0xfff5ea, 1.65);
     key.position.set(7.5, 10.5, 8.5);
     key.castShadow = true;
     key.shadow.mapSize.set(2048, 2048);
@@ -1419,12 +1419,12 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
 
     // Large soft-box lights create long, readable highlights on the aluminum
     // surfaces and screen glass, closer to a product render than a game prop.
-    const softbox = new THREE.RectAreaLight(0xfff3e8, 5.6, 7.5, 4.5);
+    const softbox = new THREE.RectAreaLight(0xfff3e8, 2.4, 7.5, 4.5);
     softbox.position.set(-4.8, 7.8, 6.6);
     softbox.lookAt(0, 1.2, 0);
     scene.add(softbox);
 
-    const edgeSoftbox = new THREE.RectAreaLight(0xa8dce8, 2.7, 5.0, 3.0);
+    const edgeSoftbox = new THREE.RectAreaLight(0xd9e5ee, 1.4, 5.0, 3.0);
     edgeSoftbox.position.set(5.8, 5.4, -5.2);
     edgeSoftbox.lookAt(0, 1.4, -0.8);
     scene.add(edgeSoftbox);
@@ -1508,7 +1508,7 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
               metalness,
               clearcoat: metalness > 0.5 ? 0.1 : 0.02,
               clearcoatRoughness: 0.25,
-              envMapIntensity: 1.18,
+              envMapIntensity: 0.28,
               anisotropy: metalness > 0.5 ? 0.34 : 0,
               anisotropyRotation: Math.PI / 2,
             });
@@ -1528,29 +1528,29 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
     // assembly used by the closed CAD reference. They give the interactive
     // open laptop real input-cover and display-frame geometry.
     loadOpenExteriorPart(
-      'framework-laptop-13-input-cover',
+      'framework-laptop-13-input-cover-refined',
       laptop.inputCoverCadMount,
       laptop.deckFallback,
       // Extracted CAD keeps its original 0..228.98 mm depth axis. Centre it
       // on the chassis and place its top surface at the interactive deck.
       [0, 1.067, -2.92],
       [0, 0, 0],
-      0xb5bdc1,
-      0.28,
-      0.74,
+      0x87929b,
+      0.46,
+      0.62,
     );
     loadOpenExteriorPart(
-      'framework-laptop-13-input-cover',
+      'framework-laptop-13-input-cover-refined',
       laptop.serviceInputCoverCadMount,
       laptop.serviceInputCoverFallback,
       [0, -0.003, -2.92],
       [0, 0, 0],
-      0xb5bdc1,
-      0.28,
-      0.74,
+      0x87929b,
+      0.46,
+      0.62,
     );
     loadOpenExteriorPart(
-      'framework-laptop-13-top-cover',
+      'framework-laptop-13-top-cover-refined',
       laptop.displayTopCoverCadMount,
       laptop.lidFrameFallback,
       // Source Z becomes local display Y after the -90° X rotation, so the
@@ -1562,7 +1562,7 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
       0.8,
     );
     loadOpenExteriorPart(
-      'framework-laptop-13-display-bezel',
+      'framework-laptop-13-display-bezel-refined',
       laptop.displayBezelCadMount,
       laptop.bezelFallback,
       // The bezel starts ~12.5 mm above the hinge in the source CAD and

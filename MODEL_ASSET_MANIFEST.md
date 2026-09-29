@@ -128,3 +128,8 @@ The parts are converted from the official STEP files to optimized neutral-materi
 | Status | Approved for Laptop Anatomy motherboard outline |
 
 The DXF contains multiple views, dimensions and annotation geometry. Big Change isolates the left mechanical view and traces the large closed LINE/ARC cycle rather than polygonizing the entire drawing sheet. The resulting silhouette is extruded to a representative 1.2 mm board thickness and replaces the procedural board shell when the local GLB loads successfully.
+
+
+## Blender shell refinement (2026-09-29)
+
+The three `framework-laptop-13-*-refined.glb` exterior assets derive from the pinned Framework CAD sources above (CC-BY-4.0). `scripts/refine-laptop-blender.py` uses Blender 2.78 to add 0.06 mm clamped edge bevels and split smooth normals. Original coordinates and mounts are retained; internal parts and fixtures are unchanged. Original GLBs remain available. The editable Blender scene is generated locally in `outputs/blender/laptop-shells.blend`.
