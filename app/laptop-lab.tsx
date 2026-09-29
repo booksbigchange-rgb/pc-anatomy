@@ -1,5 +1,6 @@
 'use client';
 import AcademyLogo from './academy-logo';
+import { applyServiceSurface } from './laptop-service-surfaces';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -58,11 +59,7 @@ import { LAPTOP_TROUBLESHOOTING_SCENARIOS } from './laptop-troubleshooting.ts';
 import { LAPTOP_ASSESSMENT_QUESTIONS } from './laptop-assessment.ts';
 
 type LaptopView = 'outside' | 'inside';
-type LaptopMode =
-  | 'explore'
-  | 'connections'
-  | 'troubleshooting'
-  | 'assessment';
+type LaptopMode = 'explore' | 'connections' | 'troubleshooting' | 'assessment';
 type LaptopPortType = 'usb' | 'hdmi' | 'power' | 'audio';
 type LaptopPortId =
   | 'usb-rear-right'
@@ -191,8 +188,7 @@ const PARTS: LaptopPart[] = [
     name: 'Speakers',
     icon: Volume2,
     view: 'inside',
-    description:
-      'Small speakers turn electrical audio signals into sound.',
+    description: 'Small speakers turn electrical audio signals into sound.',
     why: 'They let students hear lessons, videos and alerts without external speakers.',
   },
 ];
@@ -235,8 +231,6 @@ const CONNECTION_TASKS: LaptopConnectionTask[] = [
     source: [4.85, 0.82, 1.5],
   },
 ];
-
-
 
 // Teaching geometry follows the approved Framework Laptop 13 CAD proportions
 // so the clickable model and the realistic exterior read as the same machine.
@@ -587,15 +581,7 @@ function buildLaptop() {
   outside.add(base);
 
   // Dark separation line between the formed lower shell and input cover.
-  const chassisSeam = rounded(
-    7.42,
-    0.045,
-    5.66,
-    0.13,
-    0x4b555b,
-    0.48,
-    0.3,
-  );
+  const chassisSeam = rounded(7.42, 0.045, 5.66, 0.13, 0x4b555b, 0.48, 0.3);
   chassisSeam.position.y = 1.025;
   outside.add(chassisSeam);
 
@@ -639,7 +625,10 @@ function buildLaptop() {
     { z: -1.34, widths: [1.35, ...Array(12).fill(1), 1.35] as number[] },
     { z: -0.9, widths: [1.55, ...Array(11).fill(1), 1.85] as number[] },
     { z: -0.46, widths: [1.9, ...Array(10).fill(1), 2.25] as number[] },
-    { z: -0.02, widths: [1.35, 1.15, 1.15, 1.15, 5.15, 1.15, 1.15, 1.15] as number[] },
+    {
+      z: -0.02,
+      widths: [1.35, 1.15, 1.15, 1.15, 5.15, 1.15, 1.15, 1.15] as number[],
+    },
   ];
 
   for (const [rowIndex, row] of rowSpecs.entries()) {
@@ -683,7 +672,15 @@ function buildLaptop() {
   }
 
   // Separate fingerprint/power key at the top-right corner.
-  const powerKey = physicalRounded(0.44, 0.065, 0.44, 0.08, 0x20272b, 0.36, 0.18);
+  const powerKey = physicalRounded(
+    0.44,
+    0.065,
+    0.44,
+    0.08,
+    0x20272b,
+    0.36,
+    0.18,
+  );
   powerKey.position.set(3.02, 1.16, -1.83);
   keyboard.add(powerKey);
   const powerRing = new THREE.Mesh(
@@ -729,7 +726,16 @@ function buildLaptop() {
     outside.add(foot);
   }
 
-  const hinge = physicalRounded(6.4, 0.2, 0.22, 0.09, 0x6e787d, 0.27, 0.78, 0.08);
+  const hinge = physicalRounded(
+    6.4,
+    0.2,
+    0.22,
+    0.09,
+    0x6e787d,
+    0.27,
+    0.78,
+    0.08,
+  );
   hinge.position.set(0, 1.015, LAPTOP_DIMENSIONS.hingeZ);
   outside.add(hinge);
 
@@ -755,15 +761,7 @@ function buildLaptop() {
   lidFrame.position.set(0, LAPTOP_DIMENSIONS.lidHeight / 2, 0);
   displayGroup.add(lidFrame);
 
-  const bezel = rounded(
-    7.34,
-    5.02,
-    0.035,
-    0.11,
-    0x111619,
-    0.5,
-    0.12,
-  );
+  const bezel = rounded(7.34, 5.02, 0.035, 0.11, 0x111619, 0.5, 0.12);
   bezel.position.set(
     0,
     LAPTOP_DIMENSIONS.lidHeight / 2,
@@ -871,12 +869,7 @@ function buildLaptop() {
       [-3.835, 0.95, -1.32],
       0xc48761,
     ),
-    laptopPort(
-      'hdmi-left',
-      [0.07, 0.18, 0.61],
-      [-3.835, 0.95, 1.26],
-      0x927cad,
-    ),
+    laptopPort('hdmi-left', [0.07, 0.18, 0.61], [-3.835, 0.95, 1.26], 0x927cad),
     laptopPort(
       'usb-rear-right',
       [0.07, 0.18, 0.5],
@@ -939,7 +932,6 @@ function buildLaptop() {
   );
   statusLed.position.set(-3.84, 0.91, -2.1);
   outside.add(statusLed);
-
 
   const realisticInternals = buildRealisticLaptopInternals();
   inside.add(realisticInternals.inside);
@@ -1040,11 +1032,7 @@ function buildLaptop() {
     0.38,
     0.28,
   );
-  serviceBezel.position.set(
-    0,
-    LAPTOP_DIMENSIONS.lidHeight / 2,
-    0.12,
-  );
+  serviceBezel.position.set(0, LAPTOP_DIMENSIONS.lidHeight / 2, 0.12);
   serviceFront.add(serviceBezel);
 
   const serviceScreen = new THREE.Mesh(
@@ -1059,11 +1047,7 @@ function buildLaptop() {
       toneMapped: false,
     }),
   );
-  serviceScreen.position.set(
-    0,
-    LAPTOP_DIMENSIONS.lidHeight / 2,
-    0.162,
-  );
+  serviceScreen.position.set(0, LAPTOP_DIMENSIONS.lidHeight / 2, 0.162);
   serviceFront.add(serviceScreen);
   const serviceGlass = glass.clone();
   serviceGlass.material = glass.material.clone();
@@ -1165,12 +1149,7 @@ function addEnvironment(scene: THREE.Scene) {
   mat.receiveShadow = true;
   scene.add(mat);
 
-  const floor = mesh(
-    new THREE.PlaneGeometry(38, 38),
-    COLORS.floor,
-    0.92,
-    0.01,
-  );
+  const floor = mesh(new THREE.PlaneGeometry(38, 38), COLORS.floor, 0.92, 0.01);
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -2.0;
   floor.receiveShadow = true;
@@ -1178,7 +1157,9 @@ function addEnvironment(scene: THREE.Scene) {
 
   const grid = new THREE.GridHelper(32, 32, 0x34454d, 0x26343a);
   grid.position.y = -1.985;
-  const materials = Array.isArray(grid.material) ? grid.material : [grid.material];
+  const materials = Array.isArray(grid.material)
+    ? grid.material
+    : [grid.material];
   for (const material of materials) {
     material.transparent = true;
     material.opacity = 0.045;
@@ -1186,7 +1167,13 @@ function addEnvironment(scene: THREE.Scene) {
   scene.add(grid);
 }
 
-export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () => void; onOpenTaskManager: () => void }) {
+export default function LaptopLab({
+  onBack,
+  onOpenTaskManager,
+}: {
+  onBack: () => void;
+  onOpenTaskManager: () => void;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const selectedRef = useRef<LaptopPartId>('display');
   const viewRef = useRef<LaptopView>('outside');
@@ -1236,10 +1223,15 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
   const localProgressRef = useRef(0);
   const localStartedRef = useRef(0);
   const localContext = `${selected}:${view}:${mode}:${guided}:${lessonIndex}`;
-  const [localSelection, setLocalSelection] = useState<{ id: LaptopLocalPart; context: string } | null>(null);
-  const localPart = localSelection?.context === localContext ? localSelection.id : null;
+  const [localSelection, setLocalSelection] = useState<{
+    id: LaptopLocalPart;
+    context: string;
+  } | null>(null);
+  const localPart =
+    localSelection?.context === localContext ? localSelection.id : null;
   // Discard a previous selection so returning to it cannot revive an old lift.
-  if (localSelection && localSelection.context !== localContext) setLocalSelection(null);
+  if (localSelection && localSelection.context !== localContext)
+    setLocalSelection(null);
   const resetLocalPart = useCallback(() => {
     localPartRef.current = null;
     localProgressRef.current = 0;
@@ -1251,11 +1243,14 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
   }, [localContext]);
   const [explode, setExplodeValue] = useState(18);
 
-  const updateExplode = useCallback((value: number) => {
-    resetLocalPart();
-    explodeRef.current = value;
-    setExplodeValue(value);
-  }, [resetLocalPart]);
+  const updateExplode = useCallback(
+    (value: number) => {
+      resetLocalPart();
+      explodeRef.current = value;
+      setExplodeValue(value);
+    },
+    [resetLocalPart],
+  );
 
   const {
     playing: teardownPlaying,
@@ -1267,8 +1262,7 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
   const visibleParts = PARTS.filter((part) => part.view === view);
   const selectedPart =
     PARTS.find((part) => part.id === selected) ?? visibleParts[0];
-  const lessonStep =
-    LAPTOP_LESSON_STEPS[lessonIndex] ?? LAPTOP_LESSON_STEPS[0];
+  const lessonStep = LAPTOP_LESSON_STEPS[lessonIndex] ?? LAPTOP_LESSON_STEPS[0];
   const lessonStepComplete =
     !lessonStep.requiredCable ||
     disconnectedInternalCables.includes(lessonStep.requiredCable);
@@ -1280,8 +1274,7 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
   const currentAssessment =
     LAPTOP_ASSESSMENT_QUESTIONS[assessmentIndex] ??
     LAPTOP_ASSESSMENT_QUESTIONS[0];
-  const currentAssessmentAnswer =
-    assessmentAnswers[currentAssessment.id];
+  const currentAssessmentAnswer = assessmentAnswers[currentAssessment.id];
   const currentAssessmentCorrect =
     currentAssessmentAnswer === currentAssessment.answer;
   const assessmentScore = LAPTOP_ASSESSMENT_QUESTIONS.reduce(
@@ -1459,7 +1452,9 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
           mount.add(gltf.scene);
         },
         undefined,
-        () => { /* Keep the existing service model if an asset cannot load. */ },
+        () => {
+          /* Keep the existing service model if an asset cannot load. */
+        },
       );
     }
     gltfLoader.load(
@@ -1497,7 +1492,6 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
         }
       },
     );
-
 
     const loadOpenExteriorPart = (
       file: string,
@@ -1680,8 +1674,7 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
 
         // Replace the simplified fallback battery with Framework's official
         // CC BY 4.0 battery CAD, converted to a local web GLB.
-        for (const child of laptop.batteryMount.children)
-          child.visible = false;
+        for (const child of laptop.batteryMount.children) child.visible = false;
 
         const batteryModel = gltf.scene;
         batteryModel.scale.setScalar(25.5);
@@ -1691,16 +1684,11 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
           const item = object as THREE.Mesh;
           item.castShadow = true;
           item.receiveShadow = true;
-          item.material = new THREE.MeshStandardMaterial({
-            color: 0x171c20,
-            roughness: 0.86,
-            metalness: 0.02,
-          });
+          applyServiceSurface(item, 'battery');
         });
         laptop.batteryMount.add(batteryModel);
       },
     );
-
 
     gltfLoader.load(
       `${import.meta.env.BASE_URL}models/framework-laptop-13-mainboard.glb`,
@@ -1722,11 +1710,7 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
           const item = object as THREE.Mesh;
           item.castShadow = true;
           item.receiveShadow = true;
-          item.material = new THREE.MeshStandardMaterial({
-            color: 0x153e31,
-            roughness: 0.68,
-            metalness: 0.06,
-          });
+          applyServiceSurface(item, 'board');
         });
         laptop.motherboardShell.add(boardModel);
       },
@@ -1808,7 +1792,15 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
       connectionCables.set(task.id, cable);
       scene.add(cable);
 
-      const sourceMarker = rounded(0.42, 0.16, 0.62, 0.06, 0x34434a, 0.48, 0.16);
+      const sourceMarker = rounded(
+        0.42,
+        0.16,
+        0.62,
+        0.06,
+        0x34434a,
+        0.48,
+        0.16,
+      );
       sourceMarker.position.set(...task.source);
       sourceMarker.position.y -= 0.04;
       sourceMarker.visible = false;
@@ -1989,10 +1981,8 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
       }
 
       for (const [id, cable] of connectionCables)
-        cable.visible =
-          connectionMode && connectedRef.current.includes(id);
-      for (const marker of connectionMarkers)
-        marker.visible = connectionMode;
+        cable.visible = connectionMode && connectedRef.current.includes(id);
+      for (const marker of connectionMarkers) marker.visible = connectionMode;
 
       const selectedInternalKey =
         selectedRef.current === 'fan' ? 'cooling' : selectedRef.current;
@@ -2005,17 +1995,29 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
       }
 
       if (insideNow) {
-        const local = localPartRef.current === selectedRef.current ? localPartRef.current : null;
+        const local =
+          localPartRef.current === selectedRef.current
+            ? localPartRef.current
+            : null;
         localProgressRef.current = local
-          ? Math.max(localProgressRef.current, Math.min(1, (performance.now() - localStartedRef.current) / 400))
+          ? Math.max(
+              localProgressRef.current,
+              Math.min(1, (performance.now() - localStartedRef.current) / 400),
+            )
           : 0;
-        applyLaptopTeardown(laptop.teardownParts, explodeRef.current, local, localProgressRef.current);
+        applyLaptopTeardown(
+          laptop.teardownParts,
+          explodeRef.current,
+          local,
+          localProgressRef.current,
+        );
 
         // During the first half of the flip students still see the normal
         // keyboard/trackpad side. Once the cover turns over, hide those cloned
         // controls and reveal the underside plate so they cannot show through
         // the real CAD openings.
-        const inputCoverFlipped = explodeRef.current >= LAPTOP_INPUT_COVER_SERVICE.flippedAt;
+        const inputCoverFlipped =
+          explodeRef.current >= LAPTOP_INPUT_COVER_SERVICE.flippedAt;
         laptop.serviceInputCoverAssembly.visible =
           explodeRef.current < LAPTOP_INPUT_COVER_SERVICE.visibleUntil;
         laptop.serviceInputCoverKeyboard.visible = !inputCoverFlipped;
@@ -2025,11 +2027,13 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
         // At 0% the Input Cover is still installed, so the motherboard and
         // service parts must not render through the keyboard. Reveal them only
         // after the cover has completed its service flip.
-        laptop.serviceInterior.visible = explodeRef.current >= LAPTOP_INPUT_COVER_SERVICE.internalsVisibleAt;
+        laptop.serviceInterior.visible =
+          explodeRef.current >= LAPTOP_INPUT_COVER_SERVICE.internalsVisibleAt;
 
         for (const cable of laptop.disconnectCables) {
-          const disconnected =
-            disconnectedInternalCablesRef.current.includes(cable.id);
+          const disconnected = disconnectedInternalCablesRef.current.includes(
+            cable.id,
+          );
           cable.object.visible = explodeRef.current < cable.at;
           cable.object.position.copy(
             disconnected ? cable.unplugOffset : new THREE.Vector3(),
@@ -2044,11 +2048,8 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
 
       if (insideNow && focusTargetRef.current) {
         const focusKey =
-          focusTargetRef.current === 'fan'
-            ? 'cooling'
-            : focusTargetRef.current;
-        const focusObject =
-          laptop.parts[focusKey as keyof typeof laptop.parts];
+          focusTargetRef.current === 'fan' ? 'cooling' : focusTargetRef.current;
+        const focusObject = laptop.parts[focusKey as keyof typeof laptop.parts];
         if (focusObject) {
           laptop.inside.updateMatrixWorld(true);
           const box = new THREE.Box3().setFromObject(focusObject);
@@ -2065,8 +2066,7 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
       }
 
       if (insideNow && !cameraManuallyMoved) {
-        const rawService =
-          (explodeRef.current - 72) / 28;
+        const rawService = (explodeRef.current - 72) / 28;
         const serviceT = Math.min(1, Math.max(0, rawService));
         const easedService = serviceT * serviceT * (3 - 2 * serviceT);
 
@@ -2092,8 +2092,7 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
         let owner: THREE.Object3D | null = object;
         while (owner && !owner.userData.laptopPart) owner = owner.parent;
         const selectedNow =
-          !connectionMode &&
-          owner?.userData.laptopPart === selectedRef.current;
+          !connectionMode && owner?.userData.laptopPart === selectedRef.current;
         for (const material of materials) {
           if (!(material instanceof THREE.MeshStandardMaterial)) continue;
           material.emissive.setHex(selectedNow ? 0x0b2428 : 0x000000);
@@ -2134,7 +2133,6 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
       });
     };
   }, []);
-
 
   const changeView = (next: LaptopView) => {
     setGuided(false);
@@ -2327,7 +2325,14 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
           </span>
         </div>
         <div className="laptop-header-actions">
-          <button type="button" className="laptop-guide-button" aria-label="Task Manager" onClick={onOpenTaskManager}><Activity size={16} /> Task Manager</button>
+          <button
+            type="button"
+            className="laptop-guide-button"
+            aria-label="Task Manager"
+            onClick={onOpenTaskManager}
+          >
+            <Activity size={16} /> Task Manager
+          </button>
           <button
             type="button"
             className={
@@ -2352,7 +2357,9 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
           </button>
           <button
             type="button"
-            className={'laptop-guide-button' + (mode === 'connections' ? ' active' : '')}
+            className={
+              'laptop-guide-button' + (mode === 'connections' ? ' active' : '')
+            }
             onClick={startConnections}
           >
             <Cable size={15} />
@@ -2361,8 +2368,7 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
           <button
             type="button"
             className={
-              'laptop-guide-button' +
-              (mode === 'assessment' ? ' active' : '')
+              'laptop-guide-button' + (mode === 'assessment' ? ' active' : '')
             }
             onClick={startAssessment}
           >
@@ -2389,22 +2395,22 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
             Guided lesson
           </button>
           <div className="laptop-view-switch">
-          <button
-            type="button"
-            className={view === 'outside' ? 'active' : ''}
-            onClick={() => changeView('outside')}
-          >
-            <PanelTopOpen size={15} />
-            Outside
-          </button>
-          <button
-            type="button"
-            className={view === 'inside' ? 'active' : ''}
-            onClick={() => changeView('inside')}
-          >
-            <CircuitBoard size={15} />
-            Inside
-          </button>
+            <button
+              type="button"
+              className={view === 'outside' ? 'active' : ''}
+              onClick={() => changeView('outside')}
+            >
+              <PanelTopOpen size={15} />
+              Outside
+            </button>
+            <button
+              type="button"
+              className={view === 'inside' ? 'active' : ''}
+              onClick={() => changeView('inside')}
+            >
+              <CircuitBoard size={15} />
+              Inside
+            </button>
           </div>
         </div>
       </header>
@@ -2420,13 +2426,13 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
               ? assessmentComplete
                 ? 'KNOWLEDGE CHECK · COMPLETE'
                 : `KNOWLEDGE CHECK · ${assessmentIndex + 1} / ${LAPTOP_ASSESSMENT_QUESTIONS.length}`
-            : mode === 'troubleshooting'
-              ? `TROUBLESHOOT · ${troubleshootingScenario + 1} / ${LAPTOP_TROUBLESHOOTING_SCENARIOS.length}`
-            : guided
-              ? `GUIDED LESSON · ${lessonIndex + 1} / ${LAPTOP_LESSON_STEPS.length}`
-              : view === 'outside'
-                ? '01 / LAPTOP EXTERIOR'
-                : '02 / LAPTOP INTERNALS'}
+              : mode === 'troubleshooting'
+                ? `TROUBLESHOOT · ${troubleshootingScenario + 1} / ${LAPTOP_TROUBLESHOOTING_SCENARIOS.length}`
+                : guided
+                  ? `GUIDED LESSON · ${lessonIndex + 1} / ${LAPTOP_LESSON_STEPS.length}`
+                  : view === 'outside'
+                    ? '01 / LAPTOP EXTERIOR'
+                    : '02 / LAPTOP INTERNALS'}
         </p>
         <h1>
           {mode === 'connections'
@@ -2437,15 +2443,15 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
               ? assessmentComplete
                 ? 'Knowledge check complete.'
                 : currentAssessment.title
-            : mode === 'troubleshooting'
-              ? currentTroubleshooting.title
-            : guided
-              ? lessonStep.title
-              : view === 'outside'
-                ? realisticExterior && realisticLoaded
-                  ? 'Check the closed CAD reference.'
-                  : 'Explore the realistic open laptop.'
-                : 'Now look under the keyboard.'}
+              : mode === 'troubleshooting'
+                ? currentTroubleshooting.title
+                : guided
+                  ? lessonStep.title
+                  : view === 'outside'
+                    ? realisticExterior && realisticLoaded
+                      ? 'Check the closed CAD reference.'
+                      : 'Explore the realistic open laptop.'
+                    : 'Now look under the keyboard.'}
         </h1>
         <p className="laptop-intro">
           {mode === 'connections'
@@ -2456,15 +2462,15 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
               ? assessmentComplete
                 ? `You answered ${assessmentScore} of ${LAPTOP_ASSESSMENT_QUESTIONS.length} correctly (${assessmentPercent}%).`
                 : currentAssessment.prompt
-            : mode === 'troubleshooting'
-              ? currentTroubleshooting.symptom
-            : guided
-              ? lessonStep.action
-              : view === 'outside'
-                ? realisticExterior && realisticLoaded
-                  ? 'This closed CAD reference preserves the approved Framework Laptop 13 exterior proportions. Switch back to the open laptop for interactive controls and ports.'
-                  : 'The open model now uses the same real-world proportions with aluminum materials, recessed keys, display glass, realistic bezels and neutral port cavities.'
-                : 'Laptop parts are smaller and packed closer together than desktop components.'}
+              : mode === 'troubleshooting'
+                ? currentTroubleshooting.symptom
+                : guided
+                  ? lessonStep.action
+                  : view === 'outside'
+                    ? realisticExterior && realisticLoaded
+                      ? 'This closed CAD reference preserves the approved Framework Laptop 13 exterior proportions. Switch back to the open laptop for interactive controls and ports.'
+                      : 'The open model now uses the same real-world proportions with aluminum materials, recessed keys, display glass, realistic bezels and neutral port cavities.'
+                    : 'Laptop parts are smaller and packed closer together than desktop components.'}
         </p>
         {(guided || mode === 'assessment') && (
           <div
@@ -2533,7 +2539,9 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
               <small>
                 {assessmentReview.length
                   ? 'Review: ' +
-                    assessmentReview.map((question) => question.review).join(' · ')
+                    assessmentReview
+                      .map((question) => question.review)
+                      .join(' · ')
                   : 'All topics answered correctly.'}
               </small>
             </div>
@@ -2582,7 +2590,8 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
                   type="button"
                   key={id}
                   className={
-                    troubleshootingSolved && id === currentTroubleshooting.answer
+                    troubleshootingSolved &&
+                    id === currentTroubleshooting.answer
                       ? 'correct'
                       : selected === id
                         ? 'selected'
@@ -2656,11 +2665,11 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
                 ? assessmentComplete
                   ? 'Completion summary'
                   : 'Assessment tip'
-              : mode === 'troubleshooting'
-                ? 'Diagnostic clue'
-                : guided
-                  ? 'What to notice'
-                  : 'Learning goal'}
+                : mode === 'troubleshooting'
+                  ? 'Diagnostic clue'
+                  : guided
+                    ? 'What to notice'
+                    : 'Learning goal'}
           </strong>
           <span>
             {mode === 'connections'
@@ -2671,13 +2680,13 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
                     ? 'Review the topics listed above, then try the knowledge check again.'
                     : 'You answered every knowledge-check question correctly.'
                   : 'Use the 3D model as a reference before choosing an answer.'
-              : mode === 'troubleshooting'
-                ? currentTroubleshooting.clue
-              : guided
-                ? lessonStep.notice
-                : view === 'outside'
-                  ? 'Identify the display, keyboard, trackpad and the ports around the chassis.'
-                  : 'Trace how power, storage, memory, cooling and cables fit inside one laptop.'}
+                : mode === 'troubleshooting'
+                  ? currentTroubleshooting.clue
+                  : guided
+                    ? lessonStep.notice
+                    : view === 'outside'
+                      ? 'Identify the display, keyboard, trackpad and the ports around the chassis.'
+                      : 'Trace how power, storage, memory, cooling and cables fit inside one laptop.'}
           </span>
         </div>
       </aside>
@@ -2703,13 +2712,13 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
               ? assessmentComplete
                 ? 'Assessment complete · review your result or try again'
                 : 'Orbit the hardware · use the model as evidence · choose an answer'
-            : mode === 'troubleshooting'
-              ? 'Read the symptom · inspect the hardware · click your first suspect'
-            : guided
-              ? lessonStep.action
-              : view === 'inside'
-                ? 'Drag to orbit · click cables to unplug · use teardown slider'
-                : 'Drag to orbit · scroll to zoom · click a part'}
+              : mode === 'troubleshooting'
+                ? 'Read the symptom · inspect the hardware · click your first suspect'
+                : guided
+                  ? lessonStep.action
+                  : view === 'inside'
+                    ? 'Drag to orbit · click cables to unplug · use teardown slider'
+                    : 'Drag to orbit · scroll to zoom · click a part'}
         </div>
 
         {view === 'inside' && mode === 'explore' && !guided && (
@@ -2789,10 +2798,18 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
               <p>{connectionFeedback}</p>
             </div>
             <div className="laptop-port-key">
-              <span><i className="power" /> Power</span>
-              <span><i className="usb" /> USB</span>
-              <span><i className="hdmi" /> HDMI</span>
-              <span><i className="audio" /> Audio</span>
+              <span>
+                <i className="power" /> Power
+              </span>
+              <span>
+                <i className="usb" /> USB
+              </span>
+              <span>
+                <i className="hdmi" /> HDMI
+              </span>
+              <span>
+                <i className="audio" /> Audio
+              </span>
             </div>
             {allConnectionsComplete && (
               <button
@@ -2814,9 +2831,9 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
                   : `QUESTION ${assessmentIndex + 1} / ${LAPTOP_ASSESSMENT_QUESTIONS.length}`
                 : mode === 'troubleshooting'
                   ? `TROUBLESHOOT ${troubleshootingScenario + 1} / ${LAPTOP_TROUBLESHOOTING_SCENARIOS.length}`
-                : guided
-                  ? `LESSON STEP ${lessonIndex + 1} / ${LAPTOP_LESSON_STEPS.length}`
-                  : 'SELECTED COMPONENT'}
+                  : guided
+                    ? `LESSON STEP ${lessonIndex + 1} / ${LAPTOP_LESSON_STEPS.length}`
+                    : 'SELECTED COMPONENT'}
             </p>
             <h2>{selectedPart.name}</h2>
             <p>{selectedPart.description}</p>
@@ -2886,8 +2903,7 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
                       disabled={!currentAssessmentAnswer}
                       onClick={nextAssessment}
                     >
-                      {assessmentIndex <
-                      LAPTOP_ASSESSMENT_QUESTIONS.length - 1
+                      {assessmentIndex < LAPTOP_ASSESSMENT_QUESTIONS.length - 1
                         ? currentAssessmentAnswer
                           ? 'Next question →'
                           : 'Choose an answer'
@@ -2924,7 +2940,9 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
                       disabled={!troubleshootingSolved}
                       onClick={() => moveTroubleshooting(1)}
                     >
-                      {troubleshootingSolved ? 'Next case →' : 'Find the component'}
+                      {troubleshootingSolved
+                        ? 'Next case →'
+                        : 'Find the component'}
                     </button>
                   ) : (
                     <button
@@ -2946,9 +2964,16 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
                     focusTargetRef.current = selected;
                   }}
                   disabled={
-                    !['battery', 'motherboard', 'cpu', 'ram', 'ssd', 'fan', 'wifi', 'speakers'].includes(
-                      selected,
-                    )
+                    ![
+                      'battery',
+                      'motherboard',
+                      'cpu',
+                      'ram',
+                      'ssd',
+                      'fan',
+                      'wifi',
+                      'speakers',
+                    ].includes(selected)
                   }
                 >
                   <Crosshair size={14} />
@@ -2963,9 +2988,16 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
                     setIsolated(next);
                   }}
                   disabled={
-                    !['battery', 'motherboard', 'cpu', 'ram', 'ssd', 'fan', 'wifi', 'speakers'].includes(
-                      selected,
-                    )
+                    ![
+                      'battery',
+                      'motherboard',
+                      'cpu',
+                      'ram',
+                      'ssd',
+                      'fan',
+                      'wifi',
+                      'speakers',
+                    ].includes(selected)
                   }
                 >
                   {isolated ? <Eye size={14} /> : <EyeOff size={14} />}
@@ -2973,24 +3005,41 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
                 </button>
                 {isLaptopLocalPart(selected) && mode === 'explore' && (
                   <>
-                    <button type="button" disabled={explode < 18 || localPart === selected}
+                    <button
+                      type="button"
+                      disabled={explode < 18 || localPart === selected}
                       onClick={() => {
                         stopTeardown();
                         localPartRef.current = selected;
                         localStartedRef.current = performance.now();
-                        localProgressRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 0;
-                        setLocalSelection({ id: selected, context: localContext });
-                      }}>
+                        localProgressRef.current = window.matchMedia(
+                          '(prefers-reduced-motion: reduce)',
+                        ).matches
+                          ? 1
+                          : 0;
+                        setLocalSelection({
+                          id: selected,
+                          context: localContext,
+                        });
+                      }}
+                    >
                       <PanelTopOpen size={14} /> Explode part
                     </button>
-                    <button type="button" disabled={!localPart} onClick={resetLocalPart}>
+                    <button
+                      type="button"
+                      disabled={!localPart}
+                      onClick={resetLocalPart}
+                    >
                       <RotateCcw size={14} /> Reset part
                     </button>
                     <output className="laptop-local-help">
-                      {explode < 18 ? 'Open the service view to inspect this module.' : localPart
-                        ? 'Module lifted. Its socket and retainers stay on the motherboard. Reset returns it to the current teardown position.'
-                        : 'Lift only this module to see how it connects. The whole-laptop slider stays where it is.'}
-                      {selected === 'wifi' && ' Antenna leads stay routed in the chassis.'}
+                      {explode < 18
+                        ? 'Open the service view to inspect this module.'
+                        : localPart
+                          ? 'Module lifted. Its socket and retainers stay on the motherboard. Reset returns it to the current teardown position.'
+                          : 'Lift only this module to see how it connects. The whole-laptop slider stays where it is.'}
+                      {selected === 'wifi' &&
+                        ' Antenna leads stay routed in the chassis.'}
                     </output>
                   </>
                 )}
@@ -3091,7 +3140,8 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
                   </button>
                 )}
               </div>
-            ) : mode === 'troubleshooting' || mode === 'assessment' ? null : view === 'outside' ? (
+            ) : mode === 'troubleshooting' ||
+              mode === 'assessment' ? null : view === 'outside' ? (
               <button
                 type="button"
                 className="laptop-primary"
