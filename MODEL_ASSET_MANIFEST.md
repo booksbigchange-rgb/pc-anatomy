@@ -133,3 +133,8 @@ The DXF contains multiple views, dimensions and annotation geometry. Big Change 
 ## Blender shell refinement (2026-09-29)
 
 The three `framework-laptop-13-*-refined.glb` exterior assets derive from the pinned Framework CAD sources above (CC-BY-4.0). `scripts/refine-laptop-blender.py` uses Blender 2.78 to add 0.06 mm clamped edge bevels and split smooth normals. Original coordinates and mounts are retained; internal parts and fixtures are unchanged. Original GLBs remain available. The editable Blender scene is generated locally in `outputs/blender/laptop-shells.blend`.
+
+
+## Original Blender service models (2026-09-29)
+
+`public/models/service-realistic/{ssd,ram,wifi,cooling}.glb` are original educational models built by `scripts/build-service-models.py` in Blender 2.78. They use the existing mount coordinate system, with thin PCBs, keyed edges, printed identification, miniature components, antenna connectors and a centrifugal blower. Dimensions are representative and constrained by the established teaching layout; these are not manufacturer-certified repair drawings. Labels describe example hardware. No third-party textures or paid generation services are used. Editable source: `outputs/blender/laptop-service-components.blend`. Fixtures and antenna leads remain owned by the original motherboard/chassis.

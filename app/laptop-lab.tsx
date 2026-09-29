@@ -1442,6 +1442,26 @@ export default function LaptopLab({ onBack, onOpenTaskManager }: { onBack: () =>
 
     let disposed = false;
     const gltfLoader = new GLTFLoader();
+    // Replace only removable visuals. Their existing parent groups retain all
+    // home transforms, teardown ownership, picking, focus and reset behavior.
+    for (const id of ['ssd', 'ram', 'wifi', 'cooling'] as const) {
+      gltfLoader.load(
+        `${import.meta.env.BASE_URL}models/service-realistic/${id}.glb`,
+        (gltf) => {
+          if (disposed) return;
+          const mount = laptop.parts[id];
+          gltf.scene.traverse((object) => {
+            if (!(object instanceof THREE.Mesh)) return;
+            object.castShadow = true;
+            object.receiveShadow = true;
+          });
+          for (const child of mount.children) child.visible = false;
+          mount.add(gltf.scene);
+        },
+        undefined,
+        () => { /* Keep the existing service model if an asset cannot load. */ },
+      );
+    }
     gltfLoader.load(
       `${import.meta.env.BASE_URL}models/framework-laptop-13.glb`,
       (gltf) => {
