@@ -75,7 +75,8 @@ for part in ('input-cover', 'top-cover', 'display-bezel'):
     bpy.context.scene.objects.active = obj
     obj.select = True
     bevel = obj.modifiers.new('Machined edge highlights', 'BEVEL')
-    bevel.width = 0.00006
+    # The thin lid has sliver faces; retain its geometry and refine normals only.
+    bevel.width = 0.0 if part == 'top-cover' else 0.00006
     bevel.segments = 2
     bevel.limit_method = 'ANGLE'
     bevel.angle_limit = math.radians(35)
@@ -94,3 +95,4 @@ for part in ('input-cover', 'top-cover', 'display-bezel'):
 output = os.path.join(ROOT, 'outputs', 'blender')
 os.makedirs(output, exist_ok=True)
 bpy.ops.wm.save_as_mainfile(filepath=os.path.join(output, 'laptop-shells.blend'))
+
