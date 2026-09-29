@@ -44,3 +44,20 @@ await test('Blender service assets fit existing mounts and preserve global/local
     }
   }
 });
+
+await test('CPU meets the cooling contact plate before removal and retains its service position', () => {
+  const laptop = buildRealisticLaptopInternals();
+  const die = laptop.parts.cpu.getObjectByName('CPU thermal contact die')!;
+  const plate = laptop.parts.cooling.getObjectByName('CPU copper contact plate')!;
+  for (const stage of [0, 18, 42, 58]) {
+    applyLaptopTeardown(laptop.teardownParts, stage);
+    laptop.inside.updateMatrixWorld(true);
+    const d = new THREE.Box3().setFromObject(die);
+    const p = new THREE.Box3().setFromObject(plate);
+    assert.ok(d.min.x >= p.min.x && d.max.x <= p.max.x, 'plate covers die width');
+    assert.ok(d.min.z >= p.min.z && d.max.z <= p.max.z, 'plate covers die depth');
+    assert.ok(p.min.y - d.max.y >= 0 && p.min.y - d.max.y < .005, 'thermal contact gap');
+  }
+  applyLaptopTeardown(laptop.teardownParts, 100);
+  assert.ok(laptop.parts.cpu.position.distanceTo(new THREE.Vector3(2.96, 1.34, .86)) < .00001);
+});

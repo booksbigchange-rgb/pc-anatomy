@@ -574,15 +574,18 @@ function buildMotherboard() {
 function buildCpu() {
   const group = new THREE.Group();
 
-  const substrate = rounded(0.82, 0.06, 0.82, 0.045, 0x244f45, 0.44, 0.12);
+  const substrate = rounded(0.82, 0.024, 0.72, 0.025, 0x244f45, 0.64, 0.08);
   group.add(substrate);
 
-  const packageTop = rounded(0.58, 0.08, 0.58, 0.04, 0x9da1a0, 0.25, 0.68);
-  packageTop.position.y = 0.07;
+  // Low-profile mobile package with an exposed die, rather than a tall
+  // desktop-style silver heat spreader. Die top meets the copper plate.
+  const packageTop = rounded(0.58, 0.024, 0.50, 0.015, 0x20292a, 0.65, 0.08);
+  packageTop.position.y = 0.024;
   group.add(packageTop);
 
-  const die = rounded(0.3, 0.04, 0.28, 0.025, 0x474d51, 0.18, 0.52);
-  die.position.y = 0.13;
+  const die = rounded(0.4, 0.048, 0.30, 0.012, 0x545c63, 0.22, 0.48);
+  die.name = 'CPU thermal contact die';
+  die.position.y = 0.047;
   group.add(die);
 
   // The processor sits under the cooling cold plate, just to the right of
@@ -864,17 +867,18 @@ function buildCooling() {
 
   // Cold plate over the processor.
   const coldPlate = physicalMesh(
-    new RoundedBoxGeometry(0.92, 0.07, 0.84, 4, 0.055),
+    new RoundedBoxGeometry(0.92, 0.035, 0.84, 4, 0.017),
     C.copper,
     0.28,
     0.86,
     'copper',
   );
-  coldPlate.position.set(1.0, 0.145, -0.06);
+  coldPlate.name = 'CPU copper contact plate';
+  coldPlate.position.set(1.0, 0.10, -0.06);
   group.add(coldPlate);
 
   const pressurePlate = rounded(1.08, 0.035, 0.97, 0.06, 0x747e83, 0.34, 0.58);
-  pressurePlate.position.set(1.0, 0.1, -0.06);
+  pressurePlate.position.set(1.0, 0.135, -0.06);
   group.add(pressurePlate);
 
   // Dual 5 mm heat pipes are side-by-side in plan view, not stacked

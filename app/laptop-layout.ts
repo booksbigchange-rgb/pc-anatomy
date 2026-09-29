@@ -11,11 +11,13 @@ export const LAPTOP_INTERNAL_LAYOUT = {
     },
   },
   cpu: {
-    home: [0.56, 1.18, -1.49] as LaptopVec3,
+    // Cooling mount (-1.52, -1.35) + cold plate local centre (1, -0.06).
+    home: [-0.52, 1.18, -1.41] as LaptopVec3,
     teardown: {
       start: 72,
       end: 88,
-      offset: [2.4, 0.16, 2.35] as LaptopVec3,
+      // Preserve the established full-teardown service position.
+      offset: [3.48, 0.16, 2.27] as LaptopVec3,
       rotation: [0, 0.04, 0] as LaptopVec3,
     },
   },
