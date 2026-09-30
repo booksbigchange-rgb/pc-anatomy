@@ -124,22 +124,8 @@ function tag(group: THREE.Group, id: RealisticLaptopInternalId) {
   return group;
 }
 
-function chip(
-  width: number,
-  depth: number,
-  height = 0.12,
-  color = C.chip,
-) {
-  return rounded(
-    width,
-    height,
-    depth,
-    0.035,
-    color,
-    0.56,
-    0.06,
-    'ic-package',
-  );
+function chip(width: number, depth: number, height = 0.12, color = C.chip) {
+  return rounded(width, height, depth, 0.035, color, 0.56, 0.06, 'ic-package');
 }
 
 function boardShape() {
@@ -266,7 +252,7 @@ function addBoardDetails(group: THREE.Group) {
           0.125,
           z + (row - (rows - 1) / 2) * spacingZ,
         );
-        passive.rotation.y = rotation + ((row + column) % 2) * Math.PI / 2;
+        passive.rotation.y = rotation + (((row + column) % 2) * Math.PI) / 2;
         group.add(passive);
       }
     }
@@ -364,16 +350,42 @@ function addBoardDetails(group: THREE.Group) {
   // Build each as a metal shell with a dark inner cavity instead of one block.
   for (const x of [-2.72, -1.96, 1.98, 2.72]) {
     const port = new THREE.Group();
-    const shell = rounded(0.48, 0.18, 0.3, 0.045, 0xb8c0c3, 0.28, 0.64);
-    port.add(shell);
-
-    const cavity = rounded(0.34, 0.07, 0.22, 0.03, 0x202629, 0.54, 0.12);
-    cavity.position.set(0, 0.035, -0.045);
-    port.add(cavity);
-
-    const tongue = rounded(0.22, 0.025, 0.12, 0.018, 0x252c30, 0.55, 0.08);
-    tongue.position.set(0, 0.055, -0.04);
+    // Four metal walls leave a real opening through the receptacle.
+    const metal = material(0x9ca9b1, 0.3, 0.8);
+    for (const [w, h, d, px, py] of [
+      [0.48, 0.022, 0.3, 0, 0.079],
+      [0.48, 0.022, 0.3, 0, -0.079],
+      [0.025, 0.14, 0.3, -0.228, 0],
+      [0.025, 0.14, 0.3, 0.228, 0],
+    ]) {
+      const wall = new THREE.Mesh(
+        new RoundedBoxGeometry(w, h, d, 2, 0.008),
+        metal,
+      );
+      wall.position.set(px, py, 0);
+      port.add(wall);
+    }
+    const back = rounded(0.42, 0.13, 0.018, 0.008, 0x101619, 0.88, 0.02);
+    back.position.z = 0.14;
+    port.add(back);
+    const tongue = rounded(0.31, 0.026, 0.23, 0.012, 0x192125, 0.75, 0.02);
+    tongue.position.z = 0.012;
     port.add(tongue);
+    for (let pin = 0; pin < 12; pin++) {
+      const contact = mesh(
+        new THREE.BoxGeometry(0.012, 0.004, 0.12),
+        C.gold,
+        0.28,
+        0.8,
+      );
+      contact.position.set(-0.132 + pin * 0.024, 0.016, -0.015);
+      port.add(contact);
+    }
+    for (const px of [-0.25, 0.25]) {
+      const lug = rounded(0.07, 0.035, 0.1, 0.009, 0x89979f, 0.32, 0.75);
+      lug.position.set(px, -0.067, 0.08);
+      port.add(lug);
+    }
 
     port.position.set(x, 0.115, -1.235);
     group.add(port);
@@ -579,11 +591,11 @@ function buildCpu() {
 
   // Low-profile mobile package with an exposed die, rather than a tall
   // desktop-style silver heat spreader. Die top meets the copper plate.
-  const packageTop = rounded(0.58, 0.024, 0.50, 0.015, 0x20292a, 0.65, 0.08);
+  const packageTop = rounded(0.58, 0.024, 0.5, 0.015, 0x20292a, 0.65, 0.08);
   packageTop.position.y = 0.024;
   group.add(packageTop);
 
-  const die = rounded(0.4, 0.048, 0.30, 0.012, 0x545c63, 0.22, 0.48);
+  const die = rounded(0.4, 0.048, 0.3, 0.012, 0x545c63, 0.22, 0.48);
   die.name = 'CPU thermal contact die';
   die.position.y = 0.047;
   group.add(die);
@@ -626,12 +638,17 @@ function buildRam() {
 
     // Visible contact fingers run along the socketed long edge.
     for (let index = 0; index < 14; index++) {
-      const contact = rounded(0.055, 0.01, 0.028, 0.003, C.gold, 0.24, 0.78, 'gold-contact');
-      contact.position.set(
-        x - 0.312,
-        0.058,
-        -0.62 + index * (1.24 / 13),
+      const contact = rounded(
+        0.055,
+        0.01,
+        0.028,
+        0.003,
+        C.gold,
+        0.24,
+        0.78,
+        'gold-contact',
       );
+      contact.position.set(x - 0.312, 0.058, -0.62 + index * (1.24 / 13));
       group.add(contact);
     }
 
@@ -650,16 +667,7 @@ function buildSsd() {
   group.userData.removableHardwareVersion = 2;
 
   // M.2 2280: thin PCB, controller, NAND, DRAM/cache and keyed contacts.
-  const pcb = rounded(
-    2.03,
-    0.035,
-    0.56,
-    0.02,
-    C.ssd,
-    0.62,
-    0.035,
-    'pcb',
-  );
+  const pcb = rounded(2.03, 0.035, 0.56, 0.02, C.ssd, 0.62, 0.035, 'pcb');
   group.add(pcb);
 
   for (const x of [-0.48, -0.05, 0.38]) {
@@ -684,7 +692,16 @@ function buildSsd() {
   // Gold edge fingers at the socket end with an M-key gap.
   for (let index = 0; index < 12; index++) {
     if (index === 8 || index === 9) continue;
-    const finger = rounded(0.15, 0.009, 0.022, 0.003, C.gold, 0.24, 0.78, 'gold-contact');
+    const finger = rounded(
+      0.15,
+      0.009,
+      0.022,
+      0.003,
+      C.gold,
+      0.24,
+      0.78,
+      'gold-contact',
+    );
     finger.position.set(-0.95, 0.028, -0.22 + index * 0.04);
     group.add(finger);
   }
@@ -709,16 +726,7 @@ function buildWifi() {
 
   // M.2 2230 Wi-Fi module. Chassis antenna leads are modeled separately so
   // they do not travel away with the card during teardown.
-  const pcb = rounded(
-    0.76,
-    0.035,
-    0.56,
-    0.02,
-    C.wifi,
-    0.62,
-    0.035,
-    'pcb',
-  );
+  const pcb = rounded(0.76, 0.035, 0.56, 0.02, C.wifi, 0.62, 0.035, 'pcb');
   group.add(pcb);
 
   const shield = physicalMesh(
@@ -758,7 +766,16 @@ function buildWifi() {
   // Keyed M.2 contact edge.
   for (let index = 0; index < 9; index++) {
     if (index === 6) continue;
-    const finger = rounded(0.1, 0.009, 0.022, 0.003, C.gold, 0.24, 0.78, 'gold-contact');
+    const finger = rounded(
+      0.1,
+      0.009,
+      0.022,
+      0.003,
+      C.gold,
+      0.24,
+      0.78,
+      'gold-contact',
+    );
     finger.position.set(-0.34, 0.027, -0.18 + index * 0.045);
     group.add(finger);
   }
@@ -854,13 +871,7 @@ function buildCooling() {
   // read as a real heatsink instead of one solid silver block.
   const finGeometry = new THREE.BoxGeometry(0.018, 0.15, 0.94);
   for (let index = 0; index < 24; index++) {
-    const fin = mesh(
-      finGeometry.clone(),
-      C.copper,
-      0.3,
-      0.82,
-      'copper',
-    );
+    const fin = mesh(finGeometry.clone(), C.copper, 0.3, 0.82, 'copper');
     fin.position.set(-1.62 + index * 0.025, 0.095, fanZ);
     group.add(fin);
   }
@@ -874,7 +885,7 @@ function buildCooling() {
     'copper',
   );
   coldPlate.name = 'CPU copper contact plate';
-  coldPlate.position.set(1.0, 0.10, -0.06);
+  coldPlate.position.set(1.0, 0.1, -0.06);
   group.add(coldPlate);
 
   const pressurePlate = rounded(1.08, 0.035, 0.97, 0.06, 0x747e83, 0.34, 0.58);
@@ -982,11 +993,7 @@ function buildSpeakers() {
       for (let col = 0; col < 3; col++) {
         const dot = mesh(grilleGeometry.clone(), 0x626e74, 0.5, 0.12);
         dot.rotation.x = Math.PI / 2;
-        dot.position.set(
-          x - 0.12 + col * 0.12,
-          0.105,
-          0.3 + row * 0.17,
-        );
+        dot.position.set(x - 0.12 + col * 0.12, 0.105, 0.3 + row * 0.17);
         group.add(dot);
       }
     }
@@ -1045,7 +1052,13 @@ function wireCablePath(
 ) {
   const curve = new THREE.CatmullRomCurve3(vectorPath(points));
   const cable = new THREE.Mesh(
-    new THREE.TubeGeometry(curve, Math.max(24, points.length * 10), radius, 7, false),
+    new THREE.TubeGeometry(
+      curve,
+      Math.max(24, points.length * 10),
+      radius,
+      7,
+      false,
+    ),
     material(color, 0.62, 0.05),
   );
   cable.userData.cableKind = 'wire';
@@ -1086,7 +1099,10 @@ function flatRibbonPath(
   }
 
   const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(positions, 3),
+  );
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
 
@@ -1163,7 +1179,11 @@ function buildChassisDetails() {
     group.add(base);
 
     const bridge = rounded(0.11, 0.045, 0.05, 0.018, 0x7a8488, 0.38, 0.46);
-    bridge.position.set(clip.position[0], clip.position[1] + 0.035, clip.position[2]);
+    bridge.position.set(
+      clip.position[0],
+      clip.position[1] + 0.035,
+      clip.position[2],
+    );
     bridge.rotation.y = clip.rotation;
     bridge.userData.retentionKind = 'clip';
     bridge.userData.cableRole = clip.role;
@@ -1173,13 +1193,7 @@ function buildChassisDetails() {
 
   for (const tape of LAPTOP_CHASSIS_FEATURES.tape) {
     const object = physicalMesh(
-      new RoundedBoxGeometry(
-        tape.size[0],
-        tape.size[1],
-        tape.size[2],
-        3,
-        0.02,
-      ),
+      new RoundedBoxGeometry(tape.size[0], tape.size[1], tape.size[2], 3, 0.02),
       tape.role === 'display' ? 0x343a3d : 0xb39a6a,
       0.82,
       0.025,
@@ -1256,11 +1270,18 @@ export function applyLaptopTeardown(
     );
     // Compose from the global pose every frame, never from the last local pose.
     // Fixtures are children of the motherboard and never enter this branch.
-    if (progress >= 18 && part.object.userData.laptopPart === localPart && localPart) {
+    if (
+      progress >= 18 &&
+      part.object.userData.laptopPart === localPart &&
+      localPart
+    ) {
       const local = LAPTOP_LOCAL_EXPLODE[localPart];
       const t = Math.min(1, Math.max(0, localAmount));
       const lift = t * t * (3 - 2 * t);
-      part.object.position.addScaledVector(new THREE.Vector3(...local.offset), lift);
+      part.object.position.addScaledVector(
+        new THREE.Vector3(...local.offset),
+        lift,
+      );
       part.object.rotation.x += local.rotation[0] * lift;
       part.object.rotation.y += local.rotation[1] * lift;
       part.object.rotation.z += local.rotation[2] * lift;
@@ -1382,16 +1403,7 @@ export function buildRealisticLaptopInternals() {
     [2.6, 0.82, 0.5, 0.18, -0.2],
     [-1.95, -1.78, 0.62, 0.18, 0.14],
   ] as const) {
-    const tape = rounded(
-      w,
-      0.022,
-      d,
-      0.025,
-      0x15191b,
-      0.9,
-      0.005,
-      'tape',
-    );
+    const tape = rounded(w, 0.022, d, 0.025, 0x15191b, 0.9, 0.005, 'tape');
     tape.position.set(x, 0.86, z);
     tape.rotation.y = rotation;
     serviceInterior.add(tape);

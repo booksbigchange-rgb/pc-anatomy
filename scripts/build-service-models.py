@@ -255,12 +255,19 @@ for i in range(48):
     mod = obj.modifiers.new('Vane thickness', 'SOLIDIFY')
     mod.thickness = .006
     apply(obj, mod)
+box('Exhaust duct roof', (.62,.018,.94), (-1.35,.153,cz), 'Blower plastic', .01)
 for i in range(38):
     box('Exhaust fin', (.009, .13, .92), (-1.64 + i * .016, .079, cz), 'Copper', .001)
 box('Cold plate', (.92, .035, .84), (1, .10, -.06), 'Copper', .018)
 for z in [-.13, .02]:
     # Elliptical tube mesh exports consistently in the older Blender build.
-    path = [(1.30,.145,z),(.65,.16,z),(.15,.17,z-.48),(-.55,.16,z-.58),(-1.40,.14,z-.20)]
+    path = [Vector(v) for v in [(1.30,.145,z),(.65,.16,z),(.15,.17,z-.48),(-.55,.16,z-.58),(-1.40,.14,z-.20)]]
+    # Subdivide with corner cutting to form smooth manufactured pipe bends.
+    for refinement in range(3):
+        smooth = [path[0]]
+        for a, b in zip(path[:-1], path[1:]):
+            smooth.extend([a * .75 + b * .25, a * .25 + b * .75])
+        path = smooth + [path[-1]]
     verts, faces = [], []
     for i, point in enumerate(path):
         tangent = Vector(path[min(i+1,len(path)-1)]) - Vector(path[max(i-1,0)])
@@ -284,6 +291,7 @@ for z in [-.13, .02]:
 for x, z in [(-1.07,-.72),(-.11,.47),(.64,-.42),(1.37,.29)]:
     cylinder('Captive fastener', .043, .019, (x,.16,z), 'Solder', 20)
     box('Screw slot', (.044,.002,.007),(x,.171,z),'Package resin',0)
+    box('Screw cross slot', (.007,.002,.044),(x,.171,z),'Package resin',0)
 export('cooling')
 
 # Keep each model in its own layer and lay out the editable overview on D:.

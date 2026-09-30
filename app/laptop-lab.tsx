@@ -1367,7 +1367,7 @@ export default function LaptopLab({
     const roomEnvironment = new RoomEnvironment();
     const environmentTarget = pmremGenerator.fromScene(roomEnvironment, 0.04);
     scene.environment = environmentTarget.texture;
-    scene.environmentIntensity = 0.45;
+    scene.environmentIntensity = 0.32;
     roomEnvironment.dispose();
     pmremGenerator.dispose();
 
@@ -1386,23 +1386,23 @@ export default function LaptopLab({
     controls.maxPolarAngle = Math.PI / 2.02;
     controls.target.set(0, 1.15, 0.15);
 
-    scene.add(new THREE.HemisphereLight(0xd8efff, 0x2f2926, 0.65));
-    const key = new THREE.DirectionalLight(0xfff5ea, 1.65);
-    key.position.set(7.5, 10.5, 8.5);
+    scene.add(new THREE.HemisphereLight(0xd8efff, 0x2f2926, 0.42));
+    const key = new THREE.DirectionalLight(0xfff5ea, 2.05);
+    key.position.set(-3.5, 9.5, 4.5);
     key.castShadow = true;
     key.shadow.mapSize.set(2048, 2048);
     key.shadow.bias = -0.00008;
-    key.shadow.normalBias = 0.006;
-    key.shadow.radius = 3;
-    key.shadow.camera.left = -10;
-    key.shadow.camera.right = 10;
-    key.shadow.camera.top = 10;
-    key.shadow.camera.bottom = -10;
+    key.shadow.normalBias = 0.002;
+    key.shadow.radius = 2;
+    key.shadow.camera.left = -8;
+    key.shadow.camera.right = 8;
+    key.shadow.camera.top = 8;
+    key.shadow.camera.bottom = -8;
     key.shadow.camera.near = 0.5;
     key.shadow.camera.far = 35;
     scene.add(key);
 
-    const fill = new THREE.DirectionalLight(0xa8c7ff, 0.44);
+    const fill = new THREE.DirectionalLight(0xa8c7ff, 0.28);
     fill.position.set(-8, 5, 5);
     scene.add(fill);
 
