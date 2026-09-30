@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { roundedRim } from './imported-laptop-geometry.ts';
+import { importedUsbCGeometry } from './imported-usbc.ts';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {
   LAPTOP_CABLE_LAYOUT,
@@ -407,21 +409,12 @@ function addBoardDetails(group: THREE.Group) {
   // Build each as a metal shell with a dark inner cavity instead of one block.
   for (const x of [-2.72, -1.96, 1.98, 2.72]) {
     const port = new THREE.Group();
-    // Four metal walls leave a real opening through the receptacle.
-    const metal = material(0x9ca9b1, 0.3, 0.8);
-    for (const [w, h, d, px, py] of [
-      [0.48, 0.022, 0.3, 0, 0.079],
-      [0.48, 0.022, 0.3, 0, -0.079],
-      [0.025, 0.14, 0.3, -0.228, 0],
-      [0.025, 0.14, 0.3, 0.228, 0],
-    ]) {
-      const wall = new THREE.Mesh(
-        new RoundedBoxGeometry(w, h, d, 2, 0.008),
-        metal,
-      );
-      wall.position.set(px, py, 0);
-      port.add(wall);
-    }
+    const shell = new THREE.Mesh(
+      importedUsbCGeometry(),
+      material(0x9ca9b1, 0.3, 0.8),
+    );
+    shell.name = 'Imported USB-C housing';
+    port.add(shell);
     const back = rounded(0.42, 0.13, 0.018, 0.008, 0x101619, 0.88, 0.02);
     back.position.z = 0.14;
     port.add(back);
@@ -1390,16 +1383,16 @@ export function buildRealisticLaptopInternals() {
   bottom.position.y = 0.68;
   inside.add(bottom);
 
-  for (const [x, z, w, d] of [
-    [0, -2.73, 7.2, 0.12],
-    [0, 2.73, 7.2, 0.12],
-    [-3.57, 0, 0.12, 5.35],
-    [3.57, 0, 0.12, 5.35],
-  ] as const) {
-    const rail = rounded(w, 0.22, d, 0.045, C.shellDark, 0.45, 0.38);
-    rail.position.set(x, 0.82, z);
-    inside.add(rail);
-  }
+  const chassisRim = physicalMesh(
+    roundedRim(7.3, 5.58, 0.18, 0.075, 0.2),
+    C.shellDark,
+    0.42,
+    0.48,
+    'aluminum',
+  );
+  chassisRim.name = 'Continuous rounded chassis rim';
+  chassisRim.position.y = 0.81;
+  inside.add(chassisRim);
 
   // Real laptops have a lot of small structural detail between the large
   // components. These dark liners, screw bosses, foam pads and grounding
@@ -1673,4 +1666,3 @@ export function buildRealisticLaptopInternals() {
     ] satisfies LaptopInternalCable[],
   };
 }
-

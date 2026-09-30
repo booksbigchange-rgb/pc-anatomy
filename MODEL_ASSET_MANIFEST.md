@@ -138,3 +138,10 @@ The three `framework-laptop-13-*-refined.glb` exterior assets derive from the pi
 ## Original Blender service models (2026-09-29)
 
 `public/models/service-realistic/{ssd,ram,wifi,cooling}.glb` are original educational models built by `scripts/build-service-models.py` in Blender 2.78. They use the existing mount coordinate system, with thin PCBs, keyed edges, printed identification, miniature components, antenna connectors and a centrifugal blower. Dimensions are representative and constrained by the established teaching layout; these are not manufacturer-certified repair drawings. Labels describe example hardware. No third-party textures or paid generation services are used. Editable source: `outputs/blender/laptop-service-components.blend`. Fixtures and antenna leads remain owned by the original motherboard/chassis.
+
+
+## User-supplied archive integration (2026-09-30)
+- `interactive-3d-laptop-model.zip`: adapted the rounded hollow rim helper into `app/imported-laptop-geometry.ts`.
+- `16-asus-laptop.rar`: extracted only the Type C port mesh from `ASUS Laptop.blend`, normalized it to existing mounts in `app/imported-usbc.ts`. Supplied Blender file version 2.90, read with auto-execution disabled.
+- Sources supplied and reuse requested by the project owner. Archives contain no separate license statement; no claim of CC0 or original authorship is made. Full archives, branding textures, and unrelated scene assets are not redistributed here.
+- Existing layout, component ownership, lessons and teardown behavior retained. This closes the current graphics pass; further aesthetic changes are deferred.
