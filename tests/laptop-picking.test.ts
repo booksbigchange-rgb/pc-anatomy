@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { visiblePartHit } from '../app/laptop-picking.ts';
 
-test('hidden covers and retired fallbacks cannot intercept RAM or CPU clicks', () => {
+await test('hidden covers and retired fallbacks cannot intercept RAM or CPU clicks', () => {
   for (const id of ['ram', 'cpu']) {
     const root = new THREE.Group();
     const oldCover = new THREE.Group();
@@ -33,3 +33,5 @@ test('hidden covers and retired fallbacks cannot intercept RAM or CPU clicks', (
     assert.equal(visiblePartHit(hits), null);
   }
 });
+
+
