@@ -973,32 +973,42 @@ function buildCooling() {
 
 function buildSpeakers() {
   const group = new THREE.Group();
-
   for (const x of [-3.1, 3.1]) {
+    // Slim sealed speaker enclosure fitted within the battery side channels.
     const body = rounded(
-      0.56,
-      0.18,
-      1.46,
-      0.16,
+      0.4,
+      0.1,
+      1.25,
+      0.055,
       C.speaker,
-      0.72,
+      0.8,
       0.025,
       'speaker-plastic',
     );
-    body.position.set(x, 0, 0.62);
+    body.position.set(x, -0.02, 0.62);
     group.add(body);
-
-    const grilleGeometry = new THREE.CylinderGeometry(0.025, 0.025, 0.025, 12);
-    for (let row = 0; row < 5; row++) {
+    const diaphragm = rounded(0.27, 0.007, 0.66, 0.09, 0x101619, 0.92, 0.01);
+    diaphragm.position.set(x, 0.033, 0.62);
+    group.add(diaphragm);
+    // Flush dark perforations replace the old protruding silver pegs.
+    const grilleGeometry = new THREE.CylinderGeometry(0.011, 0.011, 0.002, 8);
+    const grilleMaterial = material(0x080d0f, 0.95, 0);
+    const grille = new THREE.InstancedMesh(grilleGeometry, grilleMaterial, 36);
+    let index = 0;
+    for (let row = 0; row < 12; row++) {
       for (let col = 0; col < 3; col++) {
-        const dot = mesh(grilleGeometry.clone(), 0x626e74, 0.5, 0.12);
-        dot.rotation.x = Math.PI / 2;
-        dot.position.set(x - 0.12 + col * 0.12, 0.105, 0.3 + row * 0.17);
-        group.add(dot);
+        grille.setMatrixAt(
+          index++,
+          new THREE.Matrix4().makeTranslation(
+            x - 0.065 + col * 0.065,
+            0.038,
+            0.35 + row * 0.049,
+          ),
+        );
       }
     }
+    group.add(grille);
   }
-
   group.position.set(...LAPTOP_INTERNAL_LAYOUT.speakers.home);
   return tag(group, 'speakers');
 }

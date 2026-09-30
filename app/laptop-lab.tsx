@@ -1,5 +1,6 @@
 'use client';
 import AcademyLogo from './academy-logo';
+import { visiblePartHit } from './laptop-picking';
 import { applyServiceSurface } from './laptop-service-surfaces';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -1910,13 +1911,9 @@ export default function LaptopLab({
 
       const target =
         viewRef.current === 'outside' ? laptop.outside : laptop.inside;
-      const hit = raycaster.intersectObject(target, true)[0];
-      if (!hit) return;
-
-      let current: THREE.Object3D | null = hit.object;
-      while (current && !current.userData.laptopPart) current = current.parent;
-      const id = current?.userData.laptopPart as LaptopPartId | undefined;
-      if (!id) return;
+      const picked = visiblePartHit(raycaster.intersectObject(target, true));
+      if (!picked) return;
+      const id = picked.id as LaptopPartId;
       selectedRef.current = id;
       setSelected(id);
 
@@ -2648,6 +2645,10 @@ export default function LaptopLab({
                     setGuided(false);
                     selectedRef.current = part.id;
                     setSelected(part.id);
+                    if (part.id === 'cpu' && explodeRef.current < 72) {
+                      setExplode(72);
+                      focusTargetRef.current = 'cpu';
+                    }
                   }}
                 >
                   <Icon size={17} />
