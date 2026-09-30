@@ -208,6 +208,42 @@ function addBoardDetails(group: THREE.Group) {
     item.name = name;
     item.position.set(x, 0.115 + height / 2, z);
     group.add(item);
+    // Exposed leads belong to leaded controller packages; BGA chips stay pinless.
+    if (
+      name === 'Embedded controller' ||
+      name === 'BIOS flash' ||
+      name === 'Audio codec'
+    ) {
+      const count = name === 'BIOS flash' ? 4 : 10;
+      const leads = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(0.018, 0.018, 0.065),
+        material(0x8e999d, 0.34, 0.76),
+        count * 2,
+      );
+      leads.name = name + ' soldered leads';
+      for (let i = 0; i < count; i++) {
+        const px = x + (i - (count - 1) / 2) * ((width * 0.8) / count);
+        for (const side of [-1, 1]) {
+          leads.setMatrixAt(
+            i * 2 + (side === 1 ? 1 : 0),
+            new THREE.Matrix4().makeTranslation(
+              px,
+              0.125,
+              z + side * (depth / 2 + 0.018),
+            ),
+          );
+        }
+      }
+      group.add(leads);
+      const dot = mesh(
+        new THREE.CylinderGeometry(0.014, 0.014, 0.002, 12),
+        0x798184,
+        0.8,
+        0,
+      );
+      dot.position.set(x - width * 0.3, 0.116 + height, z - depth * 0.3);
+      group.add(dot);
+    }
     return item;
   };
 
@@ -238,7 +274,13 @@ function addBoardDetails(group: THREE.Group) {
     spacingZ: number,
     rotation = 0,
   ) => {
-    const geometry = new RoundedBoxGeometry(0.062, 0.038, 0.034, 2, 0.007);
+    const geometry = new RoundedBoxGeometry(0.062, 0.022, 0.034, 2, 0.005);
+    const ends = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.015, 0.025, 0.036),
+      material(0x929e9f, 0.36, 0.72),
+      columns * rows * 2,
+    );
+    let terminal = 0;
     for (let row = 0; row < rows; row++) {
       for (let column = 0; column < columns; column++) {
         const passive = mesh(
@@ -254,8 +296,23 @@ function addBoardDetails(group: THREE.Group) {
         );
         passive.rotation.y = rotation + (((row + column) % 2) * Math.PI) / 2;
         group.add(passive);
+        for (const side of [-1, 1]) {
+          const pos = new THREE.Vector3(side * 0.026, 0, 0)
+            .applyAxisAngle(new THREE.Vector3(0, 1, 0), passive.rotation.y)
+            .add(passive.position);
+          ends.setMatrixAt(
+            terminal++,
+            new THREE.Matrix4().compose(
+              pos,
+              passive.quaternion,
+              new THREE.Vector3(1, 1, 1),
+            ),
+          );
+        }
       }
     }
+    ends.name = 'Soldered passive terminals';
+    group.add(ends);
   };
 
   // --- CPU / VRM zone ----------------------------------------------------
@@ -269,8 +326,8 @@ function addBoardDetails(group: THREE.Group) {
     [-0.22, -0.64],
     [0.11, -0.64],
   ] as const) {
-    const inductor = rounded(0.24, 0.15, 0.22, 0.035, 0x555c60, 0.5, 0.24);
-    inductor.position.set(x, 0.18, z);
+    const inductor = rounded(0.24, 0.09, 0.22, 0.02, 0x42494c, 0.7, 0.12);
+    inductor.position.set(x, 0.155, z);
     group.add(inductor);
   }
 
@@ -1616,3 +1673,4 @@ export function buildRealisticLaptopInternals() {
     ] satisfies LaptopInternalCable[],
   };
 }
+
