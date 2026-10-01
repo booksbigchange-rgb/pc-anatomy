@@ -104,15 +104,15 @@ function fan(size = 1.05) {
   ring.rotation.x = Math.PI / 2;
   g.add(ring);
   for (let i = 0; i < 7; i++) {
-    const blade = box(r * 0.76, 0.035, r * 0.27, 0x303638, 0.035);
-    blade.position.set(
-      Math.cos((i * Math.PI * 2) / 7) * r * 0.53,
-      0,
-      Math.sin((i * Math.PI * 2) / 7) * r * 0.53,
-    );
-    blade.rotation.y = (-i * Math.PI * 2) / 7 + 0.5;
-    blade.rotation.z = 0.2;
-    g.add(blade);
+    const outline = new T.Shape();
+    outline.moveTo(r * .18, -.035);
+    outline.bezierCurveTo(r * .4, -r * .16, r * .75, -r * .32, r * .96, -r * .12);
+    outline.bezierCurveTo(r * .88, r * .04, r * .49, r * .2, r * .23, r * .12);
+    outline.closePath();
+    const blade = new T.Mesh(new T.ExtrudeGeometry(outline, {depth:.024,bevelEnabled:true,bevelSize:.007,bevelThickness:.004,bevelSegments:1,steps:1}),material(0x303638));
+    blade.rotation.x = -Math.PI / 2;
+    const bladeRoot = new T.Group(); bladeRoot.rotation.y = i * Math.PI * 2 / 7;
+    bladeRoot.add(blade);g.add(bladeRoot);
   }
   put(g, cyl(size * 0.12, 0.09, black), 0, 0.04, 0);
   for (const x of [-1, 1])
@@ -254,6 +254,17 @@ export function createHardware(id: HardwareId) {
       [1.57, 1.75],
     ])
       screw(g, x, 0.075, z);
+    for(let i=0;i<12;i++) {
+      const z=-.08+i*.038;
+      put(g,box(.64,.002,.006,0x52826c,0),.2,.056,z);
+      put(g,box(.006,.002,.28,0x52826c,0),.52,.056,z-.14);
+      put(g,cyl(.012,.004,gold),.52,.058,z-.28);
+    }
+    for(let i=0;i<18;i++) {
+      const x=-1.38+(i%6)*.23,z=.38+Math.floor(i/6)*.12;
+      put(g,box(.047,.025,.024,0x6c6e67,0),x,.06,z);
+      for(const dx of [-.029,.029])put(g,box(.012,.022,.023,steel,0),x+dx,.06,z);
+    }
     label(g, 'Q170 / LGA1151', 0.86, 0.22, -0.48, 0.055, 0.34);
   }
   if (id === 'cpu') {
@@ -323,7 +334,10 @@ export function createHardware(id: HardwareId) {
     for (let z = -0.48; z <= 0.49; z += 0.095)
       for (let y = -0.4; y <= 0.4; y += 0.11)
         put(g, box(0.006, 0.046, 0.052, black, 0), -1.088, y, z);
-    put(g, box(0.034, 0.29, 0.37, black), -1.1, 0.04, 0);
+    put(g, box(.024,.32,.39,black),-1.095,.04,0);
+    put(g, box(.018,.23,.28,0x353c40),-1.112,.04,0);
+    for(const [y,z] of [[-.04,.07],[.12,.07],[.04,-.07]])put(g,box(.012,.034,.06,steel,0),-1.116,y,z);
+    for(const [y,z] of [[-.43,-.5],[.43,-.5],[.43,.5]]) {const head=cyl(.039,.014,steel);head.rotation.z=Math.PI/2;put(g,head,-1.096,y,z);}
     put(g, box(0.04, 0.035, 0.045, 0x6cad55), -1.11, -0.24, 0.31);
     for (let i = 0; i < 6; i++)
       cable(
@@ -412,14 +426,18 @@ export function createChassis() {
   const io = new T.Group();
   put(io, box(.022, .56, 2.35, steel), back - .047, 1.073, -1.55);
   const face = back - .084;
-  for (const [y, z] of [[.93,-1.05],[1.2,-1.05],[.93,-.82],[1.2,-.82],[.93,-1.35],[1.2,-1.35]]) rearSocket(io, face, y, z, .22, .12, 'usb');
-  rearSocket(io, face, 1.05, -1.66, .35, .16, 'network');
-  for (const z of [-1.98, -2.23]) rearSocket(io, face, 1.05, z, .29, .12, 'display');
-  rearSocket(io, face, 1.05, -2.52, .39, .17, 'serial');
-  for (const [y, z, c] of [[.93,-.49,0x936cb6],[1.2,-.49,0x519350],[1.05,-.34,0x81a3b2]]) {
+  for (const [y, z] of [[.93,-1.13],[1.2,-1.13],[.93,-.92],[1.2,-.92],[.93,-.69],[.93,-.48]]) rearSocket(io, face, y, z, .22, .12, 'usb');
+  // Two lower USB sockets are black USB 2.0; four upper sockets are USB 3.0.
+  for (const z of [-.69,-.48]) put(io,box(.012,.14,.035,black,0),face-.005,.93,z+.015);
+  rearSocket(io, face, 1.2, -.6, .23, .3, 'network');
+  for (const z of [-2.09, -1.86]) rearSocket(io, face, 1.05, z, .29, .12, 'display');
+  rearSocket(io, face, 1.05, -2.34, .29, .12, 'display'); // HDMI
+  rearSocket(io, face, 1.05, -1.61, .39, .17, 'serial');
+  for (const [y, z, c] of [[.93,-1.37,0x936cb6],[1.2,-1.37,0x519350],[1.05,-2.58,0x519350]]) {
     const rim = new T.Mesh(new T.TorusGeometry(.065,.014,8,24), material(c)); rim.rotation.y = Math.PI / 2;
     put(io, rim, face-.012,y,z);
     const dark = cyl(.047,.014,black); dark.rotation.z = Math.PI / 2; put(io,dark,face,y,z);
+    if(z === -1.37)for(const dy of [-.025,0,.025])for(const dz of [-.02,.02]){const contact=cyl(.005,.01,steel);contact.rotation.z=Math.PI/2;put(io,contact,face-.01,y+dy,z+dz);}
   }
   g.add(io);
   for (let i = 0; i < 4; i++) {
@@ -531,7 +549,7 @@ export function createChassis() {
   const cover = new T.Group();
   cover.name = 'cover';
   put(cover, box(274 / 60, 0.055, 350 / 60, black), cx, top + 0.035, 0);
-  put(cover, box(0.35, 0.06, 0.48, blue), back + 0.32, top + 0.085, -2.46);
+  put(cover, box(0.35, 0.06, 0.48, 0x454b50), back + 0.32, top + 0.085, -2.46);
   for (let z = -0.55; z < 0.6; z += 0.11)
     put(cover, box(1.4, 0.012, 0.032, 0x404548), 1.48, top + 0.07, z);
   shadows(cover);

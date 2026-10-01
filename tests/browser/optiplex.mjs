@@ -79,6 +79,13 @@ try {
   pickCamera.position.set(2.5, 17, 0.01);
   pickCamera.lookAt(2.5, 1.1, 0);
   pickCamera.updateMatrixWorld();
+  await page.getByRole('button', {name:'Close drive cage',exact:true}).click();
+  await page.waitForTimeout(200);
+  const blockedPoint = new T.Vector3(3.64, 3.02, -.3).project(pickCamera);
+  await page.mouse.click(pickRect.x + (blockedPoint.x+1)*pickRect.width/2, pickRect.y+(1-blockedPoint.y)*pickRect.height/2);
+  assert.equal(await page.getByRole('combobox', {name:'Select component'}).inputValue(),'ram','Clicking a closed metal cage must not select the SSD underneath');
+  await page.getByRole('button', {name:'Open drive cage',exact:true}).click();
+  await page.waitForTimeout(200);
   const coolerPoint = new T.Vector3(1.48, 1.82, -1.68).project(pickCamera);
   await page.mouse.click(
     pickRect.x + ((coolerPoint.x + 1) * pickRect.width) / 2,

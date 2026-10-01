@@ -325,10 +325,18 @@ export default function AssemblyLab({
         Math.hypot(e.clientX - press.x, e.clientY - press.y) < 5
       ) {
         pointerAt(e);
-        const hit = ray.intersectObjects([...groups.values()], true)[0];
+        const hit = ray.intersectObject(assembly, true).find(({object}) => {
+          let node: T.Object3D | null = object;
+          while(node && node !== assembly) {
+            if(!node.visible) return false;
+            node = node.parent;
+          }
+          return true;
+        });
         if (hit) {
           let o: T.Object3D = hit.object;
           while (o.parent && o.parent !== assembly) o = o.parent;
+          if (!groups.has(o.name as HardwareId)) { press = null; return; }
           setSelected(o.name as HardwareId);
           setFeedback(
             'Selected component. Use Explode selected or Isolate selected to inspect it.',
@@ -579,7 +587,7 @@ export default function AssemblyLab({
           </span>
           <span>
             <strong>Big Change PC Build Lab</strong>
-            <small>OPTIPLEX 7040 MT · REFERENCE MODEL IN DEVELOPMENT</small>
+            <small>OPTIPLEX 7040 MT · SERVICE REFERENCE MODEL</small>
           </span>
         </div>
         <div className="assembly-progress-label">
@@ -640,7 +648,7 @@ export default function AssemblyLab({
         <p className="assembly-model-note">
           Original geometry based on Dell’s manual. Chassis envelope uses
           documented dimensions; interior measurements and surfaces are
-          approximated. Visual refinement continues.
+          approximated. The optional graphics card is illustrative.
         </p>
         <a
           className="assembly-reference"
