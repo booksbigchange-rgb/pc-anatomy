@@ -24,14 +24,14 @@ export const MOUNTS: Record<HardwareId, Vec3> = {
   psu: [1.33, 1.37, 2.05],
 };
 const steel = 0xa4a9ac,
-  black = 0x171a1d,
+  black = 0x090b0d,
   blue = 0x327eb2,
   gold = 0xc9a34d;
 function material(color: number) {
   return new T.MeshStandardMaterial({
     color,
-    metalness: color === steel || color === gold ? 0.68 : 0.12,
-    roughness: color === steel ? 0.38 : 0.6,
+    metalness: color === steel || color === gold ? 0.68 : color === black ? 0 : 0.12,
+    roughness: color === steel ? 0.38 : color === black ? 0.94 : 0.6,
   });
 }
 function box(w: number, h: number, d: number, color: number, r = 0.012) {
@@ -410,7 +410,7 @@ export function createChassis() {
   const rearHoles: [number, number, number, number][] = [
     [.25, -1.95, 1.25, 1.65], // CPU exhaust field
     [-.79, -1.55, .55, 2.35], // motherboard I/O shield
-    [-.65, 2.05, 1.17, 1.3], // OEM supply
+    [-.493, 2.05, 1.11, 1.28], // OEM supply
   ];
   for (let i = 0; i < 4; i++) rearHoles.push([-.1, .07 + i * .35, 1.75, .24]);
   // Panel XY axes map to case width and height; thickness points rearward.
