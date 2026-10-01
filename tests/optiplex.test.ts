@@ -49,3 +49,20 @@ void test('OptiPlex core mounts keep board and installed hardware inside the ope
     );
   }
 });
+
+void test('Drive cage remains independently hinged and rear PSU opening stays unobstructed', () => {
+  const {group, driveCage} = createChassis();
+  assert.equal(group.getObjectByName('drive-cage'), driveCage);
+  driveCage.rotation.z = 0;
+  group.updateMatrixWorld(true);
+  const closed = new T.Box3().setFromObject(driveCage);
+  assert.ok(closed.min.y > 2.3, 'Closed cage must clear installed CPU cooler');
+  driveCage.rotation.z = -Math.PI / 2.4;
+  group.updateMatrixWorld(true);
+  const open = new T.Box3().setFromObject(driveCage);
+  assert.ok(open.max.y > closed.max.y + .5, 'Hinge must lift cage away from board');
+  const ray = new T.Raycaster(new T.Vector3(0, 1.37, 2.05), new T.Vector3(1,0,0), 0, .3);
+  assert.equal(ray.intersectObject(group, true).length, 0, 'PSU rear opening must be a real opening');
+  ray.set(new T.Vector3(0, 2.95, 2.05), new T.Vector3(1,0,0));
+  assert.ok(ray.intersectObject(group, true).length > 0, 'Rear sheet must surround the PSU opening');
+});

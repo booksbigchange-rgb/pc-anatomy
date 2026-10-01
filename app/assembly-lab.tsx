@@ -112,6 +112,7 @@ export default function AssemblyLab({
   const [preview, setPreview] = useState(true),
     [upright, setUpright] = useState(true),
     [closed, setClosed] = useState(false),
+    [cageOpen, setCageOpen] = useState(true),
     [exploded, setExploded] = useState(false),
     [isolated, setIsolated] = useState(false);
   const [selected, setSelected] = useState<HardwareId>('ssd'),
@@ -125,6 +126,7 @@ export default function AssemblyLab({
     preview: true,
     upright: true,
     closed: false,
+    cageOpen: true,
     exploded: false,
     isolated: false,
     selected: 'ssd' as HardwareId,
@@ -136,11 +138,12 @@ export default function AssemblyLab({
       preview,
       upright,
       closed,
+      cageOpen,
       exploded,
       isolated,
       selected,
     };
-  }, [preview, upright, closed, exploded, isolated, selected]);
+  }, [preview, upright, closed, cageOpen, exploded, isolated, selected]);
   const complete = installed.length === PARTS.length,
     active = preview ? PARTS.find((p) => p.id === selected)! : PARTS[current];
   const name = (p: Part) => componentNames?.[p.id] ?? p.name;
@@ -153,6 +156,7 @@ export default function AssemblyLab({
     setPreview(false);
     setUpright(false);
     setClosed(false);
+    setCageOpen(true);
     setExploded(false);
     setIsolated(false);
     actionRef.current = 'home';
@@ -216,7 +220,7 @@ export default function AssemblyLab({
     const grid = new T.GridHelper(15, 30, 0x3c5865, 0x2e444f);
     grid.position.set(-0.7, 0.522, 0);
     scene.add(grid);
-    const { group: chassis, cover } = createChassis();
+    const { group: chassis, cover, driveCage } = createChassis();
     const assembly = new T.Group();
     scene.add(assembly);
     assembly.add(chassis);
@@ -391,6 +395,7 @@ export default function AssemblyLab({
         actionRef.current = null;
       }
       chassis.visible = !(d.preview && d.isolated);
+      driveCage.rotation.z = !d.closed && (d.cageOpen || !d.preview) ? -Math.PI / 2.4 : 0;
       cover.visible = d.closed && (d.preview || done) && !d.isolated;
       for (const p of PARTS) {
         const g = groups.get(p.id)!;
@@ -499,6 +504,11 @@ export default function AssemblyLab({
         >
           {closed ? 'Remove side cover' : 'Fit side cover'}
         </button>
+        {preview && !closed && (
+          <button aria-pressed={cageOpen} onClick={() => setCageOpen(!cageOpen)}>
+            {cageOpen ? 'Close drive cage' : 'Open drive cage'}
+          </button>
+        )}
         {(['home', 'front', 'rear', 'top'] as Action[]).map((view) => (
           <button
             key={view}
@@ -649,3 +659,4 @@ export default function AssemblyLab({
     </main>
   );
 }
+

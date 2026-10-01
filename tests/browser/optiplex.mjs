@@ -45,6 +45,11 @@ try {
   }
   await page.getByRole('button', { name: /Enter interactive/ }).click();
   await shot('02-open-case');
+  await page.getByRole('button', {name: 'Close drive cage', exact: true}).click();
+  assert.equal(await page.getByRole('button', {name: 'Open drive cage', exact: true}).getAttribute('aria-pressed'), 'false');
+  await shot('02b-cage-closed');
+  await page.getByRole('button', {name: 'Open drive cage', exact: true}).click();
+  await shot('02c-cage-open');
   await page
     .getByRole('button', { name: 'Fit side cover', exact: true })
     .click();
@@ -216,3 +221,4 @@ try {
 } finally {
   await browser.close();
 }
+

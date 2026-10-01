@@ -141,7 +141,7 @@ function shadows(g: T.Group) {
     o.receiveShadow = true;
     let ancestor: T.Object3D | null = o.parent;
     while (ancestor && ancestor !== g) {
-      if (ancestor.name === 'cover') return;
+      if (ancestor.name === 'cover' || ancestor.name === 'drive-cage') return;
       ancestor = ancestor.parent;
     }
     if (o.material.map) return;
@@ -339,6 +339,42 @@ export function createHardware(id: HardwareId) {
   }
   return shadows(g);
 }
+/** A formed panel with real through openings, in its own XY plane. */
+function panel(w: number, h: number, depth: number, holes: [number, number, number, number][], color = steel) {
+  const shape = new T.Shape();
+  shape.moveTo(-w / 2, -h / 2); shape.lineTo(w / 2, -h / 2);
+  shape.lineTo(w / 2, h / 2); shape.lineTo(-w / 2, h / 2); shape.closePath();
+  for (const [x, y, hw, hh] of holes) {
+    const hole = new T.Path();
+    hole.moveTo(x - hw / 2, y - hh / 2); hole.lineTo(x - hw / 2, y + hh / 2);
+    hole.lineTo(x + hw / 2, y + hh / 2); hole.lineTo(x + hw / 2, y - hh / 2); hole.closePath();
+    shape.holes.push(hole);
+  }
+  return new T.Mesh(new T.ExtrudeGeometry(shape, { depth, bevelEnabled: false }), material(color));
+}
+/** Rear-facing ports: open socket shells, inset contacts and shaped connector profiles. */
+function rearSocket(g: T.Group, x: number, y: number, z: number, w: number, h: number, kind: 'usb' | 'display' | 'network' | 'serial') {
+  const holes: [number, number, number, number][] = [[0, 0, w - .04, h - .04]];
+  const shell = panel(w, h, .055, holes);
+  shell.quaternion.setFromRotationMatrix(new T.Matrix4().makeBasis(new T.Vector3(0, 1, 0), new T.Vector3(0, 0, 1), new T.Vector3(1, 0, 0)));
+  put(g, shell, x, y, z);
+  put(g, box(.013, w - .04, h - .04, black, 0), x + .058, y, z);
+  if (kind === 'usb') {
+    put(g, box(.016, w - .08, .035, 0x28628d, 0), x + .015, y, z + .015);
+    for (let i = 0; i < 4; i++) put(g, box(.012, .016, .009, gold, 0), x + .007, y - w / 2 + .075 + i * .033, z + .012);
+  } else if (kind === 'network') {
+    for (let i = 0; i < 8; i++) put(g, box(.018, .01, .06, gold, 0), x + .021, y - .09 + i * .026, z);
+    for (const dy of [-w / 2 + .025, w / 2 - .025]) put(g, box(.01, .025, .024, 0x75a04b, 0), x - .005, y + dy, z + h / 2 - .03);
+  } else if (kind === 'display') {
+    put(g, box(.016, w - .08, .024, 0x55595c, 0), x + .023, y, z);
+    for (let i = 0; i < 10; i++) put(g, box(.01, .008, .009, gold, 0), x + .009, y - w / 2 + .06 + i * (w - .12) / 10, z);
+  } else {
+    for (const dy of [-1, 1]) for (let i = 0; i < (dy < 0 ? 5 : 4); i++) {
+      const pin = cyl(.012, .028, gold); pin.rotation.z = Math.PI / 2;
+      put(g, pin, x + .018, y - .13 + i * .064, z + dy * .035);
+    }
+  }
+}
 export function createChassis() {
   const g = new T.Group();
   g.name = 'chassis';
@@ -348,36 +384,52 @@ export function createChassis() {
     zmax = 350 / 120,
     back = cx - 274 / 120,
     front = cx + 274 / 120;
-  // Thin folded steel walls, with rear openings rather than a solid blocking wall.
-  put(g, box(274 / 60, 0.075, 350 / 60, steel), cx, base, 0);
+  // Interior steel with separate painted exterior skins and folded edge seams.
+  put(g, box(274 / 60, .075, 350 / 60, steel), cx, base, 0);
+  put(g, box(274 / 60, .018, 350 / 60, black), cx, base - .045, 0);
   for (const z of [-zmax, zmax]) {
-    put(g, box(274 / 60, 154 / 60, 0.065, steel), cx, (base + top) / 2, z);
-    put(g, box(274 / 60, 0.07, 0.13, steel), cx, top, z);
+    put(g, box(274 / 60, 154 / 60, .055, steel), cx, (base + top) / 2, z);
+    put(g, box(274 / 60, 154 / 60, .012, black), cx, (base + top) / 2, z + Math.sign(z) * .036);
+    put(g, box(274 / 60, .055, .12, steel), cx, top - .045, z - Math.sign(z) * .06);
   }
-  put(
-    g,
-    box(0.07, 154 / 60, 0.36, steel),
-    back,
-    (base + top) / 2,
-    -zmax + 0.18,
-  );
-  put(g, box(0.07, 0.1, 350 / 60, steel), back, base + 0.07, 0);
-  put(g, box(0.07, 0.1, 350 / 60, steel), back, top - 0.03, 0);
-  for (const z of [-2.82, -0.43, 1.25, 2.82])
-    put(g, box(0.07, 154 / 60, 0.1, steel), back, (base + top) / 2, z);
-  // Rear ventilation, motherboard I/O, four expansion covers.
-  for (let z = -2.62; z < -0.57; z += 0.13)
-    for (let y = 1.38; y < 2.85; y += 0.13)
-      put(g, box(0.025, 0.047, 0.065, black, 0), back, y, z);
+  // The rear sheet is continuous around I/O, expansion and PSU openings.
+  const rearHoles: [number, number, number, number][] = [
+    [.25, -1.95, 1.25, 1.65], // CPU exhaust field
+    [-.79, -1.55, .55, 2.35], // motherboard I/O shield
+    [-.65, 2.05, 1.17, 1.3], // OEM supply
+  ];
+  for (let i = 0; i < 4; i++) rearHoles.push([-.1, .07 + i * .35, 1.75, .24]);
+  // Panel XY axes map to case width and height; thickness points rearward.
+  const rear = panel(154 / 60, 350 / 60, .035, rearHoles);
+  rear.quaternion.setFromRotationMatrix(new T.Matrix4().makeBasis(new T.Vector3(0, 1, 0), new T.Vector3(0, 0, 1), new T.Vector3(1, 0, 0)));
+  put(g, rear, back - .025, (base + top) / 2, 0);
+  // Exhaust grille made from steel, so it no longer floats on an empty opening.
+  for (let z = -2.76; z < -1.15; z += .1) put(g, box(.035, 1.25, .023, steel, 0), back - .035, 2.113, z);
+  for (let y = 1.49; y <= 2.7; y += .1) put(g, box(.035, .023, 1.65, steel, 0), back - .035, y, -1.95);
+  const exhaust = fan(1.23); exhaust.rotation.z = Math.PI / 2;
+  put(g, exhaust, back + .12, 2.08, -1.95);
+  // I/O plate: six USB, two DisplayPort, Ethernet, serial, PS/2 and line-out.
+  const io = new T.Group();
+  put(io, box(.022, .56, 2.35, steel), back - .047, 1.073, -1.55);
+  const face = back - .084;
+  for (const [y, z] of [[.93,-1.05],[1.2,-1.05],[.93,-.82],[1.2,-.82],[.93,-1.35],[1.2,-1.35]]) rearSocket(io, face, y, z, .22, .12, 'usb');
+  rearSocket(io, face, 1.05, -1.66, .35, .16, 'network');
+  for (const z of [-1.98, -2.23]) rearSocket(io, face, 1.05, z, .29, .12, 'display');
+  rearSocket(io, face, 1.05, -2.52, .39, .17, 'serial');
+  for (const [y, z, c] of [[.93,-.49,0x936cb6],[1.2,-.49,0x519350],[1.05,-.34,0x81a3b2]]) {
+    const rim = new T.Mesh(new T.TorusGeometry(.065,.014,8,24), material(c)); rim.rotation.y = Math.PI / 2;
+    put(io, rim, face-.012,y,z);
+    const dark = cyl(.047,.014,black); dark.rotation.z = Math.PI / 2; put(io,dark,face,y,z);
+  }
+  g.add(io);
   for (let i = 0; i < 4; i++) {
-    const z = 0.07 + i * 0.35;
-    put(g, box(0.06, 1.68, 0.2, steel), back, 1.62, z);
-    for (let y = 0.95; y < 2.25; y += 0.13)
-      put(g, box(0.01, 0.075, 0.12, black), back - 0.04, y, z);
+    const z = .07 + i * .35;
+    // Vented slot covers; one is replaced by the installed graphics bracket.
+    put(g, box(.026, 1.74, .22, steel), back - .018, 1.76, z);
+    for (let y = 1.04; y < 2.51; y += .11) put(g, box(.012,.06,.13,black,0),back-.038,y,z);
   }
-  const exhaust = fan(1.23);
-  exhaust.rotation.z = Math.PI / 2;
-  put(g, exhaust, back + 0.09, 2.08, -1.6);
+  put(g, box(.05,.14,1.46,steel),back-.045,2.79,.6);
+  for (const z of [-2.73,1.34,2.72]) { const fastener = cyl(.045,.035,steel); fastener.rotation.z=Math.PI/2;put(g,fastener,back-.056,2.96,z); }
   // Front bezel cut-out and geometric lattice, optical bay, four USB ports.
   const shape = new T.Shape();
   shape.moveTo(-154 / 120, -zmax);
@@ -436,19 +488,28 @@ export function createChassis() {
   const audio = cyl(0.055, 0.035, black);
   audio.rotation.z = Math.PI / 2;
   put(g, audio, front + 0.11, 2.29, -0.76);
-  // Open drive cage rails and optical assembly, release tabs.
-  for (const y of [0.92, 2.71])
-    put(g, box(1.05, 0.075, 1.82, steel), front - 0.69, y, -1.78);
-  for (const x of [front - 0.22, front - 1.16])
-    put(g, box(0.065, 1.83, 0.12, steel), x, 1.82, -2.64);
-  put(g, box(1.02, 1.9, 0.14, steel), front - 0.7, 1.82, -0.9);
-  put(g, box(0.94, 1.79, 0.13, 0x747d80), front - 0.69, 1.82, -2.24);
-  put(g, box(0.17, 0.3, 0.3, blue), front - 1.23, 2.64, -1.18);
-  // Lower drive caddy and cable routing; remains clear of RAM and board mounts.
-  for (const z of [1.38, 2.72])
-    put(g, box(0.76, 0.075, 0.075, steel), front - 0.51, 0.82, z);
-  for (const x of [front - 0.15, front - 0.86])
-    put(g, box(0.065, 0.4, 1.35, blue), x, 1.05, 2.05);
+  // Hinged front door carries the drive cage. Closed it covers the front half
+  // of the board; open it swings about the long front edge, exposing DIMMs.
+  const driveCage = new T.Group(); driveCage.name = 'drive-cage';
+  driveCage.position.set(front - .12, top - .16, 0);
+  const cageSkin = panel(1.4,5.45,.035,[[-.48,-2.35,.14,.22],[-.48,.12,.14,.22],[-.48,2.3,.14,.22],[.46,-2.35,.17,.22],[.46,2.3,.17,.22]]);
+  cageSkin.rotation.x = -Math.PI / 2; put(driveCage,cageSkin,-.72,0,0);
+  for (const z of [-1.43,1.32]) {
+    put(driveCage,box(1.15,.022,2.05,0x929da2),-.73,.04,z);
+    for (const x of [-1.3,-.16]) put(driveCage,box(.03,.06,2.1,steel),x,.06,z);
+    for(const dz of [-1.04,1.04])put(driveCage,box(1.17,.06,.03,steel),-.73,.06,z+dz);
+    for(let i=0;i<5;i++)put(driveCage,box(.48,.01,.014,0x737e83,0),-.72,.056,z-.4+i*.19);
+  }
+  // Folded cage sides, mounting windows, latch and blue tool-free sled.
+  for(const x of [-1.4,-.04])put(driveCage,box(.04,.67,5.45,steel),x,-.32,0);
+  for(const z of [-2.64,-.37,.37,2.64])put(driveCage,box(1.36,.62,.035,steel),-.72,-.32,z);
+  for(const x of [-1.3,-.16])put(driveCage,box(.07,.1,2.12,blue),x,-.58,1.32);
+  for(const z of [.26,2.38])put(driveCage,box(.21,.21,.12,blue),-1.43,-.52,z);
+  put(driveCage,box(.3,.07,.35,blue),-1.18,.08,-.15);
+  // Optical unit rides behind the upper front slot.
+  put(driveCage,box(1.18,.32,2.12,0x778287),-.72,-.22,-1.43);
+  for(const z of [-2.4,-.9,1.3,2.5]) { const hinge=cyl(.055,.25,steel); hinge.rotation.x=Math.PI/2;put(g,hinge,front-.12,top-.16,z); }
+  shadows(driveCage); driveCage.rotation.z = -Math.PI / 2.4; g.add(driveCage);
   for (const [x, z] of [
     [0.53, -1.3],
     [3.66, -1.3],
@@ -476,5 +537,6 @@ export function createChassis() {
   shadows(cover);
   cover.visible = false;
   g.add(cover);
-  return { group: shadows(g), cover };
+  return { group: shadows(g), cover, driveCage };
 }
+
