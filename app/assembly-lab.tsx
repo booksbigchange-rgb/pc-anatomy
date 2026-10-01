@@ -89,7 +89,7 @@ export default function AssemblyLab({onBack,previewOnly=false,componentNames}:{o
    const geometries=new Set<T.BufferGeometry>(),materials=new Set<T.Material>(),textures=new Set<T.Texture>();scene.traverse(o=>{if(o instanceof T.Mesh||o instanceof T.LineSegments){geometries.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material]){materials.add(m);if(m instanceof T.MeshStandardMaterial&&m.map)textures.add(m.map);}}});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());renderer.dispose();
   };
  },[]);
- const stage=<section className="assembly-stage">
+ const stage=<section className={'assembly-stage'+(previewOnly?' assembly-preview':'')}>
   <div className="assembly-view-controls">
    {!previewOnly&&<button onClick={()=>{if(preview)practice();else{setPreview(true);setClosed(false);actionRef.current='home';}}}>{preview?'Start assembly practice':'Inspect assembled model'}</button>}
    <button disabled={!preview&&!complete} onClick={()=>{setClosed(!closed);setExploded(false);setIsolated(false);}}>{closed?'Remove side cover':'Fit side cover'}</button>

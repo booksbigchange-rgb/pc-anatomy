@@ -7,8 +7,8 @@ import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js'
 export type HardwareId = 'motherboard'|'cpu'|'cooler'|'ram'|'ssd'|'gpu'|'psu';
 export type Vec3 = [number,number,number];
 export const MOUNTS:Record<HardwareId,Vec3> = {
- motherboard:[2.08,.76,.5], cpu:[1.48,.93,-.48], cooler:[1.48,1.18,-.48],
- ram:[2.91,1.2,-.43], ssd:[3.12,.92,1.26], gpu:[1.88,1.37,1.66], psu:[1.33,1.37,-2.08],
+ motherboard:[2.08,.76,.5], cpu:[1.48,.93,-.48], cooler:[1.48,1.08,-.48],
+ ram:[2.91,1.2,-.43], ssd:[3.12,.92,1.26], gpu:[1.62,1.52,1.27], psu:[1.33,1.37,-2.08],
 };
 const steel=0xa4a9ac, black=0x171a1d, blue=0x327eb2, gold=0xc9a34d;
 function material(color:number){return new T.MeshStandardMaterial({color,metalness:color===steel||color===gold?.68:.12,roughness:color===steel?.38:.6});}
@@ -51,7 +51,7 @@ export function createHardware(id:HardwareId){const g=new T.Group();g.name=id;
   put(g,cyl(.168,.04,steel),1.26,.07,.61);put(g,cyl(.186,.025,black),1.26,.03,.61);
   for(const z of [.8,1.12,1.44,1.72])put(g,box(.16,.14,.17,black),1.64,.1,z);
   put(g,box(.3,.19,.16,0xe6e2d4),1.45,.11,1.85);put(g,box(.25,.16,.15,0xe6e2d4),-.62,.1,-1.85);
-  put(g,box(.13,.09,.38,black),.3,.07,.76);
+  put(g,box(.38,.09,.13,black),1.04,.07,.05);
   for(let i=0;i<45;i++){const x=-1.35+(i%9)*.31,z=-.25+Math.floor(i/9)*.2;put(g,box(.09,.03,.04,i%3?0xb49a63:black),x,.049,z);}
   for(const [x,z]of [[-1.55,-1.76],[1.57,-1.76],[-1.55,1.75],[1.57,1.75]])screw(g,x,.075,z);
   label(g,'Q170 / LGA1151',.86,.22,-.48,.055,.34);

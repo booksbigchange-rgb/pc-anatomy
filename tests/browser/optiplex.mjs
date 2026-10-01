@@ -35,10 +35,11 @@ try{
  const rect=await page.locator('.assembly-stage canvas').boundingBox();assert.ok(rect&&rect.height>300);
  const camera=new T.PerspectiveCamera(38,rect.width/rect.height,.1,100);camera.position.set(8.65,12,11);camera.lookAt(.15,1.1,0);camera.updateMatrixWorld();
  const screen=v=>{const p=v.clone().project(camera);return{x:rect.x+(p.x+1)*rect.width/2,y:rect.y+(1-p.y)*rect.height/2};};
+ /** @type {Array<[string, [number,number,number], [number,number,number]]>} */
  const steps=[
  ['motherboard',[-3.15,.75,0],[2.08,.76,.5]],['cpu',[-5.2,.82,2.3],[1.48,.93,-.48]],
- ['cooler',[-4.8,1.01,-2.2],[1.48,1.18,-.48]],['ram',[-3.5,1.14,2.8],[2.91,1.2,-.43]],
- ['ssd',[-2.3,.85,2.8],[3.12,.92,1.26]],['gpu',[-2.15,1.27,-2.45],[1.88,1.37,1.66]],['psu',[-4.9,1.2,-.5],[1.33,1.37,-2.08]],
+ ['cooler',[-4.8,1.01,-2.2],[1.48,1.08,-.48]],['ram',[-3.5,1.14,2.8],[2.91,1.2,-.43]],
+ ['ssd',[-2.3,.85,2.8],[3.12,.92,1.26]],['gpu',[-2.15,1.27,-2.45],[1.62,1.52,1.27]],['psu',[-4.9,1.2,-.5],[1.33,1.37,-2.08]],
  ];
  for(let i=0;i<steps.length;i++){
   const [id,start,target]=steps[i],origin=new T.Vector3(...start),dest=new T.Vector3(...target),from=screen(origin);
