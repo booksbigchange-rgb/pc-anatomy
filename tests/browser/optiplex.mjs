@@ -59,6 +59,33 @@ try {
   await page.getByRole('button', { name: 'Service view', exact: true }).click();
   await page.getByRole('button', { name: 'Top', exact: true }).click();
   await shot('06-top');
+  // Verify direct object picking, not only the component dropdown.
+  await page
+    .getByRole('combobox', { name: 'Select component' })
+    .selectOption('ram');
+  const pickRect = await page.locator('.assembly-stage canvas').boundingBox();
+  assert.ok(pickRect);
+  const pickCamera = new T.PerspectiveCamera(
+    38,
+    pickRect.width / pickRect.height,
+    0.1,
+    100,
+  );
+  pickCamera.position.set(2.5, 17, 0.01);
+  pickCamera.lookAt(2.5, 1.1, 0);
+  pickCamera.updateMatrixWorld();
+  const coolerPoint = new T.Vector3(1.48, 1.82, -1.68).project(pickCamera);
+  await page.mouse.click(
+    pickRect.x + ((coolerPoint.x + 1) * pickRect.width) / 2,
+    pickRect.y + ((1 - coolerPoint.y) * pickRect.height) / 2,
+  );
+  await page.waitForTimeout(200);
+  assert.equal(
+    await page.getByRole('combobox', { name: 'Select component' }).inputValue(),
+    'cooler',
+    'Clicking the fan must select its complete cooling assembly',
+  );
+
   await page
     .getByRole('combobox', { name: 'Select component' })
     .selectOption('ssd');
