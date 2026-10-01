@@ -33,7 +33,9 @@ jobs:
         run: npm ci
 
       - name: Build Pages site
-        run: npm run build
+        run: |
+          npm run build
+          node -e 'require("fs").writeFileSync("dist/version.json",JSON.stringify({commit:process.env.GITHUB_SHA}))' 
         env:
           GITHUB_PAGES: 'true'
 
@@ -55,3 +57,38 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  verify-live:
+    name: Verify published OptiPlex interactions
+    runs-on: ubuntu-latest
+    needs: deploy
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Confirm deployed commit and exercise live model
+        env:
+          ATLAS_TEST_URL: https://booksbigchange-rgb.github.io/pc-anatomy/
+          PW_TEST_SCREENSHOT_NO_FONTS_READY: '1'
+        run: |
+          node --input-type=module - <<'JS'
+          const url = process.env.ATLAS_TEST_URL + 'version.json';
+          let matched = false;
+          for (let i=0;i<12;i++) {
+            const response = await fetch(url + '?commit=' + process.env.GITHUB_SHA);
+            if (response.ok && (await response.json()).commit === process.env.GITHUB_SHA) { matched = true; break; }
+            await new Promise(resolve => setTimeout(resolve, 5000));
+          }
+          if (!matched) throw new Error('Live preview does not serve the deployed commit');
+          JS
+          timeout 300s node tests/browser/optiplex.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-optiplex-verification
+          path: verification

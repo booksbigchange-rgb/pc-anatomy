@@ -1,14 +1,670 @@
 'use client';
-import {useEffect,useRef,useState} from 'react';
-import {ArrowLeft,CheckCircle2,Cpu,HardDrive,MemoryStick,Microchip,PackageCheck,Rotate3D,Wrench,Zap} from 'lucide-react';
-import * as THREE from 'three';
-import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
-import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-type Id='motherboard'|'cpu'|'ram'|'ssd'|'gpu'|'psu';type Part={id:Id;name:string;icon:typeof Cpu;instruction:string;why:string;start:[number,number,number];target:[number,number,number];snap:number};
-const PARTS:Part[]=[{id:'motherboard',name:'System Board',icon:Microchip,instruction:'Lower the system board onto the chassis standoffs.',why:'The OptiPlex system board carries the CPU socket, four DIMM slots, M.2 socket and PCIe slots.',start:[-4.8,.95,-.1],target:[2.05,.92,.15],snap:1.15},{id:'cpu',name:'CPU / Processor',icon:Cpu,instruction:'Place the processor into the square CPU socket.',why:'The processor sits beside the four memory slots on the 7040 system board.',start:[-5.65,.9,2.25],target:[1.35,1.18,-.45],snap:.65},{id:'ram',name:'DDR4 Memory',icon:MemoryStick,instruction:'Align the RAM with a DIMM connector and press it into place.',why:'The 7040 Mini Tower system board has four memory-module connectors.',start:[-4.05,1.05,2.3],target:[2.35,1.3,-.5],snap:.7},{id:'ssd',name:'M.2 SSD',icon:HardDrive,instruction:'Lay the M.2 SSD into the Socket 3 connector and secure its end.',why:'The 7040 board includes an M.2 Socket 3 connector for an SSD.',start:[-2.6,.9,2.3],target:[2.35,1.18,.45],snap:.7},{id:'gpu',name:'PCIe Graphics Card',icon:PackageCheck,instruction:'Align the card with the PCIe x16 slot and rear expansion opening.',why:'The expansion card locks into a PCIe connector and the chassis retention latch.',start:[-2.75,1.15,-2.05],target:[2.0,1.52,1.18],snap:1},{id:'psu',name:'Power Supply (PSU)',icon:Zap,instruction:'Lower the PSU into its bay and slide it toward the rear until seated.',why:'The 7040 PSU slides toward the rear and connects to the system board.',start:[-5.25,1.2,-2.05],target:[3.85,1.18,-1.5],snap:1}];
-const M=(c:number,metal=.14,rough=.46)=>new THREE.MeshStandardMaterial({color:c,metalness:metal,roughness:rough});const B=(w:number,h:number,d:number,c:number,r=.035)=>new THREE.Mesh(new RoundedBoxGeometry(w,h,d,4,Math.min(r,w/4,h/4,d/4)),M(c));const C=(r:number,h:number,c:number)=>new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,28),M(c,.3,.35));function A(g:THREE.Group,o:THREE.Object3D,x:number,y:number,z:number){o.position.set(x,y,z);g.add(o);return o}function fan(g:THREE.Group,x:number,y:number,z:number){const ring=new THREE.Mesh(new THREE.TorusGeometry(.37,.055,8,28),M(0x111518));ring.position.set(x,y,z);ring.rotation.x=Math.PI/2;g.add(ring);const hub=C(.09,.07,0x20272b);hub.position.set(x,y,z);hub.rotation.x=Math.PI/2;g.add(hub)}
-function part(id:Id){const g=new THREE.Group();if(id==='motherboard'){g.add(B(3.45,.13,2.85,0x14503c,.025));A(g,B(.82,.06,.82,0xc5c3b8),-.63,.13,-.55);A(g,B(.66,.06,.66,0x303638),-.63,.2,-.55);for(const x of [.18,.4,.62,.84])A(g,B(.075,.16,1.62,0x171b1d,.01),x,.18,-.35);for(const z of [.52,.83,1.12])A(g,B(2.5,.075,.1,0xe0e1dc,.01),-.08,.16,z);A(g,B(.48,.34,.82,0x9ba4a6,.03),-1.48,.24,-.75);A(g,B(.62,.16,.62,0x31383b,.025),.86,.17,.72);const bat=C(.18,.055,0xbfc2bd);bat.position.set(.95,.17,.15);g.add(bat);for(const z of [-1.1,-.92,-.74,-.56])A(g,B(.18,.18,.12,0x20272a,.015),1.48,.18,z)}if(id==='cpu'){g.add(B(.76,.15,.76,0x314047,.03));A(g,B(.64,.065,.64,0xd2d0c7),0,.11,0)}if(id==='ram'){g.add(B(1.72,.62,.17,0x174837,.02));for(let x=-.62;x<=.62;x+=.31)A(g,B(.23,.3,.04,0x101719,.01),x,.03,.1);for(let x=-.72;x<=.72;x+=.12)A(g,B(.055,.08,.03,0xd7b552,.004),x,-.34,.04)}if(id==='ssd'){g.add(B(1.5,.11,.48,0x175b42,.02));for(let x=-.42;x<=.35;x+=.27)A(g,B(.2,.075,.3,0x101719,.01),x,.09,0);const screw=C(.055,.03,0xd4b45b);screw.position.set(.66,.08,0);g.add(screw)}if(id==='gpu'){g.add(B(3.2,.8,1.22,0x252b2f,.075));fan(g,-.72,.42,0);fan(g,.72,.42,0);A(g,B(2.55,.06,.09,0xd5ad4e),0,-.43,.43);A(g,B(.12,1.02,1.38,0xa4abad),-1.64,0,0)}if(id==='psu'){g.add(B(1.9,1.15,1.65,0x25292c,.06));fan(g,0,.59,0);A(g,B(.42,.2,.05,0x080a0b),-.45,.02,.84);A(g,B(.16,.2,.05,0x8a9295),.15,.02,.84)}g.traverse(o=>{if(o instanceof THREE.Mesh){o.castShadow=true;o.receiveShadow=true}});return g}
-function bench(s:THREE.Scene){const table=B(15.5,.45,8.6,0x665446,.14);table.position.set(-.2,.28,0);s.add(table);const top=B(14.4,.04,7.45,0x151c20,.05);top.position.set(-.2,.53,0);s.add(top);const divider=B(.04,.025,6.8,0x3d6a72,.005);divider.position.set(-1,.57,0);s.add(divider)}
-function chassis(s:THREE.Scene){const g=new THREE.Group(),steel=0x343b3f,dark=0x20262a,edge=0x596267;A(g,B(5.8,.18,5.05,steel,.035),2.55,.66,0);A(g,B(5.8,3.95,.16,steel,.035),2.55,2.55,-2.46);A(g,B(.18,3.95,5.05,dark,.035),5.36,2.55,0);A(g,B(.18,3.95,5.05,dark,.035),-.26,2.55,0);for(const z of [-2.28,2.28])A(g,B(5.75,.13,.13,edge,.02),2.55,4.47,z);A(g,B(.13,3.48,4.35,0x171b1e,.04),5.48,2.55,0);A(g,B(1.55,.55,1.85,0x30373b,.03),4.45,3.55,.7);A(g,B(1.6,1.25,1.9,0x3b4347,.035),4.42,1.75,.75);A(g,B(2.15,.72,1.85,0x1c2225,.035),3.85,.98,-1.5);A(g,B(.09,.22,3.5,0x4b555a,.02),3,1.15,-.2);for(let z=-.25;z<=1.65;z+=.34)A(g,B(.1,.18,.25,0x101416,.01),-.16,1.52,z);for(let z=-1.5;z<-.4;z+=.22)A(g,B(.06,.14,.13,0x111517,.008),-.16,2.35,z);for(const [x,z] of [[.65,-1.05],[2,-1.05],[3.35,-1.05],[.65,.15],[2,.15],[3.35,.15],[.65,1.25],[2,1.25],[3.35,1.25]]){const st=C(.055,.12,0xc6a64d);st.position.set(x,.82,z);g.add(st)}const f=C(.52,.08,0x12181b);f.rotation.z=Math.PI/2;f.position.set(5.25,2.35,-.85);g.add(f);A(g,B(.12,.28,.5,0x2d83a1,.02),4.85,1.05,1.75);s.add(g)}
-function ghostSize(id:Id):[number,number,number]{if(id==='motherboard')return[3.45,.12,2.85];if(id==='gpu')return[3.2,.4,1.22];if(id==='psu')return[1.9,.7,1.65];if(id==='ram')return[1.72,.25,.25];if(id==='ssd')return[1.5,.12,.48];return[.76,.14,.76]}
-export default function AssemblyLab({onBack}:{onBack:()=>void}){const canvasRef=useRef<HTMLCanvasElement>(null),currentRef=useRef(0),installedRef=useRef<Id[]>([]);const[current,setCurrent]=useState(0),[installed,setInstalled]=useState<Id[]>([]),[session,setSession]=useState(0),[feedback,setFeedback]=useState('This build follows the Dell OptiPlex 7040 Mini Tower service layout. Rotate the chassis, then install the glowing part.');const active=PARTS[current],complete=installed.length===PARTS.length;useEffect(()=>{currentRef.current=current},[current]);useEffect(()=>{installedRef.current=installed},[installed]);useEffect(()=>{const canvas=canvasRef.current;if(!canvas)return;canvas.style.touchAction='none';const scene=new THREE.Scene();scene.background=new THREE.Color(0x091015);scene.fog=new THREE.Fog(0x091015,24,45);const camera=new THREE.PerspectiveCamera(38,1,.1,100);camera.position.set(13.2,10.5,15.2);const renderer=new THREE.WebGLRenderer({canvas,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.outputColorSpace=THREE.SRGBColorSpace;const controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.enableZoom=true;controls.enablePan=true;controls.minDistance=7;controls.maxDistance=28;controls.target.set(.15,1.55,0);scene.add(new THREE.HemisphereLight(0xe5f4ff,0x30251d,2.7));const key=new THREE.DirectionalLight(0xfff0dc,4.6);key.position.set(7,13,8);key.castShadow=true;scene.add(key);const fill=new THREE.DirectionalLight(0x70dce8,1.7);fill.position.set(-8,7,5);scene.add(fill);bench(scene);chassis(scene);const groups=new Map<Id,THREE.Group>(),ghosts=new Map<Id,THREE.Mesh>();for(const p of PARTS){const g=part(p.id);g.position.set(...p.start);groups.set(p.id,g);scene.add(g);const gh=new THREE.Mesh(new THREE.BoxGeometry(...ghostSize(p.id)),new THREE.MeshBasicMaterial({color:0x61e1eb,wireframe:true,transparent:true,opacity:.72}));gh.position.set(...p.target);ghosts.set(p.id,gh);scene.add(gh)}const ray=new THREE.Raycaster(),pointer=new THREE.Vector2(),plane=new THREE.Plane(new THREE.Vector3(0,1,0),0),point=new THREE.Vector3(),offset=new THREE.Vector3();let dragging:Id|null=null;const pointerAt=(e:PointerEvent)=>{const r=canvas.getBoundingClientRect();pointer.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(pointer,camera)};const down=(e:PointerEvent)=>{if(installedRef.current.length===PARTS.length)return;pointerAt(e);const p=PARTS[currentRef.current],g=groups.get(p.id);if(!g||!ray.intersectObject(g,true)[0])return;dragging=p.id;controls.enabled=false;plane.constant=-p.target[1];if(ray.ray.intersectPlane(plane,point))offset.copy(g.position).sub(point);canvas.setPointerCapture(e.pointerId);setFeedback(`${p.name} selected. Move it to the cyan service-manual mounting guide.`);e.preventDefault();e.stopPropagation()};const move=(e:PointerEvent)=>{if(!dragging)return;pointerAt(e);const p=PARTS.find(v=>v.id===dragging)!,g=groups.get(dragging)!;plane.constant=-p.target[1];if(ray.ray.intersectPlane(plane,point))g.position.set(point.x+offset.x,p.target[1],point.z+offset.z)};const up=(e:PointerEvent)=>{if(!dragging)return;const id=dragging;dragging=null;controls.enabled=true;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);const p=PARTS.find(v=>v.id===id)!,g=groups.get(id)!;const d=new THREE.Vector2(g.position.x-p.target[0],g.position.z-p.target[2]).length();if(d<=p.snap){g.position.set(...p.target);const next=[...installedRef.current,id];installedRef.current=next;setInstalled(next);setFeedback(`Installed: ${p.name}. The next 7040 component is highlighted.`);const n=Math.min(currentRef.current+1,PARTS.length-1);currentRef.current=n;setCurrent(n)}else{g.position.set(...p.start);setFeedback(`${p.name} is not aligned with its real mounting location yet. Try again.`)}};canvas.addEventListener('pointerdown',down,{capture:true});canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);const resize=()=>{const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()};const obs=new ResizeObserver(resize);obs.observe(canvas);resize();let frame=0;const draw=()=>{frame=requestAnimationFrame(draw);const a=PARTS[currentRef.current];for(const[id,g]of ghosts)g.visible=!installedRef.current.includes(id)&&id===a.id;for(const[id,g]of groups){const on=!installedRef.current.includes(id)&&id===a.id;g.traverse(o=>{if(o instanceof THREE.Mesh&&o.material instanceof THREE.MeshStandardMaterial){o.material.emissive.setHex(on?0x075b65:0);o.material.emissiveIntensity=on?.72:0}})}controls.update();renderer.render(scene,camera)};draw();return()=>{cancelAnimationFrame(frame);obs.disconnect();canvas.removeEventListener('pointerdown',down,true);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);controls.dispose();renderer.dispose()}},[session]);const reset=()=>{currentRef.current=0;installedRef.current=[];setCurrent(0);setInstalled([]);setFeedback('This build follows the Dell OptiPlex 7040 Mini Tower service layout. Rotate the chassis, then install the glowing part.');setSession(v=>v+1)};return <main className="assembly-lab"><header className="assembly-topbar"><button className="assembly-back" onClick={onBack}><ArrowLeft size={16}/> Computer Lab</button><div className="assembly-brand"><span className="assembly-brand-icon"><Wrench size={20}/></span><span><strong>Big Change PC Build Lab</strong><small>OPTIPLEX 7040 MINI TOWER · SERVICE-MANUAL TRAINING</small></span></div><div className="assembly-progress-label">{installed.length} / {PARTS.length} installed</div></header><aside className="assembly-steps"><p className="assembly-eyebrow">7040 BUILD ORDER</p><h1>{complete?'PC assembled!':active.name}</h1><p className="assembly-intro">{complete?'You installed the six core serviceable components.':active.instruction}</p><div className="assembly-progress"><span style={{width:(installed.length/PARTS.length)*100+'%'}}/></div><div className="assembly-step-list">{PARTS.map((p,i)=>{const I=p.icon,done=installed.includes(p.id),on=!complete&&i===current;return <div key={p.id} className={'assembly-step '+(done?'done ':'')+(on?'active':'')}>{done?<CheckCircle2 size={17}/>:<I size={17}/>}<span>{p.name}</span></div>})}</div></aside><section className="assembly-stage"><canvas ref={canvasRef} aria-label="Interactive Dell OptiPlex 7040 Mini Tower inspired PC assembly lab."/><div className="assembly-stage-tip"><Rotate3D size={15}/> Empty space: rotate · Wheel: zoom · Glowing hardware: drag & install</div></section><aside className="assembly-detail" aria-live="polite"><p className="assembly-eyebrow">{complete?'SYSTEM READY':'7040 COMPONENT'}</p><h2>{complete?'OptiPlex build complete':active.name}</h2><p>{complete?'Rotate around the completed training build or rebuild it for another practice round.':active.why}</p><div className="assembly-feedback"><strong>Service coach</strong><p>{feedback}</p></div>{complete&&<button className="assembly-primary" onClick={reset}>Rebuild the PC <span>↻</span></button>}</aside></main>}
+import { useEffect, useRef, useState } from 'react';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Cpu,
+  HardDrive,
+  MemoryStick,
+  Microchip,
+  PackageCheck,
+  Rotate3D,
+  Wrench,
+  Zap,
+  Fan,
+} from 'lucide-react';
+import * as T from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import {
+  createHardware,
+  createChassis,
+  MOUNTS,
+  type HardwareId,
+  type Vec3,
+} from '../lib/optiplex-7040';
+type Part = {
+  id: HardwareId;
+  name: string;
+  icon: typeof Cpu;
+  instruction: string;
+  why: string;
+  start: Vec3;
+  snap: number;
+};
+const PARTS: Part[] = [
+  {
+    id: 'motherboard',
+    name: 'Q170 System Board',
+    icon: Microchip,
+    instruction: 'Drag the board onto the cyan standoff guide.',
+    why: 'Dell’s proprietary board includes an LGA1151 socket, four DDR4 DIMM slots, four expansion slots and an M.2 socket.',
+    start: [-3.15, 0.75, 0],
+    snap: 0.4,
+  },
+  {
+    id: 'cpu',
+    name: 'Intel Core Processor',
+    icon: Cpu,
+    instruction: 'Align the processor with the LGA1151 socket.',
+    why: 'This chassis supports sixth-generation Intel Core processors. Socket alignment matters before the retention mechanism is closed.',
+    start: [-5.2, 0.82, 2.3],
+    snap: 0.24,
+  },
+  {
+    id: 'cooler',
+    name: 'CPU Heatsink & Fan',
+    icon: Fan,
+    instruction: 'Seat the cooling assembly above the processor.',
+    why: 'The heatsink and fan remove CPU heat. This exercise represents placement; thermal paste, screws and fan cabling are not simulated.',
+    start: [-4.8, 1.01, -2.2],
+    snap: 0.32,
+  },
+  {
+    id: 'ram',
+    name: 'DDR4 Memory',
+    icon: MemoryStick,
+    instruction: 'Align the module with the highlighted DIMM slot.',
+    why: 'The 7040 MT uses DDR4-2133 UDIMMs. Match the notch and close the two retention tabs.',
+    start: [-3.5, 1.14, 2.8],
+    snap: 0.24,
+  },
+  {
+    id: 'ssd',
+    name: 'M.2 2280 SSD',
+    icon: HardDrive,
+    instruction: 'Align the SSD with its Socket 3 mounting guide.',
+    why: 'The board accepts a 22 × 80 mm M.2 SSD. The screw at the far end secures it.',
+    start: [-2.3, 0.85, 2.8],
+    snap: 0.24,
+  },
+  {
+    id: 'gpu',
+    name: 'Slot-powered PCIe Card',
+    icon: PackageCheck,
+    instruction: 'Align the card with the blue PCIe x16 slot.',
+    why: 'This is an illustrative small expansion card, not a specific retail GPU. Exact card support requires checking Dell’s configuration and power limits.',
+    start: [-2.15, 1.27, -2.45],
+    snap: 0.3,
+  },
+  {
+    id: 'psu',
+    name: 'Dell 240 W Power Supply',
+    icon: Zap,
+    instruction: 'Seat the power supply in the lower rear bay.',
+    why: 'Dell specifies a 240 W PSU and proprietary board power connections. Generic modern ATX PSU choices have been removed.',
+    start: [-4.9, 1.2, -0.5],
+    snap: 0.32,
+  },
+];
+type Action = 'home' | 'front' | 'rear' | 'top';
+export default function AssemblyLab({
+  onBack,
+  previewOnly = false,
+  componentNames,
+}: {
+  onBack: () => void;
+  previewOnly?: boolean;
+  componentNames?: Partial<Record<HardwareId, string>>;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null),
+    installedRef = useRef<HardwareId[]>([]),
+    currentRef = useRef(0);
+  const [preview, setPreview] = useState(true),
+    [upright, setUpright] = useState(true),
+    [closed, setClosed] = useState(false),
+    [cageOpen, setCageOpen] = useState(true),
+    [exploded, setExploded] = useState(false),
+    [isolated, setIsolated] = useState(false);
+  const [selected, setSelected] = useState<HardwareId>('ssd'),
+    [installed, setInstalled] = useState<HardwareId[]>([]),
+    [current, setCurrent] = useState(0),
+    [error, setError] = useState('');
+  const [feedback, setFeedback] = useState(
+    'Explore the assembled reference model, or choose Start assembly practice.',
+  );
+  const displayRef = useRef({
+    preview: true,
+    upright: true,
+    closed: false,
+    cageOpen: true,
+    exploded: false,
+    isolated: false,
+    selected: 'ssd' as HardwareId,
+  });
+  const actionRef = useRef<Action | null>('home'),
+    resetRef = useRef(false);
+  useEffect(() => {
+    displayRef.current = {
+      preview,
+      upright,
+      closed,
+      cageOpen,
+      exploded,
+      isolated,
+      selected,
+    };
+  }, [preview, upright, closed, cageOpen, exploded, isolated, selected]);
+  const complete = installed.length === PARTS.length,
+    active = preview ? PARTS.find((p) => p.id === selected)! : PARTS[current];
+  const name = (p: Part) => componentNames?.[p.id] ?? p.name;
+  const practice = () => {
+    installedRef.current = [];
+    currentRef.current = 0;
+    resetRef.current = true;
+    setInstalled([]);
+    setCurrent(0);
+    setPreview(false);
+    setUpright(false);
+    setClosed(false);
+    setCageOpen(true);
+    setExploded(false);
+    setIsolated(false);
+    actionRef.current = 'home';
+    setFeedback(
+      'Install the glowing system board first. Wrong placements return the part to the tray.',
+    );
+  };
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    let renderer: T.WebGLRenderer;
+    try {
+      renderer = new T.WebGLRenderer({ canvas, antialias: true });
+    } catch {
+      queueMicrotask(() =>
+        setError(
+          '3D graphics could not start. Enable WebGL and reload this page.',
+        ),
+      );
+      return;
+    }
+    const scene = new T.Scene();
+    scene.background = new T.Color(0x111a21);
+    const camera = new T.PerspectiveCamera(38, 1, 0.1, 100);
+    camera.position.set(10.6, 12.8, 12.6);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = T.PCFSoftShadowMap;
+    renderer.shadowMap.autoUpdate = false;
+    let dirty = true,
+      previousDisplay = '';
+    renderer.outputColorSpace = T.SRGBColorSpace;
+    renderer.toneMapping = T.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.12;
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.minDistance = 5;
+    controls.maxDistance = 28;
+    controls.target.set(1.05, 1.15, 0);
+    scene.add(new T.HemisphereLight(0xe4f0ff, 0x4b5262, 2.3));
+    const key = new T.DirectionalLight(0xfff4e8, 3.5);
+    key.position.set(3, 12, 5);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.camera.left = -10;
+    key.shadow.camera.right = 10;
+    key.shadow.camera.top = 8;
+    key.shadow.camera.bottom = -8;
+    key.shadow.bias = -0.0004;
+    scene.add(key);
+    const fill = new T.DirectionalLight(0xbadfff, 2.1);
+    fill.position.set(-5, 6, -7);
+    scene.add(fill);
+    const table = new T.Mesh(
+      new T.BoxGeometry(15, 0.25, 9.4),
+      new T.MeshStandardMaterial({ color: 0x25333c, roughness: 0.91 }),
+    );
+    table.position.set(-0.7, 0.39, 0);
+    table.receiveShadow = true;
+    scene.add(table);
+    const grid = new T.GridHelper(15, 30, 0x3c5865, 0x2e444f);
+    grid.position.set(-0.7, 0.522, 0);
+    scene.add(grid);
+    const { group: chassis, cover, driveCage } = createChassis();
+    const assembly = new T.Group();
+    scene.add(assembly);
+    assembly.add(chassis);
+    const groups = new Map<HardwareId, T.Group>();
+    for (const p of PARTS) {
+      const g = createHardware(p.id);
+      g.position.set(...MOUNTS[p.id]);
+      groups.set(p.id, g);
+      assembly.add(g);
+    }
+    const guide = new T.BoxHelper(groups.get('motherboard')!, 0x70dce5);
+    guide.visible = false;
+    scene.add(guide);
+    const highlight = new T.BoxHelper(groups.get('ssd')!, 0xebb967);
+    scene.add(highlight);
+    const ray = new T.Raycaster(),
+      pointer = new T.Vector2(),
+      plane = new T.Plane(new T.Vector3(0, 1, 0), 0),
+      point = new T.Vector3(),
+      offset = new T.Vector3();
+    let dragging: HardwareId | null = null,
+      press: { x: number; y: number } | null = null;
+    const pointerAt = (e: PointerEvent) => {
+      const r = canvas.getBoundingClientRect();
+      pointer.set(
+        ((e.clientX - r.left) / r.width) * 2 - 1,
+        -((e.clientY - r.top) / r.height) * 2 + 1,
+      );
+      ray.setFromCamera(pointer, camera);
+    };
+    const down = (e: PointerEvent) => {
+      press = { x: e.clientX, y: e.clientY };
+      if (
+        displayRef.current.preview ||
+        installedRef.current.length === PARTS.length
+      )
+        return;
+      pointerAt(e);
+      const p = PARTS[currentRef.current],
+        g = groups.get(p.id)!;
+      if (!ray.intersectObject(g, true).length) return;
+      dragging = p.id;
+      controls.enabled = false;
+      plane.constant = -MOUNTS[p.id][1];
+      if (ray.ray.intersectPlane(plane, point))
+        offset.copy(g.position).sub(point);
+      canvas.setPointerCapture(e.pointerId);
+      setFeedback(`${p.name} selected. Drag it into the cyan guide.`);
+      e.stopPropagation();
+    };
+    const move = (e: PointerEvent) => {
+      if (!dragging) return;
+      dirty = true;
+      pointerAt(e);
+      const target = MOUNTS[dragging];
+      plane.constant = -target[1];
+      if (ray.ray.intersectPlane(plane, point))
+        groups
+          .get(dragging)!
+          .position.set(point.x + offset.x, target[1], point.z + offset.z);
+    };
+    const finish = (e: PointerEvent, cancelled = false) => {
+      dirty = true;
+      if (dragging) {
+        const id = dragging;
+        dragging = null;
+        controls.enabled = true;
+        if (canvas.hasPointerCapture(e.pointerId))
+          canvas.releasePointerCapture(e.pointerId);
+        const p = PARTS.find((p) => p.id === id)!,
+          g = groups.get(id)!,
+          target = MOUNTS[id];
+        if (
+          !cancelled &&
+          Math.hypot(g.position.x - target[0], g.position.z - target[2]) <=
+            p.snap
+        ) {
+          g.position.set(...target);
+          installedRef.current = [...installedRef.current, id];
+          setInstalled([...installedRef.current]);
+          currentRef.current = Math.min(
+            currentRef.current + 1,
+            PARTS.length - 1,
+          );
+          setCurrent(currentRef.current);
+          setFeedback(
+            `Installed: ${p.name}. ${installedRef.current.length === PARTS.length ? 'Placement exercise complete. Cabling and power-on checks remain outside this exercise.' : 'Continue with the next highlighted part.'}`,
+          );
+        } else {
+          g.position.set(...p.start);
+          setFeedback(
+            cancelled
+              ? 'Drag cancelled. Part returned to the tray.'
+              : `${p.name} missed its mounting guide. Try again.`,
+          );
+        }
+      } else if (
+        !cancelled &&
+        displayRef.current.preview &&
+        !displayRef.current.closed &&
+        press &&
+        Math.hypot(e.clientX - press.x, e.clientY - press.y) < 5
+      ) {
+        pointerAt(e);
+        const hit = ray.intersectObject(assembly, true).find(({object}) => {
+          let node: T.Object3D | null = object;
+          while(node && node !== assembly) {
+            if(!node.visible) return false;
+            node = node.parent;
+          }
+          return true;
+        });
+        if (hit) {
+          let o: T.Object3D = hit.object;
+          while (o.parent && o.parent !== assembly) o = o.parent;
+          if (!groups.has(o.name as HardwareId)) { press = null; return; }
+          setSelected(o.name as HardwareId);
+          setFeedback(
+            'Selected component. Use Explode selected or Isolate selected to inspect it.',
+          );
+        }
+      }
+      press = null;
+    };
+    const up = (e: PointerEvent) => finish(e),
+      cancel = (e: PointerEvent) => finish(e, true);
+    canvas.addEventListener('pointerdown', down, true);
+    canvas.addEventListener('pointermove', move);
+    canvas.addEventListener('pointerup', up);
+    canvas.addEventListener('pointercancel', cancel);
+    const resize = () => {
+      const w = canvas.clientWidth,
+        h = canvas.clientHeight;
+      if (w && h) {
+        dirty = true;
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+    };
+    const obs = new ResizeObserver(resize);
+    obs.observe(canvas);
+    resize();
+    let frame = 0;
+    const draw = () => {
+      frame = requestAnimationFrame(draw);
+      const d = displayRef.current,
+        done = installedRef.current.length === PARTS.length;
+      const signature = JSON.stringify([
+        d,
+        installedRef.current,
+        currentRef.current,
+      ]);
+      if (signature !== previousDisplay) {
+        dirty = true;
+        previousDisplay = signature;
+      }
+      assembly.rotation.x = d.preview && d.upright ? Math.PI / 2 : 0;
+      assembly.position.set(
+        0,
+        d.preview && d.upright ? 0.55 + 350 / 120 : 0,
+        d.preview && d.upright ? -(0.58 + 154 / 120) : 0,
+      );
+      assembly.updateMatrixWorld(true);
+      if (resetRef.current) {
+        dragging = null;
+        controls.enabled = true;
+        resetRef.current = false;
+      }
+      if (actionRef.current) {
+        dirty = true;
+        const view = actionRef.current;
+        const cx = d.preview || done ? 2.5 : 0.15;
+        controls.target.set(cx, d.preview && d.upright ? 3.4 : 1.1, 0);
+        if (view === 'home')
+          camera.position.set(cx + 8.5, d.preview && d.upright ? 7.4 : 12, 11);
+        if (view === 'front') camera.position.set(14, 4.3, 0);
+        if (view === 'rear') camera.position.set(-9, 4.3, 0);
+        if (view === 'top') camera.position.set(cx, 17, 0.01);
+        actionRef.current = null;
+      }
+      chassis.visible = !(d.preview && d.isolated);
+      driveCage.rotation.z = !d.closed && (d.cageOpen || !d.preview) ? -Math.PI / 2.4 : 0;
+      cover.visible = d.closed && (d.preview || done) && !d.isolated;
+      for (const p of PARTS) {
+        const g = groups.get(p.id)!;
+        g.visible = !(d.preview && d.isolated && d.selected !== p.id);
+        if (d.preview || installedRef.current.includes(p.id)) {
+          g.position.set(...MOUNTS[p.id]);
+          if (d.preview && d.exploded && d.selected === p.id)
+            g.position.y += 2.3;
+        } else if (dragging !== p.id) g.position.set(...p.start);
+        const on = !d.preview && !done && p.id === PARTS[currentRef.current].id;
+        g.traverse((o) => {
+          if (
+            o instanceof T.Mesh &&
+            o.material instanceof T.MeshStandardMaterial
+          ) {
+            o.material.emissive.setHex(on ? 0x13616b : 0);
+            o.material.emissiveIntensity = on ? 0.35 : 0;
+          }
+        });
+      }
+      if (!d.preview && !done) {
+        const g = groups.get(PARTS[currentRef.current].id)!;
+        const saved = g.position.clone();
+        g.position.set(...MOUNTS[PARTS[currentRef.current].id]);
+        g.updateMatrixWorld(true);
+        guide.setFromObject(g);
+        g.position.copy(saved);
+        g.updateMatrixWorld(true);
+        guide.visible = true;
+      } else guide.visible = false;
+      highlight.visible = d.preview && !d.closed;
+      highlight.setFromObject(groups.get(d.selected)!);
+      const cameraChanged = controls.update();
+      if (dirty || cameraChanged) {
+        if (dirty) renderer.shadowMap.needsUpdate = true;
+        renderer.render(scene, camera);
+        dirty = false;
+      }
+    };
+    draw();
+    return () => {
+      cancelAnimationFrame(frame);
+      obs.disconnect();
+      canvas.removeEventListener('pointerdown', down, true);
+      canvas.removeEventListener('pointermove', move);
+      canvas.removeEventListener('pointerup', up);
+      canvas.removeEventListener('pointercancel', cancel);
+      controls.dispose();
+      const geometries = new Set<T.BufferGeometry>(),
+        materials = new Set<T.Material>(),
+        textures = new Set<T.Texture>();
+      scene.traverse((o) => {
+        if (o instanceof T.Mesh || o instanceof T.LineSegments) {
+          geometries.add(o.geometry);
+          for (const m of Array.isArray(o.material)
+            ? o.material
+            : [o.material]) {
+            materials.add(m);
+            if (m instanceof T.MeshStandardMaterial && m.map)
+              textures.add(m.map);
+          }
+        }
+      });
+      geometries.forEach((g) => g.dispose());
+      materials.forEach((m) => m.dispose());
+      textures.forEach((t) => t.dispose());
+      renderer.dispose();
+    };
+  }, []);
+  const stage = (
+    <section
+      className={'assembly-stage' + (previewOnly ? ' assembly-preview' : '')}
+    >
+      <div className="assembly-view-controls">
+        {preview && (
+          <button
+            onClick={() => {
+              setUpright(!upright);
+              actionRef.current = 'home';
+            }}
+          >
+            {upright ? 'Service view' : 'Tower view'}
+          </button>
+        )}
+        {!previewOnly && (
+          <button
+            onClick={() => {
+              if (preview) practice();
+              else {
+                setPreview(true);
+                setClosed(false);
+                actionRef.current = 'home';
+              }
+            }}
+          >
+            {preview ? 'Start assembly practice' : 'Inspect assembled model'}
+          </button>
+        )}
+        <button
+          disabled={!preview && !complete}
+          onClick={() => {
+            setClosed(!closed);
+            setExploded(false);
+            setIsolated(false);
+          }}
+        >
+          {closed ? 'Remove side cover' : 'Fit side cover'}
+        </button>
+        {preview && !closed && (
+          <button aria-pressed={cageOpen} onClick={() => setCageOpen(!cageOpen)}>
+            {cageOpen ? 'Close drive cage' : 'Open drive cage'}
+          </button>
+        )}
+        {(['home', 'front', 'rear', 'top'] as Action[]).map((view) => (
+          <button
+            key={view}
+            onClick={() => {
+              actionRef.current = view;
+            }}
+          >
+            {view === 'home'
+              ? 'Overview'
+              : view[0].toUpperCase() + view.slice(1)}
+          </button>
+        ))}
+        {preview && !closed && (
+          <>
+            <button
+              aria-pressed={exploded}
+              onClick={() => setExploded(!exploded)}
+            >
+              {exploded ? 'Return selected' : 'Explode selected'}
+            </button>
+            <button
+              aria-pressed={isolated}
+              onClick={() => setIsolated(!isolated)}
+            >
+              {isolated ? 'Show all' : 'Isolate selected'}
+            </button>
+            <select
+              aria-label="Select component"
+              value={selected}
+              onChange={(e) => setSelected(e.target.value as HardwareId)}
+            >
+              {PARTS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {name(p)}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+      </div>
+      <canvas
+        ref={canvasRef}
+        aria-label="OptiPlex 7040 reference model — rotate, select and inspect hardware"
+      />
+      {error && (
+        <div className="assembly-render-error" role="alert">
+          {error}
+        </div>
+      )}
+      <div className="assembly-stage-tip">
+        <Rotate3D size={15} />
+        {preview
+          ? 'Drag empty space: rotate · Wheel: zoom · Click hardware: select'
+          : 'Drag glowing hardware into cyan guide · Empty space: rotate'}
+      </div>
+    </section>
+  );
+  if (previewOnly) return stage;
+  return (
+    <main className="assembly-lab">
+      <header className="assembly-topbar">
+        <button className="assembly-back" onClick={onBack}>
+          <ArrowLeft size={16} /> Parts picker
+        </button>
+        <div className="assembly-brand">
+          <span className="assembly-brand-icon">
+            <Wrench size={20} />
+          </span>
+          <span>
+            <strong>Big Change PC Build Lab</strong>
+            <small>OPTIPLEX 7040 MT · SERVICE REFERENCE MODEL</small>
+          </span>
+        </div>
+        <div className="assembly-progress-label">
+          {preview
+            ? 'Inspection mode'
+            : `${installed.length} / ${PARTS.length} placed`}
+        </div>
+      </header>
+      <aside className="assembly-steps">
+        <p className="assembly-eyebrow">
+          {preview ? 'EXPLORE THE HARDWARE' : 'ASSEMBLY PRACTICE'}
+        </p>
+        <h1>{!preview && complete ? 'Parts placed' : name(active)}</h1>
+        <p className="assembly-intro">
+          {preview
+            ? 'Select any component, isolate it, or lift just that part out of the case.'
+            : complete
+              ? 'All seven parts are seated. This is a placement exercise, not a powered and tested computer.'
+              : active.instruction}
+        </p>
+        <div className="assembly-progress">
+          <span
+            style={{ width: (installed.length / PARTS.length) * 100 + '%' }}
+          />
+        </div>
+        <div className="assembly-step-list">
+          {PARTS.map((p, i) => {
+            const Icon = p.icon,
+              done = installed.includes(p.id),
+              on = preview ? selected === p.id : i === current && !complete;
+            return (
+              <button
+                key={p.id}
+                disabled={!preview}
+                onClick={() => setSelected(p.id)}
+                className={
+                  'assembly-step ' +
+                  (done ? 'done ' : '') +
+                  (on ? 'active' : '')
+                }
+              >
+                {done ? <CheckCircle2 size={17} /> : <Icon size={17} />}
+                <span>{name(p)}</span>
+              </button>
+            );
+          })}
+        </div>
+      </aside>
+      {stage}
+      <aside className="assembly-detail" aria-live="polite">
+        <p className="assembly-eyebrow">COMPONENT NOTES</p>
+        <h2>{name(active)}</h2>
+        <p>{active.why}</p>
+        <div className="assembly-feedback">
+          <strong>Service coach</strong>
+          <p>{feedback}</p>
+        </div>
+        <p className="assembly-model-note">
+          Original geometry based on Dell’s manual. Chassis envelope uses
+          documented dimensions; interior measurements and surfaces are
+          approximated. The optional graphics card is illustrative.
+        </p>
+        <a
+          className="assembly-reference"
+          href="https://dl.dell.com/topicspdf/optiplex-7040-desktop_owners-manual_en-us.pdf"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Dell reference manual ↗
+        </a>
+        {complete && !preview && (
+          <button className="assembly-primary" onClick={practice}>
+            Restart practice ↻
+          </button>
+        )}
+      </aside>
+    </main>
+  );
+}
+
