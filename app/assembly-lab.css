@@ -144,7 +144,7 @@
   min-width: 0;
   min-height: 0;
   background:
-    radial-gradient(circle at 53% 42%, rgba(52, 83, 92, .46), transparent 48%),
+    radial-gradient(circle at 53% 42%, rgba(52, 83, 92, 0.46), transparent 48%),
     linear-gradient(#10171d, #0c1216);
 }
 .assembly-stage canvas {
@@ -270,16 +270,88 @@
   }
 }
 
-.assembly-lab {height:100dvh;}
-.assembly-view-controls {position:absolute;top:14px;left:14px;right:14px;z-index:2;display:flex;flex-wrap:wrap;gap:6px;}
-.assembly-view-controls button,.assembly-view-controls select {background:#17262eea;color:#e9f1f4;border:1px solid #58707b;padding:8px 10px;border-radius:7px;font-size:11px;cursor:pointer;}
-.assembly-view-controls button:disabled {opacity:.4;cursor:not-allowed;}
-.assembly-view-controls button[aria-pressed="true"] {background:#3a5964;border-color:#a9dee4;}
-.assembly-step {text-align:left;width:100%;cursor:pointer;}
-.assembly-step:disabled {cursor:default;opacity:1;}
-.assembly-model-note {font-size:11px!important;line-height:1.5;color:#99aab2!important;margin-top:24px;}
-.assembly-reference {font-size:12px;color:#a8d8e2;text-decoration:underline;}
-.assembly-render-error {position:absolute;inset:30% 15%;padding:20px;background:#452826;color:#ffddd8;}
-@media(max-width:680px){.assembly-stage{grid-row:2;min-height:60vh}.assembly-view-controls{left:198px;right:8px;top:12px}.assembly-stage-tip{max-width:95%;white-space:normal;width:max-content}.assembly-lab{height:auto}.assembly-detail{z-index:3}}
+.assembly-lab {
+  height: 100dvh;
+}
+.assembly-view-controls {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.assembly-view-controls button,
+.assembly-view-controls select {
+  background: #17262eea;
+  color: #e9f1f4;
+  border: 1px solid #58707b;
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.assembly-view-controls button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.assembly-view-controls button[aria-pressed='true'] {
+  background: #3a5964;
+  border-color: #a9dee4;
+}
+.assembly-step {
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+}
+.assembly-step:disabled {
+  cursor: default;
+  opacity: 1;
+}
+.assembly-model-note {
+  font-size: 11px !important;
+  line-height: 1.5;
+  color: #99aab2 !important;
+  margin-top: 24px;
+}
+.assembly-reference {
+  font-size: 12px;
+  color: #a8d8e2;
+  text-decoration: underline;
+}
+.assembly-render-error {
+  position: absolute;
+  inset: 30% 15%;
+  padding: 20px;
+  background: #452826;
+  color: #ffddd8;
+}
+@media (max-width: 680px) {
+  .assembly-stage {
+    grid-row: 2;
+    min-height: 60vh;
+  }
+  .assembly-view-controls {
+    left: 198px;
+    right: 8px;
+    top: 12px;
+  }
+  .assembly-stage-tip {
+    max-width: 95%;
+    white-space: normal;
+    width: max-content;
+  }
+  .assembly-lab {
+    height: auto;
+  }
+  .assembly-detail {
+    z-index: 3;
+  }
+}
 
-.assembly-stage.assembly-preview {width:100%;height:100%;}
+.assembly-stage.assembly-preview {
+  width: 100%;
+  height: 100%;
+}
