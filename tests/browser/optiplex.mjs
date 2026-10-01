@@ -1,0 +1,59 @@
+import {chromium} from 'playwright';
+import * as T from 'three';
+import {mkdir,writeFile} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+await mkdir('verification/optiplex',{recursive:true});
+const browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const page=await browser.newPage({viewport:{width:1600,height:1000}});
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+const shot=async name=>{await page.waitForTimeout(450);await page.screenshot({path:`verification/optiplex/${name}.png`});};
+try{
+ await page.goto(process.env.ATLAS_TEST_URL??'http://127.0.0.1:5173/');
+ await page.getByRole('button',{name:/Build.*PC/i}).click();
+ await page.getByRole('button',{name:'Fit side cover',exact:true}).waitFor();
+ await shot('01-parts-picker');
+ assert.equal(await page.getByRole('button',{name:/Enter interactive/}).isEnabled(),false);
+ for(const choice of [/Intel Core i5-6500/,/Dell Q170 System Board/,/8 GB DDR4/,/M.2 2280 SSD/,/Slot-powered PCIe Card/,/Dell 240 W Power Supply/]){
+  await page.getByRole('button',{name:choice}).last().click();
+ }
+ await page.getByRole('button',{name:/Enter interactive/}).click();
+ await shot('02-open-case');
+ await page.getByRole('button',{name:'Fit side cover',exact:true}).click();
+ await shot('03-closed-case');
+ await page.getByRole('button',{name:'Front',exact:true}).click();await shot('04-front');
+ await page.getByRole('button',{name:'Rear',exact:true}).click();await shot('05-rear');
+ await page.getByRole('button',{name:'Remove side cover',exact:true}).click();
+ await page.getByRole('button',{name:'Top',exact:true}).click();await shot('06-top');
+ await page.getByRole('combobox',{name:'Select component'}).selectOption('ssd');
+ await page.getByRole('button',{name:'Explode selected',exact:true}).click();
+ assert.equal(await page.getByRole('button',{name:'Return selected',exact:true}).getAttribute('aria-pressed'),'true');await shot('07-ssd-exploded');
+ await page.getByRole('button',{name:'Isolate selected',exact:true}).click();await shot('08-ssd-isolated');
+ await page.getByRole('button',{name:'Show all',exact:true}).click();
+ await page.getByRole('button',{name:'Return selected',exact:true}).click();
+ await page.getByRole('button',{name:'Start assembly practice',exact:true}).click();
+ await page.waitForTimeout(1600);await shot('09-practice-start');
+ const rect=await page.locator('.assembly-stage canvas').boundingBox();assert.ok(rect&&rect.height>300);
+ const camera=new T.PerspectiveCamera(38,rect.width/rect.height,.1,100);camera.position.set(8.65,12,11);camera.lookAt(.15,1.1,0);camera.updateMatrixWorld();
+ const screen=v=>{const p=v.clone().project(camera);return{x:rect.x+(p.x+1)*rect.width/2,y:rect.y+(1-p.y)*rect.height/2};};
+ const steps=[
+ ['motherboard',[-3.15,.75,0],[2.08,.76,.5]],['cpu',[-5.2,.82,2.3],[1.48,.93,-.48]],
+ ['cooler',[-4.8,1.01,-2.2],[1.48,1.18,-.48]],['ram',[-3.5,1.14,2.8],[2.91,1.2,-.43]],
+ ['ssd',[-2.3,.85,2.8],[3.12,.92,1.26]],['gpu',[-2.15,1.27,-2.45],[1.88,1.37,1.66]],['psu',[-4.9,1.2,-.5],[1.33,1.37,-2.08]],
+ ];
+ for(let i=0;i<steps.length;i++){
+  const [id,start,target]=steps[i],origin=new T.Vector3(...start),dest=new T.Vector3(...target),from=screen(origin);
+  const ray=new T.Raycaster();ray.setFromCamera(new T.Vector2((from.x-rect.x)/rect.width*2-1,-((from.y-rect.y)/rect.height)*2+1),camera);
+  const intersection=new T.Vector3();ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),-target[1]),intersection);
+  const offset=origin.clone().sub(intersection);const drop=dest.clone().sub(offset);drop.y=target[1];const to=screen(drop);
+  if(i===0){await page.mouse.move(from.x,from.y);await page.mouse.down();await page.mouse.move(from.x+35,from.y+45,{steps:8});await page.mouse.up();await page.getByText(/missed its mounting guide/).waitFor();assert.match(await page.locator('.assembly-progress-label').innerText(),/^0 \/ 7/);}
+  await page.mouse.move(from.x,from.y);await page.mouse.down();await page.mouse.move(to.x,to.y,{steps:24});await page.mouse.up();
+  await page.waitForTimeout(250);assert.equal(await page.locator('.assembly-progress-label').innerText(),`${i+1} / 7 placed`,`${id} must install by dragging`);
+ }
+ await shot('10-completed-placement');
+ await page.getByRole('button',{name:'Restart practice',exact:false}).click();assert.equal(await page.locator('.assembly-progress-label').innerText(),'0 / 7 placed');
+ await page.getByRole('button',{name:'Parts picker',exact:true}).click();
+ await page.getByRole('button',{name:'Reset',exact:true}).click();assert.equal(await page.getByRole('button',{name:/Enter interactive/}).isEnabled(),false);
+ assert.deepEqual(errors,[]);console.log('PASS: catalogue, live canvas, cover, views, select, explode/isolate, failed placement, all seven drags, restart and reset; no page exceptions.');
+ await writeFile('verification/optiplex/result.json',JSON.stringify({passed:true,errors},null,2));
+}catch(error){await shot('failure');await writeFile('verification/optiplex/result.json',JSON.stringify({passed:false,error:String(error),errors},null,2));throw error;}
+finally{await browser.close();}

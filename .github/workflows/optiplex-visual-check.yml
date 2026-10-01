@@ -1,0 +1,39 @@
+name: Verify OptiPlex candidate
+on:
+  push:
+    branches: [optiplex-reference-model]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Render and exercise candidate
+        run: |
+          npm run dev > /tmp/atlas-vite.log 2>&1 &
+          for i in $(seq 1 40); do curl -sf http://127.0.0.1:5173/ > /dev/null && break; sleep 1; done
+          node tests/browser/optiplex.mjs
+      - name: Capture official reference for visual comparison
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p verification/reference
+          curl --fail --location --retry 2 'https://dl.dell.com/topicspdf/optiplex-7040-desktop_owners-manual_en-us.pdf' -o verification/reference/dell-7040.pdf
+          sudo apt-get install -y poppler-utils
+          pdftoppm -f 7 -l 8 -scale-to 1600 -png verification/reference/dell-7040.pdf verification/reference/exterior
+          pdftoppm -f 17 -l 17 -scale-to 1600 -png verification/reference/dell-7040.pdf verification/reference/psu
+          pdftoppm -f 25 -l 25 -scale-to 1600 -png verification/reference/dell-7040.pdf verification/reference/board
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: optiplex-verification
+          path: verification
