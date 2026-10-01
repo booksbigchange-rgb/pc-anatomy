@@ -15,13 +15,13 @@ export type HardwareId =
   | 'psu';
 export type Vec3 = [number, number, number];
 export const MOUNTS: Record<HardwareId, Vec3> = {
-  motherboard: [2.08, 0.76, 0.5],
-  cpu: [1.48, 0.93, -0.48],
-  cooler: [1.48, 1.08, -0.48],
-  ram: [2.91, 1.2, -0.43],
-  ssd: [3.12, 0.92, 1.26],
-  gpu: [1.66, 1.52, 1.27],
-  psu: [1.33, 1.37, -2.08],
+  motherboard: [2.08, 0.76, -0.7],
+  cpu: [1.48, 0.93, -1.68],
+  cooler: [1.48, 1.08, -1.68],
+  ram: [2.91, 1.2, -1.63],
+  ssd: [3.64, 0.92, -0.3],
+  gpu: [1.66, 1.52, 0.07],
+  psu: [1.33, 1.37, 2.05],
 };
 const steel = 0xa4a9ac,
   black = 0x171a1d,
@@ -241,7 +241,7 @@ export function createHardware(id: HardwareId) {
       put(g, box(0.16, 0.14, 0.17, black), 1.64, 0.1, z);
     put(g, box(0.3, 0.19, 0.16, 0xe6e2d4), 1.45, 0.11, 1.85);
     put(g, box(0.25, 0.16, 0.15, 0xe6e2d4), -0.62, 0.1, -1.85);
-    put(g, box(0.38, 0.09, 0.13, black), 1.04, 0.07, 0.05);
+    put(g, box(0.38, 0.09, 0.13, black), 1.56, 0.07, -0.3);
     for (let i = 0; i < 45; i++) {
       const x = -1.35 + (i % 9) * 0.31,
         z = -0.25 + Math.floor(i / 9) * 0.2;
@@ -329,9 +329,9 @@ export function createHardware(id: HardwareId) {
       cable(
         g,
         [
-          [1.08, -0.22, 0.2 + i * 0.03],
-          [1.32, -0.42, 0.25 + i * 0.03],
-          [1.42, -0.54, 0.8 + i * 0.02],
+          [1.08, -0.22, -0.2 - i * 0.03],
+          [1.32, -0.42, -0.25 - i * 0.03],
+          [1.42, -0.54, -0.8 - i * 0.02],
         ],
         i % 2 ? 0xd9b343 : black,
         0.018,
@@ -351,7 +351,7 @@ export function createChassis() {
   // Thin folded steel walls, with rear openings rather than a solid blocking wall.
   put(g, box(274 / 60, 0.075, 350 / 60, steel), cx, base, 0);
   for (const z of [-zmax, zmax]) {
-    put(g, box(274 / 60, 154 / 60, 0.065, black), cx, (base + top) / 2, z);
+    put(g, box(274 / 60, 154 / 60, 0.065, steel), cx, (base + top) / 2, z);
     put(g, box(274 / 60, 0.07, 0.13, steel), cx, top, z);
   }
   put(
@@ -363,51 +363,79 @@ export function createChassis() {
   );
   put(g, box(0.07, 0.1, 350 / 60, steel), back, base + 0.07, 0);
   put(g, box(0.07, 0.1, 350 / 60, steel), back, top - 0.03, 0);
-  for (const z of [-1.29, 1.06, 2.82])
+  for (const z of [-2.82, -0.43, 1.25, 2.82])
     put(g, box(0.07, 154 / 60, 0.1, steel), back, (base + top) / 2, z);
   // Rear ventilation, motherboard I/O, four expansion covers.
-  for (let z = -1.2; z < 0.93; z += 0.13)
+  for (let z = -2.62; z < -0.57; z += 0.13)
     for (let y = 1.38; y < 2.85; y += 0.13)
       put(g, box(0.025, 0.047, 0.065, black, 0), back, y, z);
   for (let i = 0; i < 4; i++) {
-    const z = 1.28 + i * 0.35;
+    const z = 0.07 + i * 0.35;
     put(g, box(0.06, 1.68, 0.2, steel), back, 1.62, z);
     for (let y = 0.95; y < 2.25; y += 0.13)
       put(g, box(0.01, 0.075, 0.12, black), back - 0.04, y, z);
   }
   const exhaust = fan(1.23);
   exhaust.rotation.z = Math.PI / 2;
-  put(g, exhaust, back + 0.09, 2.08, -0.4);
-  // Front bezel: perforated lower field, upper optical drive and four USB ports.
-  put(
-    g,
-    box(0.16, 154 / 60, 350 / 60, black, 0.04),
-    front,
-    (base + top) / 2,
-    0,
+  put(g, exhaust, back + 0.09, 2.08, -1.6);
+  // Front bezel cut-out and geometric lattice, optical bay, four USB ports.
+  const shape = new T.Shape();
+  shape.moveTo(-154 / 120, -zmax);
+  shape.lineTo(154 / 120, -zmax);
+  shape.lineTo(154 / 120, zmax);
+  shape.lineTo(-154 / 120, zmax);
+  shape.closePath();
+  const opening = new T.Path();
+  opening.moveTo(-1.07, -0.22);
+  opening.lineTo(-1.07, 2.7);
+  opening.lineTo(1.07, 2.7);
+  opening.lineTo(1.07, -0.22);
+  opening.closePath();
+  shape.holes.push(opening);
+  const bezel = new T.Mesh(
+    new T.ExtrudeGeometry(shape, { depth: 0.16, bevelEnabled: false }),
+    material(black),
   );
-  for (let z = -0.22; z < 2.7; z += 0.105)
-    for (let y = base + 0.16; y < top - 0.1; y += 0.105)
-      put(g, box(0.022, 0.047, 0.047, 0x555a5b, 0.008), front + 0.09, y, z);
-  put(g, box(0.028, 1.95, 0.16, 0x4b5053), front + 0.096, 1.89, -2.25);
-  put(g, box(0.04, 0.11, 0.045, black), front + 0.12, 2.7, -2.25);
+  bezel.quaternion.setFromRotationMatrix(
+    new T.Matrix4().makeBasis(
+      new T.Vector3(0, 1, 0),
+      new T.Vector3(0, 0, 1),
+      new T.Vector3(1, 0, 0),
+    ),
+  );
+  put(g, bezel, front - 0.08, (base + top) / 2, 0);
+  for (let y = base + 0.23; y < top - 0.15; y += 0.095)
+    put(g, box(0.028, 0.016, 2.92, 0x42474a, 0), front + 0.084, y, 1.24);
+  for (let z = -0.22; z < 2.72; z += 0.105)
+    put(
+      g,
+      box(0.028, 2.14, 0.017, 0x42474a, 0),
+      front + 0.085,
+      (base + top) / 2,
+      z,
+    );
+  put(g, box(0.028, 2.16, 0.19, 0x383c3e), front + 0.096, 1.89, -2.42);
+  put(g, box(0.035, 0.12, 0.035, black), front + 0.12, 2.78, -2.42);
+  put(g, box(0.03, 2.16, 0.61, 0x25292c), front + 0.098, 1.89, -1.82);
+  for (const z of [-2.13, -1.51])
+    put(g, box(0.02, 2.16, 0.016, 0x5d6366), front + 0.12, 1.89, z);
   for (let i = 0; i < 4; i++) {
-    const y = base + 0.5 + i * 0.48;
-    put(g, box(0.031, 0.3, 0.15, 0x747b7e), front + 0.098, y, -0.63);
+    const y = base + 0.43 + i * 0.39;
+    put(g, box(0.031, 0.3, 0.15, 0x747b7e), front + 0.098, y, -0.76);
     put(
       g,
       box(0.035, 0.23, 0.085, i > 1 ? 0x1b6895 : black),
       front + 0.12,
       y,
-      -0.63,
+      -0.76,
     );
   }
   const power = cyl(0.115, 0.028, steel);
   power.rotation.z = Math.PI / 2;
-  put(g, power, front + 0.11, 2.77, -1.55);
+  put(g, power, front + 0.11, 2.76, -0.78);
   const audio = cyl(0.055, 0.035, black);
   audio.rotation.z = Math.PI / 2;
-  put(g, audio, front + 0.11, 1.03, -1.04);
+  put(g, audio, front + 0.11, 2.29, -0.76);
   // Open drive cage rails and optical assembly, release tabs.
   for (const y of [0.92, 2.71])
     put(g, box(1.05, 0.075, 1.82, steel), front - 0.69, y, -1.78);

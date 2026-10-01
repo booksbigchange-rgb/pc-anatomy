@@ -22,3 +22,11 @@ The picker contains a live Three.js model. Inspection supports a removable cover
 3. Appearance/delivery: manually compare the rendered candidate with the exact Mini Tower references, including front port positions, grille, rear connectors, PSU bay, board topology, chassis thickness and open drive cage. Review screenshots before merging. After deployment, verify the deployed commit and delivered browser result separately.
 
 The Latitude 5410 replacement is not part of this candidate; existing Framework assets must not be renamed Dell.
+
+## Reference review corrections
+
+The first rendered study placed the PSU at the top, which failed comparison with the manual. The corrected candidate moves the PSU to the lower rear, raises the board and related mounts, and replaces the solid front grille field with an open geometric lattice. These changes require fresh browser screenshots. The drive cage still lacks its full hinged service door, and rear port profiles and surface fidelity remain incomplete.
+
+The reference comparison used Dell’s own Mini Tower manual, retrieved from its Origin Storage mirror when dl.dell.com returned 403. In that revision, cover/bezel drawings are on pages 8–10, PSU on pages 18–19, and board topology on page 28.
+
+Inspection now starts upright and offers Service view for the bench orientation. Rendering updates when hardware, cover, selection or camera changes, rather than continuously repainting an idle scene; static surfaces remain batched by material.

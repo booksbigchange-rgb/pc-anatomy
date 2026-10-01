@@ -19,7 +19,7 @@ const shot = async (name) => {
   console.log(`Capture ${name}`);
   await page.screenshot({
     path: `verification/optiplex/${name}.png`,
-    timeout: 15000,
+    timeout: 30000,
   });
 };
 try {
@@ -56,6 +56,7 @@ try {
   await page
     .getByRole('button', { name: 'Remove side cover', exact: true })
     .click();
+  await page.getByRole('button', { name: 'Service view', exact: true }).click();
   await page.getByRole('button', { name: 'Top', exact: true }).click();
   await shot('06-top');
   await page
@@ -104,13 +105,13 @@ try {
   };
   /** @type {Array<[string, [number,number,number], [number,number,number]]>} */
   const steps = [
-    ['motherboard', [-3.15, 0.75, 0], [2.08, 0.76, 0.5]],
-    ['cpu', [-5.2, 0.82, 2.3], [1.48, 0.93, -0.48]],
-    ['cooler', [-4.8, 1.01, -2.2], [1.48, 1.08, -0.48]],
-    ['ram', [-3.5, 1.14, 2.8], [2.91, 1.2, -0.43]],
-    ['ssd', [-2.3, 0.85, 2.8], [3.12, 0.92, 1.26]],
-    ['gpu', [-2.15, 1.27, -2.45], [1.66, 1.52, 1.27]],
-    ['psu', [-4.9, 1.2, -0.5], [1.33, 1.37, -2.08]],
+    ['motherboard', [-3.15, 0.75, 0], [2.08, 0.76, -0.7]],
+    ['cpu', [-5.2, 0.82, 2.3], [1.48, 0.93, -1.68]],
+    ['cooler', [-4.8, 1.01, -2.2], [1.48, 1.08, -1.68]],
+    ['ram', [-3.5, 1.14, 2.8], [2.91, 1.2, -1.63]],
+    ['ssd', [-2.3, 0.85, 2.8], [3.64, 0.92, -0.3]],
+    ['gpu', [-2.15, 1.27, -2.45], [1.66, 1.52, 0.07]],
+    ['psu', [-4.9, 1.2, -0.5], [1.33, 1.37, 2.05]],
   ];
   for (let i = 0; i < steps.length; i++) {
     const [id, start, target] = steps[i],

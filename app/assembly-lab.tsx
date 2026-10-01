@@ -90,7 +90,7 @@ const PARTS: Part[] = [
     id: 'psu',
     name: 'Dell 240 W Power Supply',
     icon: Zap,
-    instruction: 'Seat the power supply in the upper rear bay.',
+    instruction: 'Seat the power supply in the lower rear bay.',
     why: 'Dell specifies a 240 W PSU and proprietary board power connections. Generic modern ATX PSU choices have been removed.',
     start: [-4.9, 1.2, -0.5],
     snap: 0.32,
@@ -110,6 +110,7 @@ export default function AssemblyLab({
     installedRef = useRef<HardwareId[]>([]),
     currentRef = useRef(0);
   const [preview, setPreview] = useState(true),
+    [upright, setUpright] = useState(true),
     [closed, setClosed] = useState(false),
     [exploded, setExploded] = useState(false),
     [isolated, setIsolated] = useState(false);
@@ -122,16 +123,24 @@ export default function AssemblyLab({
   );
   const displayRef = useRef({
     preview: true,
+    upright: true,
     closed: false,
     exploded: false,
     isolated: false,
     selected: 'ssd' as HardwareId,
   });
-  const actionRef = useRef<Action | null>(null),
+  const actionRef = useRef<Action | null>('home'),
     resetRef = useRef(false);
   useEffect(() => {
-    displayRef.current = { preview, closed, exploded, isolated, selected };
-  }, [preview, closed, exploded, isolated, selected]);
+    displayRef.current = {
+      preview,
+      upright,
+      closed,
+      exploded,
+      isolated,
+      selected,
+    };
+  }, [preview, upright, closed, exploded, isolated, selected]);
   const complete = installed.length === PARTS.length,
     active = preview ? PARTS.find((p) => p.id === selected)! : PARTS[current];
   const name = (p: Part) => componentNames?.[p.id] ?? p.name;
@@ -142,6 +151,7 @@ export default function AssemblyLab({
     setInstalled([]);
     setCurrent(0);
     setPreview(false);
+    setUpright(false);
     setClosed(false);
     setExploded(false);
     setIsolated(false);
@@ -171,6 +181,9 @@ export default function AssemblyLab({
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = T.PCFSoftShadowMap;
+    renderer.shadowMap.autoUpdate = false;
+    let dirty = true,
+      previousDisplay = '';
     renderer.outputColorSpace = T.SRGBColorSpace;
     renderer.toneMapping = T.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.12;
@@ -183,7 +196,7 @@ export default function AssemblyLab({
     const key = new T.DirectionalLight(0xfff4e8, 3.5);
     key.position.set(3, 12, 5);
     key.castShadow = true;
-    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.mapSize.set(1024, 1024);
     key.shadow.camera.left = -10;
     key.shadow.camera.right = 10;
     key.shadow.camera.top = 8;
@@ -204,13 +217,15 @@ export default function AssemblyLab({
     grid.position.set(-0.7, 0.522, 0);
     scene.add(grid);
     const { group: chassis, cover } = createChassis();
-    scene.add(chassis);
+    const assembly = new T.Group();
+    scene.add(assembly);
+    assembly.add(chassis);
     const groups = new Map<HardwareId, T.Group>();
     for (const p of PARTS) {
       const g = createHardware(p.id);
       g.position.set(...MOUNTS[p.id]);
       groups.set(p.id, g);
-      scene.add(g);
+      assembly.add(g);
     }
     const guide = new T.BoxHelper(groups.get('motherboard')!, 0x70dce5);
     guide.visible = false;
@@ -254,6 +269,7 @@ export default function AssemblyLab({
     };
     const move = (e: PointerEvent) => {
       if (!dragging) return;
+      dirty = true;
       pointerAt(e);
       const target = MOUNTS[dragging];
       plane.constant = -target[1];
@@ -263,6 +279,7 @@ export default function AssemblyLab({
           .position.set(point.x + offset.x, target[1], point.z + offset.z);
     };
     const finish = (e: PointerEvent, cancelled = false) => {
+      dirty = true;
       if (dragging) {
         const id = dragging;
         dragging = null;
@@ -307,7 +324,7 @@ export default function AssemblyLab({
         const hit = ray.intersectObjects([...groups.values()], true)[0];
         if (hit) {
           let o: T.Object3D = hit.object;
-          while (o.parent && o.parent !== scene) o = o.parent;
+          while (o.parent && o.parent !== assembly) o = o.parent;
           setSelected(o.name as HardwareId);
           setFeedback(
             'Selected component. Use Explode selected or Isolate selected to inspect it.',
@@ -326,6 +343,7 @@ export default function AssemblyLab({
       const w = canvas.clientWidth,
         h = canvas.clientHeight;
       if (w && h) {
+        dirty = true;
         renderer.setSize(w, h, false);
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
@@ -339,16 +357,34 @@ export default function AssemblyLab({
       frame = requestAnimationFrame(draw);
       const d = displayRef.current,
         done = installedRef.current.length === PARTS.length;
+      const signature = JSON.stringify([
+        d,
+        installedRef.current,
+        currentRef.current,
+      ]);
+      if (signature !== previousDisplay) {
+        dirty = true;
+        previousDisplay = signature;
+      }
+      assembly.rotation.x = d.preview && d.upright ? Math.PI / 2 : 0;
+      assembly.position.set(
+        0,
+        d.preview && d.upright ? 0.55 + 350 / 120 : 0,
+        d.preview && d.upright ? -(0.58 + 154 / 120) : 0,
+      );
+      assembly.updateMatrixWorld(true);
       if (resetRef.current) {
         dragging = null;
         controls.enabled = true;
         resetRef.current = false;
       }
       if (actionRef.current) {
+        dirty = true;
         const view = actionRef.current;
         const cx = d.preview || done ? 2.5 : 0.15;
-        controls.target.set(cx, 1.1, 0);
-        if (view === 'home') camera.position.set(cx + 8.5, 12, 11);
+        controls.target.set(cx, d.preview && d.upright ? 3.4 : 1.1, 0);
+        if (view === 'home')
+          camera.position.set(cx + 8.5, d.preview && d.upright ? 7.4 : 12, 11);
         if (view === 'front') camera.position.set(14, 4.3, 0);
         if (view === 'rear') camera.position.set(-9, 4.3, 0);
         if (view === 'top') camera.position.set(cx, 17, 0.01);
@@ -387,8 +423,12 @@ export default function AssemblyLab({
       } else guide.visible = false;
       highlight.visible = d.preview && !d.closed;
       highlight.setFromObject(groups.get(d.selected)!);
-      controls.update();
-      renderer.render(scene, camera);
+      const cameraChanged = controls.update();
+      if (dirty || cameraChanged) {
+        if (dirty) renderer.shadowMap.needsUpdate = true;
+        renderer.render(scene, camera);
+        dirty = false;
+      }
     };
     draw();
     return () => {
@@ -425,6 +465,16 @@ export default function AssemblyLab({
       className={'assembly-stage' + (previewOnly ? ' assembly-preview' : '')}
     >
       <div className="assembly-view-controls">
+        {preview && (
+          <button
+            onClick={() => {
+              setUpright(!upright);
+              actionRef.current = 'home';
+            }}
+          >
+            {upright ? 'Service view' : 'Tower view'}
+          </button>
+        )}
         {!previewOnly && (
           <button
             onClick={() => {
