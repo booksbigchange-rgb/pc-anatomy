@@ -38,8 +38,8 @@ const C = {
 function mat(c: number) {
   return new T.MeshStandardMaterial({
     color: c,
-    roughness: c === C.dark ? 0.82 : 0.57,
-    metalness: c === C.steel ? 0.65 : c === C.shell ? 0.3 : 0.08,
+    roughness: c === C.dark ? 0.76 : c === C.board ? 0.72 : c === C.steel ? 0.32 : 0.48,
+    metalness: c === C.steel ? 0.82 : c === C.gold ? 0.72 : c === C.shell ? 0.24 : 0,
   });
 }
 function box(w: number, h: number, d: number, c: number, r = 0.02) {
@@ -380,6 +380,11 @@ function exterior() {
     0.015,
   );
   add(lid, screen, 0, 2.67, 0.039);
+  const glass = new T.Mesh(
+    new T.PlaneGeometry(LATITUDE_DIMENSIONS.screenWidth, LATITUDE_DIMENSIONS.screenHeight),
+    new T.MeshPhysicalMaterial({ color: 0x9eb7c5, transparent: true, opacity: 0.14, roughness: 0.12, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.08 }),
+  );
+  add(lid, glass, 0, 2.67, 0.05);
   const lens = disk(0.047, 0.024, 0x0b1216);
   lens.rotation.x = Math.PI / 2;
   add(lid, lens, 0, 4.96, 0.041);
@@ -502,17 +507,20 @@ export function buildLatitude5410() {
   );
   pcb.rotation.x = Math.PI / 2;
   board.add(pcb);
-  for (let i = 0; i < 70; i++) {
-    const x = -3.42 + (i % 14) * 0.42,
-      z = -1.14 + Math.floor(i / 14) * 0.35;
-    if (x > 1.7 && z > -0.2) continue;
-    add(
-      board,
-      box(0.1, 0.045, 0.075, i % 4 ? C.dark : C.steel, 0.007),
-      x,
-      0.052,
-      z,
-    );
+  for (const [centerX, centerZ] of [[-2.7, -1.02], [0.6, -0.9], [1.7, -1.04], [2.85, -0.95], [-2.96, 1.7]]) {
+    for (let index = 0; index < 16; index++) {
+      const x = centerX + (index % 4) * 0.095;
+      const z = centerZ + Math.floor(index / 4) * 0.11;
+      add(board, box(0.048, 0.018, 0.065, index % 3 ? 0x9b8868 : C.dark, 0.003), x, 0.022, z);
+      for (const end of [-1, 1])
+        add(board, box(0.012, 0.02, 0.065, C.steel, 0), x + end * 0.024, 0.023, z);
+    }
+    add(board, box(0.24, 0.045, 0.25, C.dark, 0.008), centerX + 0.12, 0.037, centerZ + 0.52);
+    for (let lane = 0; lane < 6; lane++) {
+      const traceX = centerX + lane * 0.036;
+      add(board, box(0.009, 0.002, 0.38, 0x397486, 0), traceX, 0.005, centerZ + 0.39);
+      add(board, box(0.2, 0.002, 0.009, 0x397486, 0), traceX + 0.1, 0.005, centerZ + 0.58);
+    }
   }
   for (const x of [-3.4, -2.05, 1.63, 3.48]) screw(board, x, 0.075, -1.15);
   const cpu = owner(new T.Group(), 'cpu');
@@ -599,7 +607,6 @@ export function buildLatitude5410() {
   text(ssd, 'M.2\nNVMe', 0.37, 0.68, 0, 0.053, 0.15);
   for (let i = 0; i < 16; i++)
     add(ssd, box(0.019, 0.016, 0.1, C.gold, 0), -0.22 + i * 0.029, 0.02, 0.98);
-  screw(ssd, 0, 0.035, -0.94);
   batch(ssd);
   serviceInterior.add(ssd);
   const wifi = owner(new T.Group(), 'wifi');
@@ -636,8 +643,11 @@ export function buildLatitude5410() {
       0.072,
     );
   const blower = new T.Group();
-  add(blower, disk(0.86, 0.16, C.dark), 2.78, 0.1, -0.55);
-  add(blower, disk(0.64, 0.023, 0x3a4045), 2.78, 0.2, -0.55);
+  add(blower, disk(0.86, 0.11, C.dark), 2.78, 0.075, -0.55);
+  const shroud = new T.Mesh(new T.RingGeometry(0.64, 0.86, 64), mat(0x454c51));
+  shroud.rotation.x = -Math.PI / 2;
+  add(blower, shroud, 2.78, 0.245, -0.55);
+  add(blower, disk(0.64, 0.023, 0x101518), 2.78, 0.14, -0.55);
   for (let i = 0; i < 43; i++) {
     const a = (i * Math.PI * 2) / 43,
       o = box(0.2, 0.04, 0.025, C.dark, 0.006);
@@ -785,14 +795,14 @@ export function buildLatitude5410() {
   inside.add(serviceDisplay);
   const empty = () => new T.Group();
   const teardownParts = [
-    step(baseCover, 0, 18, [0, 1.35, 3.2]),
-    step(battery, 24, 34, [0, 0.35, 3.15]),
-    step(ssd, 30, 46, [-1.1, 0.6, 1.5]),
-    step(wifi, 34, 50, [-1.1, 0.4, -0.4]),
-    step(ram, 42, 60, [0, 0.45, 2.3]),
-    step(speakers, 50, 68, [0, 0.25, 0.45]),
-    step(cooling, 58, 78, [0, 0.75, -0.8]),
-    step(board, 90, 100, [0, 0.65, -0.1]),
+    step(baseCover, 0, 18, [0, 1.35, 6.5]),
+    step(battery, 24, 34, [0, 0.55, 2.65]),
+    step(ssd, 30, 46, [-1.8, 0.8, 0.45]),
+    step(wifi, 34, 50, [-1.8, 0.65, -0.65]),
+    step(ram, 42, 60, [4.4, 0.8, 2.6]),
+    step(speakers, 50, 68, [0, 0.5, 2.7]),
+    step(cooling, 58, 78, [3.1, 1.3, -2.4]),
+    step(board, 90, 100, [0, 1.15, -1.1]),
     step(serviceDisplay, 90, 100, [0, -0.08, -0.2]),
   ];
   const disconnectCables: LaptopInternalCable[] = [

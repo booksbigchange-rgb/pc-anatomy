@@ -3,7 +3,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import * as T from 'three';
 await mkdir('verification/latitude',{recursive:true});
-const browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const browser=await chromium.launch({channel:process.env.ATLAS_BROWSER_CHANNEL || undefined,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 const page=await browser.newPage({viewport:{width:1800,height:1100},reducedMotion:'reduce'});
 page.setDefaultTimeout(60000);
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -36,6 +36,9 @@ try{
  assert.equal(await page.getByRole('slider',{name:'Laptop teardown progress'}).inputValue(),'0');
  await shot('06-base-cover');
  const slider=page.getByRole('slider',{name:'Laptop teardown progress'});
+ for(const progress of ['18','60','78']){
+  await slider.fill(progress);await shot('06-stage-'+progress);
+ }
  await slider.fill('100');await shot('07-board-out');
  await page.getByRole('button',{name:'Reassemble laptop',exact:true}).click();
  await page.getByRole('button',{name:'Guided lesson',exact:true}).click();
@@ -58,8 +61,8 @@ try{
    await page.getByRole('button',{name:'Reset view',exact:true}).click();
    await page.waitForTimeout(700);
    const t=step===5?49:89;const f=Math.min(1,Math.max(0,(t-72)/28));const e=f*f*(3-2*f);
-   camera.position.lerpVectors(new T.Vector3(9.2,8.4,11.8),new T.Vector3(7.6,10.8,12.6),e);
-   camera.lookAt(0,1.15,.15+e*.65);camera.updateMatrixWorld();
+   camera.position.lerpVectors(new T.Vector3(9.2,8.4,11.8),new T.Vector3(11.5,14.5,19.5),e);
+   camera.lookAt(e*.6,1.15,.15+e*1.85);camera.updateMatrixWorld();
    const p=(step===5?new T.Vector3(-3.62,1.08,2.44):new T.Vector3(1.24,1.12,-2.0)).project(camera);
    await page.mouse.click(rect.x+(p.x+1)*rect.width/2,rect.y+(1-p.y)*rect.height/2);
    await page.getByRole('button',{name:'Next →',exact:true}).waitFor();

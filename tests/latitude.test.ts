@@ -6,6 +6,29 @@ import {
   LATITUDE_DIMENSIONS,
 } from '../app/latitude-5410.ts';
 import { applyLaptopTeardown } from '../app/laptop-internals.ts';
+await test('Latitude removable modules reset exactly and expanded layout separates their footprints', () => {
+  const model = buildLatitude5410();
+  for (const id of ['ssd', 'ram', 'wifi'] as const) {
+    const home = model.parts[id].position.clone();
+    const rotation = model.parts[id].rotation.clone();
+    const fixtures = model.parts.motherboard.children.map((object) => object.position.clone());
+    applyLaptopTeardown(model.teardownParts, 18, id, 1);
+    assert.ok(model.parts[id].position.y > home.y);
+    model.parts.motherboard.children.forEach((object, index) => assert.ok(object.position.equals(fixtures[index])));
+    applyLaptopTeardown(model.teardownParts, 18, null, 0);
+    assert.ok(model.parts[id].position.equals(home));
+    assert.ok(model.parts[id].rotation.equals(rotation));
+  }
+  applyLaptopTeardown(model.teardownParts, 100, null, 0);
+  const ids = ['battery', 'ram', 'ssd', 'wifi'] as const;
+  for (let first = 0; first < ids.length; first++) {
+    for (let second = first + 1; second < ids.length; second++) {
+      const firstBounds = new T.Box3().setFromObject(model.parts[ids[first]]);
+      const secondBounds = new T.Box3().setFromObject(model.parts[ids[second]]);
+      assert.ok(firstBounds.max.x < secondBounds.min.x || secondBounds.max.x < firstBounds.min.x || firstBounds.max.z < secondBounds.min.z || secondBounds.max.z < firstBounds.min.z);
+    }
+  }
+});
 await test('Latitude exterior closes over the deck and preserves Dell dimensions', () => {
   const m = buildLatitude5410();
   const bounds = new T.Box3().setFromObject(m.closed);

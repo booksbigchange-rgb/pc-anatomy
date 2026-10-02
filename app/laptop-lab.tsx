@@ -2158,12 +2158,12 @@ function LaptopScene({
 
         camera.position.lerpVectors(
           new THREE.Vector3(9.2, 8.4, 11.8),
-          new THREE.Vector3(7.6, 10.8, 12.6),
+          model === 'latitude' ? new THREE.Vector3(11.5, 14.5, 19.5) : new THREE.Vector3(7.6, 10.8, 12.6),
           easedService,
         );
         controls.target.lerpVectors(
           new THREE.Vector3(0, 1.15, 0.15),
-          new THREE.Vector3(0, 1.15, 0.8),
+          model === 'latitude' ? new THREE.Vector3(0.6, 1.15, 2) : new THREE.Vector3(0, 1.15, 0.8),
           easedService,
         );
       }
