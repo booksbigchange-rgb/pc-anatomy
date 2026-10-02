@@ -2061,8 +2061,7 @@ function LaptopScene({
           (item.userData.highlightColor as number | undefined) ?? 0x1d5d66;
         material.emissive.setHex(target ? highlightColor : 0x000000);
         material.emissiveIntensity = target ? 0.92 : 0;
-        const pulse = 1 + Math.sin(performance.now() * 0.006) * 0.05;
-        item.scale.setScalar(target ? pulse : 1);
+        item.scale.setScalar(target ? 1.025 : 1);
       }
 
       for (const [id, cable] of connectionCables)
@@ -2202,6 +2201,7 @@ function LaptopScene({
         explodeRef.current,
         localPartRef.current,
         localProgressRef.current,
+        connectionTaskRef.current,
         connectedRef.current.join(','),
         disconnectedInternalCablesRef.current.join(','),
         ...camera.position.toArray(),
@@ -2210,7 +2210,7 @@ function LaptopScene({
         canvas.width,
         canvas.height,
       ].join('|');
-      if (signature !== lastRenderSignature || connectionMode) {
+      if (signature !== lastRenderSignature) {
         renderer.render(scene, camera);
         lastRenderSignature = signature;
       }
