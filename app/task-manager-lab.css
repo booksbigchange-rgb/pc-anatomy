@@ -1,4 +1,6 @@
 .tm-lab {
+  height: 100dvh;
+  overflow-y: auto;
   min-height: 100dvh;
   background: #f2f6f3;
   color: #193b31;
@@ -218,9 +220,25 @@
   border-radius: 8px;
 }
 .tm-main {
+  display: flex;
+  flex-direction: column;
   padding: 30px;
   min-width: 0;
 }
+.tm-heading { order: 0; }
+.tm-resource-grid { order: 1; }
+.tm-graph-card { order: 2; }
+.tm-pressure { order: 3; }
+.tm-challenge { order: 4; }
+.tm-feedback { order: 5; }
+.tm-processes { order: 6; }
+.tm-apps { order: 7; }
+.tm-resource .tm-chart { height: 46px; margin: 8px 0; }
+.tm-monitor-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; justify-content: flex-end; }
+.tm-pause { display: flex; align-items: center; gap: 6px; border: 1px solid #bdd5c7; border-radius: 8px; background: white; color: #22533e; padding: 9px 12px; font-size: 12px !important; }
+.tm-process-search { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 16px; font-size: 12px; color: #46675d; }
+.tm-process-search input { min-width: 0; max-width: 100%; border: 1px solid #bdd5c7; border-radius: 8px; padding: 9px 12px; font: inherit; background: #fafcf9; color: #193b31; }
+.tm-process-search input:focus-visible { outline: 3px solid #387dcb; outline-offset: 3px; }
 .tm-heading {
   display: flex;
   justify-content: space-between;

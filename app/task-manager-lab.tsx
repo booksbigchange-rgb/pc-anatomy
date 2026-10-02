@@ -8,6 +8,7 @@ import {
   HardDrive,
   MemoryStick,
   Network,
+  Pause,
   Play,
   Power,
   RotateCcw,
@@ -240,11 +241,13 @@ export default function TaskManagerLab({
   const [state, dispatch] = useReducer(reducer, device, initial);
   const [resource, setResource] = useState<Resource>('cpu');
   const [sort, setSort] = useState<Resource>('cpu');
+  const [paused, setPaused] = useState(false);
+  const [search, setSearch] = useState('');
   useEffect(() => {
-    if (!state.powered) return;
+    if (!state.powered || paused) return;
     const timer = window.setInterval(() => dispatch({ type: 'tick' }), 1000);
     return () => window.clearInterval(timer);
-  }, [state.powered]);
+  }, [state.powered, paused]);
   const current = sample(
     state.processes,
     state.device,
@@ -254,7 +257,7 @@ export default function TaskManagerLab({
   const profile = PROFILES[state.device];
   const selected = RESOURCES[resource];
   const mission = state.mission === null ? null : MISSIONS[state.mission];
-  const rows = [...current.rows].sort(
+  const rows = current.rows.filter((row) => APPS[row.app].name.toLowerCase().includes(search.trim().toLowerCase())).sort(
     (a, b) => b[sort] - a[sort] || a.id - b.id,
   );
   return (
@@ -314,6 +317,8 @@ export default function TaskManagerLab({
                 className={state.mission === index ? 'active' : ''}
                 onClick={() => {
                   dispatch({ type: 'mission', index });
+                  setSearch('');
+                  setPaused(false);
                   setResource(item.id);
                   setSort(item.id);
                 }}
@@ -337,7 +342,11 @@ export default function TaskManagerLab({
           )}
           <button
             className="tm-reset"
-            onClick={() => dispatch({ type: 'reset' })}
+            onClick={() => {
+              dispatch({ type: 'reset' });
+              setSearch('');
+              setPaused(false);
+            }}
           >
             <RotateCcw size={14} /> Reset chapter & XP
           </button>
@@ -352,9 +361,15 @@ export default function TaskManagerLab({
               <p className="tm-eyebrow">{profile.name.toUpperCase()}</p>
               <h2>Task Manager</h2>
             </div>
-            <span className={'tm-live' + (state.powered ? ' on' : '')}>
-              {state.powered ? '● Running simulation' : '○ Powered off'}
-            </span>
+            <div className="tm-monitor-controls">
+              <span className={'tm-live' + (state.powered ? ' on' : '')}>
+                {state.powered ? paused ? '○ Graphs paused' : '● Running simulation' : '○ Powered off'}
+              </span>
+              <button className="tm-pause" disabled={!state.powered} aria-pressed={paused} onClick={() => setPaused(!paused)}>
+                {paused ? <Play size={14} /> : <Pause size={14} />}
+                {paused ? 'Resume graphs' : 'Pause graphs'}
+              </button>
+            </div>
           </div>
           <div className="tm-resource-grid">
             {(Object.keys(RESOURCES) as Resource[]).map((key) => {
@@ -386,6 +401,7 @@ export default function TaskManagerLab({
                   <div className="tm-meter">
                     <i style={{ width: `${current[key]}%` }} />
                   </div>
+                  <Chart history={state.history} resource={key} current={current[key]} />
                   <small>
                     {key === 'memory'
                       ? `${(current.memoryMB / 1024).toFixed(1)} / ${profile.memory / 1024} GB needed`
@@ -416,7 +432,7 @@ export default function TaskManagerLab({
               <span>
                 {resource === 'memory' ? '100% of RAM needed' : '100% busy'}
               </span>
-              <span>Updates every second</span>
+              <span>{!state.powered ? 'Computer off' : paused ? 'Paused · app changes still update readings' : 'Updates every second'}</span>
             </div>
             <Chart
               history={state.history}
@@ -469,7 +485,7 @@ export default function TaskManagerLab({
           <section className="tm-apps" aria-label="Open a virtual app">
             <div className="tm-card-title">
               <h3>
-                01 <span>Open an app</span>
+                <span>Open an app</span>
               </h3>
               <span>Choose a job for your computer</span>
             </div>
@@ -507,10 +523,15 @@ export default function TaskManagerLab({
           <section className="tm-processes">
             <div className="tm-card-title">
               <h3>
-                02 <span>Find the busy process</span>
+                <span>Find the busy process</span>
               </h3>
               <span>Click a column to sort highest first</span>
             </div>
+            <label className="tm-process-search">
+              Find a process
+              <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Type an app name" />
+              <span>{rows.length} of {current.rows.length} processes</span>
+            </label>
             <div className="tm-table-wrap">
               <table>
                 <caption>
@@ -571,6 +592,7 @@ export default function TaskManagerLab({
                   The virtual computer is off. Turn it on to start exploring.
                 </p>
               )}
+              {state.powered && rows.length === 0 && <p className="tm-off">No matching processes. Clear the search to show all apps.</p>}
             </div>
             <p className="tm-table-note">
               A process is a running program or job. End only the virtual apps
