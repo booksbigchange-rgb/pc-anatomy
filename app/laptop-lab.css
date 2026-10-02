@@ -1058,3 +1058,5 @@
   .laptop-detail { position: static; grid-column: 1 / -1; grid-row: 3; width: auto; max-height: none; border-radius: 0; }
 }
 
+
+.laptop-header-actions select { color: #dbe9ed; background: #172126; border: 1px solid #34494f; border-radius: 8px; padding: 8px; font: inherit; max-width: 180px; }

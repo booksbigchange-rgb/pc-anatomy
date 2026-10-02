@@ -1,0 +1,55 @@
+import {chromium} from 'playwright';
+import {mkdir,writeFile} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+await mkdir('verification/latitude',{recursive:true});
+const browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const page=await browser.newPage({viewport:{width:1800,height:1100},reducedMotion:'reduce'});
+page.setDefaultTimeout(20000);
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+const requests=[];page.on('request',r=>requests.push(r.url()));
+const shot=async(name)=>{await page.waitForTimeout(800);console.log('Capture '+name);await page.screenshot({path:`verification/latitude/${name}.png`,timeout:30000});};
+try{
+ await page.goto(process.env.ATLAS_TEST_URL??'http://127.0.0.1:5173/');
+ await page.getByRole('button',{name:'Laptop Lab',exact:true}).click();
+ assert.equal(await page.getByRole('combobox',{name:'Laptop model'}).inputValue(),'latitude');
+ await shot('01-open-exterior');
+ await page.getByRole('button',{name:'Open exterior',exact:true}).click();
+ await shot('02-closed-exterior');
+ await page.getByRole('button',{name:'Closed exterior',exact:true}).click();
+ await page.getByRole('button',{name:'Inside',exact:true}).click();
+ await shot('03-service-layout');
+ for(const name of ['SSD','RAM','Wi-Fi']){
+  await page.locator('.laptop-part-list button').filter({hasText:name}).click();
+  await page.getByRole('button',{name:'Explode part',exact:true}).click();
+  await shot('04-local-'+name);
+  assert.ok(await page.getByRole('button',{name:'Reset part',exact:true}).isEnabled());
+  await page.getByRole('button',{name:'Isolate',exact:true}).click();
+  await shot('05-isolated-'+name);
+  await page.getByRole('button',{name:'Show all',exact:true}).click();
+  await page.getByRole('button',{name:'Reset part',exact:true}).click();
+ }
+ await page.getByRole('button',{name:'Reassemble laptop',exact:true}).click();
+ assert.equal(await page.getByRole('slider',{name:'Laptop teardown progress'}).inputValue(),'0');
+ await shot('06-base-cover');
+ const slider=page.getByRole('slider',{name:'Laptop teardown progress'});
+ await slider.fill('100');await shot('07-board-out');
+ await page.getByRole('button',{name:'Reassemble laptop',exact:true}).click();
+ await page.getByRole('button',{name:'Guided lesson',exact:true}).click();
+ await page.getByRole('button',{name:'Next →',exact:true}).click();
+ assert.ok(await page.getByRole('heading',{name:'Remove the underside base cover',exact:true}).count());
+ await shot('08-guided-cover');
+ await page.getByRole('button',{name:'Next →',exact:true}).click();
+ assert.equal(await page.getByRole('button',{name:'Complete action first',exact:true}).isEnabled(),false);
+ await shot('09-cable-gate');
+ await page.getByRole('button',{name:'Troubleshoot',exact:true}).click();
+ await shot('10-troubleshooting');
+ await page.getByRole('button',{name:'Knowledge check',exact:true}).click();
+ await shot('11-knowledge-check');
+ assert.ok(!requests.some(u=>u.includes('/models/')),'Latitude must not load Framework geometry');
+ await page.getByRole('combobox',{name:'Laptop model'}).selectOption('framework');
+ await shot('12-framework-retained');
+ await page.getByRole('combobox',{name:'Laptop model'}).selectOption('latitude');
+ await shot('13-latitude-restored');
+ assert.deepEqual(errors,[]);
+ await writeFile('verification/latitude/result.json',JSON.stringify({passed:true,errors,checks:['default Dell model','closed exterior','underside service','SSD/RAM/WiFi explode isolate reset','reassemble','full teardown','guided cover','cable safety gate','troubleshooting','knowledge check','Framework retained','no substituted CAD']},null,2));
+}catch(e){await shot('failure').catch(()=>{});await writeFile('verification/latitude/failure.txt',String(e.stack));throw e;}finally{await browser.close();}

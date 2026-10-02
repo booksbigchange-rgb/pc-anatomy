@@ -1,9 +1,10 @@
 'use client';
 import AcademyLogo from './academy-logo';
+import { buildLatitude5410, latitudeTeardownStage } from './latitude-5410';
 import { visiblePartHit } from './laptop-picking';
 import { applyServiceSurface } from './laptop-service-surfaces';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
   ArrowLeft,
@@ -1168,13 +1169,61 @@ function addEnvironment(scene: THREE.Scene) {
   scene.add(grid);
 }
 
-export default function LaptopLab({
+function LaptopScene({
   onBack,
   onOpenTaskManager,
+  model,
+  onModelChange,
 }: {
   onBack: () => void;
   onOpenTaskManager: () => void;
+  model: 'latitude' | 'framework';
+  onModelChange: (model: 'latitude' | 'framework') => void;
 }) {
+  const LESSON_STEPS =
+    model === 'latitude'
+      ? LAPTOP_LESSON_STEPS.map((step, index) =>
+          index === 1
+            ? {
+                ...step,
+                title: 'Remove the underside base cover',
+                action:
+                  'Turn the powered-off laptop over. Remove its base cover to expose the service layout; the keyboard stays attached.',
+                notice:
+                  'The Latitude 5410 uses eight captive base-cover screws.',
+              }
+            : index === 8
+              ? {
+                  ...step,
+                  action:
+                    'Follow the blower fan and heat pipes to the processor cold plate.',
+                }
+              : index === 9
+                ? {
+                    ...step,
+                    action:
+                      'Inspect the soldered processor package. It stays attached to the system board.',
+                    notice:
+                      'This laptop CPU is soldered to the board; it is not a removable desktop processor.',
+                  }
+                : step,
+        )
+      : LAPTOP_LESSON_STEPS;
+  const CONNECTIONS = useMemo(
+    () =>
+      model === 'latitude'
+        ? CONNECTION_TASKS.map((task, i) => ({
+            ...task,
+            instruction:
+              i === 0
+                ? 'Connect the charger to the round DC-in jack at the rear of the left edge.'
+                : i === 2
+                  ? 'Connect the display to the HDMI socket on the right edge.'
+                  : task.instruction,
+          }))
+        : CONNECTION_TASKS,
+    [model],
+  );
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const selectedRef = useRef<LaptopPartId>('display');
   const viewRef = useRef<LaptopView>('outside');
@@ -1263,12 +1312,12 @@ export default function LaptopLab({
   const visibleParts = PARTS.filter((part) => part.view === view);
   const selectedPart =
     PARTS.find((part) => part.id === selected) ?? visibleParts[0];
-  const lessonStep = LAPTOP_LESSON_STEPS[lessonIndex] ?? LAPTOP_LESSON_STEPS[0];
+  const lessonStep = LESSON_STEPS[lessonIndex] ?? LESSON_STEPS[0];
   const lessonStepComplete =
     !lessonStep.requiredCable ||
     disconnectedInternalCables.includes(lessonStep.requiredCable);
-  const currentConnection = CONNECTION_TASKS[connectionTask];
-  const allConnectionsComplete = connected.length === CONNECTION_TASKS.length;
+  const currentConnection = CONNECTIONS[connectionTask];
+  const allConnectionsComplete = connected.length === CONNECTIONS.length;
   const currentTroubleshooting =
     LAPTOP_TROUBLESHOOTING_SCENARIOS[troubleshootingScenario] ??
     LAPTOP_TROUBLESHOOTING_SCENARIOS[0];
@@ -1291,7 +1340,10 @@ export default function LaptopLab({
       assessmentAnswers[question.id] &&
       assessmentAnswers[question.id] !== question.answer,
   );
-  const teardownStage = laptopTeardownStage(explode);
+  const teardownStage =
+    model === 'latitude'
+      ? latitudeTeardownStage(explode)
+      : laptopTeardownStage(explode);
 
   useEffect(() => {
     selectedRef.current = selected;
@@ -1425,7 +1477,7 @@ export default function LaptopLab({
 
     addEnvironment(scene);
 
-    const laptop = buildLaptop();
+    const laptop = model === 'latitude' ? buildLatitude5410() : buildLaptop();
     for (const cable of laptop.disconnectCables)
       cable.object.userData.laptopCable = cable.id;
     scene.add(laptop.root);
@@ -1435,344 +1487,361 @@ export default function LaptopLab({
     scene.add(realisticLaptop);
 
     let disposed = false;
-    const gltfLoader = new GLTFLoader();
-    // Replace only removable visuals. Their existing parent groups retain all
-    // home transforms, teardown ownership, picking, focus and reset behavior.
-    for (const id of ['ssd', 'ram', 'wifi', 'cooling'] as const) {
+    let lastRenderSignature = '';
+    if (model === 'latitude') {
+      if ('closed' in laptop) realisticLaptop.add(laptop.closed);
+      queueMicrotask(() => {
+        if (!disposed) setRealisticLoaded(true);
+      });
+    } else {
+      const gltfLoader = new GLTFLoader();
+      // Replace only removable visuals. Their existing parent groups retain all
+      // home transforms, teardown ownership, picking, focus and reset behavior.
+      for (const id of ['ssd', 'ram', 'wifi', 'cooling'] as const) {
+        gltfLoader.load(
+          `${import.meta.env.BASE_URL}models/service-realistic/${id}.glb`,
+          (gltf) => {
+            if (disposed) return;
+            lastRenderSignature = '';
+            const mount = laptop.parts[id];
+            gltf.scene.traverse((object) => {
+              if (!(object instanceof THREE.Mesh)) return;
+              object.castShadow = true;
+              object.receiveShadow = true;
+            });
+            for (const child of mount.children) child.visible = false;
+            mount.add(gltf.scene);
+          },
+          undefined,
+          () => {
+            /* Keep the existing service model if an asset cannot load. */
+          },
+        );
+      }
       gltfLoader.load(
-        `${import.meta.env.BASE_URL}models/service-realistic/${id}.glb`,
+        `${import.meta.env.BASE_URL}models/framework-laptop-13.glb`,
         (gltf) => {
           if (disposed) return;
-          const mount = laptop.parts[id];
-          gltf.scene.traverse((object) => {
-            if (!(object instanceof THREE.Mesh)) return;
-            object.castShadow = true;
-            object.receiveShadow = true;
-          });
-          for (const child of mount.children) child.visible = false;
-          mount.add(gltf.scene);
-        },
-        undefined,
-        () => {
-          /* Keep the existing service model if an asset cannot load. */
-        },
-      );
-    }
-    gltfLoader.load(
-      `${import.meta.env.BASE_URL}models/framework-laptop-13.glb`,
-      (gltf) => {
-        if (disposed) return;
-        const model = gltf.scene;
-        model.traverse((object) => {
-          if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
-          const item = object as THREE.Mesh;
-          item.castShadow = true;
-          item.receiveShadow = true;
-          item.material = new THREE.MeshPhysicalMaterial({
-            color: 0xaeb7bc,
-            roughness: 0.27,
-            metalness: 0.78,
-            clearcoat: 0.1,
-            clearcoatRoughness: 0.24,
-            envMapIntensity: 1.22,
-            anisotropy: 0.38,
-            anisotropyRotation: Math.PI / 2,
-          });
-        });
-        model.scale.setScalar(25.5);
-        model.position.set(0, 0.74, 0.05);
-        realisticLaptop.add(model);
-        setRealisticLoaded(true);
-      },
-      undefined,
-      () => {
-        if (!disposed) {
-          realisticRef.current = false;
-          setRealisticExterior(false);
-          setRealisticLoaded(false);
-        }
-      },
-    );
-
-    const loadOpenExteriorPart = (
-      file: string,
-      mount: THREE.Group,
-      fallback: THREE.Object3D,
-      position: [number, number, number],
-      rotation: [number, number, number],
-      color: number,
-      roughness: number,
-      metalness: number,
-    ) => {
-      gltfLoader.load(
-        `${import.meta.env.BASE_URL}models/${file}.glb`,
-        (gltf) => {
-          if (disposed) return;
+          lastRenderSignature = '';
           const model = gltf.scene;
-          model.scale.setScalar(25.5);
-          model.position.set(...position);
-          model.rotation.set(...rotation);
           model.traverse((object) => {
             if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
             const item = object as THREE.Mesh;
             item.castShadow = true;
             item.receiveShadow = true;
             item.material = new THREE.MeshPhysicalMaterial({
-              color,
-              roughness,
-              metalness,
-              clearcoat: metalness > 0.5 ? 0.1 : 0.02,
-              clearcoatRoughness: 0.25,
-              envMapIntensity: 0.28,
-              anisotropy: metalness > 0.5 ? 0.34 : 0,
+              color: 0xaeb7bc,
+              roughness: 0.27,
+              metalness: 0.78,
+              clearcoat: 0.1,
+              clearcoatRoughness: 0.24,
+              envMapIntensity: 1.22,
+              anisotropy: 0.38,
               anisotropyRotation: Math.PI / 2,
             });
           });
-          fallback.visible = false;
-          mount.add(model);
+          model.scale.setScalar(25.5);
+          model.position.set(0, 0.74, 0.05);
+          realisticLaptop.add(model);
+          setRealisticLoaded(true);
         },
         undefined,
         () => {
-          // The procedural shell remains visible if the extracted CAD piece
-          // has not been generated yet or fails to load.
+          if (!disposed) {
+            realisticRef.current = false;
+            setRealisticExterior(false);
+            setRealisticLoaded(false);
+          }
         },
       );
-    };
 
-    // These shells were extracted from the same pinned official Framework
-    // assembly used by the closed CAD reference. They give the interactive
-    // open laptop real input-cover and display-frame geometry.
-    loadOpenExteriorPart(
-      'framework-laptop-13-input-cover-refined',
-      laptop.inputCoverCadMount,
-      laptop.deckFallback,
-      // Extracted CAD keeps its original 0..228.98 mm depth axis. Centre it
-      // on the chassis and place its top surface at the interactive deck.
-      [0, 1.067, -2.92],
-      [0, 0, 0],
-      0x87929b,
-      0.46,
-      0.62,
-    );
-    loadOpenExteriorPart(
-      'framework-laptop-13-input-cover-refined',
-      laptop.serviceInputCoverCadMount,
-      laptop.serviceInputCoverFallback,
-      [0, -0.003, -2.92],
-      [0, 0, 0],
-      0x87929b,
-      0.46,
-      0.62,
-    );
-    loadOpenExteriorPart(
-      'framework-laptop-13-top-cover-refined',
-      laptop.displayTopCoverCadMount,
-      laptop.lidFrameFallback,
-      // Source Z becomes local display Y after the -90° X rotation, so the
-      // official 228.98 mm shell already rises from hinge to lid top.
-      [0, 0, 0],
-      [-Math.PI / 2, 0, 0],
-      0xaeb7bc,
-      0.25,
-      0.8,
-    );
-    loadOpenExteriorPart(
-      'framework-laptop-13-display-bezel-refined',
-      laptop.displayBezelCadMount,
-      laptop.bezelFallback,
-      // The bezel starts ~12.5 mm above the hinge in the source CAD and
-      // reaches the real lid top. A small Z offset puts it just in front of
-      // the rear shell while leaving room for the screen plane.
-      [0, 0, 0.12],
-      [-Math.PI / 2, 0, 0],
-      0x171c1f,
-      0.44,
-      0.12,
-    );
+      const loadOpenExteriorPart = (
+        file: string,
+        mount: THREE.Group,
+        fallback: THREE.Object3D,
+        position: [number, number, number],
+        rotation: [number, number, number],
+        color: number,
+        roughness: number,
+        metalness: number,
+      ) => {
+        gltfLoader.load(
+          `${import.meta.env.BASE_URL}models/${file}.glb`,
+          (gltf) => {
+            if (disposed) return;
+            lastRenderSignature = '';
+            const model = gltf.scene;
+            model.scale.setScalar(25.5);
+            model.position.set(...position);
+            model.rotation.set(...rotation);
+            model.traverse((object) => {
+              if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh)
+                return;
+              const item = object as THREE.Mesh;
+              item.castShadow = true;
+              item.receiveShadow = true;
+              item.material = new THREE.MeshPhysicalMaterial({
+                color,
+                roughness,
+                metalness,
+                clearcoat: metalness > 0.5 ? 0.1 : 0.02,
+                clearcoatRoughness: 0.25,
+                envMapIntensity: 0.28,
+                anisotropy: metalness > 0.5 ? 0.34 : 0,
+                anisotropyRotation: Math.PI / 2,
+              });
+            });
+            fallback.visible = false;
+            mount.add(model);
+          },
+          undefined,
+          () => {
+            // The procedural shell remains visible if the extracted CAD piece
+            // has not been generated yet or fails to load.
+          },
+        );
+      };
 
-    const loadFrameworkServicePart = (
-      file: string,
-      mount: THREE.Group,
-      position: [number, number, number],
-      rotation: [number, number, number],
-      color: number,
-      roughness: number,
-      metalness: number,
-    ) => {
+      // These shells were extracted from the same pinned official Framework
+      // assembly used by the closed CAD reference. They give the interactive
+      // open laptop real input-cover and display-frame geometry.
+      loadOpenExteriorPart(
+        'framework-laptop-13-input-cover-refined',
+        laptop.inputCoverCadMount,
+        laptop.deckFallback,
+        // Extracted CAD keeps its original 0..228.98 mm depth axis. Centre it
+        // on the chassis and place its top surface at the interactive deck.
+        [0, 1.067, -2.92],
+        [0, 0, 0],
+        0x87929b,
+        0.46,
+        0.62,
+      );
+      loadOpenExteriorPart(
+        'framework-laptop-13-input-cover-refined',
+        laptop.serviceInputCoverCadMount,
+        laptop.serviceInputCoverFallback,
+        [0, -0.003, -2.92],
+        [0, 0, 0],
+        0x87929b,
+        0.46,
+        0.62,
+      );
+      loadOpenExteriorPart(
+        'framework-laptop-13-top-cover-refined',
+        laptop.displayTopCoverCadMount,
+        laptop.lidFrameFallback,
+        // Source Z becomes local display Y after the -90° X rotation, so the
+        // official 228.98 mm shell already rises from hinge to lid top.
+        [0, 0, 0],
+        [-Math.PI / 2, 0, 0],
+        0xaeb7bc,
+        0.25,
+        0.8,
+      );
+      loadOpenExteriorPart(
+        'framework-laptop-13-display-bezel-refined',
+        laptop.displayBezelCadMount,
+        laptop.bezelFallback,
+        // The bezel starts ~12.5 mm above the hinge in the source CAD and
+        // reaches the real lid top. A small Z offset puts it just in front of
+        // the rear shell while leaving room for the screen plane.
+        [0, 0, 0.12],
+        [-Math.PI / 2, 0, 0],
+        0x171c1f,
+        0.44,
+        0.12,
+      );
+
+      const loadFrameworkServicePart = (
+        file: string,
+        mount: THREE.Group,
+        position: [number, number, number],
+        rotation: [number, number, number],
+        color: number,
+        roughness: number,
+        metalness: number,
+      ) => {
+        gltfLoader.load(
+          `${import.meta.env.BASE_URL}models/framework-service/${file}.glb`,
+          (gltf) => {
+            if (disposed) return;
+            lastRenderSignature = '';
+            const model = gltf.scene;
+            model.scale.setScalar(25.5);
+            model.position.set(...position);
+            model.rotation.set(...rotation);
+            model.traverse((object) => {
+              if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh)
+                return;
+              const item = object as THREE.Mesh;
+              item.castShadow = true;
+              item.receiveShadow = true;
+              item.material = new THREE.MeshStandardMaterial({
+                color,
+                roughness,
+                metalness,
+              });
+            });
+            mount.add(model);
+          },
+          undefined,
+          () => {
+            // Keep the rest of Laptop Anatomy functional if a candidate asset
+            // fails to load; service assets are visual accuracy upgrades.
+          },
+        );
+      };
+
+      loadFrameworkServicePart(
+        'display-assembly',
+        laptop.serviceDisplayMount,
+        // The CAD includes the lower cable/bracket region, so centre it lower
+        // than the visible lid. This aligns the top edge with the front bezel
+        // and lets the extra service geometry extend naturally into the hinge.
+        [0, 2.32, 0],
+        [-Math.PI / 2, 0, 0],
+        0xaeb7bd,
+        0.34,
+        0.5,
+      );
+      loadFrameworkServicePart(
+        'hinge-left',
+        laptop.serviceHingeLeft,
+        [-2.82, 0.08, 0.02],
+        [-Math.PI / 2, 0, 0],
+        0x717b81,
+        0.3,
+        0.62,
+      );
+      loadFrameworkServicePart(
+        'hinge-right',
+        laptop.serviceHingeRight,
+        [2.82, 0.08, 0.02],
+        [-Math.PI / 2, Math.PI, 0],
+        0x717b81,
+        0.3,
+        0.62,
+      );
+      loadFrameworkServicePart(
+        'webcam',
+        laptop.serviceWebcam,
+        [0, 4.94, 0.16],
+        [-Math.PI / 2, 0, 0],
+        0x252c30,
+        0.42,
+        0.18,
+      );
+
       gltfLoader.load(
-        `${import.meta.env.BASE_URL}models/framework-service/${file}.glb`,
+        `${import.meta.env.BASE_URL}models/framework-laptop-13-battery.glb`,
         (gltf) => {
           if (disposed) return;
-          const model = gltf.scene;
-          model.scale.setScalar(25.5);
-          model.position.set(...position);
-          model.rotation.set(...rotation);
-          model.traverse((object) => {
+          lastRenderSignature = '';
+
+          // Replace the simplified fallback battery with Framework's official
+          // CC BY 4.0 battery CAD, converted to a local web GLB.
+          for (const child of laptop.batteryMount.children)
+            child.visible = false;
+
+          const batteryModel = gltf.scene;
+          batteryModel.scale.setScalar(25.5);
+          batteryModel.position.set(0, -0.1, 0);
+          batteryModel.traverse((object) => {
             if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
             const item = object as THREE.Mesh;
             item.castShadow = true;
             item.receiveShadow = true;
-            item.material = new THREE.MeshStandardMaterial({
-              color,
-              roughness,
-              metalness,
-            });
+            applyServiceSurface(item, 'battery');
           });
-          mount.add(model);
-        },
-        undefined,
-        () => {
-          // Keep the rest of Laptop Anatomy functional if a candidate asset
-          // fails to load; service assets are visual accuracy upgrades.
+          laptop.batteryMount.add(batteryModel);
         },
       );
-    };
-
-    loadFrameworkServicePart(
-      'display-assembly',
-      laptop.serviceDisplayMount,
-      // The CAD includes the lower cable/bracket region, so centre it lower
-      // than the visible lid. This aligns the top edge with the front bezel
-      // and lets the extra service geometry extend naturally into the hinge.
-      [0, 2.32, 0],
-      [-Math.PI / 2, 0, 0],
-      0xaeb7bd,
-      0.34,
-      0.5,
-    );
-    loadFrameworkServicePart(
-      'hinge-left',
-      laptop.serviceHingeLeft,
-      [-2.82, 0.08, 0.02],
-      [-Math.PI / 2, 0, 0],
-      0x717b81,
-      0.3,
-      0.62,
-    );
-    loadFrameworkServicePart(
-      'hinge-right',
-      laptop.serviceHingeRight,
-      [2.82, 0.08, 0.02],
-      [-Math.PI / 2, Math.PI, 0],
-      0x717b81,
-      0.3,
-      0.62,
-    );
-    loadFrameworkServicePart(
-      'webcam',
-      laptop.serviceWebcam,
-      [0, 4.94, 0.16],
-      [-Math.PI / 2, 0, 0],
-      0x252c30,
-      0.42,
-      0.18,
-    );
-
-    gltfLoader.load(
-      `${import.meta.env.BASE_URL}models/framework-laptop-13-battery.glb`,
-      (gltf) => {
-        if (disposed) return;
-
-        // Replace the simplified fallback battery with Framework's official
-        // CC BY 4.0 battery CAD, converted to a local web GLB.
-        for (const child of laptop.batteryMount.children) child.visible = false;
-
-        const batteryModel = gltf.scene;
-        batteryModel.scale.setScalar(25.5);
-        batteryModel.position.set(0, -0.1, 0);
-        batteryModel.traverse((object) => {
-          if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
-          const item = object as THREE.Mesh;
-          item.castShadow = true;
-          item.receiveShadow = true;
-          applyServiceSurface(item, 'battery');
-        });
-        laptop.batteryMount.add(batteryModel);
-      },
-    );
-
-    gltfLoader.load(
-      `${import.meta.env.BASE_URL}models/framework-laptop-13-mainboard.glb`,
-      (gltf) => {
-        if (disposed) return;
-
-        // Replace only the fallback PCB silhouette. The educational component
-        // population stays on top, so students keep recognizable chips,
-        // sockets and connectors while the board perimeter comes from
-        // Framework's official 2D mechanical CAD.
-        for (const child of laptop.motherboardShell.children)
-          child.visible = false;
-
-        const boardModel = gltf.scene;
-        boardModel.scale.setScalar(25.5);
-        boardModel.position.set(0, 0, 0);
-        boardModel.traverse((object) => {
-          if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
-          const item = object as THREE.Mesh;
-          item.castShadow = true;
-          item.receiveShadow = true;
-          applyServiceSurface(item, 'board');
-        });
-        laptop.motherboardShell.add(boardModel);
-      },
-      undefined,
-      () => {
-        // Keep the detailed procedural fallback if the CAD-derived candidate
-        // is unavailable or fails validation.
-      },
-    );
-
-    const replaceBoardConnector = (
-      role: string,
-      file: string,
-      color: number,
-      rotationY = 0,
-    ) => {
-      let mount: THREE.Object3D | null = null;
-      laptop.motherboardMount.traverse((object) => {
-        if (!mount && object.userData.connectorRole === role) mount = object;
-      });
-      if (!mount) return;
 
       gltfLoader.load(
-        `${import.meta.env.BASE_URL}models/kicad/${file}.glb`,
+        `${import.meta.env.BASE_URL}models/framework-laptop-13-mainboard.glb`,
         (gltf) => {
-          if (disposed || !mount) return;
+          if (disposed) return;
+          lastRenderSignature = '';
 
-          // Keep the procedural teaching connector as a fallback, but hide it
-          // once the pinned KiCad geometry has loaded successfully.
-          for (const child of mount.children) child.visible = false;
+          // Replace only the fallback PCB silhouette. The educational component
+          // population stays on top, so students keep recognizable chips,
+          // sockets and connectors while the board perimeter comes from
+          // Framework's official 2D mechanical CAD.
+          for (const child of laptop.motherboardShell.children)
+            child.visible = false;
 
-          const model = gltf.scene;
-          model.scale.setScalar(25.5);
-          model.rotation.y = rotationY;
-          model.traverse((object) => {
+          const boardModel = gltf.scene;
+          boardModel.scale.setScalar(25.5);
+          boardModel.position.set(0, 0, 0);
+          boardModel.traverse((object) => {
             if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
             const item = object as THREE.Mesh;
             item.castShadow = true;
             item.receiveShadow = true;
-            item.material = new THREE.MeshStandardMaterial({
-              color,
-              roughness: 0.36,
-              metalness: 0.28,
-            });
+            applyServiceSurface(item, 'board');
           });
-          mount.add(model);
+          laptop.motherboardShell.add(boardModel);
         },
         undefined,
         () => {
-          // Local converted asset missing: retain the procedural fallback.
+          // Keep the detailed procedural fallback if the CAD-derived candidate
+          // is unavailable or fails validation.
         },
       );
-    };
 
-    replaceBoardConnector('battery', 'battery-10pin', 0xd6d8d2);
-    replaceBoardConnector('fan', 'fan-speaker-4pin', 0xd6d8d2);
-    replaceBoardConnector('speaker', 'fan-speaker-4pin', 0xd6d8d2, Math.PI);
-    replaceBoardConnector('display', 'display-41pin', 0xdedfd9);
-    replaceBoardConnector('input-cover', 'input-51pin', 0xdedfd9);
-    replaceBoardConnector('audio', 'audio-15pin', 0xe5e2da);
+      const replaceBoardConnector = (
+        role: string,
+        file: string,
+        color: number,
+        rotationY = 0,
+      ) => {
+        let mount: THREE.Object3D | null = null;
+        laptop.motherboardMount.traverse((object) => {
+          if (!mount && object.userData.connectorRole === role) mount = object;
+        });
+        if (!mount) return;
 
+        gltfLoader.load(
+          `${import.meta.env.BASE_URL}models/kicad/${file}.glb`,
+          (gltf) => {
+            if (disposed || !mount) return;
+
+            // Keep the procedural teaching connector as a fallback, but hide it
+            // once the pinned KiCad geometry has loaded successfully.
+            for (const child of mount.children) child.visible = false;
+
+            const model = gltf.scene;
+            model.scale.setScalar(25.5);
+            model.rotation.y = rotationY;
+            model.traverse((object) => {
+              if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh)
+                return;
+              const item = object as THREE.Mesh;
+              item.castShadow = true;
+              item.receiveShadow = true;
+              item.material = new THREE.MeshStandardMaterial({
+                color,
+                roughness: 0.36,
+                metalness: 0.28,
+              });
+            });
+            mount.add(model);
+          },
+          undefined,
+          () => {
+            // Local converted asset missing: retain the procedural fallback.
+          },
+        );
+      };
+
+      replaceBoardConnector('battery', 'battery-10pin', 0xd6d8d2);
+      replaceBoardConnector('fan', 'fan-speaker-4pin', 0xd6d8d2);
+      replaceBoardConnector('speaker', 'fan-speaker-4pin', 0xd6d8d2, Math.PI);
+      replaceBoardConnector('display', 'display-41pin', 0xdedfd9);
+      replaceBoardConnector('input-cover', 'input-51pin', 0xdedfd9);
+      replaceBoardConnector('audio', 'audio-15pin', 0xe5e2da);
+    }
     scene.updateMatrixWorld(true);
 
     const portPosition = (id: LaptopPortId) => {
@@ -1784,7 +1853,7 @@ export default function LaptopLab({
 
     const connectionCables = new Map<LaptopConnectionId, THREE.Mesh>();
     const connectionMarkers: THREE.Mesh[] = [];
-    for (const task of CONNECTION_TASKS) {
+    for (const task of CONNECTIONS) {
       const cable = connectionCable(
         new THREE.Vector3(...task.source),
         portPosition(task.targetPort),
@@ -1829,7 +1898,7 @@ export default function LaptopLab({
 
         const portId = portHit.object.userData.laptopPort as LaptopPortId;
         const clickedType = PORT_TYPES[portId];
-        const task = CONNECTION_TASKS[connectionTaskRef.current];
+        const task = CONNECTIONS[connectionTaskRef.current];
 
         if (clickedType !== task.portType) {
           setConnectionFeedback(
@@ -1856,7 +1925,7 @@ export default function LaptopLab({
         setConnected(nextConnected);
         setConnectionFeedback('Correct — ' + task.name + ' is connected.');
 
-        const nextIndex = CONNECTION_TASKS.findIndex(
+        const nextIndex = CONNECTIONS.findIndex(
           (candidate, index) =>
             index > connectionTaskRef.current &&
             !nextConnected.includes(candidate.id),
@@ -1963,7 +2032,7 @@ export default function LaptopLab({
       laptop.outside.visible = !insideNow && !realisticNow;
       laptop.inside.visible = insideNow;
 
-      const activeTask = CONNECTION_TASKS[connectionTaskRef.current];
+      const activeTask = CONNECTIONS[connectionTaskRef.current];
       for (const item of laptop.ports) {
         const material = item.material;
         if (!(material instanceof THREE.MeshStandardMaterial)) continue;
@@ -1988,7 +2057,9 @@ export default function LaptopLab({
           !insideNow ||
           !isolateRef.current ||
           key === selectedInternalKey ||
-          (key === 'motherboard' && isLaptopLocalPart(selectedInternalKey));
+          (key === 'motherboard' &&
+            (isLaptopLocalPart(selectedInternalKey) ||
+              (model === 'latitude' && selectedInternalKey === 'cpu')));
       }
 
       if (insideNow) {
@@ -2102,7 +2173,28 @@ export default function LaptopLab({
       });
 
       controls.update();
-      renderer.render(scene, camera);
+      const signature = [
+        viewRef.current,
+        modeRef.current,
+        realisticRef.current,
+        selectedRef.current,
+        guidedRef.current,
+        isolateRef.current,
+        explodeRef.current,
+        localPartRef.current,
+        localProgressRef.current,
+        connectedRef.current.join(','),
+        disconnectedInternalCablesRef.current.join(','),
+        ...camera.position.toArray(),
+        ...camera.quaternion.toArray(),
+        camera.aspect,
+        canvas.width,
+        canvas.height,
+      ].join('|');
+      if (signature !== lastRenderSignature || connectionMode) {
+        renderer.render(scene, camera);
+        lastRenderSignature = signature;
+      }
     };
     draw();
 
@@ -2129,7 +2221,7 @@ export default function LaptopLab({
         }
       });
     };
-  }, []);
+  }, [model, CONNECTIONS]);
 
   const changeView = (next: LaptopView) => {
     setGuided(false);
@@ -2152,7 +2244,7 @@ export default function LaptopLab({
   };
 
   const applyLessonStep = (index: number) => {
-    const step = LAPTOP_LESSON_STEPS[index];
+    const step = LESSON_STEPS[index];
     if (!step) return;
 
     stopTeardown();
@@ -2192,7 +2284,7 @@ export default function LaptopLab({
   const moveGuide = (direction: -1 | 1) => {
     if (direction === 1 && !lessonStepComplete) return;
     const next = Math.min(
-      LAPTOP_LESSON_STEPS.length - 1,
+      LESSON_STEPS.length - 1,
       Math.max(0, lessonIndex + direction),
     );
     applyLessonStep(next);
@@ -2304,7 +2396,7 @@ export default function LaptopLab({
     connectionTaskRef.current = 0;
     setConnected([]);
     setConnectionTask(0);
-    setConnectionFeedback(CONNECTION_TASKS[0].instruction);
+    setConnectionFeedback(CONNECTIONS[0].instruction);
   };
 
   return (
@@ -2318,10 +2410,24 @@ export default function LaptopLab({
           <AcademyLogo />
           <span>
             <strong>Big Change Laptop Lab</strong>
-            <small>OUTSIDE → INSIDE</small>
+            <small>
+              {model === 'latitude'
+                ? 'DELL LATITUDE 5410 · UNDERSIDE SERVICE'
+                : 'FRAMEWORK LAPTOP 13 · LEGACY MODEL'}
+            </small>
           </span>
         </div>
         <div className="laptop-header-actions">
+          <select
+            aria-label="Laptop model"
+            value={model}
+            onChange={(e) =>
+              onModelChange(e.target.value as 'latitude' | 'framework')
+            }
+          >
+            <option value="latitude">Dell Latitude 5410</option>
+            <option value="framework">Framework Laptop 13</option>
+          </select>
           <button
             type="button"
             className="laptop-guide-button"
@@ -2345,12 +2451,20 @@ export default function LaptopLab({
               setView('outside');
               setRealisticExterior((value) => !value);
             }}
-            title="Toggle the realistic CAD exterior preview"
+            title={
+              model === 'latitude'
+                ? 'Inspect the closed Latitude reference model'
+                : 'Toggle the CAD exterior preview'
+            }
           >
             <Scan size={15} />
             {realisticExterior && realisticLoaded
-              ? 'CAD reference'
-              : 'Realistic open'}
+              ? model === 'latitude'
+                ? 'Closed exterior'
+                : 'CAD reference'
+              : model === 'latitude'
+                ? 'Open exterior'
+                : 'Realistic open'}
           </button>
           <button
             type="button"
@@ -2417,8 +2531,8 @@ export default function LaptopLab({
           {mode === 'connections'
             ? `03 / CONNECTIONS · ${Math.min(
                 connected.length + 1,
-                CONNECTION_TASKS.length,
-              )} / ${CONNECTION_TASKS.length}`
+                CONNECTIONS.length,
+              )} / ${CONNECTIONS.length}`
             : mode === 'assessment'
               ? assessmentComplete
                 ? 'KNOWLEDGE CHECK · COMPLETE'
@@ -2426,7 +2540,7 @@ export default function LaptopLab({
               : mode === 'troubleshooting'
                 ? `TROUBLESHOOT · ${troubleshootingScenario + 1} / ${LAPTOP_TROUBLESHOOTING_SCENARIOS.length}`
                 : guided
-                  ? `GUIDED LESSON · ${lessonIndex + 1} / ${LAPTOP_LESSON_STEPS.length}`
+                  ? `GUIDED LESSON · ${lessonIndex + 1} / ${LESSON_STEPS.length}`
                   : view === 'outside'
                     ? '01 / LAPTOP EXTERIOR'
                     : '02 / LAPTOP INTERNALS'}
@@ -2446,7 +2560,9 @@ export default function LaptopLab({
                   ? lessonStep.title
                   : view === 'outside'
                     ? realisticExterior && realisticLoaded
-                      ? 'Check the closed CAD reference.'
+                      ? model === 'latitude'
+                        ? 'Inspect the closed Latitude.'
+                        : 'Check the closed CAD reference.'
                       : 'Explore the realistic open laptop.'
                     : 'Now look under the keyboard.'}
         </h1>
@@ -2465,8 +2581,12 @@ export default function LaptopLab({
                   ? lessonStep.action
                   : view === 'outside'
                     ? realisticExterior && realisticLoaded
-                      ? 'This closed CAD reference preserves the approved Framework Laptop 13 exterior proportions. Switch back to the open laptop for interactive controls and ports.'
-                      : 'The open model now uses the same real-world proportions with aluminum materials, recessed keys, display glass, realistic bezels and neutral port cavities.'
+                      ? model === 'latitude'
+                        ? 'Closed Latitude 5410 reference model. Switch to the open model to inspect ports and controls.'
+                        : 'This closed CAD reference preserves Framework Laptop 13 exterior proportions.'
+                      : model === 'latitude'
+                        ? 'Latitude 5410 reference geometry: 14-inch 16:9 display, fixed side ports and a conventional keyboard deck. Interior dimensions are estimated from Dell service illustrations.'
+                        : 'Framework reference geometry with aluminum materials, recessed keys and display glass.'
                     : 'Laptop parts are smaller and packed closer together than desktop components.'}
         </p>
         {(guided || mode === 'assessment') && (
@@ -2479,7 +2599,7 @@ export default function LaptopLab({
             <span
               style={{
                 width: guided
-                  ? ((lessonIndex + 1) / LAPTOP_LESSON_STEPS.length) * 100 + '%'
+                  ? ((lessonIndex + 1) / LESSON_STEPS.length) * 100 + '%'
                   : assessmentComplete
                     ? '100%'
                     : ((assessmentIndex + 1) /
@@ -2492,7 +2612,7 @@ export default function LaptopLab({
         )}
         {mode === 'connections' ? (
           <div className="laptop-connection-list">
-            {CONNECTION_TASKS.map((task, index) => {
+            {CONNECTIONS.map((task, index) => {
               const done = connected.includes(task.id);
               return (
                 <button
@@ -2616,7 +2736,7 @@ export default function LaptopLab({
           </div>
         ) : guided ? (
           <div className="laptop-lesson-list" aria-label="Guided lesson steps">
-            {LAPTOP_LESSON_STEPS.map((step, index) => (
+            {LESSON_STEPS.map((step, index) => (
               <div
                 key={step.id}
                 className={
@@ -2833,7 +2953,7 @@ export default function LaptopLab({
                 : mode === 'troubleshooting'
                   ? `TROUBLESHOOT ${troubleshootingScenario + 1} / ${LAPTOP_TROUBLESHOOTING_SCENARIOS.length}`
                   : guided
-                    ? `LESSON STEP ${lessonIndex + 1} / ${LAPTOP_LESSON_STEPS.length}`
+                    ? `LESSON STEP ${lessonIndex + 1} / ${LESSON_STEPS.length}`
                     : 'SELECTED COMPONENT'}
             </p>
             <h2>{selectedPart.name}</h2>
@@ -3121,7 +3241,7 @@ export default function LaptopLab({
                 >
                   ← Back
                 </button>
-                {lessonIndex < LAPTOP_LESSON_STEPS.length - 1 ? (
+                {lessonIndex < LESSON_STEPS.length - 1 ? (
                   <button
                     type="button"
                     disabled={!lessonStepComplete}
@@ -3165,5 +3285,20 @@ export default function LaptopLab({
         )}
       </aside>
     </main>
+  );
+}
+
+export default function LaptopLab(props: {
+  onBack: () => void;
+  onOpenTaskManager: () => void;
+}) {
+  const [model, setModel] = useState<'latitude' | 'framework'>('latitude');
+  return (
+    <LaptopScene
+      key={model}
+      {...props}
+      model={model}
+      onModelChange={setModel}
+    />
   );
 }
