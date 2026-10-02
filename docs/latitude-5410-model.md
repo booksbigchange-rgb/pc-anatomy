@@ -16,7 +16,7 @@ Observed configuration details were cross-checked against [LaptopMedia's origina
 
 ## Preserved behavior
 
-Exterior/closed/service views; guided service sequence; three cable disconnection gates; staged teardown and reset; SSD, RAM, and Wi-Fi local extraction; selection, focus, isolation; four external connection exercises; troubleshooting; knowledge assessment; Task Manager.
+Exterior/closed/service views; left/right/top/reset camera presets; guided service sequence; three cable disconnection gates; staged teardown and reset; visible-port picking with chassis occlusion; SSD, RAM, and Wi-Fi local extraction; selection, focus, isolation; four external connection exercises; troubleshooting; knowledge assessment; Task Manager.
 
 The CPU is soldered to and moves with the system board. It is never registered as a removable teardown part. DIMM sockets, M.2 connectors, and mounts remain on the board during local module extraction. Framework asset replacements are disabled in Dell mode. The existing guided cable click restriction was corrected so guided cable gates can actually be completed.
 

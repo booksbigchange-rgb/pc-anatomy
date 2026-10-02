@@ -60,3 +60,27 @@ await test('Local upgrades leave the board, sockets, and antenna routing in plac
     ],
   );
 });
+
+await test('Latitude side walls expose their own sockets and occlude opposite-side ports', () => {
+  const m = buildLatitude5410();
+  m.root.updateMatrixWorld(true);
+  for (const side of [-1, 1]) {
+    const c = new T.PerspectiveCamera(40, 1.2, 0.1, 100);
+    c.position.set(side * 13, 3.4, 0.15);
+    c.lookAt(0, 1.15, 0.15);
+    c.updateMatrixWorld();
+    for (const port of m.ports) {
+      const p = port.getWorldPosition(new T.Vector3()).project(c);
+      const ray = new T.Raycaster();
+      ray.setFromCamera(new T.Vector2(p.x, p.y), c);
+      const hit = ray.intersectObject(m.outside, true)[0];
+      if (Math.sign(port.position.x) === side)
+        assert.equal(hit?.object.userData.laptopPort, port.userData.laptopPort);
+      else
+        assert.notEqual(
+          hit?.object.userData.laptopPort,
+          port.userData.laptopPort,
+        );
+    }
+  }
+});

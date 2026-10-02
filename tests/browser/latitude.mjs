@@ -55,7 +55,8 @@ try{
  await shot('09b-cable-action-complete');
  for(let step=3;step<11;step++){
   if(step===5||step===10){
-   await page.waitForTimeout(500);
+   await page.getByRole('button',{name:'Reset view',exact:true}).click();
+   await page.waitForTimeout(700);
    const t=step===5?49:89;const f=Math.min(1,Math.max(0,(t-72)/28));const e=f*f*(3-2*f);
    camera.position.lerpVectors(new T.Vector3(9.2,8.4,11.8),new T.Vector3(7.6,10.8,12.6),e);
    camera.lookAt(0,1.15,.15+e*.65);camera.updateMatrixWorld();
