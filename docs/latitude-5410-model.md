@@ -12,7 +12,7 @@ Primary references:
 - [Dell CRU teardown guide](https://www.dell.com/support/kbdoc/en-us/000133667/latitude-5410-teardown-removal-guide-for-customer-replaceable-units-crus), including battery and cooling illustrations at supportkb.dell.com.
 - Dell Latitude 5410 Setup and Specifications: dimensions and left/right port maps.
 
-Observed configuration details were cross-checked against [LaptopMedia's original 68 Wh teardown photography](https://laptopmedia.com/highlights/inside-dell-latitude-14-5410-disassembly-and-upgrade-options/). Keyboard/pointing-stick/button layout was compared against Dell's product imagery. Reference imagery is used for review only and is not bundled into the application.
+Observed configuration details were cross-checked against [LaptopMedia's original 68 Wh teardown photography](https://laptopmedia.com/highlights/inside-dell-latitude-14-5410-disassembly-and-upgrade-options/). Keyboard/pointing-stick/button layout was compared against published product imagery. Reference imagery is used for review only and is not bundled into the application.
 
 ## Preserved behavior
 

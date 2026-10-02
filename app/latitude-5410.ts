@@ -177,7 +177,13 @@ function port(
       add(g, box(0.04, h + 0.025, 0.02, C.steel), x, 0.84, z + dz);
     for (const dy of [-h / 2, h / 2])
       add(g, box(0.04, 0.018, w, C.steel), x, 0.84 + dy, z);
-    add(g, box(0.018, 0.022, w * 0.75, C.blue, 0), x + sx * 0.038, 0.85, z);
+    add(
+      g,
+      box(0.018, 0.022, w * 0.75, id.startsWith('usb-') ? C.blue : C.steel, 0),
+      x + sx * 0.038,
+      0.85,
+      z,
+    );
   } else {
     const ring = new T.Mesh(
       new T.TorusGeometry(w / 2, 0.018, 8, 32),
@@ -192,7 +198,55 @@ function exterior() {
   const g = new T.Group(),
     w = LATITUDE_DIMENSIONS.width,
     d = LATITUDE_DIMENSIONS.depth;
-  add(g, box(w, 0.34, d, C.shell, 0.13), 0, 0.84, 0);
+  // Hollow side walls: sockets are openings in the chassis, not pasted on a solid block.
+  add(g, box(w, 0.055, d, C.shell, 0.06), 0, 0.697, 0);
+  for (const z of [-d / 2 + 0.05, d / 2 - 0.05])
+    add(g, box(w - 0.1, 0.3, 0.1, C.shell, 0.045), 0, 0.84, z);
+  const sidePorts = [
+    [
+      [-2.15, 0.2, 0.2],
+      [-1.67, 0.22, 0.11],
+      [-1.2, 0.33, 0.17],
+      [1.28, 1.26, 0.023],
+    ],
+    [
+      [-1.9, 0.36, 0.26],
+      [-1.34, 0.4, 0.14],
+      [-0.77, 0.33, 0.17],
+      [-0.23, 0.33, 0.17],
+      [0.4, 0.14, 0.14],
+      [0.86, 0.25, 0.025],
+      [1.14, 0.25, 0.025],
+    ],
+  ];
+  for (let side = 0; side < 2; side++) {
+    const shape = new T.Shape();
+    shape.moveTo(-d / 2, -0.17);
+    shape.lineTo(d / 2, -0.17);
+    shape.lineTo(d / 2, 0.17);
+    shape.lineTo(-d / 2, 0.17);
+    shape.closePath();
+    const openings = [...sidePorts[side]];
+    if (side === 0)
+      for (let i = 0; i < 14; i++)
+        openings.push([-0.75 + i * 0.097, 0.067, 0.16]);
+    for (const [z, pw, ph] of openings) {
+      const hole = new T.Path();
+      const center = -z;
+      hole.moveTo(center - pw / 2, -ph / 2);
+      hole.lineTo(center - pw / 2, ph / 2);
+      hole.lineTo(center + pw / 2, ph / 2);
+      hole.lineTo(center + pw / 2, -ph / 2);
+      hole.closePath();
+      shape.holes.push(hole);
+    }
+    const wall = new T.Mesh(
+      new T.ExtrudeGeometry(shape, { depth: 0.065, bevelEnabled: false }),
+      mat(C.shell),
+    );
+    wall.rotation.y = Math.PI / 2;
+    add(g, wall, side === 0 ? -w / 2 : w / 2 - 0.065, 0.84, 0);
+  }
   add(g, box(w - 0.12, 0.018, d - 0.08, C.dark, 0.09), 0, 1.025, 0);
   add(g, box(w - 0.16, 0.035, d - 0.16, 0x7f878c, 0.1), 0, 1.045, 0);
   const keyboard = owner(new T.Group(), 'keyboard');
@@ -322,20 +376,20 @@ function exterior() {
     add(g, box(0.84, 0.23, 0.33, 0x525d63, 0.055), x, 1.0, -2.56);
   g.add(batch(lid));
   const ports = [
-    port(g, 'power-left', -w / 2 + 0.04, -2.15, 0.2, 0.2, true),
-    port(g, 'usb-rear-right', w / 2 - 0.04, -0.77, 0.33, 0.17),
-    port(g, 'usb-front-right', w / 2 - 0.04, -0.23, 0.33, 0.17),
-    port(g, 'hdmi-left', w / 2 - 0.04, -1.34, 0.4, 0.14),
-    port(g, 'audio-right', w / 2 - 0.04, 0.4, 0.14, 0.14, true),
+    port(g, 'power-left', -w / 2 + 0.022, -2.15, 0.2, 0.2, true),
+    port(g, 'usb-rear-right', w / 2 - 0.022, -0.77, 0.33, 0.17),
+    port(g, 'usb-front-right', w / 2 - 0.022, -0.23, 0.33, 0.17),
+    port(g, 'hdmi-left', w / 2 - 0.022, -1.34, 0.4, 0.14),
+    port(g, 'audio-right', w / 2 - 0.022, 0.4, 0.14, 0.14, true),
   ];
-  port(g, 'usb-c-left', -w / 2 + 0.04, -1.67, 0.22, 0.11);
-  port(g, 'usb-a-left', -w / 2 + 0.04, -1.2, 0.33, 0.17);
-  port(g, 'ethernet-right', w / 2 - 0.04, -1.9, 0.36, 0.26);
+  port(g, 'usb-c-left', -w / 2 + 0.022, -1.67, 0.22, 0.11);
+  port(g, 'usb-a-left', -w / 2 + 0.022, -1.2, 0.33, 0.17);
+  port(g, 'ethernet-right', w / 2 - 0.022, -1.9, 0.36, 0.26);
   for (let i = 0; i < 14; i++)
     add(
       g,
       box(0.016, 0.16, 0.07, C.dark, 0),
-      -w / 2 - 0.049,
+      -w / 2 - 0.0229,
       0.84,
       -0.75 + i * 0.097,
     );

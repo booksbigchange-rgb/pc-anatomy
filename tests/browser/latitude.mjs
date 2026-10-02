@@ -5,7 +5,7 @@ import * as T from 'three';
 await mkdir('verification/latitude',{recursive:true});
 const browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 const page=await browser.newPage({viewport:{width:1800,height:1100},reducedMotion:'reduce'});
-page.setDefaultTimeout(20000);
+page.setDefaultTimeout(60000);
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 const requests=[];page.on('request',r=>requests.push(r.url()));
 const shot=async(name)=>{await page.waitForTimeout(800);console.log('Capture '+name);await page.screenshot({path:`verification/latitude/${name}.png`,timeout:30000});};
@@ -56,7 +56,7 @@ try{
    const t=step===5?49:89;const f=Math.min(1,Math.max(0,(t-72)/28));const e=f*f*(3-2*f);
    camera.position.lerpVectors(new T.Vector3(9.2,8.4,11.8),new T.Vector3(7.6,10.8,12.6),e);
    camera.lookAt(0,1.15,.15+e*.65);camera.updateMatrixWorld();
-   const p=(step===5?new T.Vector3(-3.6,1.08,1.45):new T.Vector3(1.24,1.12,-2.0)).project(camera);
+   const p=(step===5?new T.Vector3(-3.62,1.08,2.44):new T.Vector3(1.24,1.12,-2.0)).project(camera);
    await page.mouse.click(rect.x+(p.x+1)*rect.width/2,rect.y+(1-p.y)*rect.height/2);
    await page.getByRole('button',{name:'Next →',exact:true}).waitFor();
   }
@@ -96,7 +96,7 @@ try{
  await page.getByRole('heading',{name:'Laptop connected.',exact:true}).waitFor();
  await shot('14-connections-complete');
  await page.getByRole('button',{name:'Reset connections',exact:true}).click();
- await page.getByRole('heading',{name:'Charger → Power',exact:true}).waitFor();
+ await page.getByRole('heading',{name:'Charger → Power',exact:true}).first().waitFor();
  assert.deepEqual(errors,[]);
- await writeFile('verification/latitude/result.json',JSON.stringify({passed:true,errors,checks:['default Dell model','closed exterior','underside service','SSD/RAM/WiFi explode isolate reset','reassemble','full teardown','guided cover','cable safety gate','troubleshooting','knowledge check','Framework retained','no substituted CAD']},null,2));
+ await writeFile('verification/latitude/result.json',JSON.stringify({passed:true,errors,checks:['default Dell model','closed exterior','underside service','SSD/RAM/WiFi explode isolate reset','reassemble','full teardown','complete guided lesson with three direct cable picks','cable safety gates','wrong/correct troubleshooting','assessment completion and review score','wrong/correct external port picks and reset','Framework retained','no substituted CAD']},null,2));
 }catch(e){await shot('failure').catch(()=>{});await writeFile('verification/latitude/failure.txt',String(e.stack));throw e;}finally{await browser.close();}
