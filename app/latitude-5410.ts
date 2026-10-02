@@ -530,9 +530,9 @@ export function buildLatitude5410() {
   add(board, coinRing, -1.8, 0.08, -0.5);
   // DIMM sockets stay fixed on the board when their two modules lift away.
   for (const x of [-1.58, 0.3]) {
-    add(board, box(1.66, 0.065, 0.14, 0xd9d7ca), x, 0.07, 0.27);
+    add(board, box(1.66, 0.065, 0.14, 0xd9d7ca), x, 0.07, 1.0);
     for (const dx of [-0.85, 0.85])
-      add(board, box(0.04, 0.06, 0.58, C.steel), x + dx, 0.065, 0.3);
+      add(board, box(0.04, 0.06, 0.58, C.steel), x + dx, 0.065, 0.64);
   }
   for (const z of [3.14, 0.765]) {
     add(board, box(0.58, 0.075, 0.14, C.dark), -3.13, 0.065, z);
