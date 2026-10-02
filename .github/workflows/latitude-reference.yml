@@ -8,15 +8,18 @@ jobs:
   reference:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch Dell authored service illustrations
-        run: |
-          mkdir -p reference
-          curl -fL --retry 1 --max-time 30 'https://dl.dell.com/content/guides/public/html//latitude_5410_sm/images/GUID-FC93E079-E3DA-453C-B583-803DB5AAB8BF-low.jpg' -o reference/inside.jpg || true
-          curl -fL --retry 1 --max-time 30 'https://dl.dell.com/content/guides/public/html//latitude_5410_sm/images/GUID-2475D7BD-0451-47FC-AD31-9336F4D92280-low.jpg' -o reference/board.jpg || true
-          curl -fL --retry 1 --max-time 30 'https://dl.dell.com/content/guides/public/Html/latitude_5410_specs/images/GUID-F86E3F2D-E51D-4448-AD1D-4EF32442580B-low.jpg' -o reference/palmrest.jpg || true
-          curl -fL --retry 1 --max-time 30 'https://dl.dell.com/content/guides/public/Html/latitude_5410_specs/images/GUID-D5E677F6-C96D-49AF-8A59-3CC0A61AE4D9-low.jpg' -o reference/left.jpg || true
-          curl -fL --retry 1 --max-time 30 'https://dl.dell.com/content/guides/public/Html/latitude_5410_specs/images/GUID-7A51F6F3-7179-4704-ADB5-A75AB6FCCDD6-low.jpg' -o reference/right.jpg || true
+      - run: |
+          mkdir reference
+          curl -fL --max-time 45 'https://www.originstorage.com/services/api/originstorage/model/manual/Latitude%205410/Dell.pdf' -o reference/service.pdf || curl -fL --max-time 45 'https://manuals.plus/m/2d90de61dda3717f218f0b30620986a680f5068a411468e0a5667a1241427043.pdf' -o reference/service.pdf
+          curl -fL --max-time 30 'https://www.bhphotovideo.com/lit_files/633273.pdf' -o reference/specs.pdf
+          sudo apt-get update -qq
+          sudo apt-get install -y poppler-utils
+          pdftotext -layout reference/service.pdf reference/service.txt
+          pdftoppm -f 20 -l 27 -scale-to 1300 -png reference/service.pdf reference/service
+          pdftoppm -f 5 -l 10 -scale-to 1300 -png reference/specs.pdf reference/exterior
+          rm reference/*.pdf
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: latitude-reference
           path: reference
