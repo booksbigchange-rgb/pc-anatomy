@@ -1060,3 +1060,6 @@
 
 
 .laptop-header-actions select { color: #dbe9ed; background: #172126; border: 1px solid #34494f; border-radius: 8px; padding: 8px; font: inherit; max-width: 180px; }
+
+.laptop-camera-views { position: absolute; top: 16px; left: 16px; display: flex; gap: 6px; z-index: 3; }
+.laptop-camera-views button { border: 1px solid #34494f; border-radius: 7px; color: #c8dde4; background: #172126; padding: 7px 10px; font-size: 12px; cursor: pointer; }

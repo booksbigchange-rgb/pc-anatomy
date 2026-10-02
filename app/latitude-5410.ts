@@ -171,6 +171,7 @@ function port(
   add(g, o, x, 0.84, z);
   o.userData.laptopPort = id;
   o.userData.highlightColor = 0x297b92;
+  const trimStart = g.children.length;
   const sx = Math.sign(x);
   if (!round) {
     for (const dz of [-w / 2, w / 2])
@@ -191,6 +192,9 @@ function port(
     );
     ring.rotation.y = Math.PI / 2;
     add(g, ring, x + sx * 0.035, 0.84, z);
+  }
+  for (const trim of g.children.slice(trimStart)) {
+    trim.userData.laptopPort = id;
   }
   return o;
 }
@@ -780,7 +784,7 @@ export function buildLatitude5410() {
     step(ram, 42, 60, [0, 0.45, 2.3]),
     step(speakers, 50, 68, [0, 0.25, 0.45]),
     step(cooling, 58, 78, [0, 0.75, -0.8]),
-    step(board, 84, 100, [0, 0.65, -0.1]),
+    step(board, 90, 100, [0, 0.65, -0.1]),
     step(serviceDisplay, 90, 100, [0, -0.08, -0.2]),
   ];
   const disconnectCables: LaptopInternalCable[] = [

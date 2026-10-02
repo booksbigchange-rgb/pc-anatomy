@@ -1225,6 +1225,7 @@ function LaptopScene({
     [model],
   );
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cameraViewRef = useRef<'left' | 'right' | 'top' | 'reset' | null>(null);
   const selectedRef = useRef<LaptopPartId>('display');
   const viewRef = useRef<LaptopView>('outside');
   const modeRef = useRef<LaptopMode>('explore');
@@ -1888,7 +1889,10 @@ function LaptopScene({
       raycaster.setFromCamera(pointer, camera);
 
       if (modeRef.current === 'connections') {
-        const portHit = raycaster.intersectObjects(laptop.ports, false)[0];
+        const surfaceHit = raycaster.intersectObject(laptop.outside, true)[0];
+        const portHit = surfaceHit?.object.userData.laptopPort
+          ? surfaceHit
+          : undefined;
         if (!portHit) {
           setConnectionFeedback(
             'That is not a port. Rotate the laptop and click the glowing connection.',
@@ -2019,6 +2023,22 @@ function LaptopScene({
     let frame = 0;
     const draw = () => {
       frame = requestAnimationFrame(draw);
+      if (cameraViewRef.current) {
+        const preset = cameraViewRef.current;
+        cameraViewRef.current = null;
+        controls.target.set(0, 1.15, 0.15);
+        camera.position.set(
+          ...((preset === 'left'
+            ? [-13, 3.4, 0.15]
+            : preset === 'right'
+              ? [13, 3.4, 0.15]
+              : preset === 'top'
+                ? [0, 15, 0.16]
+                : [9.2, 8.4, 11.8]) as [number, number, number]),
+        );
+        camera.lookAt(controls.target);
+        cameraManuallyMoved = preset !== 'reset';
+      }
       const connectionMode = modeRef.current === 'connections';
       const insideNow = !connectionMode && viewRef.current === 'inside';
       const realisticNow =
@@ -2818,6 +2838,25 @@ function LaptopScene({
       </aside>
 
       <section className="laptop-stage">
+        <div className="laptop-camera-views" aria-label="Camera views">
+          {(['left', 'right', 'top', 'reset'] as const).map((preset) => (
+            <button
+              type="button"
+              key={preset}
+              onClick={() => {
+                cameraViewRef.current = preset;
+              }}
+            >
+              {preset === 'left'
+                ? 'Left side'
+                : preset === 'right'
+                  ? 'Right side'
+                  : preset === 'top'
+                    ? 'Top view'
+                    : 'Reset view'}
+            </button>
+          ))}
+        </div>
         <canvas
           ref={canvasRef}
           aria-label="Interactive 3D laptop. Drag to orbit and click a component."

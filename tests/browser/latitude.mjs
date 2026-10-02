@@ -19,6 +19,9 @@ try{
  await page.getByRole('button',{name:'Closed exterior',exact:true}).click();
  await page.getByRole('button',{name:'Inside',exact:true}).click();
  await shot('03-service-layout');
+ await page.getByRole('button',{name:'Top view',exact:true}).click();
+ await shot('03b-top-service');
+ await page.getByRole('button',{name:'Reset view',exact:true}).click();
  for(const name of ['SSD','RAM','Wi-Fi']){
   await page.locator('.laptop-part-list button').filter({hasText:name}).click();
   await page.getByRole('button',{name:'Explode part',exact:true}).click();
@@ -88,11 +91,21 @@ try{
  await page.getByRole('button',{name:'Connections',exact:true}).click();
  const portRect=await page.locator('.laptop-stage canvas').boundingBox();
  const pc=new T.PerspectiveCamera(40,portRect.width/portRect.height,.1,100);
- pc.position.set(9.2,8.4,11.8);pc.lookAt(0,1.15,.15);pc.updateMatrixWorld();
+ pc.position.set(13,3.4,.15);pc.lookAt(0,1.15,.15);pc.updateMatrixWorld();
+ await page.getByRole('button',{name:'Right side',exact:true}).click();
+ await page.waitForTimeout(600);
  const clickPort=async(x,z)=>{const p=new T.Vector3(x,.79,z+.2).project(pc);await page.mouse.click(portRect.x+(p.x+1)*portRect.width/2,portRect.y+(1-p.y)*portRect.height/2);await page.waitForTimeout(200);};
  await clickPort(323.05/80-.04,-1.34);
  assert.ok((await page.locator('.laptop-detail').innerText()).includes('Not quite'));
- for(const [x,z] of [[-323.05/80+.04,-2.15],[323.05/80-.04,-.77],[323.05/80-.04,-1.34],[323.05/80-.04,.4]])await clickPort(x,z);
+ // The opposite-side DC jack must be occluded by the chassis from this view.
+ await clickPort(-323.05/80+.022,-2.15);
+ assert.ok(await page.getByRole('heading',{name:'Charger → Power',exact:true}).count());
+ await page.getByRole('button',{name:'Left side',exact:true}).click();await page.waitForTimeout(600);
+ pc.position.set(-13,3.4,.15);pc.lookAt(0,1.15,.15);pc.updateMatrixWorld();
+ await clickPort(-323.05/80+.022,-2.15);await shot('14a-left-ports');
+ await page.getByRole('button',{name:'Right side',exact:true}).click();await page.waitForTimeout(600);
+ pc.position.set(13,3.4,.15);pc.lookAt(0,1.15,.15);pc.updateMatrixWorld();
+ for(const [x,z] of [[323.05/80-.022,-.77],[323.05/80-.022,-1.34],[323.05/80-.022,.4]])await clickPort(x,z);
  await page.getByRole('heading',{name:'Laptop connected.',exact:true}).waitFor();
  await shot('14-connections-complete');
  await page.getByRole('button',{name:'Reset connections',exact:true}).click();
