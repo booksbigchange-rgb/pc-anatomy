@@ -1,5 +1,6 @@
 'use client';
 import AcademyLogo from './academy-logo';
+import { readProgress, saveProgress } from './student-progress';
 
 import { useEffect, useReducer, useState } from 'react';
 import {
@@ -86,7 +87,7 @@ function initial(device: Device): State {
     tick: 0,
     history: [],
     mission: null,
-    completed: [],
+    completed: readProgress().taskManager,
     feedback: '',
   };
 }
@@ -114,7 +115,7 @@ function reducer(state: State, action: Action): State {
         feedback: '',
       };
     case 'reset':
-      return initial(state.device);
+      return { ...initial(state.device), completed: [] };
     case 'device':
       return {
         ...state,
@@ -142,7 +143,7 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         processes: endProcess(state.processes, action.id),
-        feedback: '',
+        feedback: state.processes.find(process => process.id === action.id)?.app === 'system' ? 'System stays protected.' : 'App ended. Compare the readings above: its CPU work stopped and its RAM was released. Saved files stay on the SSD.',
       };
     case 'mission':
       return {
@@ -243,6 +244,8 @@ export default function TaskManagerLab({
   const [sort, setSort] = useState<Resource>('cpu');
   const [paused, setPaused] = useState(false);
   const [search, setSearch] = useState('');
+  const [compactSidebar, setCompactSidebar] = useState(true);
+  useEffect(() => { saveProgress({ taskManager: state.completed }); }, [state.completed]);
   useEffect(() => {
     if (!state.powered || paused) return;
     const timer = window.setInterval(() => dispatch({ type: 'tick' }), 1000);
@@ -277,7 +280,8 @@ export default function TaskManagerLab({
         <span className="tm-simulation">Classroom simulation</span>
       </header>
       <div className="tm-layout">
-        <aside className="tm-sidebar">
+        <aside className={'tm-sidebar' + (compactSidebar ? ' compact' : '')}>
+          <button className="tm-mobile-challenges" aria-expanded={!compactSidebar} onClick={() => setCompactSidebar(!compactSidebar)}>{compactSidebar ? 'Show challenges & XP' : 'Hide challenges & XP'}</button>
           <p className="tm-eyebrow">NEW CHAPTER</p>
           <h1>
             What is your{' '}
@@ -352,7 +356,7 @@ export default function TaskManagerLab({
           </button>
           <p className="tm-note">
             These are learning examples, not readings from your real device.
-            Progress lasts while this chapter is open.
+            Completed challenges and XP are saved on this browser. Reset clears this chapter’s XP.
           </p>
         </aside>
         <section className="tm-main" aria-label="Task Manager simulation">
@@ -570,10 +574,10 @@ export default function TaskManagerLab({
                           <small> · group {row.id}</small>
                         )}
                       </th>
-                      <td>{row.cpu.toFixed(1)}%</td>
-                      <td>{row.memory.toLocaleString()} MB</td>
-                      <td>{row.disk.toFixed(1)}%</td>
-                      <td>{row.network.toFixed(1)} Mbps</td>
+                      <td style={{ background: `rgba(24,136,93,${Math.min(.38, row.cpu / 100 * .38)})` }}>{row.cpu.toFixed(1)}%</td>
+                      <td style={{ background: `rgba(132,80,197,${Math.min(.38, row.memory / profile.memory * .65)})` }}>{row.memory.toLocaleString()} MB</td>
+                      <td style={{ background: `rgba(202,114,24,${Math.min(.38, row.disk / 100 * .38)})` }}>{row.disk.toFixed(1)}%</td>
+                      <td style={{ background: `rgba(34,120,195,${Math.min(.38, row.network / profile.network * .38)})` }}>{row.network.toFixed(1)} Mbps</td>
                       <td>
                         <button
                           disabled={row.app === 'system'}

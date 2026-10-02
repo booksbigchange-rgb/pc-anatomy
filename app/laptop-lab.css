@@ -1063,3 +1063,5 @@
 
 .laptop-camera-views { position: absolute; top: 16px; left: 16px; display: flex; gap: 6px; z-index: 3; }
 .laptop-camera-views button { border: 1px solid #34494f; border-radius: 7px; color: #c8dde4; background: #172126; padding: 7px 10px; font-size: 12px; cursor: pointer; }
+.laptop-exploded-labels { position: absolute; inset: 0; pointer-events: none; }
+.laptop-exploded-labels span { position: absolute; transform: translate(-50%, -150%); background: #101a21dc; color: #e6f5f7; border: 1px solid #607b84; padding: 4px 7px; border-radius: 5px; font-size: 10px; white-space: nowrap; }

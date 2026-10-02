@@ -501,12 +501,21 @@ export function buildLatitude5410() {
     i ? shape.lineTo(p[0], p[1]) : shape.moveTo(p[0], p[1]),
   );
   shape.closePath();
+  for (const [holeX, holeZ] of [[-3.4, -1.15], [-2.05, -1.15], [1.63, -1.15], [3.48, -1.15]]) {
+    const hole = new T.Path();
+    hole.absarc(holeX, holeZ, 0.046, 0, Math.PI * 2, true);
+    shape.holes.push(hole);
+  }
   const pcb = new T.Mesh(
     new T.ExtrudeGeometry(shape, { depth: 0.045, bevelEnabled: false }),
     mat(C.board),
   );
   pcb.rotation.x = Math.PI / 2;
   board.add(pcb);
+  for (const x of [-1.45, -1.12, -0.79]) {
+    add(board, box(0.21, 0.07, 0.22, 0x505960, 0.018), x, 0.055, -1.02);
+    add(board, box(0.16, 0.006, 0.16, 0x899298, 0.012), x, 0.093, -1.02);
+  }
   for (const [centerX, centerZ] of [[-2.7, -1.02], [0.6, -0.9], [1.7, -1.04], [2.85, -0.95], [-2.96, 1.7]]) {
     for (let index = 0; index < 16; index++) {
       const x = centerX + (index % 4) * 0.095;
@@ -572,9 +581,9 @@ export function buildLatitude5410() {
     add(battery, box(1.38, 0.018, 1.92, 0x252b2f, 0.02), x, 0.127, 0);
   text(
     battery,
-    '68 Wh · 4 CELL\nLatitude 5410\nDISCONNECT BEFORE SERVICE\nTEACHING REFERENCE',
-    3.6,
-    1.28,
+    '68 Wh · Li-ion\nLatitude 5410\nDisconnect before service',
+    2.15,
+    0.82,
     0,
     0.14,
     0,

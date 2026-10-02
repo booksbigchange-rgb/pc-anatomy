@@ -14,6 +14,8 @@ import {
   Fan,
 } from 'lucide-react';
 import * as T from 'three';
+import { PC_CONNECTIONS, canConnect, checkPcPower, type PcConnection } from './pc-power-challenge';
+import { readProgress, saveProgress } from './student-progress';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {
   createHardware,
@@ -55,7 +57,7 @@ const PARTS: Part[] = [
     name: 'CPU Heatsink & Fan',
     icon: Fan,
     instruction: 'Seat the cooling assembly above the processor.',
-    why: 'The heatsink and fan remove CPU heat. This exercise represents placement; thermal paste, screws and fan cabling are not simulated.',
+    why: 'The heatsink and fan remove CPU heat. Connect the fan lead after placement. Thermal paste and screw tightening are not simulated.',
     start: [-4.8, 1.01, -2.2],
     snap: 0.32,
   },
@@ -122,6 +124,27 @@ export default function AssemblyLab({
   const [feedback, setFeedback] = useState(
     'Explore the assembled reference model, or choose Start assembly practice.',
   );
+  const [connections, setConnections] = useState<PcConnection[]>([]);
+  const [cable, setCable] = useState<PcConnection>('board-power');
+  const [powerOn, setPowerOn] = useState(false);
+  const [buildEarned, setBuildEarned] = useState(() => readProgress().pcBuilt);
+  const [powerProblems, setPowerProblems] = useState<string[]>([]);
+  const connectionRef = useRef<PcConnection[]>([]);
+  useEffect(() => { connectionRef.current = preview ? [] : connections; }, [connections, preview]);
+  const connect = (target: string) => {
+    const problem = canConnect(cable, target, installed, connections);
+    if (problem) { setFeedback(problem); return; }
+    setConnections(previous => [...new Set([...previous, cable])]);
+    setPowerProblems([]);
+    setFeedback('Cable connected. M.2 storage and this slot-powered card do not need separate power cables.');
+  };
+  const testPower = () => {
+    const problems = checkPcPower(installed, connections, closed, !cageOpen);
+    setPowerProblems(problems);
+    setPowerOn(problems.length === 0);
+    if (!problems.length) { saveProgress({ pcBuilt: true }); setBuildEarned(true); }
+    setFeedback(problems.length ? 'Power-on check stopped. Fix the items below and try again.' : 'POST passed in the simulation. Memory and storage detected. Your virtual PC is ready.');
+  };
   const displayRef = useRef({
     preview: true,
     upright: true,
@@ -148,6 +171,9 @@ export default function AssemblyLab({
     active = preview ? PARTS.find((p) => p.id === selected)! : PARTS[current];
   const name = (p: Part) => componentNames?.[p.id] ?? p.name;
   const practice = () => {
+    setConnections([]);
+    setPowerOn(false);
+    setPowerProblems([]);
     installedRef.current = [];
     currentRef.current = 0;
     resetRef.current = true;
@@ -224,6 +250,23 @@ export default function AssemblyLab({
     const assembly = new T.Group();
     scene.add(assembly);
     assembly.add(chassis);
+    const cableVisuals = new Map<PcConnection, T.Mesh>();
+    const routes: Record<PcConnection, number[][]> = {
+      'board-power': [[1.33, 1.6, 2.05], [3.6, 1.05, 1.8], [3.4, 1, -0.9]],
+      'cpu-power': [[1.33, 1.6, 2.05], [0.5, 1.05, 1], [0.55, 1, -1.9]],
+      fan: [[1.48, 1.8, -1.68], [1.9, 1.1, -1.9], [2.25, 1, -2.05]],
+      switch: [[4.3, 0.95, 1.5], [3.6, 0.98, 0.9], [2.9, 0.98, 0.7]],
+      display: [[0.3, 1.65, 0.1], [-0.4, 1.3, 0.1], [-0.9, 0.65, -0.7]],
+      mains: [[0.4, 1.35, 2.1], [-0.5, 1, 2.1], [-1.3, 0.7, 2.8]],
+    };
+    for (const connection of PC_CONNECTIONS) {
+      const path = new T.CatmullRomCurve3(routes[connection.id].map(point => new T.Vector3(...point)));
+      const visual = new T.Mesh(new T.TubeGeometry(path, 24, connection.id === 'mains' ? 0.045 : 0.024, 6, false), new T.MeshStandardMaterial({ color: connection.id === 'fan' ? 0xc9aa52 : 0x30383e, roughness: 0.75 }));
+      visual.visible = false;
+      visual.castShadow = true;
+      assembly.add(visual);
+      cableVisuals.set(connection.id, visual);
+    }
     const groups = new Map<HardwareId, T.Group>();
     for (const p of PARTS) {
       const g = createHardware(p.id);
@@ -307,7 +350,7 @@ export default function AssemblyLab({
           );
           setCurrent(currentRef.current);
           setFeedback(
-            `Installed: ${p.name}. ${installedRef.current.length === PARTS.length ? 'Placement exercise complete. Cabling and power-on checks remain outside this exercise.' : 'Continue with the next highlighted part.'}`,
+            `Installed: ${p.name}. ${installedRef.current.length === PARTS.length ? 'Parts placed. Match the cables, close the cage, fit the cover, then test power.' : 'Continue with the next highlighted part.'}`,
           );
         } else {
           g.position.set(...p.start);
@@ -373,11 +416,13 @@ export default function AssemblyLab({
         d,
         installedRef.current,
         currentRef.current,
+        connectionRef.current,
       ]);
       if (signature !== previousDisplay) {
         dirty = true;
         previousDisplay = signature;
       }
+      for (const [id, visual] of cableVisuals) visual.visible = !d.preview && connectionRef.current.includes(id);
       assembly.rotation.x = d.preview && d.upright ? Math.PI / 2 : 0;
       assembly.position.set(
         0,
@@ -403,7 +448,7 @@ export default function AssemblyLab({
         actionRef.current = null;
       }
       chassis.visible = !(d.preview && d.isolated);
-      driveCage.rotation.z = !d.closed && (d.cageOpen || !d.preview) ? -Math.PI / 2.4 : 0;
+      driveCage.rotation.z = !d.closed && (d.cageOpen || (!d.preview && !done)) ? -Math.PI / 2.4 : 0;
       cover.visible = d.closed && (d.preview || done) && !d.isolated;
       for (const p of PARTS) {
         const g = groups.get(p.id)!;
@@ -493,6 +538,7 @@ export default function AssemblyLab({
             onClick={() => {
               if (preview) practice();
               else {
+                setPowerOn(false);
                 setPreview(true);
                 setClosed(false);
                 actionRef.current = 'home';
@@ -505,6 +551,7 @@ export default function AssemblyLab({
         <button
           disabled={!preview && !complete}
           onClick={() => {
+            if (powerOn) { setFeedback('Shut down the virtual PC before opening the case.'); return; }
             setClosed(!closed);
             setExploded(false);
             setIsolated(false);
@@ -512,8 +559,8 @@ export default function AssemblyLab({
         >
           {closed ? 'Remove side cover' : 'Fit side cover'}
         </button>
-        {preview && !closed && (
-          <button aria-pressed={cageOpen} onClick={() => setCageOpen(!cageOpen)}>
+        {(preview || complete) && !closed && (
+          <button disabled={powerOn} aria-pressed={cageOpen} onClick={() => setCageOpen(!cageOpen)}>
             {cageOpen ? 'Close drive cage' : 'Open drive cage'}
           </button>
         )}
@@ -593,19 +640,19 @@ export default function AssemblyLab({
         <div className="assembly-progress-label">
           {preview
             ? 'Inspection mode'
-            : `${installed.length} / ${PARTS.length} placed`}
+            : powerOn ? 'POST passed · PC ready' : `${installed.length} / ${PARTS.length} placed`}
         </div>
       </header>
       <aside className="assembly-steps">
         <p className="assembly-eyebrow">
           {preview ? 'EXPLORE THE HARDWARE' : 'ASSEMBLY PRACTICE'}
         </p>
-        <h1>{!preview && complete ? 'Parts placed' : name(active)}</h1>
+        <h1>{powerOn ? 'PC ready' : !preview && complete ? 'Parts placed' : name(active)}</h1>
         <p className="assembly-intro">
           {preview
             ? 'Select any component, isolate it, or lift just that part out of the case.'
             : complete
-              ? 'All seven parts are seated. This is a placement exercise, not a powered and tested computer.'
+              ? 'Parts are seated. Connect the cables and run the power-on check.'
               : active.instruction}
         </p>
         <div className="assembly-progress">
@@ -639,12 +686,26 @@ export default function AssemblyLab({
       {stage}
       <aside className="assembly-detail" aria-live="polite">
         <p className="assembly-eyebrow">COMPONENT NOTES</p>
+        {buildEarned && <p className="assembly-boot">✓ PC Builder earned · saved on this browser</p>}
         <h2>{name(active)}</h2>
         <p>{active.why}</p>
         <div className="assembly-feedback">
           <strong>Service coach</strong>
           <p>{feedback}</p>
         </div>
+        {!preview && (
+          <section className="assembly-wiring" aria-label="Connections and power-on challenge">
+            <h3>Connect → Close → Test</h3>
+            <p>Choose a cable. Then choose its socket. Connect wall power last. Cable routes are teaching examples.</p>
+            <label>Cable<select aria-label="Choose PC cable" value={cable} disabled={powerOn} onChange={event => setCable(event.target.value as PcConnection)}>{PC_CONNECTIONS.map(connection => <option key={connection.id} value={connection.id}>{connections.includes(connection.id) ? '✓ ' : ''}{connection.label}</option>)}</select></label>
+            <div className="assembly-sockets">{PC_CONNECTIONS.map(connection => <button key={connection.id} disabled={powerOn} onClick={() => connect(connection.target)}>{connection.target}</button>)}</div>
+            <p>{connections.length} / {PC_CONNECTIONS.length} cables connected</p>
+            <button className="assembly-back" disabled={powerOn || !connections.includes('mains')} onClick={() => { setConnections(previous => previous.filter(id => id !== 'mains')); setFeedback('Wall power unplugged. You can change connections.'); }}>Unplug wall power</button>
+            <button className="assembly-primary" onClick={() => { if (powerOn) { setPowerOn(false); setFeedback('Virtual PC shut down.'); } else testPower(); }}>{powerOn ? 'Shut down PC' : 'Test power-on'}</button>
+            {powerProblems.length > 0 && <ul>{powerProblems.map(problem => <li key={problem}>{problem}</li>)}</ul>}
+            {powerOn && <output className="assembly-boot"><strong>✓ POST passed</strong><p>RAM detected · NVMe SSD detected · Display signal ready</p><small>Simulated checks. No real operating system starts.</small></output>}
+          </section>
+        )}
         <p className="assembly-model-note">
           Original geometry based on Dell’s manual. Chassis envelope uses
           documented dimensions; interior measurements and surfaces are

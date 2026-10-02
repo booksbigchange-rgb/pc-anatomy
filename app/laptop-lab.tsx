@@ -1225,6 +1225,7 @@ function LaptopScene({
     [model],
   );
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const explodedLabelsRef = useRef<HTMLDivElement>(null);
   const cameraViewRef = useRef<'left' | 'right' | 'top' | 'reset' | null>(null);
   const selectedRef = useRef<LaptopPartId>('display');
   const viewRef = useRef<LaptopView>('outside');
@@ -2081,6 +2082,21 @@ function LaptopScene({
       }
 
       if (insideNow) {
+        const labels = explodedLabelsRef.current;
+        if (labels) {
+          for (const label of labels.querySelectorAll<HTMLElement>('[data-part]')) {
+            const key = label.dataset.part as keyof typeof laptop.parts;
+            const object = laptop.parts[key];
+            const point = new THREE.Box3().setFromObject(object).getCenter(new THREE.Vector3()).project(camera);
+            const teardown = laptop.teardownParts.find(part => part.object === object);
+            const smallScreen = canvas.clientWidth < 500;
+            const selectedKey = selectedRef.current === 'fan' ? 'cooling' : selectedRef.current;
+            const shown = !!teardown && explodeRef.current >= teardown.end && object.visible && (!smallScreen || key === selectedKey) && point.z > -1 && point.z < 1 && Math.abs(point.x) < .94 && Math.abs(point.y) < .88;
+            label.hidden = !shown;
+            label.style.left = `${(point.x + 1) * 50}%`;
+            label.style.top = `${(1 - point.y) * 50}%`;
+          }
+        }
         const local =
           localPartRef.current === selectedRef.current
             ? localPartRef.current
@@ -2861,6 +2877,11 @@ function LaptopScene({
           ref={canvasRef}
           aria-label="Interactive 3D laptop. Drag to orbit and click a component."
         />
+        {view === 'inside' && mode === 'explore' && !guided && (
+          <div className="laptop-exploded-labels" ref={explodedLabelsRef} aria-hidden="true">
+            {Object.entries({ battery: 'Battery', motherboard: 'System board', ram: 'RAM', ssd: 'SSD', wifi: 'Wi-Fi', cooling: 'Cooling', speakers: 'Speakers' }).map(([key, label]) => <span key={key} data-part={key} hidden>{label}</span>)}
+          </div>
+        )}
         <div
           className={
             'laptop-stage-tip' +

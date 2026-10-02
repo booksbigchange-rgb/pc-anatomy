@@ -4,6 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 await mkdir('verification/optiplex', { recursive: true });
 const browser = await chromium.launch({
+  channel: process.env.ATLAS_BROWSER_CHANNEL || undefined,
   args: [
     '--use-gl=angle',
     '--use-angle=swiftshader',
@@ -197,6 +198,22 @@ try {
     );
   }
   await shot('10-completed-placement');
+  await page.getByRole('button', { name: 'Test power-on', exact: true }).click();
+  assert.ok((await page.locator('.assembly-wiring').innerText()).includes('Connect PSU'));
+  await page.getByRole('combobox', { name: 'Choose PC cable' }).selectOption('board-power');
+  await page.getByRole('button', { name: 'CPU fan header', exact: true }).click();
+  assert.ok((await page.locator('.assembly-feedback').innerText()).includes('Wrong socket'));
+  for (const [id, target] of [['board-power', 'Board power socket'], ['cpu-power', 'CPU power socket'], ['fan', 'CPU fan header'], ['switch', 'Power-button header'], ['display', 'Graphics display output'], ['mains', 'PSU AC inlet']]) {
+    await page.getByRole('combobox', { name: 'Choose PC cable' }).selectOption(id);
+    await page.getByRole('button', { name: target, exact: true }).click();
+  }
+  await page.getByRole('button', { name: 'Close drive cage', exact: true }).click();
+  await page.getByRole('button', { name: 'Fit side cover', exact: true }).click();
+  await page.getByRole('button', { name: 'Test power-on', exact: true }).click();
+  await page.getByText('✓ POST passed', { exact: true }).waitFor();
+  await shot('11-power-on-passed');
+  assert.equal(await page.getByRole('combobox', { name: 'Choose PC cable' }).isEnabled(), false);
+  await page.getByRole('button', { name: 'Shut down PC', exact: true }).click();
   await page
     .getByRole('button', { name: 'Restart practice', exact: false })
     .click();

@@ -225,6 +225,7 @@
   padding: 30px;
   min-width: 0;
 }
+.tm-mobile-challenges { display: none; }
 .tm-heading { order: 0; }
 .tm-resource-grid { order: 1; }
 .tm-graph-card { order: 2; }
@@ -594,6 +595,9 @@
   }
 }
 @media (max-width: 640px) {
+  .tm-mobile-challenges { display: block; border: 1px solid #bdd5c7; border-radius: 8px; padding: 9px 12px; background: white; color: #22533e; margin-bottom: 10px; }
+  .tm-sidebar.compact > h1, .tm-sidebar.compact > p, .tm-sidebar.compact .tm-missions, .tm-sidebar.compact .tm-score, .tm-sidebar.compact .tm-reset { display: none; }
+  .tm-sidebar.compact .tm-device { margin-top: 0; }
   .tm-header {
     flex-wrap: wrap;
   }
