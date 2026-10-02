@@ -1,0 +1,22 @@
+name: Latitude service reference
+on:
+  push:
+    branches: [latitude-5410-model]
+permissions:
+  contents: read
+jobs:
+  reference:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Dell authored service illustrations
+        run: |
+          mkdir -p reference
+          curl -fL --retry 1 --max-time 30 'https://dl.dell.com/content/guides/public/html//latitude_5410_sm/images/GUID-FC93E079-E3DA-453C-B583-803DB5AAB8BF-low.jpg' -o reference/inside.jpg || true
+          curl -fL --retry 1 --max-time 30 'https://dl.dell.com/content/guides/public/html//latitude_5410_sm/images/GUID-2475D7BD-0451-47FC-AD31-9336F4D92280-low.jpg' -o reference/board.jpg || true
+          curl -fL --retry 1 --max-time 30 'https://dl.dell.com/content/guides/public/Html/latitude_5410_specs/images/GUID-F86E3F2D-E51D-4448-AD1D-4EF32442580B-low.jpg' -o reference/palmrest.jpg || true
+          curl -fL --retry 1 --max-time 30 'https://dl.dell.com/content/guides/public/Html/latitude_5410_specs/images/GUID-D5E677F6-C96D-49AF-8A59-3CC0A61AE4D9-low.jpg' -o reference/left.jpg || true
+          curl -fL --retry 1 --max-time 30 'https://dl.dell.com/content/guides/public/Html/latitude_5410_specs/images/GUID-7A51F6F3-7179-4704-ADB5-A75AB6FCCDD6-low.jpg' -o reference/right.jpg || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: latitude-reference
+          path: reference
