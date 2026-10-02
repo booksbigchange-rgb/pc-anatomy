@@ -1,6 +1,7 @@
 import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import * as T from 'three';
 await mkdir('verification/latitude',{recursive:true});
 const browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 const page=await browser.newPage({viewport:{width:1800,height:1100},reducedMotion:'reduce'});
@@ -41,15 +42,61 @@ try{
  await page.getByRole('button',{name:'Next →',exact:true}).click();
  assert.equal(await page.getByRole('button',{name:'Complete action first',exact:true}).isEnabled(),false);
  await shot('09-cable-gate');
+ const rect=await page.locator('.laptop-stage canvas').boundingBox();
+ const camera=new T.PerspectiveCamera(40,rect.width/rect.height,.1,100);
+ camera.position.set(9.2,8.4,11.8);camera.lookAt(0,1.15,.15);camera.updateMatrixWorld();
+ const point=new T.Vector3(.68,1.15,.25).project(camera);
+ await page.mouse.click(rect.x+(point.x+1)*rect.width/2,rect.y+(1-point.y)*rect.height/2);
+ await page.getByRole('button',{name:'Next →',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Next →',exact:true}).click();
+ await shot('09b-cable-action-complete');
+ for(let step=3;step<11;step++){
+  if(step===5||step===10){
+   await page.waitForTimeout(500);
+   const t=step===5?49:89;const f=Math.min(1,Math.max(0,(t-72)/28));const e=f*f*(3-2*f);
+   camera.position.lerpVectors(new T.Vector3(9.2,8.4,11.8),new T.Vector3(7.6,10.8,12.6),e);
+   camera.lookAt(0,1.15,.15+e*.65);camera.updateMatrixWorld();
+   const p=(step===5?new T.Vector3(-3.6,1.08,1.45):new T.Vector3(1.24,1.12,-2.0)).project(camera);
+   await page.mouse.click(rect.x+(p.x+1)*rect.width/2,rect.y+(1-p.y)*rect.height/2);
+   await page.getByRole('button',{name:'Next →',exact:true}).waitFor();
+  }
+  await page.getByRole('button',{name:'Next →',exact:true}).click();
+ }
+ await shot('09c-guided-complete');
+ await page.getByRole('button',{name:'Finish lesson ✓',exact:true}).click();
  await page.getByRole('button',{name:'Troubleshoot',exact:true}).click();
+ await page.locator('.laptop-troubleshoot-options button').filter({hasText:'M.2 SSD'}).click();
+ assert.ok(await page.locator('.laptop-troubleshoot-card').innerText().then(t=>t.includes('Not quite')));
+ await page.locator('.laptop-troubleshoot-options button').filter({hasText:'Battery'}).click();
+ assert.ok(await page.getByRole('button',{name:'Next case →',exact:true}).isEnabled());
  await shot('10-troubleshooting');
  await page.getByRole('button',{name:'Knowledge check',exact:true}).click();
+ assert.equal(await page.getByRole('button',{name:'Choose an answer',exact:true}).isEnabled(),false);
+ const answers=['SSD','Battery cable','RAM / SODIMM','M.2 SSD','Heat pipes','Wi-Fi card','Motherboard','Display and display cable'];
+ for(let i=0;i<answers.length;i++){
+  await page.locator('.laptop-assessment-options button').filter({hasText:answers[i]}).click();
+  await page.getByRole('button',{name:i===answers.length-1?'See results →':'Next question →',exact:true}).click();
+ }
  await shot('11-knowledge-check');
+ assert.ok((await page.locator('.laptop-assessment-card').innerText()).includes('7 / 8'));
+
  assert.ok(!requests.some(u=>u.includes('/models/')),'Latitude must not load Framework geometry');
  await page.getByRole('combobox',{name:'Laptop model'}).selectOption('framework');
  await shot('12-framework-retained');
  await page.getByRole('combobox',{name:'Laptop model'}).selectOption('latitude');
  await shot('13-latitude-restored');
+ await page.getByRole('button',{name:'Connections',exact:true}).click();
+ const portRect=await page.locator('.laptop-stage canvas').boundingBox();
+ const pc=new T.PerspectiveCamera(40,portRect.width/portRect.height,.1,100);
+ pc.position.set(9.2,8.4,11.8);pc.lookAt(0,1.15,.15);pc.updateMatrixWorld();
+ const clickPort=async(x,z)=>{const p=new T.Vector3(x,.79,z+.2).project(pc);await page.mouse.click(portRect.x+(p.x+1)*portRect.width/2,portRect.y+(1-p.y)*portRect.height/2);await page.waitForTimeout(200);};
+ await clickPort(323.05/80-.04,-1.34);
+ assert.ok((await page.locator('.laptop-detail').innerText()).includes('Not quite'));
+ for(const [x,z] of [[-323.05/80+.04,-2.15],[323.05/80-.04,-.77],[323.05/80-.04,-1.34],[323.05/80-.04,.4]])await clickPort(x,z);
+ await page.getByRole('heading',{name:'Laptop connected.',exact:true}).waitFor();
+ await shot('14-connections-complete');
+ await page.getByRole('button',{name:'Reset connections',exact:true}).click();
+ await page.getByRole('heading',{name:'Charger → Power',exact:true}).waitFor();
  assert.deepEqual(errors,[]);
  await writeFile('verification/latitude/result.json',JSON.stringify({passed:true,errors,checks:['default Dell model','closed exterior','underside service','SSD/RAM/WiFi explode isolate reset','reassemble','full teardown','guided cover','cable safety gate','troubleshooting','knowledge check','Framework retained','no substituted CAD']},null,2));
 }catch(e){await shot('failure').catch(()=>{});await writeFile('verification/latitude/failure.txt',String(e.stack));throw e;}finally{await browser.close();}

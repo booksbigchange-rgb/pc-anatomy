@@ -218,7 +218,7 @@ function exterior() {
     ['Tab', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\\'],
     ['Caps', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'", 'Enter'],
     ['Shift', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 'Shift'],
-    ['Ctrl', 'Fn', 'Win', 'Alt', 'Space', 'Alt', 'Ctrl', '←', '↑', '↓', '→'],
+    ['Ctrl', 'Fn', 'Win', 'Alt', 'Space', 'Alt', 'Ctrl', 'PgUp', '↑', 'PgDn'],
   ];
   for (let row = 0; row < rows.length; row++) {
     let x = -3.22;
@@ -226,7 +226,7 @@ function exterior() {
       const k = rows[row][i],
         kw =
           k === 'Space'
-            ? 2.3
+            ? 1.85
             : k === 'Shift'
               ? 0.72
               : k === 'Enter'
@@ -263,18 +263,49 @@ function exterior() {
       x += kw;
     }
   }
+  add(keyboard, disk(0.075, 0.028, C.dark), -0.18, 1.145, -0.44);
+  for (const x of [1.89, 2.345, 2.8])
+    add(keyboard, box(0.4, 0.035, 0.17, C.dark, 0.025), x, 1.11, 0.3);
   g.add(batch(keyboard));
   const trackpad = owner(new T.Group(), 'trackpad');
-  add(trackpad, box(2.6, 0.025, 1.32, 0x4f595f, 0.055), 0, 1.082, 1.15);
-  for (const x of [-0.65, 0.65])
-    add(trackpad, box(1.26, 0.02, 0.25, 0x646f76), x, 1.087, 0.34);
+  add(trackpad, box(2.6, 0.025, 1.32, 0x717b82, 0.055), -0.42, 1.082, 1.23);
+  for (const x of [-1.07, 0.23])
+    add(trackpad, box(1.26, 0.02, 0.25, 0x646f76), x, 1.087, 2.07);
+  for (const [x, w] of [
+    [-1.28, 0.87],
+    [-0.42, 0.48],
+    [0.44, 0.87],
+  ])
+    add(trackpad, box(w, 0.02, 0.22, 0x454f56), x, 1.087, 0.43);
   g.add(batch(trackpad));
-  add(g, box(0.39, 0.022, 0.18, C.dark, 0.045), 3.34, 1.09, -1.96);
+  add(g, disk(0.115, 0.026, C.steel), 3.48, 1.09, -1.72);
   const lid = owner(new T.Group(), 'display');
   lid.position.set(0, 1.03, -2.54);
   lid.rotation.x = -0.17;
   add(lid, box(w - 0.07, 5.1, 0.1, C.shell, 0.12), 0, 2.55, -0.07);
   add(lid, box(w - 0.22, 4.97, 0.05, C.dark, 0.09), 0, 2.55, 0);
+  if (typeof document !== 'undefined') {
+    const c = document.createElement('canvas');
+    c.width = c.height = 256;
+    const ctx = c.getContext('2d')!;
+    ctx.strokeStyle = '#4b555b';
+    ctx.lineWidth = 9;
+    ctx.beginPath();
+    ctx.arc(128, 128, 106, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = '#4b555b';
+    ctx.font = 'bold 66px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('DELL', 128, 151);
+    const texture = new T.CanvasTexture(c);
+    texture.colorSpace = T.SRGBColorSpace;
+    const badge = new T.Mesh(
+      new T.PlaneGeometry(0.76, 0.76),
+      new T.MeshBasicMaterial({ map: texture, transparent: true }),
+    );
+    badge.rotation.y = Math.PI;
+    add(lid, badge, 0, 2.55, -0.121);
+  }
   const screen = box(
     LATITUDE_DIMENSIONS.screenWidth,
     LATITUDE_DIMENSIONS.screenHeight,
@@ -291,15 +322,15 @@ function exterior() {
     add(g, box(0.84, 0.23, 0.33, 0x525d63, 0.055), x, 1.0, -2.56);
   g.add(batch(lid));
   const ports = [
-    port(g, 'power-left', -w / 2 - 0.035, -2.15, 0.2, 0.2, true),
-    port(g, 'usb-rear-right', w / 2 + 0.035, -0.77, 0.33, 0.17),
-    port(g, 'usb-front-right', w / 2 + 0.035, -0.23, 0.33, 0.17),
-    port(g, 'hdmi-left', w / 2 + 0.035, -1.34, 0.4, 0.14),
-    port(g, 'audio-right', w / 2 + 0.035, 0.4, 0.14, 0.14, true),
+    port(g, 'power-left', -w / 2 + 0.04, -2.15, 0.2, 0.2, true),
+    port(g, 'usb-rear-right', w / 2 - 0.04, -0.77, 0.33, 0.17),
+    port(g, 'usb-front-right', w / 2 - 0.04, -0.23, 0.33, 0.17),
+    port(g, 'hdmi-left', w / 2 - 0.04, -1.34, 0.4, 0.14),
+    port(g, 'audio-right', w / 2 - 0.04, 0.4, 0.14, 0.14, true),
   ];
-  port(g, 'usb-c-left', -w / 2 - 0.035, -1.67, 0.22, 0.11);
-  port(g, 'usb-a-left', -w / 2 - 0.035, -1.2, 0.33, 0.17);
-  port(g, 'ethernet-right', w / 2 + 0.035, -1.9, 0.36, 0.26);
+  port(g, 'usb-c-left', -w / 2 + 0.04, -1.67, 0.22, 0.11);
+  port(g, 'usb-a-left', -w / 2 + 0.04, -1.2, 0.33, 0.17);
+  port(g, 'ethernet-right', w / 2 - 0.04, -1.9, 0.36, 0.26);
   for (let i = 0; i < 14; i++)
     add(
       g,
@@ -360,7 +391,7 @@ export function buildLatitude5410() {
   );
   if (closedLid) closedLid.rotation.x = Math.PI / 2;
   closed.position.copy(root.position);
-  const base = owner(new T.Group(), 'motherboard');
+  const base = new T.Group();
   add(
     base,
     box(
@@ -437,9 +468,9 @@ export function buildLatitude5410() {
     for (const dx of [-0.85, 0.85])
       add(board, box(0.04, 0.06, 0.58, C.steel), x + dx, 0.065, 0.3);
   }
-  for (const z of [2.96, 1.22]) {
+  for (const z of [3.14, 0.765]) {
     add(board, box(0.58, 0.075, 0.14, C.dark), -3.13, 0.065, z);
-    screw(board, -3.13, 0.07, z - 1.48);
+    screw(board, -3.13, 0.07, z === 3.14 ? 1.27 : 0.04);
   }
   for (const [x, z, w] of [
     [-3.13, -0.95, 0.5],
@@ -463,8 +494,8 @@ export function buildLatitude5410() {
   const battery = owner(new T.Group(), 'battery');
   battery.position.set(...LATITUDE_HOME.battery);
   add(battery, box(5.8, 0.23, 2.04, C.dark, 0.035));
-  for (const x of [-1.85, 0, 1.85])
-    add(battery, box(1.78, 0.018, 1.92, 0x252b2f, 0.02), x, 0.127, 0);
+  for (const x of [-2.16, -0.72, 0.72, 2.16])
+    add(battery, box(1.38, 0.018, 1.92, 0x252b2f, 0.02), x, 0.127, 0);
   text(
     battery,
     '68 Wh · 4 CELL\nLatitude 5410\nDISCONNECT BEFORE SERVICE\nTEACHING REFERENCE',
@@ -512,6 +543,14 @@ export function buildLatitude5410() {
   text(wifi, 'WLAN', 0.4, 0.23, 0, 0.064, 0);
   for (const x of [-0.14, 0.14])
     add(wifi, disk(0.024, 0.025, C.gold), x, 0.077, -0.29);
+  for (let i = 0; i < 16; i++)
+    add(
+      wifi,
+      box(0.019, 0.013, 0.09, C.gold, 0),
+      -0.22 + i * 0.029,
+      0.023,
+      0.355,
+    );
   batch(wifi);
   serviceInterior.add(wifi);
   const cooling = owner(new T.Group(), 'fan');

@@ -1947,8 +1947,7 @@ function LaptopScene({
       if (
         viewRef.current === 'inside' &&
         explodeRef.current >= LAPTOP_INPUT_COVER_SERVICE.internalsVisibleAt &&
-        modeRef.current === 'explore' &&
-        !guidedRef.current
+        modeRef.current === 'explore'
       ) {
         const cableObjects = laptop.disconnectCables
           .filter((cable) => explodeRef.current < cable.at)
@@ -2563,8 +2562,12 @@ function LaptopScene({
                       ? model === 'latitude'
                         ? 'Inspect the closed Latitude.'
                         : 'Check the closed CAD reference.'
-                      : 'Explore the realistic open laptop.'
-                    : 'Now look under the keyboard.'}
+                      : model === 'latitude'
+                        ? 'Explore the Latitude 5410.'
+                        : 'Explore the realistic open laptop.'
+                    : model === 'latitude'
+                      ? 'Inspect the underside service layout.'
+                      : 'Now look under the keyboard.'}
         </h1>
         <p className="laptop-intro">
           {mode === 'connections'
@@ -2587,7 +2590,9 @@ function LaptopScene({
                       : model === 'latitude'
                         ? 'Latitude 5410 reference geometry: 14-inch 16:9 display, fixed side ports and a conventional keyboard deck. Interior dimensions are estimated from Dell service illustrations.'
                         : 'Framework reference geometry with aluminum materials, recessed keys and display glass.'
-                    : 'Laptop parts are smaller and packed closer together than desktop components.'}
+                    : model === 'latitude'
+                      ? 'Underside access · 68 Wh configuration · two SODIMM sockets. Component shapes and spacing are estimated from service references.'
+                      : 'Laptop parts are smaller and packed closer together than desktop components.'}
         </p>
         {(guided || mode === 'assessment') && (
           <div
