@@ -1,0 +1,19 @@
+{
+  "source": "KiCad/kicad-packages3D",
+  "source_commit": "b8b3cfdfad88ba66f21002b3de51dc6f7d55ba5a",
+  "source_path": "Connector_FFC-FPC.3dshapes/TE_1-84952-5_1x15-1MP_P1.0mm_Horizontal.step",
+  "source_blob": "a1a46c65c6afbfe70dc74b4f945b4d4ee117cd",
+  "license": "CC-BY-SA-4.0-with-KiCad-library-exception",
+  "modified": true,
+  "conversion": "STEP -> STL (CadQuery) -> optimized neutral-material GLB (trimesh)",
+  "source_faces": 918,
+  "output_faces": 918,
+  "output_vertices": 461,
+  "extents_m": [
+    0.02292,
+    0.00256,
+    0.00654
+  ],
+  "glb_bytes": 19584,
+  "release_status": "approved-for-laptop-board-detail"
+}

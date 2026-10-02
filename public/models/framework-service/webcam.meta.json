@@ -1,0 +1,19 @@
+{
+  "source": "FrameworkComputer/Framework-Laptop-13",
+  "source_commit": "9680262347b80efe2314673bf1f26eb955165fca",
+  "source_path": "Webcam/FW_13_camera_module.stp",
+  "source_blob": "090cc04e50e3d4fd437ff31392f76c7202cf932c",
+  "license": "CC-BY-4.0",
+  "modified": true,
+  "conversion": "STEP -> STL (CadQuery) -> optimized neutral-material GLB (trimesh)",
+  "source_faces": 21831,
+  "output_faces": 21831,
+  "output_vertices": 11024,
+  "extents_m": [
+    0.085,
+    0.004928,
+    0.006
+  ],
+  "glb_bytes": 439560,
+  "release_status": "candidate-for-laptop-anatomy-teardown"
+}

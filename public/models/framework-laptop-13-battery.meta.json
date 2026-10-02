@@ -1,0 +1,18 @@
+{
+  "source": "FrameworkComputer/Framework-Laptop-13",
+  "source_file": "Battery/FWKNAQ9_G01_20210911.stp",
+  "source_blob": "16ce561192960c9aa0e8f0fdcd957482cd187042",
+  "license": "CC-BY-4.0",
+  "modified": true,
+  "conversion": "STEP -> STL (CadQuery) -> optimized neutral-material GLB (trimesh)",
+  "source_faces": 101028,
+  "output_faces": 44816,
+  "output_vertices": 22247,
+  "extents_m": [
+    0.240013,
+    0.007679,
+    0.101053
+  ],
+  "glb_bytes": 894752,
+  "release_status": "approved-for-realistic-internals-v1"
+}

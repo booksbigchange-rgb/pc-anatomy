@@ -1,0 +1,75 @@
+name: Build Framework service-part assets
+
+on:
+  push:
+    branches:
+      - bigchange-school
+    paths:
+      - .github/workflows/framework-service-parts.yml
+      - scripts/convert-framework-service-parts.py
+
+permissions:
+  contents: write
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out school branch
+        uses: actions/checkout@v7
+        with:
+          ref: bigchange-school
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install conversion dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install \
+            cadquery==2.6.1 \
+            trimesh==4.8.3 \
+            fast-simplification==0.1.12 \
+            numpy==2.2.6 \
+            scipy==1.16.2 \
+            networkx==3.5
+
+      - name: Download pinned official Framework STEP models
+        run: |
+          set -euo pipefail
+          mkdir -p asset-work/framework-service public/models/framework-service
+          base='https://raw.githubusercontent.com/FrameworkComputer/Framework-Laptop-13/9680262347b80efe2314673bf1f26eb955165fca'
+
+          curl --fail --location --retry 3 "$base/Display/FW_display_w_cable_bracket.stp" -o asset-work/framework-service/FW_display_w_cable_bracket.stp
+          test "$(wc -c < asset-work/framework-service/FW_display_w_cable_bracket.stp)" -eq 11317482
+
+          curl --fail --location --retry 3 "$base/Hinges/13_5_hinge_l_assy.stp" -o asset-work/framework-service/13_5_hinge_l_assy.stp
+          test "$(wc -c < asset-work/framework-service/13_5_hinge_l_assy.stp)" -eq 460878
+
+          curl --fail --location --retry 3 "$base/Hinges/13_5_hinge_R_assy.stp" -o asset-work/framework-service/13_5_hinge_R_assy.stp
+          test "$(wc -c < asset-work/framework-service/13_5_hinge_R_assy.stp)" -eq 503221
+
+          curl --fail --location --retry 3 "$base/Webcam/FW_13_camera_module.stp" -o asset-work/framework-service/FW_13_camera_module.stp
+          test "$(wc -c < asset-work/framework-service/FW_13_camera_module.stp)" -eq 2984386
+
+      - name: Convert and validate
+        run: python scripts/convert-framework-service-parts.py
+
+      - name: Confirm no runtime dependency changes
+        run: git diff --exit-code package.json package-lock.json
+
+      - name: Commit converted local assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/models/framework-service
+          if git diff --cached --quiet; then
+            echo "No asset changes"
+            exit 0
+          fi
+          git commit -m "Add converted Framework service-part assets"
+          git fetch origin bigchange-school
+          git rebase origin/bigchange-school
+          git push origin HEAD:bigchange-school
