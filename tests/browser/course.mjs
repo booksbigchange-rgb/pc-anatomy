@@ -33,6 +33,9 @@ try {
   assert.match(await page.locator('.course-result').innerText(), /7 \/ 8 correct/);
   const downloadPromise = page.waitForEvent('download'); await click('Download my results'); const download = await downloadPromise;
   assert.equal(download.suggestedFilename(), 'bigchange-my-learning.json');
+  const exportButton = page.getByRole('button',{name:'Download my results',exact:true});
+  await exportButton.hover();
+  assert.equal(await exportButton.evaluate(button=>getComputedStyle(button).color),'rgb(21, 62, 53)','Hover must preserve readable text on the light button');
   await shot('03-final-review');
   await page.reload(); await click('My learning path');
   assert.match(await page.getByRole('region', { name: 'Learning path' }).innerText(), /7 \/ 8 correct/);
