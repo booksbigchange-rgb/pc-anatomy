@@ -23,6 +23,22 @@ export const MOUNTS: Record<HardwareId, Vec3> = {
   gpu: [1.66, 1.52, 0.07],
   psu: [1.33, 1.37, 2.05],
 };
+export const BOARD_TARGETS = {
+  'cpu-socket': { name: 'CPU socket', job: 'Holds the processor and connects it to the motherboard.', connects: 'Intel LGA1151 processor' },
+  'memory-slots': { name: 'Memory slots', job: 'Hold RAM upright. Match the notch before pressing the module into place.', connects: 'DDR4 memory modules' },
+  'expansion-slots': { name: 'Expansion slots', job: 'Connect extra cards, such as a graphics card, to the computer.', connects: 'PCIe expansion cards' },
+  'storage-socket': { name: 'M.2 storage socket', job: 'Connects the SSD. A fixed mount supports its other end.', connects: 'M.2 2280 SSD' },
+  'sata-ports': { name: 'SATA ports', job: 'Connect data cables for supported hard drives and SATA SSDs.', connects: 'SATA data cable' },
+  'clock-battery': { name: 'Clock battery', job: 'Keeps the clock running when the computer is unplugged.', connects: 'Battery holder on the motherboard' },
+} as const;
+export type BoardTargetId = keyof typeof BOARD_TARGETS;
+function markTarget(g: T.Group, start: number, id: BoardTargetId) {
+  const target = new T.Group();
+  target.name = id;
+  target.userData.boardTarget = id;
+  for (const child of g.children.slice(start)) target.add(child);
+  g.add(target);
+}
 const steel = 0xa4a9ac,
   black = 0x090b0d,
   blue = 0x327eb2,
@@ -141,7 +157,7 @@ function shadows(g: T.Group) {
     o.receiveShadow = true;
     let ancestor: T.Object3D | null = o.parent;
     while (ancestor && ancestor !== g) {
-      if (ancestor.name === 'cover' || ancestor.name === 'drive-cage') return;
+      if (ancestor.name === 'cover' || ancestor.name === 'drive-cage' || ancestor.userData.boardTarget) return;
       ancestor = ancestor.parent;
     }
     if (o.material.map) return;
@@ -186,7 +202,8 @@ export function createHardware(id: HardwareId) {
   g.name = id;
   if (id === 'motherboard') {
     put(g, box(3.6, 0.055, 3.84, 0x24614d));
-    // CPU socket and retention frame, four DIMM connectors, four expansion slots.
+    // Keep learning targets separate so picking survives geometry batching.
+    let start = g.children.length;
     put(g, box(0.76, 0.06, 0.76, steel), -0.6, 0.07, -0.98);
     put(g, box(0.6, 0.06, 0.6, black), -0.6, 0.12, -0.98);
     cable(
@@ -200,12 +217,16 @@ export function createHardware(id: HardwareId) {
       steel,
       0.016,
     );
+    markTarget(g, start, 'cpu-socket');
+    start = g.children.length;
     for (const x of [0.61, 0.83, 1.05, 1.27]) {
       put(g, box(0.09, 0.15, 2.22, black), x, 0.09, -0.93);
       put(g, box(0.028, 0.004, 2.1, 0x887452), x, 0.169, -0.93);
       for (const z of [-2.03, 0.18])
         put(g, box(0.13, 0.19, 0.12, 0xdad8c9), x, 0.11, z);
     }
+    markTarget(g, start, 'memory-slots');
+    start = g.children.length;
     for (const [z, c, w] of [
       [0.77, blue, 2.78],
       [1.14, black, 0.65],
@@ -215,6 +236,7 @@ export function createHardware(id: HardwareId) {
       put(g, box(w, 0.13, 0.1, c), -0.18, 0.09, z);
       put(g, box(w - 0.09, 0.005, 0.024, black), -0.18, 0.16, z);
     }
+    markTarget(g, start, 'expansion-slots');
     // Rear I/O shielding faces the rear x edge.
     for (const [z, w, h] of [
       [-1.54, 0.42, 0.28],
@@ -235,17 +257,35 @@ export function createHardware(id: HardwareId) {
     put(g, box(0.53, 0.13, 0.5, 0x46515b), 0.62, 0.08, 0.79);
     for (let x = 0.4; x < 0.87; x += 0.045)
       put(g, box(0.018, 0.13, 0.48, steel), x, 0.17, 0.79);
+    start = g.children.length;
     put(g, cyl(0.168, 0.04, steel), 1.26, 0.07, 0.61);
     put(g, cyl(0.186, 0.025, black), 1.26, 0.03, 0.61);
+    markTarget(g, start, 'clock-battery');
+    start = g.children.length;
     for (const z of [0.8, 1.12, 1.44, 1.72])
       put(g, box(0.16, 0.14, 0.17, black), 1.64, 0.1, z);
+    markTarget(g, start, 'sata-ports');
     put(g, box(0.3, 0.19, 0.16, 0xe6e2d4), 1.45, 0.11, 1.85);
     put(g, box(0.25, 0.16, 0.15, 0xe6e2d4), -0.62, 0.1, -1.85);
-    put(g, box(0.38, 0.09, 0.13, black), 1.56, 0.07, -0.3);
-    for (let i = 0; i < 45; i++) {
-      const x = -1.35 + (i % 9) * 0.31,
-        z = -0.25 + Math.floor(i / 9) * 0.2;
-      put(g, box(0.09, 0.03, 0.04, i % 3 ? 0xb49a63 : black), x, 0.049, z);
+    start = g.children.length;
+    // SSD contacts enter at the negative-z edge; fixture stays on the board.
+    put(g, box(0.38, 0.09, 0.13, black), 1.56, 0.13, -0.3);
+    put(g, box(0.32, 0.008, 0.045, gold, 0), 1.56, 0.145, -0.26);
+    put(g, cyl(0.045, 0.105, gold), 1.56, 0.105, 1.01);
+    screw(g, 1.56, 0.17, 1.01);
+    markTarget(g, start, 'storage-socket');
+    // Uneven circuit clusters, with small packages and metal terminations.
+    for (const [cx, cz, count] of [[-1.1, -0.12, 7], [-0.45, 0.31, 5], [0.96, 0.32, 6]]) {
+      for (let i = 0; i < count; i++) {
+        const x = cx + (i % 3) * 0.12, z = cz + Math.floor(i / 3) * 0.095;
+        put(g, box(0.045, 0.018, 0.025, i % 2 ? black : 0x9a8260, 0), x, 0.042, z);
+        for (const dx of [-0.027, 0.027]) put(g, box(0.01, 0.019, 0.025, steel, 0), x + dx, 0.043, z);
+      }
+    }
+    for (const [x, z, w, d] of [[-1.1, 0.34, 0.2, 0.26], [-0.67, -0.2, 0.24, 0.18], [0.02, -0.38, 0.28, 0.24]]) {
+      put(g, box(w, 0.045, d, black), x, 0.055, z);
+      for (let i = 0; i < 5; i++) for (const side of [-1, 1])
+        put(g, box(0.026, 0.013, 0.018, steel, 0), x + side * (w / 2 + 0.012), 0.038, z - d * 0.35 + i * d * 0.17);
     }
     for (const [x, z] of [
       [-1.55, -1.76],
@@ -306,12 +346,19 @@ export function createHardware(id: HardwareId) {
     put(g, sticker, 0.059, 0.03, 0.15);
   }
   if (id === 'ssd') {
-    put(g, box(0.367, 0.036, 1.333, 0x21563c));
+    const outline = new T.Shape();
+    outline.moveTo(-0.1835, -0.6665); outline.lineTo(0.1835, -0.6665);
+    outline.lineTo(0.1835, 0.6665); outline.lineTo(-0.1835, 0.6665); outline.closePath();
+    const mountingHole = new T.Path(); mountingHole.absarc(0, 0.61, 0.045, 0, Math.PI * 2, true);
+    outline.holes.push(mountingHole);
+    const pcb = new T.Mesh(new T.ExtrudeGeometry(outline, { depth:0.036, bevelEnabled:false }), material(0x21563c));
+    pcb.rotation.x = Math.PI / 2;
+    put(g, pcb, 0, 0.018, 0);
     for (const z of [-0.36, 0.06, 0.42])
       put(g, box(0.25, 0.05, 0.28, black), 0, 0.043, z);
     for (let x = -0.15; x < 0.17; x += 0.028)
       put(g, box(0.018, 0.038, 0.095, gold, 0), x, 0, -0.7);
-    screw(g, 0, 0.029, 0.61);
+
     label(g, 'M.2 NVMe', 0.28, 0.26, 0, 0.072, 0.08);
   }
   if (id === 'gpu') {
@@ -351,6 +398,7 @@ export function createHardware(id: HardwareId) {
         0.018,
       );
   }
+  for (const child of g.children) if (child instanceof T.Group && child.userData.boardTarget) shadows(child);
   return shadows(g);
 }
 /** A formed panel with real through openings, in its own XY plane. */

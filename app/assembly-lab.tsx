@@ -21,6 +21,8 @@ import {
   createHardware,
   createChassis,
   MOUNTS,
+  BOARD_TARGETS,
+  type BoardTargetId,
   type HardwareId,
   type Vec3,
 } from '../lib/optiplex-7040';
@@ -117,6 +119,8 @@ export default function AssemblyLab({
     [cageOpen, setCageOpen] = useState(true),
     [exploded, setExploded] = useState(false),
     [isolated, setIsolated] = useState(false);
+  const [boardTarget, setBoardTarget] = useState<BoardTargetId | null>(null);
+  const selectHardware = (id: HardwareId) => { setSelected(id); setBoardTarget(null); };
   const [selected, setSelected] = useState<HardwareId>('ssd'),
     [installed, setInstalled] = useState<HardwareId[]>([]),
     [current, setCurrent] = useState(0),
@@ -157,6 +161,7 @@ export default function AssemblyLab({
     exploded: false,
     isolated: false,
     selected: 'ssd' as HardwareId,
+    boardTarget: null as BoardTargetId | null,
   });
   const actionRef = useRef<Action | null>('home'),
     resetRef = useRef(false);
@@ -169,8 +174,9 @@ export default function AssemblyLab({
       exploded,
       isolated,
       selected,
+      boardTarget,
     };
-  }, [preview, upright, closed, cageOpen, exploded, isolated, selected]);
+  }, [preview, upright, closed, cageOpen, exploded, isolated, selected, boardTarget]);
   const complete = installed.length === PARTS.length,
     active = preview ? PARTS.find((p) => p.id === selected)! : PARTS[current];
   const name = (p: Part) => componentNames?.[p.id] ?? p.name;
@@ -390,7 +396,13 @@ export default function AssemblyLab({
         });
         if (hit) {
           let o: T.Object3D = hit.object;
-          while (o.parent && o.parent !== assembly) o = o.parent;
+          let target: BoardTargetId | null = null;
+          while (o.parent && o.parent !== assembly) {
+            if (o.userData.boardTarget) target = o.userData.boardTarget as BoardTargetId;
+            o = o.parent;
+          }
+          setBoardTarget(target);
+          if (target) setExploded(false);
           if (!groups.has(o.name as HardwareId)) { press = null; return; }
           setSelected(o.name as HardwareId);
           setFeedback(
@@ -494,7 +506,8 @@ export default function AssemblyLab({
         guide.visible = true;
       } else guide.visible = false;
       highlight.visible = d.preview && !d.closed;
-      highlight.setFromObject(groups.get(d.selected)!);
+      const selectedRoot = groups.get(d.selected)!;
+      highlight.setFromObject(d.selected === 'motherboard' && d.boardTarget ? selectedRoot.getObjectByName(d.boardTarget)! : selectedRoot);
       const cameraChanged = controls.update();
       if (dirty || cameraChanged) {
         if (dirty) renderer.shadowMap.needsUpdate = true;
@@ -593,6 +606,7 @@ export default function AssemblyLab({
         {preview && !closed && (
           <>
             <button
+              disabled={selected === 'motherboard' && boardTarget !== null}
               aria-pressed={exploded}
               onClick={() => setExploded(!exploded)}
             >
@@ -602,12 +616,12 @@ export default function AssemblyLab({
               aria-pressed={isolated}
               onClick={() => setIsolated(!isolated)}
             >
-              {isolated ? 'Show all' : 'Isolate selected'}
+              {isolated ? 'Show all' : boardTarget && selected === 'motherboard' ? 'Isolate motherboard' : 'Isolate selected'}
             </button>
             <select
               aria-label="Select component"
               value={selected}
-              onChange={(e) => setSelected(e.target.value as HardwareId)}
+              onChange={(e) => selectHardware(e.target.value as HardwareId)}
             >
               {PARTS.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -683,7 +697,7 @@ export default function AssemblyLab({
               <button
                 key={p.id}
                 disabled={!preview}
-                onClick={() => setSelected(p.id)}
+                onClick={() => selectHardware(p.id)}
                 className={
                   'assembly-step ' +
                   (done ? 'done ' : '') +
@@ -701,8 +715,14 @@ export default function AssemblyLab({
       <aside className="assembly-detail" aria-live="polite">
         <p className="assembly-eyebrow">COMPONENT NOTES</p>
         {buildEarned && <p className="assembly-boot">✓ PC Builder earned · saved on this browser</p>}
-        <h2>{name(active)}</h2>
-        <p>{active.why}</p>
+        <h2>{preview && selected === 'motherboard' && boardTarget ? BOARD_TARGETS[boardTarget].name : name(active)}</h2>
+        <p>{preview && selected === 'motherboard' && boardTarget ? BOARD_TARGETS[boardTarget].job : active.why}</p>
+        {preview && selected === 'motherboard' && boardTarget && <p><strong>Connects to:</strong> {BOARD_TARGETS[boardTarget].connects}</p>}
+        {preview && <section className="assembly-board-targets" aria-label="Motherboard learning targets">
+          <h3>Explore the board</h3>
+          <p>Tap a visible socket, or choose it here. Covered parts can be explored after removing the part above them.</p>
+          <div>{(Object.keys(BOARD_TARGETS) as BoardTargetId[]).map(id => <button key={id} aria-pressed={selected === 'motherboard' && boardTarget === id} onClick={() => { setSelected('motherboard'); setBoardTarget(id); setExploded(false); setFeedback('Highlighted on the motherboard. Sockets and holders remain attached to the board.'); }}>{BOARD_TARGETS[id].name}</button>)}</div>
+        </section>}
         <div className="assembly-feedback">
           <strong>Service coach</strong>
           <p>{feedback}</p>

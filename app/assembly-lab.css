@@ -369,3 +369,8 @@
 .assembly-corners { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0; }
 .assembly-corners button { padding:12px; border:1px solid #789995; border-radius:8px; background:#eef7f5; color:#173932; }
 .assembly-corners button:disabled { opacity:.55; }
+
+.assembly-board-targets { border-top:1px solid #d9e1df; margin-top:16px; padding-top:12px; }
+.assembly-board-targets div { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.assembly-board-targets button { min-height:44px; padding:8px; border:1px solid #789995; border-radius:8px; color:#173932; background:#eef7f5; }
+.assembly-board-targets button[aria-pressed="true"] { background:#cde9df; border-color:#236f5d; }

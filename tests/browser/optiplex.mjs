@@ -99,6 +99,17 @@ try {
     'Clicking the fan must select its complete cooling assembly',
   );
 
+  // Fixed motherboard targets are individually identifiable, by list and direct picking.
+  for (const target of ['CPU socket', 'Memory slots', 'Expansion slots', 'M.2 storage socket', 'SATA ports', 'Clock battery']) {
+    await page.getByRole('button', {name:target,exact:true}).click();
+    assert.equal(await page.locator('.assembly-detail h2').innerText(), target);
+    assert.equal(await page.getByRole('button', {name:'Explode selected',exact:true}).isEnabled(), false, 'Fixed board targets cannot be removed independently');
+  }
+  await page.getByRole('button', {name:'Memory slots',exact:true}).click();
+  const batteryPoint = new T.Vector3(3.34, .85, -.09).project(pickCamera);
+  await page.mouse.click(pickRect.x + (batteryPoint.x+1)*pickRect.width/2, pickRect.y+(1-batteryPoint.y)*pickRect.height/2);
+  assert.equal(await page.locator('.assembly-detail h2').innerText(), 'Clock battery', 'Direct battery pick must identify its holder');
+  await shot('06b-board-learning-target');
   await page
     .getByRole('combobox', { name: 'Select component' })
     .selectOption('ssd');

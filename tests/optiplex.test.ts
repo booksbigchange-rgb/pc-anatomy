@@ -20,7 +20,7 @@ void test('OptiPlex inspection batches static meshes without losing selectable r
         assert.ok(o.castShadow);
       }
     });
-    assert.ok(meshes > 0 && meshes < 20, `${id} has ${meshes} batches`);
+    assert.ok(meshes > 0 && meshes < 45, `${id} has ${meshes} batches`);
     const bounds = new T.Box3().setFromObject(g);
     assert.ok(!bounds.isEmpty());
     const size = bounds.getSize(new T.Vector3());
@@ -65,4 +65,26 @@ void test('Drive cage remains independently hinged and rear PSU opening stays un
   assert.equal(ray.intersectObject(group, true).length, 0, 'PSU rear opening must be a real opening');
   ray.set(new T.Vector3(0, 2.95, 2.05), new T.Vector3(1,0,0));
   assert.ok(ray.intersectObject(group, true).length > 0, 'Rear sheet must surround the PSU opening');
+});
+
+void test('Motherboard learning targets survive batching and remain fixed when SSD is lifted', () => {
+  const board = createHardware('motherboard'); board.position.set(...MOUNTS.motherboard);
+  for (const id of ['cpu-socket', 'memory-slots', 'expansion-slots', 'storage-socket', 'sata-ports', 'clock-battery']) {
+    const target = board.getObjectByName(id);
+    assert.ok(target, id);
+    assert.equal(target.userData.boardTarget, id);
+    assert.equal(target.parent, board);
+    assert.ok(!new T.Box3().setFromObject(target).isEmpty());
+  }
+  const fixture = board.getObjectByName('storage-socket')!;
+  board.updateMatrixWorld(true);
+  const home = new T.Box3().setFromObject(fixture);
+  const ssd = createHardware('ssd'); ssd.position.set(...MOUNTS.ssd);
+  const connector = new T.Vector3(MOUNTS.ssd[0], MOUNTS.ssd[1], MOUNTS.ssd[2] - 0.7);
+  assert.ok(home.distanceToPoint(connector) < 0.04, 'SSD contact edge must meet its board socket');
+  ssd.position.y += 2.3;
+  assert.ok(home.equals(new T.Box3().setFromObject(fixture)), 'Fixture must remain fixed');
+  const holeRay = new T.Raycaster(new T.Vector3(0, 1, 0.61), new T.Vector3(0, -1, 0));
+  const removable = createHardware('ssd'); removable.updateMatrixWorld(true);
+  assert.equal(holeRay.intersectObject(removable, true).length, 0, 'SSD mounting hole must remain open without a travelling screw');
 });
