@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import * as T from 'three';
 import { PC_CONNECTIONS, COOLER_ORDER, checkCooling, canConnect, checkPcPower, type PcConnection } from './pc-power-challenge';
+import FaultPractice from './fault-practice';
+import { ORIENTED_PARTS, RETAINERS, PART_JOBS, PC_FAULTS, placementProblem, fasteningProblems, type Retainer } from './hardware-practice.ts';
 import { readProgress, saveProgress } from './student-progress';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {
@@ -22,6 +24,9 @@ import {
   createChassis,
   MOUNTS,
   BOARD_TARGETS,
+  CASE_TARGETS,
+  setHardwareRetainers,
+  type CaseTargetId,
   type BoardTargetId,
   type HardwareId,
   type Vec3,
@@ -119,8 +124,17 @@ export default function AssemblyLab({
     [cageOpen, setCageOpen] = useState(true),
     [exploded, setExploded] = useState(false),
     [isolated, setIsolated] = useState(false);
+  const [aligned, setAligned] = useState<HardwareId[]>([]);
+  const [fastened, setFastened] = useState<Retainer[]>([]);
+  const preparationRef = useRef({ aligned: [] as HardwareId[], fastened: [] as Retainer[] });
+  useEffect(() => { preparationRef.current = { aligned, fastened }; }, [aligned, fastened]);
+  const [fault, setFault] = useState(0);
+  const [lightGraphics, setLightGraphics] = useState(false);
+  const [caseTarget, setCaseTarget] = useState<CaseTargetId | null>(null);
+  const [caseInstance, setCaseInstance] = useState<string | null>(null);
+  const [selectedCable, setSelectedCable] = useState<PcConnection | null>(null);
   const [boardTarget, setBoardTarget] = useState<BoardTargetId | null>(null);
-  const selectHardware = (id: HardwareId) => { setSelected(id); setBoardTarget(null); };
+  const selectHardware = (id: HardwareId) => { setSelected(id); setBoardTarget(null); setCaseTarget(null); setSelectedCable(null); };
   const [selected, setSelected] = useState<HardwareId>('ssd'),
     [installed, setInstalled] = useState<HardwareId[]>([]),
     [current, setCurrent] = useState(0),
@@ -147,7 +161,7 @@ export default function AssemblyLab({
     setFeedback('Cable connected. M.2 storage and this slot-powered card do not need separate power cables.');
   };
   const testPower = () => {
-    const problems = [...checkPcPower(installed, connections, closed, !cageOpen), ...checkCooling({ pasteApplied, screws })];
+    const problems = [...checkPcPower(installed, connections, closed, !cageOpen), ...checkCooling({ pasteApplied, screws }), ...fasteningProblems(fastened)];
     setPowerProblems(problems);
     setPowerOn(problems.length === 0);
     if (!problems.length) { saveProgress({ pcBuilt: true }); setBuildEarned(true); }
@@ -162,6 +176,9 @@ export default function AssemblyLab({
     isolated: false,
     selected: 'ssd' as HardwareId,
     boardTarget: null as BoardTargetId | null,
+    caseTarget: null as CaseTargetId | null,
+    caseInstance: null as string | null,
+    selectedCable: null as PcConnection | null,
   });
   const actionRef = useRef<Action | null>('home'),
     resetRef = useRef(false);
@@ -175,12 +192,15 @@ export default function AssemblyLab({
       isolated,
       selected,
       boardTarget,
+      caseTarget, caseInstance, selectedCable,
     };
-  }, [preview, upright, closed, cageOpen, exploded, isolated, selected, boardTarget]);
+  }, [preview, upright, closed, cageOpen, exploded, isolated, selected, boardTarget, caseTarget, caseInstance, selectedCable]);
   const complete = installed.length === PARTS.length,
-    active = preview ? PARTS.find((p) => p.id === selected)! : PARTS[current];
+    active = preview || complete ? PARTS.find((p) => p.id === selected)! : PARTS[current];
   const name = (p: Part) => componentNames?.[p.id] ?? p.name;
   const practice = () => {
+    setAligned([]); setFastened([]);
+    preparationRef.current = { aligned: [], fastened: [] };
     setPasteApplied(false);
     setScrews([]);
     coolingRef.current = { pasteApplied: false, screws: [] };
@@ -221,22 +241,22 @@ export default function AssemblyLab({
     scene.background = new T.Color(0x111a21);
     const camera = new T.PerspectiveCamera(38, 1, 0.1, 100);
     camera.position.set(10.6, 12.8, 12.6);
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
-    renderer.shadowMap.enabled = true;
+    renderer.setPixelRatio(Math.min(devicePixelRatio, lightGraphics ? 1 : 1.75));
+    renderer.shadowMap.enabled = !lightGraphics;
     renderer.shadowMap.type = T.PCFSoftShadowMap;
     renderer.shadowMap.autoUpdate = false;
     let dirty = true,
       previousDisplay = '';
     renderer.outputColorSpace = T.SRGBColorSpace;
     renderer.toneMapping = T.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.12;
+    renderer.toneMappingExposure = 1.0;
     const controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true;
     controls.minDistance = 5;
     controls.maxDistance = 28;
     controls.target.set(1.05, 1.15, 0);
-    scene.add(new T.HemisphereLight(0xe4f0ff, 0x4b5262, 2.3));
-    const key = new T.DirectionalLight(0xfff4e8, 3.5);
+    scene.add(new T.HemisphereLight(0xe4f0ff, 0x4b5262, 1.6));
+    const key = new T.DirectionalLight(0xfff4e8, 2.8);
     key.position.set(3, 12, 5);
     key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
@@ -245,8 +265,9 @@ export default function AssemblyLab({
     key.shadow.camera.top = 8;
     key.shadow.camera.bottom = -8;
     key.shadow.bias = -0.0004;
+    key.shadow.normalBias = 0.003;
     scene.add(key);
-    const fill = new T.DirectionalLight(0xbadfff, 2.1);
+    const fill = new T.DirectionalLight(0xbadfff, 1.5);
     fill.position.set(-5, 6, -7);
     scene.add(fill);
     const table = new T.Mesh(
@@ -275,6 +296,7 @@ export default function AssemblyLab({
     for (const connection of PC_CONNECTIONS) {
       const path = new T.CatmullRomCurve3(routes[connection.id].map(point => new T.Vector3(...point)));
       const visual = new T.Mesh(new T.TubeGeometry(path, 24, connection.id === 'mains' ? 0.045 : 0.024, 6, false), new T.MeshStandardMaterial({ color: connection.id === 'fan' ? 0xc9aa52 : 0x30383e, roughness: 0.75 }));
+      visual.userData.connectionId = connection.id;
       visual.visible = false;
       visual.castShadow = true;
       assembly.add(visual);
@@ -286,6 +308,13 @@ export default function AssemblyLab({
       g.position.set(...MOUNTS[p.id]);
       groups.set(p.id, g);
       assembly.add(g);
+    }
+    const ghosts = new Map<HardwareId, T.Group>();
+    for (const [id, hardware] of groups) {
+      const ghost = hardware.clone(true);
+      ghost.position.set(...MOUNTS[id]); ghost.visible=false;
+      ghost.traverse(object => { if (object instanceof T.Mesh) { object.material=new T.MeshBasicMaterial({color:0x70dce5,transparent:true,opacity:.22,depthWrite:false}); object.castShadow=false; } });
+      ghosts.set(id,ghost); assembly.add(ghost);
     }
     const paste = new T.Mesh(new T.SphereGeometry(0.075, 16, 8), new T.MeshStandardMaterial({ color: 0xb6bcc2, roughness: 0.9 }));
     paste.scale.y = 0.2;
@@ -322,6 +351,8 @@ export default function AssemblyLab({
       const p = PARTS[currentRef.current],
         g = groups.get(p.id)!;
       if (!ray.intersectObject(g, true).length) return;
+      const orientationProblem = placementProblem(p.id, preparationRef.current.aligned.includes(p.id));
+      if (orientationProblem) { setFeedback(orientationProblem); return; }
       if (p.id === 'cooler' && !coolingRef.current.pasteApplied) { setFeedback('Apply thermal paste to the CPU before seating the cooler.'); return; }
       dragging = p.id;
       controls.enabled = false;
@@ -380,13 +411,12 @@ export default function AssemblyLab({
         }
       } else if (
         !cancelled &&
-        displayRef.current.preview &&
-        !displayRef.current.closed &&
+        (displayRef.current.preview || installedRef.current.length === PARTS.length) &&
         press &&
         Math.hypot(e.clientX - press.x, e.clientY - press.y) < 5
       ) {
         pointerAt(e);
-        const hit = ray.intersectObject(assembly, true).find(({object}) => {
+        const hit = ray.intersectObjects([chassis, ...groups.values(), ...cableVisuals.values()], true).find(({object}) => {
           let node: T.Object3D | null = object;
           while(node && node !== assembly) {
             if(!node.visible) return false;
@@ -397,10 +427,18 @@ export default function AssemblyLab({
         if (hit) {
           let o: T.Object3D = hit.object;
           let target: BoardTargetId | null = null;
+          let exterior: CaseTargetId | null = null;
+          let instance: string | null = null;
+          const cableId = o.userData.connectionId as PcConnection | undefined;
+          if (cableId) { setSelectedCable(cableId); setCaseTarget(null); setBoardTarget(null); press=null; return; }
           while (o.parent && o.parent !== assembly) {
+            if (o.userData.caseTarget) { exterior=o.userData.caseTarget as CaseTargetId; instance=o.name; }
             if (o.userData.boardTarget) target = o.userData.boardTarget as BoardTargetId;
             o = o.parent;
           }
+          setSelectedCable(null);
+          if (o === chassis) { setCaseTarget(exterior ?? 'chassis'); setCaseInstance(instance); setBoardTarget(null); press=null; return; }
+          setCaseTarget(null);
           setBoardTarget(target);
           if (target) setExploded(false);
           if (!groups.has(o.name as HardwareId)) { press = null; return; }
@@ -442,6 +480,7 @@ export default function AssemblyLab({
         currentRef.current,
         connectionRef.current,
         coolingRef.current,
+        preparationRef.current,
       ]);
       if (signature !== previousDisplay) {
         dirty = true;
@@ -472,6 +511,7 @@ export default function AssemblyLab({
         if (view === 'top') camera.position.set(cx, 17, 0.01);
         actionRef.current = null;
       }
+      for (const id of ['motherboard','gpu'] as HardwareId[]) setHardwareRetainers(groups.get(id)!, d.preview ? ['ram','ssd','gpu'] : preparationRef.current.fastened);
       paste.visible = !d.preview && coolingRef.current.pasteApplied && !installedRef.current.includes('cooler');
       chassis.visible = !(d.preview && d.isolated);
       driveCage.rotation.z = !d.closed && (d.cageOpen || (!d.preview && !done)) ? -Math.PI / 2.4 : 0;
@@ -484,6 +524,7 @@ export default function AssemblyLab({
           if (d.preview && d.exploded && d.selected === p.id)
             g.position.y += 2.3;
         } else if (dragging !== p.id) g.position.set(...p.start);
+        g.rotation.y = !d.preview && !installedRef.current.includes(p.id) && ORIENTED_PARTS.includes(p.id) && !preparationRef.current.aligned.includes(p.id) ? Math.PI : 0;
         const on = !d.preview && !done && p.id === PARTS[currentRef.current].id;
         g.traverse((o) => {
           if (
@@ -495,19 +536,23 @@ export default function AssemblyLab({
           }
         });
       }
+      for (const [id,ghost] of ghosts) ghost.visible=!d.preview && !done && id===PARTS[currentRef.current].id;
       if (!d.preview && !done) {
         const g = groups.get(PARTS[currentRef.current].id)!;
         const saved = g.position.clone();
+        const savedRotation=g.rotation.y; g.rotation.y=0;
         g.position.set(...MOUNTS[PARTS[currentRef.current].id]);
         g.updateMatrixWorld(true);
         guide.setFromObject(g);
-        g.position.copy(saved);
+        g.position.copy(saved); g.rotation.y=savedRotation;
         g.updateMatrixWorld(true);
         guide.visible = true;
       } else guide.visible = false;
-      highlight.visible = d.preview && !d.closed;
+      highlight.visible = (d.preview || done) && (!d.closed || d.caseTarget !== null);
       const selectedRoot = groups.get(d.selected)!;
-      highlight.setFromObject(d.selected === 'motherboard' && d.boardTarget ? selectedRoot.getObjectByName(d.boardTarget)! : selectedRoot);
+      const caseObject = d.caseTarget && !d.caseInstance ? (() => { let found: T.Object3D | undefined; chassis.traverse(object => { if (!found && object.userData.caseTarget === d.caseTarget) found=object; }); return found ?? chassis; })() : chassis;
+      const inspectionObject = d.caseTarget ? (d.caseInstance ? chassis.getObjectByName(d.caseInstance) : caseObject) : d.selectedCable ? cableVisuals.get(d.selectedCable) : d.selected === 'motherboard' && d.boardTarget ? selectedRoot.getObjectByName(d.boardTarget) : selectedRoot;
+      highlight.setFromObject(inspectionObject ?? selectedRoot);
       const cameraChanged = controls.update();
       if (dirty || cameraChanged) {
         if (dirty) renderer.shadowMap.needsUpdate = true;
@@ -544,7 +589,7 @@ export default function AssemblyLab({
       textures.forEach((t) => t.dispose());
       renderer.dispose();
     };
-  }, []);
+  }, [lightGraphics]);
   const stage = (
     <section
       className={'assembly-stage' + (previewOnly ? ' assembly-preview' : '')}
@@ -591,6 +636,7 @@ export default function AssemblyLab({
             {cageOpen ? 'Close drive cage' : 'Open drive cage'}
           </button>
         )}
+        <button aria-pressed={lightGraphics} onClick={() => { actionRef.current='home'; setLightGraphics(!lightGraphics); }}>{lightGraphics ? 'Full graphics' : 'Light graphics'}</button>
         {(['home', 'front', 'rear', 'top'] as Action[]).map((view) => (
           <button
             key={view}
@@ -606,7 +652,7 @@ export default function AssemblyLab({
         {preview && !closed && (
           <>
             <button
-              disabled={selected === 'motherboard' && boardTarget !== null}
+              disabled={caseTarget !== null || selectedCable !== null || (selected === 'motherboard' && boardTarget !== null)}
               aria-pressed={exploded}
               onClick={() => setExploded(!exploded)}
             >
@@ -696,7 +742,7 @@ export default function AssemblyLab({
             return (
               <button
                 key={p.id}
-                disabled={!preview}
+                disabled={!preview && !complete}
                 onClick={() => selectHardware(p.id)}
                 className={
                   'assembly-step ' +
@@ -715,14 +761,29 @@ export default function AssemblyLab({
       <aside className="assembly-detail" aria-live="polite">
         <p className="assembly-eyebrow">COMPONENT NOTES</p>
         {buildEarned && <p className="assembly-boot">✓ PC Builder earned · saved on this browser</p>}
-        <h2>{preview && selected === 'motherboard' && boardTarget ? BOARD_TARGETS[boardTarget].name : name(active)}</h2>
-        <p>{preview && selected === 'motherboard' && boardTarget ? BOARD_TARGETS[boardTarget].job : active.why}</p>
+        <h2>{caseTarget ? CASE_TARGETS[caseTarget].name : selectedCable ? PC_CONNECTIONS.find(item => item.id === selectedCable)!.label : preview && selected === 'motherboard' && boardTarget ? BOARD_TARGETS[boardTarget].name : name(active)}</h2>
+        <p>{caseTarget ? CASE_TARGETS[caseTarget].job : selectedCable ? `Connects to ${PC_CONNECTIONS.find(item => item.id === selectedCable)!.target}. Disconnect wall power before changing hardware connections.` : preview && selected === 'motherboard' && boardTarget ? BOARD_TARGETS[boardTarget].job : active.why}</p>
         {preview && selected === 'motherboard' && boardTarget && <p><strong>Connects to:</strong> {BOARD_TARGETS[boardTarget].connects}</p>}
         {preview && <section className="assembly-board-targets" aria-label="Motherboard learning targets">
           <h3>Explore the board</h3>
           <p>Tap a visible socket, or choose it here. Covered parts can be explored after removing the part above them.</p>
-          <div>{(Object.keys(BOARD_TARGETS) as BoardTargetId[]).map(id => <button key={id} aria-pressed={selected === 'motherboard' && boardTarget === id} onClick={() => { setSelected('motherboard'); setBoardTarget(id); setExploded(false); setFeedback('Highlighted on the motherboard. Sockets and holders remain attached to the board.'); }}>{BOARD_TARGETS[id].name}</button>)}</div>
+          <div>{(Object.keys(BOARD_TARGETS) as BoardTargetId[]).map(id => <button key={id} aria-pressed={selected === 'motherboard' && boardTarget === id} onClick={() => { setSelected('motherboard'); setCaseTarget(null); setSelectedCable(null); setBoardTarget(id); setExploded(false); setFeedback('Highlighted on the motherboard. Sockets and holders remain attached to the board.'); }}>{BOARD_TARGETS[id].name}</button>)}</div>
         </section>}
+        {caseTarget && <p><strong>Connects to:</strong> {CASE_TARGETS[caseTarget].connects}</p>}
+        {!boardTarget && !caseTarget && !selectedCable && <div className="assembly-job"><strong>Its job:</strong> {PART_JOBS[active.id].job}<p>{PART_JOBS[active.id].example}</p><p><strong>Connects to:</strong> {PART_JOBS[active.id].connection}</p></div>}
+        {preview && <section className="assembly-board-targets" aria-label="Case port learning targets"><h3>Ports and case</h3><div>{(Object.keys(CASE_TARGETS) as CaseTargetId[]).filter(id => id !== 'optical').map(id => <button key={id} onClick={() => { setCaseTarget(id); setCaseInstance(null); setBoardTarget(null); setSelectedCable(null); setIsolated(false); actionRef.current = id === 'button' ? 'front' : 'rear'; }}>{CASE_TARGETS[id].name}</button>)}</div></section>}
+        {!preview && !complete && ORIENTED_PARTS.includes(active.id) && <section className="assembly-handling" aria-label="Part orientation">
+          <h3>Match the direction</h3><p>Compare the part with its cyan guide. Turn it before placing it. This checks direction; it does not model insertion force.</p>
+          <button aria-pressed={aligned.includes(active.id)} onClick={() => { setAligned(previous => previous.includes(active.id) ? previous.filter(id => id !== active.id) : [...previous, active.id]); setFeedback('Direction changed. Compare the contacts and socket guide, then drag the part.'); }}>Turn part 180°</button>
+          <p>{aligned.includes(active.id) ? 'Contacts match the guide.' : 'Contacts face the wrong direction.'}</p>
+        </section>}
+        {!preview && <section className="assembly-handling" aria-label="Module retainers"><h3>Secure installed parts</h3>
+          {(Object.keys(RETAINERS) as Retainer[]).map(id => <button key={id} disabled={!installed.includes(id) || fastened.includes(id) || connections.includes('mains') || powerOn} onClick={() => { setFastened(previous => [...previous, id]); setFeedback(`${RETAINERS[id]}: secured. The retainer holds the part in place.`); }}>{fastened.includes(id) ? '✓ ' : ''}{RETAINERS[id]}</button>)}
+          <p>Unplug wall power before changing a retainer. These are simplified actions, not a repair guide.</p></section>}
+        {preview && <details className="assembly-faults"><summary>Practise troubleshooting</summary>
+          <label>Case<select aria-label="PC troubleshooting case" value={fault} onChange={event => setFault(Number(event.target.value))}>{PC_FAULTS.map((item, index) => <option key={item.id} value={index}>{item.title}</option>)}</select></label>
+          <FaultPractice key={PC_FAULTS[fault].id} scenario={PC_FAULTS[fault]} />
+        </details>}
         <div className="assembly-feedback">
           <strong>Service coach</strong>
           <p>{feedback}</p>
@@ -777,4 +838,3 @@ export default function AssemblyLab({
     </main>
   );
 }
-

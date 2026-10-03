@@ -676,3 +676,7 @@
     padding: 20px 15px;
   }
 }
+
+.tm-comparison { padding:16px; border:1px solid #b9d7ca; background:#f0f8f4; color:#163b2d; border-radius:12px; }
+.tm-comparison table { width:100%; border-collapse:collapse; }
+.tm-comparison th, .tm-comparison td { padding:8px; text-align:left; border-bottom:1px solid #c9ddd4; }

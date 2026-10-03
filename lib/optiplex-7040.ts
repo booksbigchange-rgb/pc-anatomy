@@ -18,7 +18,7 @@ export const MOUNTS: Record<HardwareId, Vec3> = {
   motherboard: [2.08, 0.76, -0.7],
   cpu: [1.48, 0.93, -1.68],
   cooler: [1.48, 1.08, -1.68],
-  ram: [2.91, 1.2, -1.63],
+  ram: [2.91, 1.11, -1.63],
   ssd: [3.64, 0.92, -0.3],
   gpu: [1.66, 1.52, 0.07],
   psu: [1.33, 1.37, 2.05],
@@ -38,6 +38,40 @@ function markTarget(g: T.Group, start: number, id: BoardTargetId) {
   target.userData.boardTarget = id;
   for (const child of g.children.slice(start)) target.add(child);
   g.add(target);
+}
+export const CASE_TARGETS = {
+  usb: { name:'USB port', job:'Connects devices and transfers data.', connects:'USB keyboard, mouse or storage device' },
+  display: { name:'DisplayPort', job:'Sends video and audio to a compatible screen.', connects:'DisplayPort monitor cable' },
+  hdmi: { name:'HDMI port', job:'Sends video and audio to a compatible screen.', connects:'HDMI monitor cable' },
+  network: { name:'Ethernet port', job:'Connects the computer to a wired network.', connects:'Ethernet network cable' },
+  audio: { name:'Audio socket', job:'Connects compatible audio equipment.', connects:'Matching audio plug' },
+  ps2: { name:'PS/2 port', job:'Connects an older keyboard or mouse.', connects:'Matching PS/2 keyboard or mouse' },
+  serial: { name:'Serial port', job:'Connects supported older equipment.', connects:'Compatible serial device cable' },
+  button: { name:'Power button', job:'Sends a request to start or shut down the computer.', connects:'Front-panel switch lead to the board' },
+  optical: { name:'Optical drive bay', job:'Holds the fitted optical drive.', connects:'Supported disc and internal drive connections' },
+  chassis: { name:'Case and ventilation', job:'Supports and protects the hardware. Open vents let cooling air pass.', connects:'Side cover, drive cage and component mounting points' },
+} as const;
+export type CaseTargetId = keyof typeof CASE_TARGETS;
+function markCase(g: T.Group, start: number, id: CaseTargetId) {
+  const target = new T.Group(); target.name = `case-${id}-${g.children.length}`;
+  target.userData.caseTarget = id;
+  for (const child of g.children.slice(start)) target.add(child);
+  g.add(target);
+}
+function markRetainer(g: T.Group, start: number, id: string) {
+  const target = new T.Group(); target.name=id; target.userData.retainer=id;
+  for (const child of g.children.slice(start)) target.add(child);
+  g.add(target);
+}
+export function setHardwareRetainers(board: T.Group, fastened: readonly string[]) {
+  for (const name of ['ram-clip-left','ram-clip-right']) {
+    const clip=board.getObjectByName(name);
+    if (clip) clip.rotation.x=fastened.includes('ram') ? 0 : (name.endsWith('left') ? -.4 : .4);
+  }
+  const bracket=board.getObjectByName('gpu-retainer');
+  if (bracket) bracket.rotation.x=fastened.includes('gpu') ? 0 : .55;
+  const screw=board.getObjectByName('ssd-retainer');
+  if (screw) screw.position.y=fastened.includes('ssd') ? 0 : .12;
 }
 const steel = 0xa4a9ac,
   black = 0x090b0d,
@@ -157,7 +191,7 @@ function shadows(g: T.Group) {
     o.receiveShadow = true;
     let ancestor: T.Object3D | null = o.parent;
     while (ancestor && ancestor !== g) {
-      if (ancestor.name === 'cover' || ancestor.name === 'drive-cage' || ancestor.userData.boardTarget) return;
+      if (ancestor.name === 'cover' || ancestor.name === 'drive-cage' || ancestor.userData.boardTarget || ancestor.userData.caseTarget || ancestor.userData.retainer) return;
       ancestor = ancestor.parent;
     }
     if (o.material.map) return;
@@ -222,8 +256,12 @@ export function createHardware(id: HardwareId) {
     for (const x of [0.61, 0.83, 1.05, 1.27]) {
       put(g, box(0.09, 0.15, 2.22, black), x, 0.09, -0.93);
       put(g, box(0.028, 0.004, 2.1, 0x887452), x, 0.169, -0.93);
-      for (const z of [-2.03, 0.18])
-        put(g, box(0.13, 0.19, 0.12, 0xdad8c9), x, 0.11, z);
+      for (const z of [-2.03, 0.18]) {
+        const clip = new T.Group(); clip.position.set(x, 0.11, z);
+        put(clip, box(0.13, 0.19, 0.12, 0xdad8c9));
+        if (x === 0.83) { clip.name=z<0 ? 'ram-clip-left' : 'ram-clip-right'; clip.userData.retainer=clip.name; }
+        g.add(clip);
+      }
     }
     markTarget(g, start, 'memory-slots');
     start = g.children.length;
@@ -272,7 +310,9 @@ export function createHardware(id: HardwareId) {
     put(g, box(0.38, 0.09, 0.13, black), 1.56, 0.13, -0.3);
     put(g, box(0.32, 0.008, 0.045, gold, 0), 1.56, 0.145, -0.26);
     put(g, cyl(0.045, 0.105, gold), 1.56, 0.105, 1.01);
+    const screwStart=g.children.length;
     screw(g, 1.56, 0.17, 1.01);
+    markRetainer(g,screwStart,'ssd-retainer');
     markTarget(g, start, 'storage-socket');
     // Uneven circuit clusters, with small packages and metal terminations.
     for (const [cx, cz, count] of [[-1.1, -0.12, 7], [-0.45, 0.31, 5], [0.96, 0.32, 6]]) {
@@ -310,6 +350,7 @@ export function createHardware(id: HardwareId) {
   if (id === 'cpu') {
     put(g, box(0.62, 0.06, 0.62, 0x315445));
     put(g, box(0.55, 0.05, 0.55, steel), 0, 0.055, 0);
+    put(g,box(.065,.004,.065,gold,0),-.22,.082,-.22);
     label(g, 'Intel Core', 0.45, 0.12, 0, 0.082, 0);
   }
   if (id === 'cooler') {
@@ -334,13 +375,17 @@ export function createHardware(id: HardwareId) {
     );
   }
   if (id === 'ram') {
-    put(g, box(0.042, 0.52, 2.22, 0x25543e));
+    const edge = new T.Shape();
+    edge.moveTo(-1.11,-.26); edge.lineTo(.09,-.26); edge.lineTo(.09,-.19); edge.lineTo(.21,-.19); edge.lineTo(.21,-.26);
+    edge.lineTo(1.11,-.26); edge.lineTo(1.11,.26); edge.lineTo(-1.11,.26); edge.closePath();
+    const board = new T.Mesh(new T.ExtrudeGeometry(edge,{depth:.042,bevelEnabled:false}),material(0x25543e));
+    board.rotation.y=Math.PI/2; put(g,board,-.021,0,0);
     for (const x of [-0.04, 0.04])
       for (let z = -0.85; z < 1; z += 0.255)
         put(g, box(0.03, 0.24, 0.2, black), x, 0.07, z);
     for (let z = -1.02; z < 1.04; z += 0.041) {
       if (Math.abs(z + 0.15) < 0.06) continue;
-      put(g, box(0.046, 0.095, 0.025, gold, 0), 0, -0.3, z);
+      put(g, box(0.046, 0.095, 0.025, gold, 0), 0, -0.21, z);
     }
     const sticker = box(0.016, 0.21, 0.75, 0xe8e9df);
     put(g, sticker, 0.059, 0.03, 0.15);
@@ -371,6 +416,9 @@ export function createHardware(id: HardwareId) {
     f.rotation.x = Math.PI / 2;
     put(g, f, 0.35, 0.04, 0.39);
     put(g, box(0.045, 1.85, 0.24, steel), -1.39, 0.14, 0);
+    const bracketStart=g.children.length;
+    put(g,box(.15,.10,.18,blue),-1.37,.97,0);
+    markRetainer(g,bracketStart,'gpu-retainer');
     put(g, box(1.54, 0.1, 0.05, gold), -0.18, -0.55, 0);
     for (const y of [-0.18, 0.16, 0.5])
       put(g, box(0.04, 0.16, 0.13, black), -1.42, y, 0);
@@ -398,7 +446,10 @@ export function createHardware(id: HardwareId) {
         0.018,
       );
   }
-  for (const child of g.children) if (child instanceof T.Group && child.userData.boardTarget) shadows(child);
+  const batchTargets = (root: T.Group) => {
+    for (const child of root.children) if (child instanceof T.Group) { batchTargets(child); if (child.userData.boardTarget || child.userData.retainer) shadows(child); }
+  };
+  batchTargets(g);
   return shadows(g);
 }
 /** A formed panel with real through openings, in its own XY plane. */
@@ -415,19 +466,20 @@ function panel(w: number, h: number, depth: number, holes: [number, number, numb
   return new T.Mesh(new T.ExtrudeGeometry(shape, { depth, bevelEnabled: false }), material(color));
 }
 /** Rear-facing ports: open socket shells, inset contacts and shaped connector profiles. */
-function rearSocket(g: T.Group, x: number, y: number, z: number, w: number, h: number, kind: 'usb' | 'display' | 'network' | 'serial') {
+function rearSocket(g: T.Group, x: number, y: number, z: number, w: number, h: number, kind: 'usb' | 'display' | 'hdmi' | 'network' | 'serial') {
+  const start=g.children.length;
   const holes: [number, number, number, number][] = [[0, 0, w - .04, h - .04]];
   const shell = panel(w, h, .055, holes);
   shell.quaternion.setFromRotationMatrix(new T.Matrix4().makeBasis(new T.Vector3(0, 1, 0), new T.Vector3(0, 0, 1), new T.Vector3(1, 0, 0)));
   put(g, shell, x, y, z);
-  put(g, box(.013, w - .04, h - .04, black, 0), x + .058, y, z);
+  put(g, box(.013, w - .04, h - .04, black, 0), x + .027, y, z);
   if (kind === 'usb') {
     put(g, box(.016, w - .08, .035, 0x28628d, 0), x + .015, y, z + .015);
     for (let i = 0; i < 4; i++) put(g, box(.012, .016, .009, gold, 0), x + .007, y - w / 2 + .075 + i * .033, z + .012);
   } else if (kind === 'network') {
     for (let i = 0; i < 8; i++) put(g, box(.018, .01, .06, gold, 0), x + .021, y - .09 + i * .026, z);
     for (const dy of [-w / 2 + .025, w / 2 - .025]) put(g, box(.01, .025, .024, 0x75a04b, 0), x - .005, y + dy, z + h / 2 - .03);
-  } else if (kind === 'display') {
+  } else if (kind === 'display' || kind === 'hdmi') {
     put(g, box(.016, w - .08, .024, 0x55595c, 0), x + .023, y, z);
     for (let i = 0; i < 10; i++) put(g, box(.01, .008, .009, gold, 0), x + .009, y - w / 2 + .06 + i * (w - .12) / 10, z);
   } else {
@@ -436,6 +488,7 @@ function rearSocket(g: T.Group, x: number, y: number, z: number, w: number, h: n
       put(g, pin, x + .018, y - .13 + i * .064, z + dy * .035);
     }
   }
+  markCase(g,start,kind);
 }
 export function createChassis() {
   const g = new T.Group();
@@ -479,13 +532,15 @@ export function createChassis() {
   for (const z of [-.69,-.48]) put(io,box(.012,.14,.035,black,0),face-.005,.93,z+.015);
   rearSocket(io, face, 1.2, -.6, .23, .3, 'network');
   for (const z of [-2.09, -1.86]) rearSocket(io, face, 1.05, z, .29, .12, 'display');
-  rearSocket(io, face, 1.05, -2.34, .29, .12, 'display'); // HDMI
+  rearSocket(io, face, 1.05, -2.34, .29, .12, 'hdmi'); // HDMI
   rearSocket(io, face, 1.05, -1.61, .39, .17, 'serial');
   for (const [y, z, c] of [[.93,-1.37,0x936cb6],[1.2,-1.37,0x519350],[1.05,-2.58,0x519350]]) {
+    const start=io.children.length;
     const rim = new T.Mesh(new T.TorusGeometry(.065,.014,8,24), material(c)); rim.rotation.y = Math.PI / 2;
     put(io, rim, face-.012,y,z);
     const dark = cyl(.047,.014,black); dark.rotation.z = Math.PI / 2; put(io,dark,face,y,z);
     if(z === -1.37)for(const dy of [-.025,0,.025])for(const dz of [-.02,.02]){const contact=cyl(.005,.01,steel);contact.rotation.z=Math.PI/2;put(io,contact,face-.01,y+dy,z+dz);}
+    markCase(io,start,z===-1.37 ? 'ps2' : 'audio');
   }
   g.add(io);
   for (let i = 0; i < 4; i++) {
@@ -538,6 +593,7 @@ export function createChassis() {
   for (const z of [-2.13, -1.51])
     put(g, box(0.02, 2.16, 0.016, 0x5d6366), front + 0.12, 1.89, z);
   for (let i = 0; i < 4; i++) {
+    const start=g.children.length;
     const y = base + 0.43 + i * 0.39;
     put(g, box(0.031, 0.3, 0.15, 0x747b7e), front + 0.098, y, -0.76);
     put(
@@ -547,13 +603,16 @@ export function createChassis() {
       y,
       -0.76,
     );
+    markCase(g,start,'usb');
   }
   const power = cyl(0.115, 0.028, steel);
   power.rotation.z = Math.PI / 2;
   put(g, power, front + 0.11, 2.76, -0.78);
+  markCase(g,g.children.length-1,'button');
   const audio = cyl(0.055, 0.035, black);
   audio.rotation.z = Math.PI / 2;
   put(g, audio, front + 0.11, 2.29, -0.76);
+  markCase(g,g.children.length-1,'audio');
   // Hinged front door carries the drive cage. Closed it covers the front half
   // of the board; open it swings about the long front edge, exposing DIMMs.
   const driveCage = new T.Group(); driveCage.name = 'drive-cage';
@@ -603,6 +662,10 @@ export function createChassis() {
   shadows(cover);
   cover.visible = false;
   g.add(cover);
+  const batchCaseTargets = (root: T.Group) => {
+    for (const child of root.children) if (child instanceof T.Group) { batchCaseTargets(child); if (child.userData.caseTarget) shadows(child); }
+  };
+  batchCaseTargets(g);
   return { group: shadows(g), cover, driveCage };
 }
 

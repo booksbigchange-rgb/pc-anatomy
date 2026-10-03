@@ -131,6 +131,14 @@ try {
   await page
     .getByRole('button', { name: 'Return selected', exact: true })
     .click();
+  await page.getByText('Practise troubleshooting',{exact:true}).click();
+  await page.getByRole('button',{name:'Inspect the CPU fan connection',exact:true}).click();
+  assert.match(await page.locator('.fault-practice output').innerText(), /does not explain/);
+  await page.getByRole('button',{name:'Inspect the monitor connection and input',exact:true}).click();
+  await page.getByRole('button',{name:'Reconnect the monitor cable and select its input',exact:true}).click();
+  await page.getByRole('button',{name:'3. Run the check again',exact:true}).click();
+  assert.match(await page.locator('.fault-practice').innerText(), /Verified: the simulated fault is resolved/);
+  await shot('08b-diagnosis-verified');
   await page
     .getByRole('button', { name: 'Start assembly practice', exact: true })
     .click();
@@ -159,7 +167,7 @@ try {
     ['motherboard', [-3.15, 0.75, 0], [2.08, 0.76, -0.7]],
     ['cpu', [-5.2, 0.82, 2.3], [1.48, 0.93, -1.68]],
     ['cooler', [-4.8, 1.01, -2.2], [1.48, 1.08, -1.68]],
-    ['ram', [-3.5, 1.14, 2.8], [2.91, 1.2, -1.63]],
+    ['ram', [-3.5, 1.14, 2.8], [2.91, 1.11, -1.63]],
     ['ssd', [-2.3, 0.85, 2.8], [3.64, 0.92, -0.3]],
     ['gpu', [-2.15, 1.27, -2.45], [1.66, 1.52, 0.07]],
     ['psu', [-4.9, 1.2, -0.5], [1.33, 1.37, 2.05]],
@@ -170,6 +178,11 @@ try {
       origin = new T.Vector3(...start),
       dest = new T.Vector3(...target),
       from = screen(origin);
+    if ([1,3,4,5].includes(i)) {
+      await page.mouse.click(from.x,from.y);
+      assert.match(await page.locator('.assembly-feedback').innerText(), /Wrong direction/);
+      await page.getByRole('button',{name:'Turn part 180°',exact:true}).click();
+    }
     const ray = new T.Raycaster();
     ray.setFromCamera(
       new T.Vector2(
@@ -210,6 +223,9 @@ try {
     );
   }
   await shot('10-completed-placement');
+  await page.getByRole('button',{name:'Test power-on',exact:true}).click();
+  assert.match(await page.locator('.assembly-wiring').innerText(), /Close RAM clips/);
+  for (const name of ['Close RAM clips','Fasten SSD screw','Secure expansion bracket']) await page.getByRole('button',{name,exact:true}).click();
   await page.getByRole('button', { name: 'Corner 2', exact: true }).click();
   assert.match(await page.locator('.assembly-feedback').innerText(), /Choose corner 1/);
   await page.getByRole('button', { name: 'Test power-on', exact: true }).click();

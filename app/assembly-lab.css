@@ -374,3 +374,8 @@
 .assembly-board-targets div { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 .assembly-board-targets button { min-height:44px; padding:8px; border:1px solid #789995; border-radius:8px; color:#173932; background:#eef7f5; }
 .assembly-board-targets button[aria-pressed="true"] { background:#cde9df; border-color:#236f5d; }
+.assembly-job, .assembly-handling, .assembly-faults { border-top:1px solid #456157; padding-top:14px; margin-top:14px; font-size:13px; line-height:1.5; }
+.assembly-handling button { min-height:44px; width:100%; padding:10px; margin:4px 0; border:1px solid #70978c; border-radius:7px; color:#173932; background:#eef7f5; }
+.assembly-handling button:disabled { opacity:.5; }
+.assembly-faults summary { cursor:pointer; min-height:44px; }
+.assembly-faults select { width:100%; padding:10px; margin-top:8px; color:#15362d; background:#edf6f2; }

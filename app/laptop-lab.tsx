@@ -58,6 +58,8 @@ import {
   LAPTOP_LESSON_STEPS,
   type LaptopLessonPartId,
 } from './laptop-lesson.ts';
+import FaultPractice from './fault-practice';
+import { LAPTOP_FAULT_FOLLOWUPS } from './hardware-practice.ts';
 import { LAPTOP_TROUBLESHOOTING_SCENARIOS } from './laptop-troubleshooting.ts';
 import { LAPTOP_ASSESSMENT_QUESTIONS } from './laptop-assessment.ts';
 
@@ -1262,6 +1264,8 @@ function LaptopScene({
     LaptopInternalCableId[]
   >([]);
   const [isolated, setIsolated] = useState(false);
+  const [troubleshootingVerified, setTroubleshootingVerified] = useState(false);
+  const [lightGraphics, setLightGraphics] = useState(false);
   const [troubleshootingScenario, setTroubleshootingScenario] = useState(0);
   const [troubleshootingSolved, setTroubleshootingSolved] = useState(false);
   const [troubleshootingFeedback, setTroubleshootingFeedback] = useState(
@@ -1418,8 +1422,8 @@ function LaptopScene({
       antialias: true,
       powerPreference: 'high-performance',
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, lightGraphics ? 1 : 2));
+    renderer.shadowMap.enabled = !lightGraphics;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -2009,6 +2013,7 @@ function LaptopScene({
         const correct = id === scenario.answer;
         troubleshootingSolvedRef.current = correct;
         setTroubleshootingSolved(correct);
+        if (!correct) setTroubleshootingVerified(false);
         setTroubleshootingFeedback(
           correct
             ? 'Correct — ' + scenario.explanation
@@ -2274,7 +2279,7 @@ function LaptopScene({
         }
       });
     };
-  }, [model, CONNECTIONS]);
+  }, [model, CONNECTIONS, lightGraphics]);
 
   const changeView = (next: LaptopView) => {
     setGuided(false);
@@ -2353,6 +2358,7 @@ function LaptopScene({
     troubleshootingSolvedRef.current = false;
     setTroubleshootingScenario(0);
     setTroubleshootingSolved(false);
+    setTroubleshootingVerified(false);
     setTroubleshootingFeedback(
       'Read the symptom and click the component you would inspect first.',
     );
@@ -2366,7 +2372,7 @@ function LaptopScene({
   };
 
   const moveTroubleshooting = (direction: -1 | 1) => {
-    if (direction === 1 && !troubleshootingSolved) return;
+    if (direction === 1 && (!troubleshootingSolved || !troubleshootingVerified)) return;
     const next = Math.min(
       LAPTOP_TROUBLESHOOTING_SCENARIOS.length - 1,
       Math.max(0, troubleshootingScenario + direction),
@@ -2376,6 +2382,7 @@ function LaptopScene({
     troubleshootingSolvedRef.current = false;
     setTroubleshootingScenario(next);
     setTroubleshootingSolved(false);
+    setTroubleshootingVerified(false);
     setTroubleshootingFeedback(
       'Read the symptom and click the component you would inspect first.',
     );
@@ -2539,6 +2546,7 @@ function LaptopScene({
             <ClipboardCheck size={15} />
             Knowledge check
           </button>
+          <button type="button" className="laptop-guide-button" aria-pressed={lightGraphics} onClick={() => { stopTeardown(); resetLocalPart(); setLightGraphics(!lightGraphics); }}>{lightGraphics ? 'Full graphics' : 'Light graphics'}</button>
           <button
             type="button"
             className={
@@ -2779,6 +2787,7 @@ function LaptopScene({
                     const correct = id === currentTroubleshooting.answer;
                     troubleshootingSolvedRef.current = correct;
                     setTroubleshootingSolved(correct);
+        if (!correct) setTroubleshootingVerified(false);
                     setTroubleshootingFeedback(
                       correct
                         ? 'Correct — ' + currentTroubleshooting.explanation
@@ -3129,6 +3138,7 @@ function LaptopScene({
                 <span>{troubleshootingSolved ? 'FOUND IT' : 'SYMPTOM'}</span>
                 <strong>{currentTroubleshooting.symptom}</strong>
                 <p>{troubleshootingFeedback}</p>
+                {troubleshootingSolved && <FaultPractice key={currentTroubleshooting.id} scenario={{ ...currentTroubleshooting, ...LAPTOP_FAULT_FOLLOWUPS[currentTroubleshooting.id] }} onVerified={() => setTroubleshootingVerified(true)} />}
                 <div>
                   <button
                     type="button"
@@ -3141,17 +3151,17 @@ function LaptopScene({
                   LAPTOP_TROUBLESHOOTING_SCENARIOS.length - 1 ? (
                     <button
                       type="button"
-                      disabled={!troubleshootingSolved}
+                      disabled={!troubleshootingSolved || !troubleshootingVerified}
                       onClick={() => moveTroubleshooting(1)}
                     >
-                      {troubleshootingSolved
+                      {troubleshootingVerified
                         ? 'Next case →'
-                        : 'Find the component'}
+                        : troubleshootingSolved ? 'Verify the fix first' : 'Find the component'}
                     </button>
                   ) : (
                     <button
                       type="button"
-                      disabled={!troubleshootingSolved}
+                      disabled={!troubleshootingSolved || !troubleshootingVerified}
                       onClick={startTroubleshooting}
                     >
                       Practise again ↻

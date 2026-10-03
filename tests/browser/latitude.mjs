@@ -91,6 +91,10 @@ try{
  await page.locator('.laptop-troubleshoot-options button').filter({hasText:'M.2 SSD'}).click();
  assert.ok(await page.locator('.laptop-troubleshoot-card').innerText().then(t=>t.includes('Not quite')));
  await page.locator('.laptop-troubleshoot-options button').filter({hasText:'Battery'}).click();
+ assert.equal(await page.getByRole('button',{name:'Verify the fix first',exact:true}).isEnabled(),false);
+ await page.getByRole('button',{name:'Check battery health and charging status',exact:true}).click();
+ await page.getByRole('button',{name:'Arrange replacement of the failed battery',exact:true}).click();
+ await page.getByRole('button',{name:'3. Run the check again',exact:true}).click();
  assert.ok(await page.getByRole('button',{name:'Next case →',exact:true}).isEnabled());
  await shot('10-troubleshooting');
  await page.getByRole('button',{name:'Knowledge check',exact:true}).click();

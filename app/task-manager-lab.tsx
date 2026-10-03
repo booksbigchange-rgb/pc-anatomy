@@ -72,6 +72,7 @@ type State = {
   mission: number | null;
   completed: Resource[];
   feedback: string;
+  comparison: { label: string; before: Snapshot; after: Snapshot } | null;
 };
 type Action =
   | { type: 'tick' | 'power' | 'reset' | 'check' }
@@ -89,6 +90,7 @@ function initial(device: Device): State {
     mission: null,
     completed: readProgress().taskManager,
     feedback: '',
+    comparison: null,
   };
 }
 function reducer(state: State, action: Action): State {
@@ -113,6 +115,7 @@ function reducer(state: State, action: Action): State {
         tick: 0,
         mission: null,
         feedback: '',
+        comparison: null,
       };
     case 'reset':
       return { ...initial(state.device), completed: [] };
@@ -123,6 +126,7 @@ function reducer(state: State, action: Action): State {
         history: [],
         mission: null,
         feedback: '',
+        comparison: null,
       };
     case 'open': {
       if (
@@ -136,13 +140,15 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         processes: [...state.processes, { id, app: action.app }],
-        feedback: '',
+        comparison: { label: `Opened ${APPS[action.app].name}`, before: sample(state.processes, state.device, state.tick, true), after: sample([...state.processes, { id, app: action.app }], state.device, state.tick, true) },
+        feedback: APPS[action.app].description,
       };
     }
     case 'end':
       return {
         ...state,
         processes: endProcess(state.processes, action.id),
+        comparison: { label: 'After ending the selected task', before: sample(state.processes, state.device, state.tick, state.powered), after: sample(endProcess(state.processes, action.id), state.device, state.tick, state.powered) },
         feedback: state.processes.find(process => process.id === action.id)?.app === 'system' ? 'System stays protected.' : 'App ended. Compare the readings above: its CPU work stopped and its RAM was released. Saved files stay on the SSD.',
       };
     case 'mission':
@@ -155,6 +161,7 @@ function reducer(state: State, action: Action): State {
         tick: 0,
         history: [],
         feedback: '',
+        comparison: null,
       };
     case 'check': {
       if (state.mission === null) return state;
@@ -486,6 +493,11 @@ export default function TaskManagerLab({
           >
             {state.feedback}
           </output>
+          {state.comparison && <section className="tm-comparison" aria-label="Effect of your last action">
+            <h3>{state.comparison.label}</h3><p>Compare the same simulated moment, before and after your action.</p>
+            <table><thead><tr><th>Resource</th><th>Before</th><th>After</th></tr></thead><tbody>{(Object.keys(RESOURCES) as Resource[]).map(key => <tr key={key}><th>{RESOURCES[key].label}</th><td>{Math.round(state.comparison!.before[key])}%</td><td>{Math.round(state.comparison!.after[key])}%</td></tr>)}</tbody></table>
+            <p>RAM is working space. Disk activity is reading and writing, not how much storage is full.</p>
+          </section>}
           <section className="tm-apps" aria-label="Open a virtual app">
             <div className="tm-card-title">
               <h3>

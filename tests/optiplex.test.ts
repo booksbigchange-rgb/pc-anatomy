@@ -5,6 +5,7 @@ import {
   createHardware,
   createChassis,
   MOUNTS,
+  setHardwareRetainers,
   type HardwareId,
 } from '../lib/optiplex-7040.ts';
 
@@ -87,4 +88,31 @@ void test('Motherboard learning targets survive batching and remain fixed when S
   const holeRay = new T.Raycaster(new T.Vector3(0, 1, 0.61), new T.Vector3(0, -1, 0));
   const removable = createHardware('ssd'); removable.updateMatrixWorld(true);
   assert.equal(holeRay.intersectObject(removable, true).length, 0, 'SSD mounting hole must remain open without a travelling screw');
+});
+
+void test('RAM notch is open, contacts fit the slot, and retainers change visibly on their owner', () => {
+  const ram=createHardware('ram'); ram.updateMatrixWorld(true);
+  const ray=new T.Raycaster(new T.Vector3(-1,-.235,-.15),new T.Vector3(1,0,0));
+  assert.equal(ray.intersectObject(ram,true).length,0,'RAM key notch must pass through the PCB');
+  const board=createHardware('motherboard');
+  const screw=board.getObjectByName('ssd-retainer'); const clip=board.getObjectByName('ram-clip-left');
+  assert.ok(screw && clip);
+  setHardwareRetainers(board,[]); assert.ok(screw.position.y>0); assert.notEqual(clip.rotation.x,0);
+  setHardwareRetainers(board,['ram','ssd']); assert.equal(screw.position.y,0); assert.equal(clip.rotation.x,0);
+  const card=createHardware('gpu'); const bracket=card.getObjectByName('gpu-retainer'); assert.ok(bracket);
+  setHardwareRetainers(card,[]); assert.notEqual(bracket.rotation.x,0);
+  setHardwareRetainers(card,['gpu']); assert.equal(bracket.rotation.x,0);
+});
+void test('Case ports remain individually pickable through geometry batching', () => {
+  const {group}=createChassis(); const ids=new Set();
+  group.traverse(object=> { if(object.userData.caseTarget) { ids.add(object.userData.caseTarget); assert.ok(!new T.Box3().setFromObject(object).isEmpty()); } });
+  for(const id of ['usb','display','hdmi','network','audio','ps2','serial','button']) assert.ok(ids.has(id),id);
+});
+
+void test('A ray into the Ethernet opening identifies the socket backing before the rear shield', () => {
+  const {group}=createChassis(); group.updateMatrixWorld(true);
+  const ray=new T.Raycaster(new T.Vector3(-1,1.2,-.6),new T.Vector3(1,0,0));
+  const hit=ray.intersectObject(group,true)[0]; assert.ok(hit);
+  let object=hit.object; while(object.parent && !object.userData.caseTarget) object=object.parent;
+  assert.equal(object.userData.caseTarget,'network');
 });
