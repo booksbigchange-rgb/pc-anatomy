@@ -1,7 +1,9 @@
+import {mkdir} from 'node:fs/promises';
+await mkdir('output/playwright',{recursive:true});
 import {chromium} from 'playwright';import assert from 'node:assert/strict';
 const browser=await chromium.launch({channel:process.env.ATLAS_BROWSER_CHANNEL || undefined,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 const page=await browser.newPage({viewport:{width:1440,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
-await page.goto(process.env.ATLAS_TEST_URL || 'http://127.0.0.1:5188/');await page.locator('video').evaluate(v=>v.pause());
+await page.goto(process.env.ATLAS_TEST_URL || 'http://127.0.0.1:5188/',{waitUntil:'domcontentloaded',timeout:60000});await page.locator('video').evaluate(v=>v.pause());
 await page.locator('video').evaluate(v=>new Promise(resolve=>{if(v.readyState>=1)resolve();else v.addEventListener('loadedmetadata',resolve,{once:true})}));
 console.log(await page.locator('video').evaluate(v=>({duration:v.duration,width:v.videoWidth,height:v.videoHeight,muted:v.muted})));
 await page.locator('video').evaluate(v=>{v.currentTime=2;});await page.waitForTimeout(700);await page.screenshot({path:'output/playwright/school-opening.png'});

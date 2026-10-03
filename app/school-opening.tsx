@@ -27,11 +27,13 @@ export default function SchoolOpening({ onEnter }: { onEnter: () => void }) {
       poster={`${import.meta.env.BASE_URL}bigchange-school-logo.png`}
       aria-label="BigChange Academy opening animation" autoPlay={!reducedMotion}
       muted={muted} playsInline controls preload={reducedMotion ? 'none' : 'auto'}
-      onEnded={enter} onError={() => setStatus('The animation could not load. You can still enter the lab.')} />
+      onEnded={enter} onError={() => setStatus('The animation could not load. You can still enter the lab.')} >
+      <track kind="captions" src={`${import.meta.env.BASE_URL}bigchange-school-intro.vtt`} srcLang="en" label="English" />
+    </video>
     <footer>
       <button type="button" onClick={() => setMuted(value => !value)} aria-pressed={!muted}>{muted ? 'Sound on' : 'Sound off'}</button>
       <button type="button" className="school-enter" onClick={enter}>Skip intro · Enter lab →</button>
     </footer>
-    <p role="status">{status || 'Explore. Build. Learn.'}</p>
+    <output aria-live="polite">{status || 'Explore. Build. Learn.'}</output>
   </main>;
 }

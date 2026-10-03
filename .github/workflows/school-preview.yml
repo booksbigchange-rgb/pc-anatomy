@@ -1,0 +1,108 @@
+name: Publish separate school preview
+on:
+  push:
+    branches: [bigchange-school-branding]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      stable-sha: ${{ steps.stable.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check && npm run lint && npm test
+      - name: Build school preview at its own URL
+        run: |
+          node node_modules/vite/bin/vite.js build --base /pc-anatomy/school/ --outDir school-dist
+          node -e 'require("fs").writeFileSync("school-dist/version.json",JSON.stringify({commit:process.env.GITHUB_SHA}))'
+      - run: npx playwright install --with-deps chromium
+      - name: Check opening and school logo before release
+        env:
+          ATLAS_TEST_URL: http://127.0.0.1:5188/pc-anatomy/school/
+        run: |
+          node node_modules/vite/bin/vite.js preview --outDir school-dist --host 127.0.0.1 --port 5188 --base /pc-anatomy/school/ &
+          timeout 180s node tests/browser/school-branding.mjs
+      - name: Fetch the existing preview source
+        uses: actions/checkout@v7
+        with:
+          ref: bigchange-school
+          path: stable
+      - run: npm ci
+        working-directory: stable
+      - name: Preserve the existing preview alongside school
+        id: stable
+        working-directory: stable
+        env:
+          GITHUB_PAGES: 'true'
+        run: |
+          npm run build
+          sha=$(git rev-parse HEAD)
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          node -e 'require("fs").writeFileSync("dist/version.json",JSON.stringify({commit:process.argv[1]}))' "$sha"
+          cp -R ../school-dist dist/school
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: stable/dist
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: school-preview-screenshots
+          path: output/playwright
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}school/
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment
+  verify-live:
+    runs-on: ubuntu-latest
+    needs: [build, deploy]
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Confirm both releases and exercise school opening
+        env:
+          ATLAS_TEST_URL: https://booksbigchange-rgb.github.io/pc-anatomy/school/
+          STABLE_SHA: ${{ needs.build.outputs.stable-sha }}
+        run: |
+          node --input-type=module - <<'JS'
+          const urls = [[process.env.ATLAS_TEST_URL, process.env.GITHUB_SHA], ['https://booksbigchange-rgb.github.io/pc-anatomy/', process.env.STABLE_SHA]];
+          for (const [url, sha] of urls) {
+            let matched = false;
+            for (let i=0; i<12; i++) {
+              const r = await fetch(url+'version.json?commit='+sha);
+              if (r.ok && (await r.json()).commit === sha) { matched=true; break; }
+              await new Promise(resolve=>setTimeout(resolve,5000));
+            }
+            if (!matched) throw new Error('Unexpected live release at '+url);
+          }
+          JS
+          timeout 240s node tests/browser/school-branding.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: school-live-screenshots
+          path: output/playwright
