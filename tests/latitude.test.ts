@@ -110,6 +110,7 @@ await test('Latitude side walls expose their own sockets and occlude opposite-si
 
 await test('Latitude module footprints and cooler contact fit the teaching scale', () => {
   const m = buildLatitude5410();
+  m.root.updateMatrixWorld(true);
   const ssd = m.parts.ssd.getObjectByName('SSD PCB')!;
   const wifi = m.parts.wifi.getObjectByName('Wi-Fi PCB')!;
   for (const [object, width, length] of [[ssd, 0.55, 2], [wifi, 0.55, 0.75]] as const) {
@@ -117,6 +118,17 @@ await test('Latitude module footprints and cooler contact fit the teaching scale
     assert.ok(Math.abs(size.x - width) < 0.001);
     // Connector finger tips complete the PCB footprint's final 0.1 units.
     assert.ok(Math.abs(size.z - (length - 0.1)) < 0.001);
+  }
+  for (const [module, name] of [[ssd, 'SSD standoff'], [wifi, 'Wi-Fi standoff']] as const) {
+    const support = m.parts.motherboard.getObjectByName(name)!;
+    const supportBox = new T.Box3().setFromObject(support);
+    const moduleBox = new T.Box3().setFromObject(module);
+    assert.ok(Math.abs(supportBox.max.y - moduleBox.min.y) < 0.001, 'fixed support meets the PCB underside');
+    const home = support.getWorldPosition(new T.Vector3());
+    applyLaptopTeardown(m.teardownParts, 18, module === ssd ? 'ssd' : 'wifi', 1);
+    assert.ok(support.getWorldPosition(new T.Vector3()).equals(home));
+    applyLaptopTeardown(m.teardownParts, 18, null, 0);
+    m.root.updateMatrixWorld(true);
   }
   const cpu = new T.Box3().setFromObject(m.parts.cpu);
   const plate = new T.Box3().setFromObject(m.parts.cooling.getObjectByName('CPU cooler contact')!);

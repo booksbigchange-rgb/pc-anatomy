@@ -565,8 +565,14 @@ export function buildLatitude5410() {
       add(board, box(0.04, 0.06, 0.58, C.steel), x + dx, 0.065, 0.64);
   }
   for (const z of [3.14, 0.765]) {
-    add(board, box(0.58, 0.075, 0.14, C.dark), -3.13, 0.065, z);
-    screw(board, -3.13, 0.07, z === 3.14 ? 1.27 : 0.075);
+    add(board, box(0.58, 0.125, 0.14, C.dark), -3.13, 0.065, z);
+    const isSsd = z === 3.14;
+    const supportHeight = isSsd ? 0.112 : 0.11;
+    const support = disk(0.04, supportHeight, C.gold);
+    support.name = isSsd ? 'SSD standoff' : 'Wi-Fi standoff';
+    support.userData.geometryRole = 'fixed-standoff';
+    add(board, support, -3.13, supportHeight / 2, isSsd ? 1.27 : 0.075);
+    screw(board, -3.13, 0.145, isSsd ? 1.27 : 0.075);
   }
   for (const [x, z, w] of [
     [-3.13, -0.95, 0.5],
