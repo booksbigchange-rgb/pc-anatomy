@@ -1073,3 +1073,14 @@
 .laptop-part-rotation input { grid-column:1/-1; width:100%; min-height:28px; accent-color:#7bd1d5; }
 .laptop-part-rotation button { min-height:36px; padding:8px 12px; background:#243940; color:#e4f4f7; border:1px solid #63818b; border-radius:8px; }
 .laptop-part-rotation button:disabled { opacity:.45; }
+
+@media (max-width: 680px) {
+  .laptop-lab { grid-template-rows: auto auto minmax(420px, 58dvh) auto; }
+  .laptop-topbar { grid-template-columns: auto minmax(0, 1fr); gap: 8px; }
+  .laptop-header-actions { grid-column: 1 / -1; justify-content: flex-start; }
+  .laptop-parts { position: static; grid-row: 2; width: auto; max-height: 180px; margin: 0; overflow-y: auto; }
+  .laptop-part-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .laptop-stage { grid-row: 3; }
+  .laptop-detail { grid-row: 4; }
+  .laptop-camera-views { top: 8px; left: 8px; right: 8px; flex-wrap: wrap; }
+}

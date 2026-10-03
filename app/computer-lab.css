@@ -268,3 +268,16 @@
     display: none;
   }
 }
+
+/* Keep phone navigation and parts clear of the interactive model. */
+@media (max-width: 680px) {
+  .computer-lab { grid-template-rows: auto auto minmax(400px, 58dvh) auto; }
+  .lab-topbar { flex-wrap: wrap; gap: 10px; padding: 12px; }
+  .lab-machine-actions { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+  .lab-open-pc { min-height: 40px; flex: 1 1 140px; }
+  .computer-lab .lab-machine-actions .lab-open-pc span { display: inline; }
+  .lab-parts { position: static; grid-row: 2; width: auto; margin: 0; max-height: 180px; overflow: auto; }
+  .lab-part-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .lab-stage { grid-row: 3; }
+  .lab-detail { grid-row: 4; }
+}

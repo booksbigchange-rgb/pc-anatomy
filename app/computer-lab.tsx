@@ -1141,17 +1141,17 @@ export default function ComputerLab({
         </div>
 
         <div className="lab-machine-actions">
-          <button type="button" className="lab-open-pc" onClick={onOpenCourse}><BookOpen size={16} /><span>My learning path</span></button>
+          <button type="button" className="lab-open-pc" aria-label="My learning path" onClick={onOpenCourse}><BookOpen size={16} /><span>My learning path</span></button>
           <button type="button" className="lab-open-pc" onClick={onOpenTaskManager} aria-label="Task Manager"><Activity size={16} /><span>Task Manager</span></button>
-          <button type="button" className="lab-open-pc" onClick={onOpenAssembly}>
+          <button type="button" className="lab-open-pc" aria-label="Build a PC" onClick={onOpenAssembly}>
             <Wrench size={16} />
             <span>Build a PC</span>
           </button>
-          <button type="button" className="lab-open-pc" onClick={onOpenLaptop}>
+          <button type="button" className="lab-open-pc" aria-label="Laptop Lab" onClick={onOpenLaptop}>
             <Laptop size={16} />
             <span>Laptop Lab</span>
           </button>
-          <button type="button" className="lab-open-pc" onClick={onOpenPC}>
+          <button type="button" className="lab-open-pc" aria-label="Explore inside the PC" onClick={onOpenPC}>
             <PcCase size={16} />
             <span>Explore inside the PC</span>
           </button>

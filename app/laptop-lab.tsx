@@ -1437,13 +1437,14 @@ function LaptopScene({
     const roomEnvironment = new RoomEnvironment();
     const environmentTarget = pmremGenerator.fromScene(roomEnvironment, 0.04);
     scene.environment = environmentTarget.texture;
-    scene.environmentIntensity = 0.32;
+    scene.environmentIntensity = 0.45;
     roomEnvironment.dispose();
     pmremGenerator.dispose();
 
     const controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true;
     let cameraManuallyMoved = false;
+    let lastAutoFit = "";
     const markCameraManual = () => {
       cameraManuallyMoved = true;
     };
@@ -1456,7 +1457,7 @@ function LaptopScene({
     controls.maxPolarAngle = Math.PI / 2.02;
     controls.target.set(0, 1.15, 0.15);
 
-    scene.add(new THREE.HemisphereLight(0xd8efff, 0x2f2926, 0.42));
+    scene.add(new THREE.HemisphereLight(0xd8efff, 0x2f2926, 0.58));
     const key = new THREE.DirectionalLight(0xfff5ea, 2.05);
     key.position.set(-3.5, 9.5, 4.5);
     key.castShadow = true;
@@ -2061,6 +2062,7 @@ function LaptopScene({
         );
         camera.lookAt(controls.target);
         cameraManuallyMoved = preset !== 'reset';
+        lastAutoFit = '';
       }
       const connectionMode = modeRef.current === 'connections';
       const insideNow = !connectionMode && viewRef.current === 'inside';
@@ -2190,7 +2192,10 @@ function LaptopScene({
         focusTargetRef.current = null;
       }
 
-      if (insideNow && !cameraManuallyMoved) {
+      if (!insideNow) lastAutoFit = '';
+      const autoFitSignature = `${explodeRef.current}:${canvas.clientWidth}:${canvas.clientHeight}:${isolateRef.current}:${selectedRef.current}:${localPartRef.current}:${localProgressRef.current.toFixed(2)}`;
+      if (insideNow && !cameraManuallyMoved && autoFitSignature !== lastAutoFit) {
+        lastAutoFit = autoFitSignature;
         const rawService = (explodeRef.current - 72) / 28;
         const serviceT = Math.min(1, Math.max(0, rawService));
         const easedService = serviceT * serviceT * (3 - 2 * serviceT);
@@ -2205,6 +2210,23 @@ function LaptopScene({
           model === 'latitude' ? new THREE.Vector3(0.6, 1.15, 2) : new THREE.Vector3(0, 1.15, 0.8),
           easedService,
         );
+        // Fit the complete service assembly while keeping manual orbit untouched.
+        laptop.inside.updateMatrixWorld(true);
+        const bounds = new THREE.Box3();
+        laptop.inside.traverseVisible(object => {
+          if (!(object instanceof THREE.Mesh)) return;
+          if (!object.geometry.boundingBox) object.geometry.computeBoundingBox();
+          if (object.geometry.boundingBox)
+            bounds.union(object.geometry.boundingBox.clone().applyMatrix4(object.matrixWorld));
+        });
+        const sphere = bounds.getBoundingSphere(new THREE.Sphere());
+        const verticalHalfFov = THREE.MathUtils.degToRad(camera.fov / 2);
+        const horizontalHalfFov = Math.atan(Math.tan(verticalHalfFov) * camera.aspect);
+        const fitDistance = sphere.radius / Math.sin(Math.min(verticalHalfFov, horizontalHalfFov)) * 1.12;
+        controls.maxDistance = Math.max(22, fitDistance * 1.5);
+        const direction = camera.position.clone().sub(controls.target).normalize();
+        controls.target.copy(sphere.center);
+        camera.position.copy(sphere.center).addScaledVector(direction, fitDistance);
       }
 
       const activeRoot = insideNow ? laptop.inside : laptop.outside;
@@ -3296,11 +3318,21 @@ function LaptopScene({
                     : 'LOOK & NOTICE'}
                 </span>
                 <strong>{lessonStep.action}</strong>
+                {lessonStep.requiredCable && !lessonStepComplete && (
+                  <button type="button" onClick={() => {
+                    const id = lessonStep.requiredCable;
+                    if (!id) return;
+                    const next = [...new Set([...disconnectedInternalCablesRef.current, id])];
+                    disconnectedInternalCablesRef.current = next;
+                    setDisconnectedInternalCables(next);
+                    setInternalCableFeedback(`${id} cable unplugged.`);
+                  }}>Unplug {lessonStep.requiredCable} cable</button>
+                )}
                 {lessonStep.requiredCable && (
                   <small>
                     {lessonStepComplete
                       ? 'Cable unplugged — you can continue.'
-                      : 'Next unlocks after you unplug this cable in the 3D view.'}
+                      : 'Unplug the highlighted cable, or use the button below.'}
                   </small>
                 )}
               </div>

@@ -90,6 +90,7 @@ jobs:
           timeout 400s node tests/browser/latitude.mjs
           timeout 240s node tests/browser/learning-polish.mjs
           timeout 180s node tests/browser/course.mjs
+          timeout 180s node tests/browser/visual-priorities.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

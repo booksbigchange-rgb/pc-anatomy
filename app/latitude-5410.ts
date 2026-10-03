@@ -531,13 +531,21 @@ export function buildLatitude5410() {
   }
   for (const [centerX, centerZ] of [[-2.7, -1.02], [0.6, -0.9], [1.7, -1.04], [2.85, -0.95], [-2.96, 1.7]]) {
     for (let index = 0; index < 16; index++) {
-      const x = centerX + (index % 4) * 0.095;
-      const z = centerZ + Math.floor(index / 4) * 0.11;
+      // Paired decoupling banks around each controller, with a routing gap.
+      const column = index % 4;
+      const row = Math.floor(index / 4);
+      const x = centerX + column * 0.075 + (column >= 2 ? 0.065 : 0);
+      const z = centerZ + row * 0.075 + (row >= 2 ? 0.055 : 0);
       add(board, box(0.048, 0.018, 0.065, index % 3 ? 0x9b8868 : C.dark, 0.003), x, 0.022, z);
       for (const end of [-1, 1])
         add(board, box(0.012, 0.02, 0.065, C.steel, 0), x + end * 0.024, 0.023, z);
     }
     add(board, box(0.24, 0.045, 0.25, C.dark, 0.008), centerX + 0.12, 0.037, centerZ + 0.52);
+    for (let pin = 0; pin < 6; pin++) {
+      for (const side of [-1, 1])
+        add(board, box(0.045, 0.009, 0.015, C.steel, 0), centerX + 0.12 + side * 0.14, 0.022, centerZ + 0.43 + pin * 0.035);
+    }
+    text(board, 'U · CTRL', 0.3, 0.1, centerX + 0.12, 0.009, centerZ + 0.73, '#a6b7b8');
     for (let lane = 0; lane < 6; lane++) {
       const traceX = centerX + lane * 0.036;
       add(board, box(0.009, 0.002, 0.38, 0x397486, 0), traceX, 0.005, centerZ + 0.39);

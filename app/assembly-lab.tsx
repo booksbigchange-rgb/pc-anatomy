@@ -263,7 +263,8 @@ export default function AssemblyLab({
     renderer.shadowMap.type = T.PCFSoftShadowMap;
     renderer.shadowMap.autoUpdate = false;
     let dirty = true,
-      previousDisplay = '';
+      previousDisplay = '',
+      previousIsolation = '';
     renderer.outputColorSpace = T.SRGBColorSpace;
     renderer.toneMapping = T.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.0;
@@ -561,6 +562,21 @@ export default function AssemblyLab({
       const caseObject = d.caseTarget && !d.caseInstance ? (() => { let found: T.Object3D | undefined; chassis.traverse(object => { if (!found && object.userData.caseTarget === d.caseTarget) found=object; }); return found ?? chassis; })() : chassis;
       const inspectionObject = d.caseTarget ? (d.caseInstance ? chassis.getObjectByName(d.caseInstance) : caseObject) : d.selectedCable ? cableVisuals.get(d.selectedCable) : d.selected === 'motherboard' && d.boardTarget ? selectedRoot.getObjectByName(d.boardTarget) : selectedRoot;
       highlight.setFromObject(inspectionObject ?? selectedRoot);
+      const isolationSignature = d.preview && d.isolated ? `${d.selected}:${d.exploded}:${d.upright}` : '';
+      if (isolationSignature !== previousIsolation) {
+        previousIsolation = isolationSignature;
+        if (isolationSignature) {
+          assembly.updateMatrixWorld(true);
+          const bounds = new T.Box3().setFromObject(selectedRoot);
+          const sphere = bounds.getBoundingSphere(new T.Sphere());
+          const halfFov = Math.min(T.MathUtils.degToRad(camera.fov / 2), Math.atan(Math.tan(T.MathUtils.degToRad(camera.fov / 2)) * camera.aspect));
+          const distance = Math.max(1.8, sphere.radius / Math.sin(halfFov) * 1.3);
+          controls.minDistance = 1;
+          controls.target.copy(sphere.center);
+          camera.position.copy(sphere.center).addScaledVector(new T.Vector3(0.7, 0.8, 1).normalize(), distance);
+        } else actionRef.current = 'home';
+        dirty = true;
+      }
       const cameraChanged = controls.update();
       if (dirty || cameraChanged) {
         if (dirty) renderer.shadowMap.needsUpdate = true;
@@ -768,6 +784,7 @@ export default function AssemblyLab({
       {stage}
       <aside className="assembly-detail" aria-live="polite">
         <p className="assembly-eyebrow">COMPONENT NOTES</p>
+        {preview && selected === 'ssd' && !cageOpen && !isolated && <p>The SSD sits behind the drive cage. Choose Open drive cage, then Service view to see it, or Isolate selected for a close look.</p>}
         {buildEarned && <p className="assembly-boot">✓ PC Builder earned · saved on this browser</p>}
         <h2>{caseTarget ? CASE_TARGETS[caseTarget].name : selectedCable ? PC_CONNECTIONS.find(item => item.id === selectedCable)!.label : preview && selected === 'motherboard' && boardTarget ? BOARD_TARGETS[boardTarget].name : name(active)}</h2>
         <p>{caseTarget ? CASE_TARGETS[caseTarget].job : selectedCable ? `Connects to ${PC_CONNECTIONS.find(item => item.id === selectedCable)!.target}. Disconnect wall power before changing hardware connections.` : preview && selected === 'motherboard' && boardTarget ? BOARD_TARGETS[boardTarget].job : active.why}</p>
