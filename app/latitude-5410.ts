@@ -38,8 +38,8 @@ const C = {
 function mat(c: number) {
   return new T.MeshStandardMaterial({
     color: c,
-    roughness: c === C.dark ? 0.76 : c === C.board ? 0.72 : c === C.steel ? 0.32 : 0.48,
-    metalness: c === C.steel ? 0.82 : c === C.gold ? 0.72 : c === C.shell ? 0.24 : 0,
+    roughness: c === C.dark ? 0.76 : c === C.board ? 0.72 : c === C.steel || c === 0xad703e ? 0.32 : 0.48,
+    metalness: c === C.steel || c === 0xad703e ? 0.82 : c === C.gold ? 0.72 : c === C.shell ? 0.24 : 0,
   });
 }
 function box(w: number, h: number, d: number, c: number, r = 0.02) {
@@ -47,6 +47,19 @@ function box(w: number, h: number, d: number, c: number, r = 0.02) {
     new RoundedBoxGeometry(w, h, d, 2, Math.min(r, w / 4, h / 4, d / 4)),
     mat(c),
   );
+}
+/** Board cutouts are geometry, so they remain visible when modules lift out. */
+function moduleBoard(w: number, d: number, thickness: number, color: number, holeZ?: number) {
+  const shape = new T.Shape();
+  const points = [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2 - 0.1], [0.08, d / 2 - 0.1], [0.08, d / 2 - 0.18], [0.025, d / 2 - 0.18], [0.025, d / 2 - 0.1], [-w / 2, d / 2 - 0.1]];
+  points.forEach(([x, z], i) => i ? shape.lineTo(x, z) : shape.moveTo(x, z));
+  shape.closePath();
+  if (holeZ !== undefined) { const hole = new T.Path(); hole.absarc(0, holeZ, 0.034, 0, Math.PI * 2, true); shape.holes.push(hole); }
+  const mesh = new T.Mesh(new T.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false, curveSegments: 16 }), mat(color));
+  mesh.rotation.x = Math.PI / 2;
+  mesh.position.y = thickness / 2;
+  mesh.userData.geometryRole = 'module-board';
+  return mesh;
 }
 function add(g: T.Group, o: T.Object3D, x = 0, y = 0, z = 0) {
   o.position.set(x, y, z);
@@ -120,7 +133,7 @@ function batch(g: T.Group) {
     if (!(o instanceof T.Mesh)) return;
     o.castShadow = true;
     o.receiveShadow = true;
-    if (!(o.material instanceof T.MeshStandardMaterial) || o.material.map)
+    if (o.userData.geometryRole || !(o.material instanceof T.MeshStandardMaterial) || o.material.map)
       return;
     let p = o.parent;
     while (p && p !== g) {
@@ -553,7 +566,7 @@ export function buildLatitude5410() {
   }
   for (const z of [3.14, 0.765]) {
     add(board, box(0.58, 0.075, 0.14, C.dark), -3.13, 0.065, z);
-    screw(board, -3.13, 0.07, z === 3.14 ? 1.27 : 0.04);
+    screw(board, -3.13, 0.07, z === 3.14 ? 1.27 : 0.075);
   }
   for (const [x, z, w] of [
     [-3.13, -0.95, 0.5],
@@ -565,7 +578,7 @@ export function buildLatitude5410() {
     for (let i = 0; i < 8; i++)
       add(
         board,
-        box(0.016, 0.04, 0.13, C.gold, 0),
+        box(0.016, 0.008, 0.09, C.gold, 0),
         x - w / 2 + 0.04 + (i * (w - 0.08)) / 8,
         0.08,
         z,
@@ -606,40 +619,56 @@ export function buildLatitude5410() {
         0.355,
       );
   }
+  for (const x of [-0.93, 0.93]) text(ram, 'DDR4 · SODIMM', 1.08, 0.15, x, 0.055, -0.24, '#d3d7c8');
   batch(ram);
   serviceInterior.add(ram);
   const ssd = owner(new T.Group(), 'ssd');
   ssd.position.set(...LATITUDE_HOME.ssd);
-  add(ssd, box(0.55, 0.036, 2, 0x23734e));
+  const ssdPcb = moduleBoard(0.55, 2, 0.036, 0x23734e, -0.94);
+  ssdPcb.name = 'SSD PCB';
+  ssd.add(ssdPcb);
+  const ssdEyelet = new T.Mesh(new T.RingGeometry(0.034, 0.058, 24), mat(C.gold));
+  ssdEyelet.rotation.x = -Math.PI / 2;
+  add(ssd, ssdEyelet, 0, 0.02, -0.94);
   for (const z of [-0.68, -0.2, 0.38])
     add(ssd, box(0.37, 0.03, 0.4, C.dark), 0, 0.035, z);
   text(ssd, 'M.2\nNVMe', 0.37, 0.68, 0, 0.053, 0.15);
-  for (let i = 0; i < 16; i++)
-    add(ssd, box(0.019, 0.016, 0.1, C.gold, 0), -0.22 + i * 0.029, 0.02, 0.98);
+  for (let i = 0; i < 16; i++) {
+    if (i === 9 || i === 10) continue;
+    add(ssd, box(0.019, 0.016, 0.1, C.gold, 0), -0.22 + i * 0.029, 0.02, 0.95);
+  }
   batch(ssd);
   serviceInterior.add(ssd);
   const wifi = owner(new T.Group(), 'wifi');
   wifi.position.set(...LATITUDE_HOME.wifi);
-  add(wifi, box(0.55, 0.04, 0.75, 0x2e6344));
-  add(wifi, box(0.45, 0.035, 0.56, C.steel), 0, 0.043, 0);
+  const wifiPcb = moduleBoard(0.55, 0.75, 0.04, 0x2e6344, -0.315);
+  wifiPcb.name = 'Wi-Fi PCB';
+  wifi.add(wifiPcb);
+  add(wifi, box(0.45, 0.025, 0.44, C.steel), 0, 0.043, 0);
   text(wifi, 'WLAN', 0.4, 0.23, 0, 0.064, 0);
   for (const x of [-0.14, 0.14])
     add(wifi, disk(0.024, 0.025, C.gold), x, 0.077, -0.29);
-  for (let i = 0; i < 16; i++)
+  for (let i = 0; i < 16; i++) {
+    if (i === 9 || i === 10) continue;
     add(
       wifi,
-      box(0.019, 0.013, 0.09, C.gold, 0),
+      box(0.019, 0.013, 0.1, C.gold, 0),
       -0.22 + i * 0.029,
       0.023,
-      0.355,
+      0.325,
     );
+  }
   batch(wifi);
   serviceInterior.add(wifi);
   const cooling = owner(new T.Group(), 'fan');
   cooling.position.set(...LATITUDE_HOME.cooling);
-  add(cooling, box(1.16, 0.12, 0.74, C.dark), -0.75, 0.07, -1.86);
-  for (const z of [-2.02, -1.79])
-    wire(
+  add(cooling, box(1.16, 0.12, 0.74, C.dark), -0.75, 0.04, -1.86);
+  const contact = box(0.76, 0.02, 0.4, 0xad703e, 0.008);
+  contact.name = 'CPU cooler contact';
+  contact.userData.geometryRole = 'cold-plate';
+  add(cooling, contact, -0.75, -0.025, -1.86);
+  for (const z of [-2.02, -1.79]) {
+    const pipe = wire(
       cooling,
       [
         [-0.75, 0.16, z],
@@ -651,6 +680,9 @@ export function buildLatitude5410() {
       0x282d30,
       0.072,
     );
+    pipe.scale.y = 0.35;
+    pipe.position.y = 0.104;
+  }
   const blower = new T.Group();
   add(blower, disk(0.86, 0.11, C.dark), 2.78, 0.075, -0.55);
   const shroud = new T.Mesh(new T.RingGeometry(0.64, 0.86, 64), mat(0x454c51));
@@ -690,14 +722,16 @@ export function buildLatitude5410() {
   speakers.position.set(...LATITUDE_HOME.speakers);
   for (const x of [-2.92, 2.92]) {
     add(speakers, box(1.35, 0.16, 0.32, C.dark, 0.06), x, 0, 0);
-    for (let i = 0; i < 9; i++)
-      add(
-        speakers,
-        box(0.064, 0.007, 0.18, 0x3c464c, 0),
-        x - 0.38 + i * 0.095,
-        0.085,
-        0,
-      );
+    const surround = new T.Mesh(new T.TorusGeometry(0.105, 0.014, 8, 32), mat(0x363c40));
+    surround.rotation.x = Math.PI / 2;
+    surround.scale.x = 3.1;
+    add(speakers, surround, x, 0.083, 0);
+    const diaphragm = disk(0.092, 0.008, 0x242a2e);
+    diaphragm.scale.x = 3.1;
+    add(speakers, diaphragm, x, 0.082, 0);
+    for (let i = 0; i < 18; i++)
+      add(speakers, box(0.012, 0.003, 0.18, 0x434a4e, 0), x - 0.29 + i * 0.034, 0.09, 0);
+    for (const dx of [-0.56, 0.56]) screw(speakers, x + dx, 0.087, 0);
   }
   batch(speakers);
   serviceInterior.add(speakers);

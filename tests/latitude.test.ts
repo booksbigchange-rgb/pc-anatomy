@@ -107,3 +107,20 @@ await test('Latitude side walls expose their own sockets and occlude opposite-si
     }
   }
 });
+
+await test('Latitude module footprints and cooler contact fit the teaching scale', () => {
+  const m = buildLatitude5410();
+  const ssd = m.parts.ssd.getObjectByName('SSD PCB')!;
+  const wifi = m.parts.wifi.getObjectByName('Wi-Fi PCB')!;
+  for (const [object, width, length] of [[ssd, 0.55, 2], [wifi, 0.55, 0.75]] as const) {
+    const size = new T.Box3().setFromObject(object).getSize(new T.Vector3());
+    assert.ok(Math.abs(size.x - width) < 0.001);
+    // Connector finger tips complete the PCB footprint's final 0.1 units.
+    assert.ok(Math.abs(size.z - (length - 0.1)) < 0.001);
+  }
+  const cpu = new T.Box3().setFromObject(m.parts.cpu);
+  const plate = new T.Box3().setFromObject(m.parts.cooling.getObjectByName('CPU cooler contact')!);
+  assert.ok(Math.abs(cpu.max.y - plate.min.y) < 0.005, 'cold plate contacts the CPU die');
+  assert.ok(plate.min.x < cpu.getCenter(new T.Vector3()).x && plate.max.x > cpu.getCenter(new T.Vector3()).x);
+  assert.ok(plate.min.z < cpu.getCenter(new T.Vector3()).z && plate.max.z > cpu.getCenter(new T.Vector3()).z);
+});
