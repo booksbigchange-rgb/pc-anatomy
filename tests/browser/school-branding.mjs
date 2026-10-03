@@ -1,0 +1,16 @@
+import {chromium} from 'playwright';import assert from 'node:assert/strict';
+const browser=await chromium.launch({channel:process.env.ATLAS_BROWSER_CHANNEL || undefined,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const page=await browser.newPage({viewport:{width:1440,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.goto(process.env.ATLAS_TEST_URL || 'http://127.0.0.1:5188/');await page.locator('video').evaluate(v=>v.pause());
+await page.locator('video').evaluate(v=>new Promise(resolve=>{if(v.readyState>=1)resolve();else v.addEventListener('loadedmetadata',resolve,{once:true})}));
+console.log(await page.locator('video').evaluate(v=>({duration:v.duration,width:v.videoWidth,height:v.videoHeight,muted:v.muted})));
+await page.locator('video').evaluate(v=>{v.currentTime=2;});await page.waitForTimeout(700);await page.screenshot({path:'output/playwright/school-opening.png'});
+await page.getByRole('button',{name:'Sound on',exact:true}).click();assert.equal(await page.locator('video').evaluate(v=>v.muted),false);
+await page.setViewportSize({width:390,height:844});await page.screenshot({path:'output/playwright/school-opening-phone.png'});
+await page.getByRole('button',{name:/Skip intro/}).click();await page.getByRole('button',{name:'Laptop Lab',exact:true}).waitFor();
+await page.locator('.academy-logo img').evaluate(img=>img.decode());await page.screenshot({path:'output/playwright/school-logo-phone.png'});
+await page.reload();assert.equal(await page.locator('video').count(),0,'Opening should not interrupt every reload');
+const reduced=await browser.newPage({reducedMotion:'reduce'});await reduced.goto(process.env.ATLAS_TEST_URL || 'http://127.0.0.1:5188/');assert.equal(await reduced.locator('video').evaluate(v=>v.autoplay),false);await reduced.close();
+const failure=await browser.newPage();await failure.route('**/bigchange-school-intro.mp4',r=>r.abort());await failure.goto(process.env.ATLAS_TEST_URL || 'http://127.0.0.1:5188/');await failure.getByText(/animation could not load/).waitFor();await failure.getByRole('button',{name:/Skip intro/}).click();await failure.getByRole('button',{name:'Laptop Lab',exact:true}).waitFor();await failure.close();
+const ended=await browser.newPage();await ended.goto(process.env.ATLAS_TEST_URL || 'http://127.0.0.1:5188/');await ended.locator('video').evaluate(v=>v.dispatchEvent(new Event('ended')));await ended.getByRole('button',{name:'Laptop Lab',exact:true}).waitFor();await ended.close();
+assert.deepEqual(errors,[]);console.log('PASS: playback metadata, sound, skip, session entry, reduced motion, video failure, ended transition');await browser.close();

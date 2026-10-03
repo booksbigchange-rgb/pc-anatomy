@@ -20,8 +20,10 @@ import LaptopLab from './laptop-lab';
 import BuildPcLab from './build-pc-lab';
 import TaskManagerLab from './task-manager-lab';
 import CourseLab from './course-lab';
+import SchoolOpening, { needsSchoolOpening } from './school-opening';
 
 export default function Home() {
+  const [opening, setOpening] = useState(needsSchoolOpening);
   const explorer = useExplorer();
   const { state, selected, logical, layers, selectConcept, choose, navigate } = explorer;
   const [search, setSearch] = useState(false),
@@ -56,6 +58,7 @@ export default function Home() {
     return () => window.removeEventListener('keydown', key);
   }, [about, choose, mode, navigate, search, state.level]);
 
+  if (opening) return <SchoolOpening onEnter={() => setOpening(false)} />;
   if (mode === 'course') return <CourseLab onBack={() => setMode('lab')} onActivity={setMode} />;
   if (mode === 'lab') return <ComputerLab onOpenCourse={() => setMode('course')} onOpenPC={() => setMode('explorer')} onOpenLaptop={() => setMode('laptop')} onOpenAssembly={() => setMode('assembly')} onOpenTaskManager={() => setMode('task-manager-pc')} />;
   if (mode === 'laptop') return <LaptopLab onBack={() => setMode('lab')} onOpenTaskManager={() => setMode('task-manager-laptop')} />;

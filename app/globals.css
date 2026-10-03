@@ -25,24 +25,13 @@
   --radius-lg: 8px;
 }
 
-/* Viewport onto the selected top-centre shield in the supplied logo sheet.
-   The source artwork remains byte-for-byte unchanged. */
-.academy-logo,
-.tm-brand > .academy-logo {
-  position: relative;
-  display: block;
-  flex: 0 0 44px;
-  width: 44px;
-  height: 48px;
-  overflow: hidden;
-  background: #fff;
-  border-radius: 5px;
+/* Display the supplied school logo intact; crop only its transparent padding. */
+.academy-logo, .tm-brand > .academy-logo {
+  position:relative; display:block; flex:0 0 76px; width:76px; height:64px;
+  overflow:hidden; background:#fff; border-radius:6px;
 }
 .academy-logo img {
-  position: absolute;
-  width: 357.2093%;
-  max-width: none;
-  height: auto;
-  left: -128.8372%;
-  top: -7.6087%;
+  position:absolute; width:153.374%; max-width:none; height:auto;
+  left:-26.687%; top:-43%;
 }
+
