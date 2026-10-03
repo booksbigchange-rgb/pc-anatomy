@@ -8,6 +8,8 @@ Task Manager highlights process demand, explains resource release after ending a
 
 The Latitude model adds mounting openings and power-stage detail, a smaller battery label, and projected labels for removed parts. Narrow stages show only the selected part's label. Existing guided service, cable gates, assessment, troubleshooting and Framework switching are retained.
 
-Validation: 106 model and regression tests; TypeScript, production build and lint; browser interaction runs for desktop placement/wiring/power, Latitude learning flows, Task Manager and persisted XP. The deployed workflow repeats the desktop and Latitude checks.
+Validation: 108 model and regression tests; TypeScript, production build and lint; browser interaction runs for desktop placement/wiring/power, Latitude learning flows, Task Manager and persisted XP. The deployed workflow repeats the desktop and Latitude checks.
 
 Laptop fit pass: the CPU cooler contact now meets the die surface; heat pipes are flattened without shifting their route. SSD and Wi-Fi boards have keyed edges and mounting openings, with fixed board retainers retained. Wi-Fi retainer position is aligned to its new mounting opening. Speaker housings retain their footprint but use shallow oval diaphragms and grilles. RAM labels sit on the modules. Dimensions and internals remain service-reference estimates, not a manufacturer CAD model.
+
+Detached laptop inspection: Tilt, Turn and Roll rotate the selected removable part around its own center once fully removed by global teardown or local explode. Rotation composes from the current teardown pose without accumulating transforms. Reset rotation preserves the lift; Reset part, selection changes, model changes and teardown changes clear inspection rotation. Seated components cannot rotate independently; the soldered CPU follows its motherboard. RAM, SSD and Wi-Fi have underside chip/pad detail. Controls operate in Explore mode and do not alter guided service steps.

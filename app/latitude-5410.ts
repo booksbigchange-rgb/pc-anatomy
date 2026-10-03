@@ -626,6 +626,8 @@ export function buildLatitude5410() {
       );
   }
   for (const x of [-0.93, 0.93]) text(ram, 'DDR4 · SODIMM', 1.08, 0.15, x, 0.055, -0.24, '#d3d7c8');
+  for (const x of [-0.93, 0.93]) for (let i = 0; i < 4; i++)
+    add(ram, box(0.27, 0.025, 0.27, C.dark), x - 0.55 + i * 0.365, -0.034, 0);
   batch(ram);
   serviceInterior.add(ram);
   const ssd = owner(new T.Group(), 'ssd');
@@ -643,6 +645,7 @@ export function buildLatitude5410() {
     if (i === 9 || i === 10) continue;
     add(ssd, box(0.019, 0.016, 0.1, C.gold, 0), -0.22 + i * 0.029, 0.02, 0.95);
   }
+  for (const z of [-0.45, 0.25]) add(ssd, box(0.34, 0.023, 0.37, C.dark), 0, -0.03, z);
   batch(ssd);
   serviceInterior.add(ssd);
   const wifi = owner(new T.Group(), 'wifi');
@@ -664,6 +667,9 @@ export function buildLatitude5410() {
       0.325,
     );
   }
+  add(wifi, box(0.29, 0.022, 0.22, C.dark), 0, -0.031, -0.02);
+  for (const x of [-0.19, 0.19]) for (let i = 0; i < 5; i++)
+    add(wifi, box(0.028, 0.008, 0.035, C.gold, 0), x, -0.025, -0.19 + i * 0.075);
   batch(wifi);
   serviceInterior.add(wifi);
   const cooling = owner(new T.Group(), 'fan');

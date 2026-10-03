@@ -136,3 +136,41 @@ await test('Latitude module footprints and cooler contact fit the teaching scale
   assert.ok(plate.min.x < cpu.getCenter(new T.Vector3()).x && plate.max.x > cpu.getCenter(new T.Vector3()).x);
   assert.ok(plate.min.z < cpu.getCenter(new T.Vector3()).z && plate.max.z > cpu.getCenter(new T.Vector3()).z);
 });
+
+await test('Detached part rotation keeps its center fixed, does not accumulate and resets to the global pose', () => {
+  const m = buildLatitude5410();
+  for (const id of ['battery', 'motherboard', 'ram', 'ssd', 'cooling', 'wifi', 'speakers'] as const) {
+    applyLaptopTeardown(m.teardownParts, 100);
+    m.root.updateMatrixWorld(true);
+    const object = m.parts[id];
+    const position = object.position.clone(), quaternion = object.quaternion.clone();
+    const center = new T.Box3().setFromObject(object).getCenter(new T.Vector3());
+    const pivot = object.worldToLocal(center.clone());
+    const inspection = { id: id === 'cooling' ? 'fan' : id, angles: [Math.PI / 2, Math.PI / 4, 0] as const };
+    applyLaptopTeardown(m.teardownParts, 100, null, 0, inspection);
+    assert.ok(object.localToWorld(pivot.clone()).distanceTo(center) < 0.00001, id + ' rotates around its own center');
+    assert.ok(Math.abs(object.quaternion.dot(quaternion)) < 0.999);
+    const rotated = object.position.clone(), turned = object.quaternion.clone();
+    applyLaptopTeardown(m.teardownParts, 100, null, 0, inspection);
+    assert.ok(object.position.distanceTo(rotated) < 0.00001);
+    assert.ok(Math.abs(object.quaternion.dot(turned)) > 0.999999);
+    applyLaptopTeardown(m.teardownParts, 100);
+    assert.ok(object.position.equals(position));
+    assert.ok(Math.abs(object.quaternion.dot(quaternion)) > 0.999999);
+  }
+});
+await test('Seated parts cannot rotate; lifted module rotation leaves its motherboard fixtures fixed', () => {
+  const m = buildLatitude5410();
+  applyLaptopTeardown(m.teardownParts, 18);
+  const home = m.parts.ssd.rotation.clone();
+  const inspection = { id: 'ssd', angles: [Math.PI, 0, 0] as const };
+  applyLaptopTeardown(m.teardownParts, 18, null, 0, inspection);
+  assert.ok(m.parts.ssd.rotation.equals(home));
+  const support = m.parts.motherboard.getObjectByName('SSD standoff')!;
+  const supportHome = support.position.clone();
+  applyLaptopTeardown(m.teardownParts, 18, 'ssd', 1, inspection);
+  assert.ok(!m.parts.ssd.rotation.equals(home));
+  assert.ok(support.position.equals(supportHome));
+  applyLaptopTeardown(m.teardownParts, 18);
+  assert.ok(m.parts.ssd.rotation.equals(home));
+});

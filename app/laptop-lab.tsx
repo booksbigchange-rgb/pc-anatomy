@@ -44,6 +44,7 @@ import {
   applyLaptopTeardown,
   isLaptopLocalPart,
   type LaptopLocalPart,
+  type LaptopInspectionRotation,
   buildRealisticLaptopInternals,
   type LaptopInternalCableId,
 } from './laptop-internals';
@@ -1271,10 +1272,15 @@ function LaptopScene({
     Record<string, string>
   >({});
   const [assessmentComplete, setAssessmentComplete] = useState(false);
+  const [inspectionState, setInspectionState] = useState<{ angles: [number, number, number]; context: string } | null>(null);
+  const inspectionRef = useRef<LaptopInspectionRotation | null>(null);
+  const [inspectionEnds, setInspectionEnds] = useState<Record<string, number>>({});
   const localPartRef = useRef<LaptopLocalPart | null>(null);
   const localProgressRef = useRef(0);
   const localStartedRef = useRef(0);
-  const localContext = `${selected}:${view}:${mode}:${guided}:${lessonIndex}`;
+  const localContext = `${model}:${selected}:${view}:${mode}:${guided}:${lessonIndex}`;
+  const inspectionAngles: [number, number, number] = inspectionState?.context === localContext ? inspectionState.angles : [0, 0, 0];
+  if (inspectionState && inspectionState.context !== localContext) setInspectionState(null);
   const [localSelection, setLocalSelection] = useState<{
     id: LaptopLocalPart;
     context: string;
@@ -1285,6 +1291,8 @@ function LaptopScene({
   if (localSelection && localSelection.context !== localContext)
     setLocalSelection(null);
   const resetLocalPart = useCallback(() => {
+    inspectionRef.current = null;
+    setInspectionState(null);
     localPartRef.current = null;
     localProgressRef.current = 0;
     setLocalSelection(null);
@@ -1292,6 +1300,7 @@ function LaptopScene({
   useEffect(() => {
     localPartRef.current = null;
     localProgressRef.current = 0;
+    inspectionRef.current = null;
   }, [localContext]);
   const [explode, setExplodeValue] = useState(18);
 
@@ -1480,6 +1489,8 @@ function LaptopScene({
     addEnvironment(scene);
 
     const laptop = model === 'latitude' ? buildLatitude5410() : buildLaptop();
+    const removalEnds = Object.fromEntries(laptop.teardownParts.filter(part => part.object.userData.laptopPart).map(part => [part.object.userData.laptopPart, part.end]));
+    let inspectionThresholdsPublished = false;
     for (const cable of laptop.disconnectCables)
       cable.object.userData.laptopCable = cable.id;
     scene.add(laptop.root);
@@ -2023,6 +2034,10 @@ function LaptopScene({
 
     let frame = 0;
     const draw = () => {
+      if (!inspectionThresholdsPublished) {
+        inspectionThresholdsPublished = true;
+        setInspectionEnds(removalEnds);
+      }
       frame = requestAnimationFrame(draw);
       if (cameraViewRef.current) {
         const preset = cameraViewRef.current;
@@ -2112,6 +2127,7 @@ function LaptopScene({
           explodeRef.current,
           local,
           localProgressRef.current,
+          modeRef.current === 'explore' && !guidedRef.current ? inspectionRef.current : null,
         );
 
         // During the first half of the flip students still see the normal
@@ -2217,6 +2233,8 @@ function LaptopScene({
         explodeRef.current,
         localPartRef.current,
         localProgressRef.current,
+        inspectionRef.current?.id,
+        inspectionRef.current?.angles.join(','),
         connectionTaskRef.current,
         connectedRef.current.join(','),
         disconnectedInternalCablesRef.current.join(','),
@@ -2231,7 +2249,7 @@ function LaptopScene({
         lastRenderSignature = signature;
       }
     };
-    draw();
+    frame = requestAnimationFrame(draw);
 
     return () => {
       disposed = true;
@@ -3230,6 +3248,20 @@ function LaptopScene({
                   </>
                 )}
               </div>
+            )}
+            {!guided && view === 'inside' && mode === 'explore' && inspectionEnds[selected] !== undefined && (
+              <section className="laptop-part-rotation" aria-label="Rotate detached component">
+                <h3>Rotate this part</h3>
+                <p>{explode >= inspectionEnds[selected] || localPart === selected ? 'Turn the part to inspect its edges and underside. Drag the background to orbit the camera.' : 'Explode this part first, or move the teardown slider until it is removed.'}</p>
+                {(['Tilt', 'Turn', 'Roll'] as const).map((label, axis) => <label key={label}>{label}<output>{inspectionAngles[axis]}°</output><input aria-label={`${label} selected part`} type="range" min={-180} max={180} step={15} value={inspectionAngles[axis]} disabled={!(explode >= inspectionEnds[selected] || localPart === selected)} onChange={event => {
+                  stopTeardown();
+                  const angles = [...inspectionAngles] as [number, number, number];
+                  angles[axis] = Number(event.target.value);
+                  setInspectionState({ angles, context: localContext });
+                  inspectionRef.current = { id: selected, angles: angles.map(angle => angle * Math.PI / 180) as [number, number, number] };
+                }} /></label>)}
+                <button type="button" onClick={() => { inspectionRef.current = null; setInspectionState(null); }} disabled={inspectionAngles.every(angle => angle === 0)}>Reset rotation</button>
+              </section>
             )}
             {guided && (
               <div

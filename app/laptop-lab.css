@@ -1065,3 +1065,11 @@
 .laptop-camera-views button { border: 1px solid #34494f; border-radius: 7px; color: #c8dde4; background: #172126; padding: 7px 10px; font-size: 12px; cursor: pointer; }
 .laptop-exploded-labels { position: absolute; inset: 0; pointer-events: none; }
 .laptop-exploded-labels span { position: absolute; transform: translate(-50%, -150%); background: #101a21dc; color: #e6f5f7; border: 1px solid #607b84; padding: 4px 7px; border-radius: 5px; font-size: 10px; white-space: nowrap; }
+
+.laptop-part-rotation { margin:16px 0; padding:14px; border:1px solid #40555a; border-radius:12px; background:#19292e; }
+.laptop-part-rotation h3 { font-size:14px; margin:0 0 8px; }
+.laptop-part-rotation p { font-size:12px; line-height:1.5; }
+.laptop-part-rotation label { display:grid; grid-template-columns:1fr auto; gap:6px; margin:12px 0; font-size:12px; }
+.laptop-part-rotation input { grid-column:1/-1; width:100%; min-height:28px; accent-color:#7bd1d5; }
+.laptop-part-rotation button { min-height:36px; padding:8px 12px; background:#243940; color:#e4f4f7; border:1px solid #63818b; border-radius:8px; }
+.laptop-part-rotation button:disabled { opacity:.45; }

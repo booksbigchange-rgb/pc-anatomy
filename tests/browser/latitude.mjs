@@ -28,9 +28,17 @@ try{
   await shot('04-local-'+name);
   assert.ok(await page.getByRole('button',{name:'Reset part',exact:true}).isEnabled());
   await page.getByRole('button',{name:'Isolate',exact:true}).click();
+  await page.getByRole('slider',{name:'Tilt selected part',exact:true}).fill('90');
+  await page.getByRole('slider',{name:'Turn selected part',exact:true}).fill('45');
   await shot('05-isolated-'+name);
+  assert.equal(await page.getByRole('slider',{name:'Tilt selected part'}).inputValue(),'90');
+  await page.getByRole('button',{name:'Reset rotation',exact:true}).click();
+  assert.equal(await page.getByRole('slider',{name:'Tilt selected part'}).inputValue(),'0');
+  await page.getByRole('slider',{name:'Roll selected part'}).fill('30');
   await page.getByRole('button',{name:'Show all',exact:true}).click();
   await page.getByRole('button',{name:'Reset part',exact:true}).click();
+  assert.equal(await page.getByRole('slider',{name:'Roll selected part'}).inputValue(),'0');
+  assert.equal(await page.getByRole('slider',{name:'Tilt selected part'}).isEnabled(),false);
  }
  await page.getByRole('button',{name:'Reassemble laptop',exact:true}).click();
  assert.equal(await page.getByRole('slider',{name:'Laptop teardown progress'}).inputValue(),'0');
@@ -40,6 +48,14 @@ try{
   await slider.fill(progress);await shot('06-stage-'+progress);
  }
  await slider.fill('100');await shot('07-board-out');
+ for(const name of ['Battery','Motherboard','Cooling fan','Speakers']) {
+  await page.locator('.laptop-part-list button').filter({hasText:name}).click();
+  assert.ok(await page.getByRole('slider',{name:'Tilt selected part'}).isEnabled());
+  await page.getByRole('slider',{name:'Tilt selected part'}).fill('45');
+  await page.getByRole('button',{name:'Reset rotation',exact:true}).click();
+ }
+ await slider.fill('18');
+ assert.equal(await page.getByRole('slider',{name:'Tilt selected part'}).isEnabled(),false);
  await page.getByRole('button',{name:'Reassemble laptop',exact:true}).click();
  await page.getByRole('button',{name:'Guided lesson',exact:true}).click();
  await page.getByRole('button',{name:'Next →',exact:true}).click();
