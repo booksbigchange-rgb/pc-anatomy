@@ -28,10 +28,18 @@
 /* Display the supplied school logo intact; crop only its transparent padding. */
 .academy-logo, .tm-brand > .academy-logo {
   position:relative; display:block; flex:0 0 76px; width:76px; height:64px;
-  overflow:hidden; background:#fff; border-radius:6px;
+  overflow:hidden; background:transparent; border-radius:6px;
 }
 .academy-logo img {
   position:absolute; width:153.374%; max-width:none; height:auto;
   left:-26.687%; top:-43%;
+  filter:var(--academy-logo-filter, none);
 }
 
+
+/* Theme token: dark surfaces use a gold wordmark; light surfaces retain the
+   supplied gold symbol and black lettering. No solid logo tile is needed. */
+.school-opening, .computer-lab, .laptop-lab, .workbench {
+  --academy-logo-filter: brightness(0) saturate(100%) invert(86%) sepia(54%) saturate(915%) hue-rotate(326deg) brightness(105%) contrast(102%);
+}
+.tm-lab, .course-lab { --academy-logo-filter: none; }

@@ -9,4 +9,4 @@
 .school-opening p { text-align:center; max-width:600px; font-size:14px; }
 @media(max-width:600px) { .school-opening { padding:12px; } .school-opening header { gap:12px; } }
 
-@media(prefers-reduced-motion:reduce) { .school-opening video { background:#fff; } }
+
