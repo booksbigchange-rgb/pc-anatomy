@@ -1,6 +1,6 @@
 {
   "name": "pc-anatomy",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": false,
   "description": "An interactive 3D explorer of a desktop computer, from an assembled ATX tower to a single streaming multiprocessor.",
   "license": "MIT",

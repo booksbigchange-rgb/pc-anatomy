@@ -106,6 +106,7 @@ try{
  }
  await shot('11-knowledge-check');
  assert.ok((await page.locator('.laptop-assessment-card').innerText()).includes('7 / 8'));
+ assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('bigchange-course-v1')).laptopScore),88,'Completed laptop score must reach the learning path');
 
  assert.ok(!requests.some(u=>u.includes('/models/')),'Latitude must not load Framework geometry');
  await page.getByRole('combobox',{name:'Laptop model'}).selectOption('framework');

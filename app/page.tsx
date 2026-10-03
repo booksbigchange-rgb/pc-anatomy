@@ -19,6 +19,7 @@ import ComputerLab from './computer-lab';
 import LaptopLab from './laptop-lab';
 import BuildPcLab from './build-pc-lab';
 import TaskManagerLab from './task-manager-lab';
+import CourseLab from './course-lab';
 
 export default function Home() {
   const explorer = useExplorer();
@@ -27,7 +28,7 @@ export default function Home() {
     [query, setQuery] = useState(''),
     [about, setAbout] = useState(false),
     [studentMode, setStudentMode] = useState(true),
-    [mode, setMode] = useState<'lab' | 'laptop' | 'assembly' | 'explorer' | 'comparison' | 'task-manager-pc' | 'task-manager-laptop'>('lab'),
+    [mode, setMode] = useState<'lab' | 'laptop' | 'assembly' | 'explorer' | 'comparison' | 'task-manager-pc' | 'task-manager-laptop' | 'course'>('lab'),
     [count, setCount] = useState<number | null>(null);
 
   const selectResult = useCallback((id: string) => {
@@ -55,7 +56,8 @@ export default function Home() {
     return () => window.removeEventListener('keydown', key);
   }, [about, choose, mode, navigate, search, state.level]);
 
-  if (mode === 'lab') return <ComputerLab onOpenPC={() => setMode('explorer')} onOpenLaptop={() => setMode('laptop')} onOpenAssembly={() => setMode('assembly')} onOpenTaskManager={() => setMode('task-manager-pc')} />;
+  if (mode === 'course') return <CourseLab onBack={() => setMode('lab')} onActivity={setMode} />;
+  if (mode === 'lab') return <ComputerLab onOpenCourse={() => setMode('course')} onOpenPC={() => setMode('explorer')} onOpenLaptop={() => setMode('laptop')} onOpenAssembly={() => setMode('assembly')} onOpenTaskManager={() => setMode('task-manager-pc')} />;
   if (mode === 'laptop') return <LaptopLab onBack={() => setMode('lab')} onOpenTaskManager={() => setMode('task-manager-laptop')} />;
   if (mode === 'task-manager-pc' || mode === 'task-manager-laptop') return <TaskManagerLab device={mode === 'task-manager-laptop' ? 'laptop' : 'pc'} onBack={() => setMode(mode === 'task-manager-laptop' ? 'laptop' : 'lab')} />;
   if (mode === 'assembly') return <BuildPcLab onBack={() => setMode('lab')} />;

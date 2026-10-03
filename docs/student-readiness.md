@@ -16,9 +16,9 @@ This pass closes specific teaching interaction gaps. It does not certify measure
 
 Use three to five students and at least one older computer and one phone. Observe whether they can identify a port, orient and seat RAM, secure retainers, pass simulated POST, interpret the Task Manager comparison and verify a fault fix. Record confusing instructions, unsuccessful touches and visible lag. No student names are needed.
 
-## Deferred until existing activities are accepted
+## Version 1 learning additions
 
-No operating-system chapter, full data-flow chapter or combined OS missions are added in this pass. Resume-saving and larger assessment expansion remain separate work.
+Version 1 adds a learning path, simplified photo data route, virtual OS/file practice and an eight-question final assessment. Final answers and completed results persist locally; laptop knowledge-check scores are recorded. Full in-progress 3D assembly and virtual desktop state do not resume after leaving. The OS activity is a teaching simulation, not an installed OS.
 
 ## Final software follow-up
 

@@ -1,4 +1,5 @@
 'use client';
+import { saveCourse } from './course-model';
 import AcademyLogo from './academy-logo';
 import { buildLatitude5410, latitudeTeardownStage } from './latitude-5410';
 import { visiblePartHit } from './laptop-picking';
@@ -1276,6 +1277,7 @@ function LaptopScene({
     Record<string, string>
   >({});
   const [assessmentComplete, setAssessmentComplete] = useState(false);
+  const [assessmentSaveFailed, setAssessmentSaveFailed] = useState(false);
   const [inspectionState, setInspectionState] = useState<{ angles: [number, number, number]; context: string } | null>(null);
   const inspectionRef = useRef<LaptopInspectionRotation | null>(null);
   const [inspectionEnds, setInspectionEnds] = useState<Record<string, number>>({});
@@ -2430,6 +2432,7 @@ function LaptopScene({
   const nextAssessment = () => {
     if (!currentAssessmentAnswer) return;
     if (assessmentIndex >= LAPTOP_ASSESSMENT_QUESTIONS.length - 1) {
+      setAssessmentSaveFailed(!saveCourse({ laptopScore: assessmentPercent }));
       setAssessmentComplete(true);
       return;
     }
@@ -2715,6 +2718,7 @@ function LaptopScene({
         ) : mode === 'assessment' ? (
           assessmentComplete ? (
             <div className="laptop-assessment-summary">
+              {assessmentSaveFailed && <p role="alert">This browser could not save the score. Record it before leaving.</p>}
               <Trophy size={24} />
               <strong>
                 {assessmentScore} / {LAPTOP_ASSESSMENT_QUESTIONS.length}

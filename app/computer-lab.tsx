@@ -726,11 +726,13 @@ export default function ComputerLab({
   onOpenLaptop,
   onOpenAssembly,
   onOpenTaskManager,
+  onOpenCourse,
 }: {
   onOpenPC: () => void;
   onOpenLaptop: () => void;
   onOpenAssembly: () => void;
   onOpenTaskManager: () => void;
+  onOpenCourse: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const selectedRef = useRef<LabPartId>('tower');
@@ -1139,6 +1141,7 @@ export default function ComputerLab({
         </div>
 
         <div className="lab-machine-actions">
+          <button type="button" className="lab-open-pc" onClick={onOpenCourse}><BookOpen size={16} /><span>My learning path</span></button>
           <button type="button" className="lab-open-pc" onClick={onOpenTaskManager} aria-label="Task Manager"><Activity size={16} /><span>Task Manager</span></button>
           <button type="button" className="lab-open-pc" onClick={onOpenAssembly}>
             <Wrench size={16} />
