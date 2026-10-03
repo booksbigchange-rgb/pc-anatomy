@@ -24,3 +24,12 @@ export function checkPcPower(installed: HardwareId[], connected: PcConnection[],
   if (!coverClosed) problems.push('Fit the side cover.');
   return problems;
 }
+
+export type CoolingPreparation = { pasteApplied: boolean; screws: number[] };
+export const COOLER_ORDER = [1, 3, 2, 4] as const;
+export function checkCooling(cooling: CoolingPreparation) {
+  const problems: string[] = [];
+  if (!cooling.pasteApplied) problems.push('Apply thermal paste before seating the cooler.');
+  if (!COOLER_ORDER.every((screw, index) => cooling.screws[index] === screw) || cooling.screws.length !== 4) problems.push('Fasten the cooler in the marked diagonal order.');
+  return problems;
+}

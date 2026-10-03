@@ -14,7 +14,7 @@ import {
   Fan,
 } from 'lucide-react';
 import * as T from 'three';
-import { PC_CONNECTIONS, canConnect, checkPcPower, type PcConnection } from './pc-power-challenge';
+import { PC_CONNECTIONS, COOLER_ORDER, checkCooling, canConnect, checkPcPower, type PcConnection } from './pc-power-challenge';
 import { readProgress, saveProgress } from './student-progress';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {
@@ -57,7 +57,7 @@ const PARTS: Part[] = [
     name: 'CPU Heatsink & Fan',
     icon: Fan,
     instruction: 'Seat the cooling assembly above the processor.',
-    why: 'The heatsink and fan remove CPU heat. Connect the fan lead after placement. Thermal paste and screw tightening are not simulated.',
+    why: 'The heatsink and fan remove CPU heat. Connect the fan lead after placement. Apply paste before seating the cooler, then fasten the four marked corners. This is simplified practice, not a torque guide.',
     start: [-4.8, 1.01, -2.2],
     snap: 0.32,
   },
@@ -124,6 +124,10 @@ export default function AssemblyLab({
   const [feedback, setFeedback] = useState(
     'Explore the assembled reference model, or choose Start assembly practice.',
   );
+  const [pasteApplied, setPasteApplied] = useState(false);
+  const [screws, setScrews] = useState<number[]>([]);
+  const coolingRef = useRef({ pasteApplied: false, screws: [] as number[] });
+  useEffect(() => { coolingRef.current = { pasteApplied, screws }; }, [pasteApplied, screws]);
   const [connections, setConnections] = useState<PcConnection[]>([]);
   const [cable, setCable] = useState<PcConnection>('board-power');
   const [powerOn, setPowerOn] = useState(false);
@@ -139,7 +143,7 @@ export default function AssemblyLab({
     setFeedback('Cable connected. M.2 storage and this slot-powered card do not need separate power cables.');
   };
   const testPower = () => {
-    const problems = checkPcPower(installed, connections, closed, !cageOpen);
+    const problems = [...checkPcPower(installed, connections, closed, !cageOpen), ...checkCooling({ pasteApplied, screws })];
     setPowerProblems(problems);
     setPowerOn(problems.length === 0);
     if (!problems.length) { saveProgress({ pcBuilt: true }); setBuildEarned(true); }
@@ -171,6 +175,9 @@ export default function AssemblyLab({
     active = preview ? PARTS.find((p) => p.id === selected)! : PARTS[current];
   const name = (p: Part) => componentNames?.[p.id] ?? p.name;
   const practice = () => {
+    setPasteApplied(false);
+    setScrews([]);
+    coolingRef.current = { pasteApplied: false, screws: [] };
     setConnections([]);
     setPowerOn(false);
     setPowerProblems([]);
@@ -274,6 +281,10 @@ export default function AssemblyLab({
       groups.set(p.id, g);
       assembly.add(g);
     }
+    const paste = new T.Mesh(new T.SphereGeometry(0.075, 16, 8), new T.MeshStandardMaterial({ color: 0xb6bcc2, roughness: 0.9 }));
+    paste.scale.y = 0.2;
+    paste.position.set(MOUNTS.cpu[0], MOUNTS.cpu[1] + 0.09, MOUNTS.cpu[2]);
+    assembly.add(paste);
     const guide = new T.BoxHelper(groups.get('motherboard')!, 0x70dce5);
     guide.visible = false;
     scene.add(guide);
@@ -305,6 +316,7 @@ export default function AssemblyLab({
       const p = PARTS[currentRef.current],
         g = groups.get(p.id)!;
       if (!ray.intersectObject(g, true).length) return;
+      if (p.id === 'cooler' && !coolingRef.current.pasteApplied) { setFeedback('Apply thermal paste to the CPU before seating the cooler.'); return; }
       dragging = p.id;
       controls.enabled = false;
       plane.constant = -MOUNTS[p.id][1];
@@ -417,6 +429,7 @@ export default function AssemblyLab({
         installedRef.current,
         currentRef.current,
         connectionRef.current,
+        coolingRef.current,
       ]);
       if (signature !== previousDisplay) {
         dirty = true;
@@ -447,6 +460,7 @@ export default function AssemblyLab({
         if (view === 'top') camera.position.set(cx, 17, 0.01);
         actionRef.current = null;
       }
+      paste.visible = !d.preview && coolingRef.current.pasteApplied && !installedRef.current.includes('cooler');
       chassis.visible = !(d.preview && d.isolated);
       driveCage.rotation.z = !d.closed && (d.cageOpen || (!d.preview && !done)) ? -Math.PI / 2.4 : 0;
       cover.visible = d.closed && (d.preview || done) && !d.isolated;
@@ -693,6 +707,21 @@ export default function AssemblyLab({
           <strong>Service coach</strong>
           <p>{feedback}</p>
         </div>
+        {!preview && (
+          <section className="assembly-cooling" aria-label="CPU cooling preparation">
+            <h3>Prepare CPU cooling</h3>
+            <p>Paste fills tiny gaps between the CPU and cooler. The cooler carries heat away.</p>
+            <button className="assembly-primary" disabled={pasteApplied || !installed.includes('cpu') || installed.includes('cooler') || connections.includes('mains') || powerOn} onClick={() => { setPasteApplied(true); setFeedback('Paste applied. Seat the cooler over the CPU.'); }}>{pasteApplied ? 'Paste applied' : 'Apply thermal paste'}</button>
+            <p>Seat the cooler. Then follow the marked diagonal order: 1 → 3 → 2 → 4.</p>
+            <div className="assembly-corners">{[1, 2, 4, 3].map(corner => <button key={corner} disabled={!installed.includes('cooler') || screws.includes(corner) || connections.includes('mains') || powerOn} onClick={() => {
+              if (corner !== COOLER_ORDER[screws.length]) { setFeedback(`Choose corner ${COOLER_ORDER[screws.length]} next. Work across opposite corners.`); return; }
+              setScrews(previous => [...previous, corner]); setPowerProblems([]);
+              setFeedback(screws.length === 3 ? 'Cooler secured. Connect its fan lead to power the fan.' : 'Corner fastened. Choose the opposite marked corner next.');
+            }}>{screws.includes(corner) ? 'Done: ' : ''}Corner {corner}</button>)}</div>
+            <p>{screws.length} / 4 corners fastened</p>
+            <small>Simplified learning steps. Real coolers may use different paste, clips or screw instructions. Follow their manual.</small>
+          </section>
+        )}
         {!preview && (
           <section className="assembly-wiring" aria-label="Connections and power-on challenge">
             <h3>Connect → Close → Test</h3>

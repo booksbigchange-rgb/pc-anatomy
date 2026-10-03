@@ -154,6 +154,7 @@ try {
     ['psu', [-4.9, 1.2, -0.5], [1.33, 1.37, 2.05]],
   ];
   for (let i = 0; i < steps.length; i++) {
+    if (i === 2) await page.getByRole('button', { name: 'Apply thermal paste', exact: true }).click();
     const [id, start, target] = steps[i],
       origin = new T.Vector3(...start),
       dest = new T.Vector3(...target),
@@ -198,6 +199,11 @@ try {
     );
   }
   await shot('10-completed-placement');
+  await page.getByRole('button', { name: 'Corner 2', exact: true }).click();
+  assert.match(await page.locator('.assembly-feedback').innerText(), /Choose corner 1/);
+  await page.getByRole('button', { name: 'Test power-on', exact: true }).click();
+  assert.match(await page.locator('.assembly-wiring').innerText(), /Fasten the cooler/);
+  for (const corner of [1, 3, 2, 4]) await page.getByRole('button', { name: `Corner ${corner}`, exact: true }).click();
   await page.getByRole('button', { name: 'Test power-on', exact: true }).click();
   assert.ok((await page.locator('.assembly-wiring').innerText()).includes('Connect PSU'));
   await page.getByRole('combobox', { name: 'Choose PC cable' }).selectOption('board-power');
