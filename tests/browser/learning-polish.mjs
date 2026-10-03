@@ -65,6 +65,35 @@ try {
   await page.locator('.assembly-detail h2').scrollIntoViewIfNeeded();
   await shot('04-desktop-phone');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
+  await page.getByRole('button',{name:'Start assembly practice',exact:true}).click();
+  await page.getByRole('button',{name:/^Seat .* in its guide$/}).click();
+  // Touch placement must not bypass direction or cooling preparation.
+  await page.getByRole('button',{name:/^Seat .* in its guide$/}).click();
+  assert.match(await page.locator('.assembly-feedback').innerText(),/Wrong direction/);
+  for (const id of ['cpu','cooler','ram','ssd','gpu','psu']) {
+    if (['cpu','ram','ssd','gpu'].includes(id)) await page.getByRole('button',{name:'Turn part 180°',exact:true}).click();
+    if (id==='cooler') {
+      await page.getByRole('button',{name:/^Seat .* in its guide$/}).click();
+      assert.match(await page.locator('.assembly-feedback').innerText(),/Apply thermal paste/);
+      await page.getByRole('button',{name:'Apply thermal paste',exact:true}).click();
+    }
+    await page.getByRole('button',{name:/^Seat .* in its guide$/}).click();
+  }
+  await page.getByRole('button',{name:'Test power-on',exact:true}).click();
+  assert.equal(await page.locator('.assembly-boot strong').count(),0);
+  for (const label of ['Close RAM clips','Fasten SSD screw','Secure expansion bracket']) await page.getByRole('button',{name:label,exact:true}).click();
+  for (const corner of [1,3,2,4]) await page.getByRole('button',{name:`Corner ${corner}`,exact:true}).click();
+  for (const [id,target] of [['board-power','Board power socket'],['cpu-power','CPU power socket'],['fan','CPU fan header'],['switch','Power-button header'],['display','Graphics display output'],['mains','PSU AC inlet']]) {
+    await page.getByRole('combobox',{name:'Choose PC cable'}).selectOption(id);
+    await page.getByRole('button',{name:target,exact:true}).click();
+  }
+  await page.getByRole('button',{name:'Close drive cage',exact:true}).click();
+  await page.getByRole('button',{name:'Fit side cover',exact:true}).click();
+  await page.getByRole('button',{name:'Test power-on',exact:true}).click();
+  assert.match(await page.locator('output.assembly-boot').innerText(),/POST passed/);
+  await page.locator('output.assembly-boot').scrollIntoViewIfNeeded();
+  await shot('05-phone-assembly-passed');
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
   assert.deepEqual(errors,[]);
   await writeFile('verification/learning-polish/result.json',JSON.stringify({passed:true,errors,checks:['before/after resource effect','phone overflow','port identification','light graphics','four desktop diagnoses and verification gates']},null,2));
   console.log('PASS learning polish: resource comparison, phone layout, ports, light graphics, diagnosis gates.');

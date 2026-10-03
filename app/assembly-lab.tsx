@@ -223,6 +223,23 @@ export default function AssemblyLab({
       'Install the glowing system board first. Wrong placements return the part to the tray.',
     );
   };
+  const recordPlacement = (id: HardwareId) => {
+    if (installedRef.current.includes(id) || PARTS[currentRef.current].id !== id) return;
+    installedRef.current = [...installedRef.current, id];
+    setInstalled([...installedRef.current]);
+    currentRef.current = Math.min(currentRef.current + 1, PARTS.length - 1);
+    setCurrent(currentRef.current);
+    setFeedback(`Installed: ${PARTS.find(part => part.id === id)!.name}. ${installedRef.current.length === PARTS.length ? 'Parts placed. Secure the retainers, match the cables, close the cage, fit the cover, then test power.' : 'Continue with the next highlighted part.'}`);
+  };
+  const seatPart = () => {
+    if (preview || complete) return;
+    const id = PARTS[currentRef.current].id;
+    const problem = placementProblem(id, preparationRef.current.aligned.includes(id));
+    if (problem) { setFeedback(problem); return; }
+    if (id === 'cooler' && !coolingRef.current.pasteApplied) { setFeedback('Apply thermal paste to the CPU before seating the cooler.'); return; }
+    if (closed || !cageOpen || connections.includes('mains') || powerOn) { setFeedback('Open the cover and drive cage, and unplug wall power before installing parts.'); return; }
+    recordPlacement(id);
+  };
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -391,16 +408,7 @@ export default function AssemblyLab({
             p.snap
         ) {
           g.position.set(...target);
-          installedRef.current = [...installedRef.current, id];
-          setInstalled([...installedRef.current]);
-          currentRef.current = Math.min(
-            currentRef.current + 1,
-            PARTS.length - 1,
-          );
-          setCurrent(currentRef.current);
-          setFeedback(
-            `Installed: ${p.name}. ${installedRef.current.length === PARTS.length ? 'Parts placed. Match the cables, close the cage, fit the cover, then test power.' : 'Continue with the next highlighted part.'}`,
-          );
+          recordPlacement(id);
         } else {
           g.position.set(...p.start);
           setFeedback(
@@ -772,6 +780,10 @@ export default function AssemblyLab({
         {caseTarget && <p><strong>Connects to:</strong> {CASE_TARGETS[caseTarget].connects}</p>}
         {!boardTarget && !caseTarget && !selectedCable && <div className="assembly-job"><strong>Its job:</strong> {PART_JOBS[active.id].job}<p>{PART_JOBS[active.id].example}</p><p><strong>Connects to:</strong> {PART_JOBS[active.id].connection}</p></div>}
         {preview && <section className="assembly-board-targets" aria-label="Case port learning targets"><h3>Ports and case</h3><div>{(Object.keys(CASE_TARGETS) as CaseTargetId[]).filter(id => id !== 'optical').map(id => <button key={id} onClick={() => { setCaseTarget(id); setCaseInstance(null); setBoardTarget(null); setSelectedCable(null); setIsolated(false); actionRef.current = id === 'button' ? 'front' : 'rear'; }}>{CASE_TARGETS[id].name}</button>)}</div></section>}
+        {!preview && !complete && <section className="assembly-handling" aria-label="Touch assembly">
+          <h3>Place this part</h3><p>Drag into the cyan guide, or use this button. Both methods check direction. Secure clips and screws afterward.</p>
+          <button onClick={seatPart}>Seat {name(active)} in its guide</button>
+        </section>}
         {!preview && !complete && ORIENTED_PARTS.includes(active.id) && <section className="assembly-handling" aria-label="Part orientation">
           <h3>Match the direction</h3><p>Compare the part with its cyan guide. Turn it before placing it. This checks direction; it does not model insertion force.</p>
           <button aria-pressed={aligned.includes(active.id)} onClick={() => { setAligned(previous => previous.includes(active.id) ? previous.filter(id => id !== active.id) : [...previous, active.id]); setFeedback('Direction changed. Compare the contacts and socket guide, then drag the part.'); }}>Turn part 180°</button>

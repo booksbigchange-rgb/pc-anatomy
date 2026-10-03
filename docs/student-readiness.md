@@ -10,7 +10,7 @@ This pass closes specific teaching interaction gaps. It does not certify measure
 | Installation handling | Keyed direction rejects incorrect placement; visible RAM clips, SSD screw and card latch must be secured before simulated POST | Force, torque and exact manufacturer service steps are not simulated. |
 | Task Manager teaching | Open/end actions show before/after resource readings at the same moment; existing challenges retained | Real device readings are not collected. |
 | Troubleshooting | Four desktop cases plus six laptop follow-ups require test, evidence, matching fix and verification | Cases are scripted examples, not exhaustive diagnoses. |
-| Phone and low-spec readiness | Phone-width UI checks and optional Light graphics in both model labs | Test on actual student devices before marking classroom performance done. |
+| Phone and low-spec readiness | Phone-width UI checks, optional Light graphics in both model labs, and button-based PC placement with direction/cooling gates | Test on actual student devices before marking classroom performance done. |
 
 ## Teacher-led pilot
 
@@ -19,3 +19,7 @@ Use three to five students and at least one older computer and one phone. Observ
 ## Deferred until existing activities are accepted
 
 No operating-system chapter, full data-flow chapter or combined OS missions are added in this pass. Resume-saving and larger assessment expansion remain separate work.
+
+## Final software follow-up
+
+PC placement now supports drag or a Seat in its guide button. Both share the same placement record and orientation/paste requirements. A phone-width browser test completes all seven placements, retains the fastening and wiring checks, and reaches simulated POST. Use [the classroom checklist](student-pilot.md) for the remaining real-device and learner acceptance; those results have not been collected.
