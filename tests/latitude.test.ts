@@ -4,8 +4,35 @@ import * as T from 'three';
 import {
   buildLatitude5410,
   LATITUDE_DIMENSIONS,
+  LATITUDE_RAM,
 } from '../app/latitude-5410.ts';
 import { applyLaptopTeardown } from '../app/laptop-internals.ts';
+await test('Latitude SODIMM key fits a real PCB cutout and sockets stay fixed during extraction', () => {
+  const model = buildLatitude5410();
+  model.root.updateMatrixWorld(true);
+  for (const index of [1, 2]) {
+    const pcb = model.parts.ram.getObjectByName(`RAM PCB ${index}`)!;
+    const key = model.parts.motherboard.getObjectByName(`RAM socket key ${index}`)!;
+    const bounds = new T.Box3().setFromObject(pcb);
+    const size = bounds.getSize(new T.Vector3());
+    assert.ok(Math.abs(size.x - 69.6 / 40) < 0.00001);
+    assert.ok(Math.abs(size.z - 30 / 40) < 0.00001);
+    const center = bounds.getCenter(new T.Vector3());
+    const ray = new T.Raycaster(new T.Vector3(center.x + LATITUDE_RAM.notchX, 5, bounds.max.z - 0.025), new T.Vector3(0, -1, 0));
+    assert.equal(ray.intersectObject(pcb).length, 0, 'PCB has open keyed notch');
+    ray.ray.origin.x = center.x - 0.4;
+    assert.ok(ray.intersectObject(pcb).length > 0, 'PCB remains solid beside notch');
+    const position = key.getWorldPosition(new T.Vector3());
+    assert.ok(Math.abs(position.x - center.x - LATITUDE_RAM.notchX) < 0.00001);
+    assert.ok(Math.abs(position.z - bounds.max.z + LATITUDE_RAM.notchDepth / 2) < 0.00001);
+    assert.equal(key.parent, model.parts.motherboard);
+    applyLaptopTeardown(model.teardownParts, 18, 'ram', 1);
+    model.root.updateMatrixWorld(true);
+    assert.ok(key.getWorldPosition(new T.Vector3()).equals(position));
+    applyLaptopTeardown(model.teardownParts, 18);
+    model.root.updateMatrixWorld(true);
+  }
+});
 await test('Latitude removable modules reset exactly and expanded layout separates their footprints', () => {
   const model = buildLatitude5410();
   for (const id of ['ssd', 'ram', 'wifi'] as const) {
