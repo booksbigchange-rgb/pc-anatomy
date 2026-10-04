@@ -13,6 +13,9 @@ try {
  if(await page.getByRole('button',{name:/Skip intro/}).count()) await page.getByRole('button',{name:/Skip intro/}).click();
  await page.getByRole('button',{name:'Laptop Lab',exact:true}).click();
  await page.getByRole('button',{name:'Inside',exact:true}).click();
+ await page.getByRole('button',{name:'Top view',exact:true}).click();
+ await shot('00-assembled-cooling');
+ await page.getByRole('button',{name:'Reset view',exact:true}).click();
  await page.locator('.laptop-part-list button').filter({hasText:'RAM'}).click();
  await page.getByRole('button',{name:'Explode part',exact:true}).click();
  await page.getByRole('button',{name:'Isolate',exact:true}).click();
@@ -21,6 +24,14 @@ try {
  await page.getByRole('button',{name:'Show all',exact:true}).click();
  await page.getByRole('button',{name:'Reset part',exact:true}).click();
  for(const value of ['18','60','78','100']) {await page.getByRole('slider',{name:'Laptop teardown progress'}).fill(value);await shot(`02-stage-${value}`);}
+ await page.getByRole('slider',{name:'Laptop teardown progress'}).fill('78');
+ await page.locator('.laptop-part-list button').filter({hasText:'Cooling fan'}).click();
+ await page.getByRole('button',{name:'Isolate',exact:true}).click();
+ await page.getByRole('button',{name:'Focus',exact:true}).click();
+ await page.getByRole('slider',{name:'Tilt selected part',exact:true}).fill('45');
+ await shot('02-cooling-inspection');
+ await page.getByRole('button',{name:'Reset rotation',exact:true}).click();
+ await page.getByRole('button',{name:'Show all',exact:true}).click();
  await page.goto(url);
  await page.getByRole('button',{name:/Build.*PC/i}).click();
  for(const choice of [/Intel Core i5-6500/,/Dell Q170 System Board/,/8 GB DDR4/,/M.2 2280 SSD/,/Slot-powered PCIe Card/,/Dell 240 W Power Supply/]) await page.getByRole('button',{name:choice}).last().click();
