@@ -14,11 +14,13 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      school-sha: ${{ steps.school.outputs.sha }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -38,6 +40,34 @@ jobs:
           node -e 'require("fs").writeFileSync("dist/version.json",JSON.stringify({commit:process.env.GITHUB_SHA}))' 
         env:
           GITHUB_PAGES: 'true'
+
+      - name: Check out the separate school version
+        uses: actions/checkout@v7
+        with:
+          ref: bigchange-school-branding
+          path: branding
+
+      - name: Build school into the same Pages artifact
+        id: school
+        working-directory: branding
+        run: |
+          npm ci
+          npm run check
+          node node_modules/vite/bin/vite.js build --base /pc-anatomy/school/ --outDir school-dist
+          sha=$(git rev-parse HEAD)
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          node -e 'require("fs").writeFileSync("school-dist/version.json",JSON.stringify({commit:process.argv[1]}))' "$sha"
+          cp -R school-dist ../dist/school
+
+      - run: npx playwright install --with-deps chromium
+      - name: Verify school entry in the combined artifact
+        env:
+          ATLAS_TEST_URL: http://127.0.0.1:5188/pc-anatomy/school/
+        run: |
+          node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 5188 --base /pc-anatomy/ &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          timeout 180s node branding/tests/browser/school-branding.mjs
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
@@ -61,7 +91,7 @@ jobs:
   verify-live:
     name: Verify published desktop and laptop interactions
     runs-on: ubuntu-latest
-    needs: deploy
+    needs: [build, deploy]
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
@@ -71,10 +101,18 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - name: Check out the school browser checks
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.build.outputs.school-sha }}
+          path: branding
+      - run: npm ci
+        working-directory: branding
       - name: Confirm deployed commit and exercise live model
         env:
           ATLAS_TEST_URL: https://booksbigchange-rgb.github.io/pc-anatomy/
           PW_TEST_SCREENSHOT_NO_FONTS_READY: '1'
+          SCHOOL_SHA: ${{ needs.build.outputs.school-sha }}
         run: |
           node --input-type=module - <<'JS'
           const url = process.env.ATLAS_TEST_URL + 'version.json';
@@ -86,6 +124,11 @@ jobs:
           }
           if (!matched) throw new Error('Live preview does not serve the deployed commit');
           JS
+          ATLAS_TEST_URL=https://booksbigchange-rgb.github.io/pc-anatomy/school/ timeout 240s node branding/tests/browser/school-branding.mjs
+          node --input-type=module - <<'JS'
+          const response = await fetch(process.env.ATLAS_TEST_URL+'school/version.json?commit='+process.env.SCHOOL_SHA);
+          if (!response.ok || (await response.json()).commit !== process.env.SCHOOL_SHA) throw new Error('School preview does not serve its built commit');
+          JS
           timeout 300s node tests/browser/optiplex.mjs
           timeout 400s node tests/browser/latitude.mjs
           timeout 240s node tests/browser/learning-polish.mjs
@@ -95,4 +138,6 @@ jobs:
         if: always()
         with:
           name: live-hardware-verification
-          path: verification
+          path: |
+            verification
+            output/playwright
