@@ -531,16 +531,16 @@ export function buildLatitude5410() {
     add(board, box(0.21, 0.07, 0.22, 0x505960, 0.018), x, 0.055, -1.02);
     add(board, box(0.16, 0.006, 0.16, 0x899298, 0.012), x, 0.093, -1.02);
   }
-  for (const [centerX, centerZ] of [[-2.7, -1.02], [0.6, -0.9], [1.7, -1.04], [2.85, -0.95], [-2.96, 1.7]]) {
-    for (let index = 0; index < 16; index++) {
+  for (const [bank, [centerX, centerZ]] of [[-2.7, -1.02], [0.6, -0.9], [1.7, -1.04], [2.85, -0.95], [-2.96, 1.7]].entries()) {
+    for (let index = 0; index < 8 + bank % 3 * 2; index++) {
       // Paired decoupling banks around each controller, with a routing gap.
       const column = index % 4;
       const row = Math.floor(index / 4);
-      const x = centerX + column * 0.075 + (column >= 2 ? 0.065 : 0);
-      const z = centerZ + row * 0.075 + (row >= 2 ? 0.055 : 0);
-      add(board, box(0.048, 0.018, 0.065, index % 3 ? 0x9b8868 : C.dark, 0.003), x, 0.022, z);
+      const x = centerX + column * 0.072 + (row % 2 ? 0.022 : 0);
+      const z = centerZ + row * 0.062;
+      add(board, box(0.044, 0.012, index % 3 ? 0.025 : 0.035, index % 3 ? 0x9b8868 : C.dark, 0.002), x, 0.022, z);
       for (const end of [-1, 1])
-        add(board, box(0.012, 0.02, 0.065, C.steel, 0), x + end * 0.024, 0.023, z);
+        add(board, box(0.009, 0.013, index % 3 ? 0.025 : 0.035, C.steel, 0), x + end * 0.022, 0.022, z);
     }
     add(board, box(0.24, 0.045, 0.25, C.dark, 0.008), centerX + 0.12, 0.037, centerZ + 0.52);
     for (let pin = 0; pin < 6; pin++) {
@@ -700,7 +700,11 @@ export function buildLatitude5410() {
   serviceInterior.add(wifi);
   const cooling = owner(new T.Group(), 'fan');
   cooling.position.set(...LATITUDE_HOME.cooling);
-  add(cooling, box(1.16, 0.12, 0.74, C.dark), -0.75, 0.04, -1.86);
+  add(cooling, box(1.16, 0.07, 0.74, 0x394044), -0.75, 0.015, -1.86);
+  for (const dx of [-0.61, 0.61]) {
+    add(cooling, box(0.18, 0.025, 0.9, C.steel, 0.02), -0.75 + dx, 0.022, -1.86);
+    for (const dz of [-0.39, 0.39]) screw(cooling, -0.75 + dx, 0.045, -1.86 + dz);
+  }
   const contact = box(0.76, 0.02, 0.4, 0xad703e, 0.008);
   contact.name = 'CPU cooler contact';
   contact.userData.geometryRole = 'cold-plate';
@@ -722,33 +726,49 @@ export function buildLatitude5410() {
     pipe.position.y = 0.104;
   }
   const blower = new T.Group();
-  add(blower, disk(0.86, 0.11, C.dark), 2.78, 0.075, -0.55);
-  const shroud = new T.Mesh(new T.RingGeometry(0.64, 0.86, 64), mat(0x454c51));
-  shroud.rotation.x = -Math.PI / 2;
-  add(blower, shroud, 2.78, 0.245, -0.55);
-  add(blower, disk(0.64, 0.023, 0x101518), 2.78, 0.14, -0.55);
+  const fanX = 2.78, fanZ = -0.55;
+  // A shallow centrifugal blower: curved vanes inside a formed casing.
+  const casingShape = new T.Shape();
+  casingShape.moveTo(-0.84, -0.32);
+  casingShape.bezierCurveTo(-0.94, -0.95, 0.38, -1.13, 0.77, -0.62);
+  casingShape.lineTo(1.02, -0.72);
+  casingShape.lineTo(1.02, 0.72);
+  casingShape.lineTo(0.52, 0.72);
+  casingShape.bezierCurveTo(-0.1, 1.04, -0.88, 0.53, -0.84, -0.32);
+  casingShape.closePath();
+  const intake = new T.Path();
+  intake.absarc(0, 0, 0.65, 0, Math.PI * 2, true);
+  casingShape.holes.push(intake);
+  const casing = new T.Mesh(new T.ExtrudeGeometry(casingShape, {depth:0.026, bevelEnabled:false, curveSegments:32}), mat(0x454c51));
+  casing.rotation.x = Math.PI / 2;
+  casing.name = 'Blower intake casing';
+  casing.userData.geometryRole = 'blower-casing';
+  add(blower, casing, fanX, 0.235, fanZ);
+  add(blower, disk(0.85, 0.065, C.dark), fanX, 0.055, fanZ);
+  const wall = new T.Mesh(new T.CylinderGeometry(0.84, 0.84, 0.15, 64, 1, true), mat(C.dark));
+  add(blower, wall, fanX, 0.14, fanZ);
   for (let i = 0; i < 43; i++) {
-    const a = (i * Math.PI * 2) / 43,
-      o = box(0.2, 0.04, 0.025, C.dark, 0.006);
-    o.rotation.y = -a + 0.45;
-    add(blower, o, 2.78 + Math.cos(a) * 0.52, 0.23, -0.55 + Math.sin(a) * 0.52);
+    const vane = new T.Shape();
+    vane.moveTo(0.27, -0.035);
+    vane.quadraticCurveTo(0.42, -0.11, 0.63, 0.02);
+    vane.lineTo(0.63, 0.038);
+    vane.quadraticCurveTo(0.42, -0.083, 0.27, -0.017);
+    vane.closePath();
+    const blade = new T.Mesh(new T.ExtrudeGeometry(vane, {depth:0.075, bevelEnabled:false, curveSegments:6}), mat(0x30363b));
+    blade.rotation.x = Math.PI / 2;
+    const rotor = new T.Group();
+    rotor.rotation.y = i * Math.PI * 2 / 43;
+    rotor.add(blade);
+    add(blower, rotor, fanX, 0.205, fanZ);
   }
-  add(blower, disk(0.28, 0.04, C.dark), 2.78, 0.245, -0.55);
-  add(blower, box(0.34, 0.23, 1.52, C.dark), 3.7, 0.13, -0.55);
-  for (let i = 0; i < 22; i++)
-    add(
-      blower,
-      box(0.019, 0.18, 0.055, C.steel, 0),
-      3.88,
-      0.13,
-      -1.2 + i * 0.06,
-    );
+  add(blower, disk(0.27, 0.038, C.dark), fanX, 0.195, fanZ);
+  add(blower, disk(0.12, 0.003, 0x626b70), fanX, 0.216, fanZ);
+  // Fin stack receives heat from the pipes at the side exhaust.
+  for (let i = 0; i < 26; i++)
+    add(blower, box(0.3, 0.14, 0.012, C.steel, 0), 3.73, 0.13, -1.24 + i * 0.055);
+  for (const y of [0.047, 0.213]) add(blower, box(0.32, 0.018, 1.46, C.dark, 0.008), 3.73, y, -0.55);
   cooling.add(blower);
   for (const [x, z] of [
-    [-0.75, -2.26],
-    [-0.75, -1.5],
-    [1, -2.26],
-    [1, -1.5],
     [2.25, -1.16],
     [2.28, 0.04],
     [3.45, 0.13],

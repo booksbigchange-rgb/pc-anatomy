@@ -7,6 +7,25 @@ import {
   LATITUDE_RAM,
 } from '../app/latitude-5410.ts';
 import { applyLaptopTeardown } from '../app/laptop-internals.ts';
+await test('Latitude blower intake is open and its casing fits inside the chassis', () => {
+  const model = buildLatitude5410();
+  model.root.updateMatrixWorld(true);
+  const casing = model.parts.cooling.getObjectByName('Blower intake casing')!;
+  assert.ok(casing);
+  const ray = new T.Raycaster(new T.Vector3(2.78, 5, -0.55), new T.Vector3(0, -1, 0));
+  assert.equal(ray.intersectObject(casing).length, 0, 'air intake is a real opening');
+  ray.ray.origin.x = 2.78 - 0.78;
+  assert.ok(ray.intersectObject(casing).length > 0, 'casing remains solid beside intake');
+  const bounds = new T.Box3().setFromObject(model.parts.cooling);
+  assert.ok(bounds.max.x < LATITUDE_DIMENSIONS.width / 2);
+  assert.ok(bounds.min.z > -LATITUDE_DIMENSIONS.depth / 2);
+  applyLaptopTeardown(model.teardownParts, 78);
+  model.root.updateMatrixWorld(true);
+  const before = casing.getWorldPosition(new T.Vector3());
+  applyLaptopTeardown(model.teardownParts, 18);
+  model.root.updateMatrixWorld(true);
+  assert.ok(casing.getWorldPosition(new T.Vector3()).distanceTo(before) > 1, 'casing travels with the cooling assembly');
+});
 await test('Latitude SODIMM key fits a real PCB cutout and sockets stay fixed during extraction', () => {
   const model = buildLatitude5410();
   model.root.updateMatrixWorld(true);
