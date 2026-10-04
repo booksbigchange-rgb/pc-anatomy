@@ -27,6 +27,8 @@ export const LATITUDE_HOME = {
   cooling: [0, 1.19, 0],
   speakers: [0, 0.99, 2.4],
 } as const;
+// DDR4 SODIMM envelope follows module datasheets; notch detail is illustrative.
+export const LATITUDE_RAM = { width: 69.6 / 40, depth: 30 / 40, thickness: 1.2 / 40, notchX: 0.04, notchWidth: 0.065, notchDepth: 0.08, centers: [-0.93, 0.93] } as const;
 const C = {
   shell: 0x7d858b,
   dark: 0x171b1f,
@@ -567,10 +569,19 @@ export function buildLatitude5410() {
   coinRing.rotation.x = Math.PI / 2;
   add(board, coinRing, -1.8, 0.08, -0.5);
   // DIMM sockets stay fixed on the board when their two modules lift away.
-  for (const x of [-1.58, 0.3]) {
-    add(board, box(1.66, 0.065, 0.14, 0xd9d7ca), x, 0.07, 1.0);
-    for (const dx of [-0.85, 0.85])
-      add(board, box(0.04, 0.06, 0.58, C.steel), x + dx, 0.065, 0.64);
+  const ramEdge = LATITUDE_HOME.ram[2] - LATITUDE_HOME.motherboard[2] + LATITUDE_RAM.depth / 2;
+  for (const [index, center] of LATITUDE_RAM.centers.entries()) {
+    const x = LATITUDE_HOME.ram[0] + center;
+    const socket = box(LATITUDE_RAM.width + 0.08, 0.065, 0.14, 0xd9d7ca);
+    socket.name = `RAM socket ${index + 1}`;
+    socket.userData.geometryRole = 'fixed-socket';
+    add(board, socket, x, 0.07, ramEdge + 0.04);
+    const key = box(0.04, 0.045, 0.055, 0xd9d7ca, 0.004);
+    key.name = `RAM socket key ${index + 1}`;
+    key.userData.geometryRole = 'fixed-key';
+    add(board, key, x + LATITUDE_RAM.notchX, LATITUDE_HOME.ram[1] - LATITUDE_HOME.motherboard[1], ramEdge - LATITUDE_RAM.notchDepth / 2);
+    for (const dx of [-LATITUDE_RAM.width / 2 - 0.03, LATITUDE_RAM.width / 2 + 0.03])
+      add(board, box(0.04, 0.06, 0.58, C.steel), x + dx, 0.065, ramEdge - 0.36);
   }
   for (const z of [3.14, 0.765]) {
     add(board, box(0.58, 0.125, 0.14, C.dark), -3.13, 0.065, z);
@@ -620,18 +631,25 @@ export function buildLatitude5410() {
   serviceInterior.add(battery);
   const ram = owner(new T.Group(), 'ram');
   ram.position.set(...LATITUDE_HOME.ram);
-  for (const x of [-0.93, 0.93]) {
-    add(ram, box(1.68, 0.04, 0.7, 0x377746), x, 0, 0);
+  for (const [index, x] of LATITUDE_RAM.centers.entries()) {
+    const { width: w, depth: d, notchX: nx, notchWidth: nw, notchDepth: nd } = LATITUDE_RAM;
+    const shape = new T.Shape();
+    const outline = [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2], [nx + nw / 2, d / 2], [nx + nw / 2, d / 2 - nd], [nx - nw / 2, d / 2 - nd], [nx - nw / 2, d / 2], [-w / 2, d / 2]];
+    outline.forEach(([px, pz], i) => i ? shape.lineTo(px, pz) : shape.moveTo(px, pz));
+    shape.closePath();
+    const pcb = new T.Mesh(new T.ExtrudeGeometry(shape, { depth: LATITUDE_RAM.thickness, bevelEnabled: false }), mat(0x377746));
+    pcb.rotation.x = Math.PI / 2;
+    pcb.position.set(x, LATITUDE_RAM.thickness / 2, 0);
+    pcb.name = `RAM PCB ${index + 1}`;
+    pcb.userData.geometryRole = 'module-board';
+    ram.add(pcb);
     for (let i = 0; i < 4; i++)
       add(ram, box(0.27, 0.03, 0.27, C.dark), x - 0.55 + i * 0.365, 0.037, 0);
-    for (let i = 0; i < 32; i++)
-      add(
-        ram,
-        box(0.024, 0.01, 0.09, C.gold, 0),
-        x - 0.76 + i * 0.048,
-        0.025,
-        0.355,
-      );
+    for (let i = 0; i < 36; i++) {
+      const contactX = -0.82 + i * (1.64 / 35);
+      if (Math.abs(contactX - LATITUDE_RAM.notchX) < LATITUDE_RAM.notchWidth / 2 + 0.012) continue;
+      for (const side of [-1, 1]) add(ram, box(0.024, 0.004, 0.085, C.gold, 0), x + contactX, side * (LATITUDE_RAM.thickness / 2 + 0.002), LATITUDE_RAM.depth / 2 - 0.0425);
+    }
   }
   for (const x of [-0.93, 0.93]) text(ram, 'DDR4 · SODIMM', 1.08, 0.15, x, 0.055, -0.24, '#d3d7c8');
   for (const x of [-0.93, 0.93]) for (let i = 0; i < 4; i++)

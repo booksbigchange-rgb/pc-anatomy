@@ -1,0 +1,41 @@
+import {chromium} from 'playwright';
+import {mkdir} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const directory='verification/dell-fit';
+await mkdir(directory,{recursive:true});
+const browser=await chromium.launch({channel:process.env.ATLAS_BROWSER_CHANNEL||undefined,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const page=await browser.newPage({viewport:{width:1600,height:1000},reducedMotion:'reduce'});
+const errors=[];page.on('pageerror',error=>errors.push(error.message));
+const url=process.env.ATLAS_TEST_URL||'http://127.0.0.1:5191/';
+const shot=async name=>{await page.waitForTimeout(800);await page.screenshot({path:`${directory}/${name}.png`});};
+try {
+ await page.goto(url);
+ if(await page.getByRole('button',{name:/Skip intro/}).count()) await page.getByRole('button',{name:/Skip intro/}).click();
+ await page.getByRole('button',{name:'Laptop Lab',exact:true}).click();
+ await page.getByRole('button',{name:'Inside',exact:true}).click();
+ await page.locator('.laptop-part-list button').filter({hasText:'RAM'}).click();
+ await page.getByRole('button',{name:'Explode part',exact:true}).click();
+ await page.getByRole('button',{name:'Isolate',exact:true}).click();
+ await page.getByRole('button',{name:'Focus',exact:true}).click();
+ await shot('01-keyed-ram');
+ await page.getByRole('button',{name:'Show all',exact:true}).click();
+ await page.getByRole('button',{name:'Reset part',exact:true}).click();
+ for(const value of ['18','60','78','100']) {await page.getByRole('slider',{name:'Laptop teardown progress'}).fill(value);await shot(`02-stage-${value}`);}
+ await page.goto(url);
+ await page.getByRole('button',{name:/Build.*PC/i}).click();
+ for(const choice of [/Intel Core i5-6500/,/Dell Q170 System Board/,/8 GB DDR4/,/M.2 2280 SSD/,/Slot-powered PCIe Card/,/Dell 240 W Power Supply/]) await page.getByRole('button',{name:choice}).last().click();
+ await page.getByRole('button',{name:/Enter interactive/}).click();
+ await page.getByRole('button',{name:'Rear',exact:true}).click();await shot('03-rear-desktop');
+ await page.setViewportSize({width:390,height:844});await shot('04-rear-phone');
+ const canvasBox=await page.locator('.assembly-stage canvas').boundingBox();
+ const controlsBox=await page.locator('.assembly-view-controls').boundingBox();
+ const partsBox=await page.locator('.assembly-steps').boundingBox();
+ const notesBox=await page.locator('.assembly-detail').boundingBox();
+ assert.ok(canvasBox.height>=400,'phone model needs its own usable viewport');
+ assert.ok(controlsBox.y+controlsBox.height<=canvasBox.y+1,'controls must sit above the canvas');
+ assert.ok(partsBox.y+partsBox.height<=canvasBox.y+1,'parts must sit above the canvas');
+ assert.ok(notesBox.y>=canvasBox.y+canvasBox.height-1,'notes must not cover the model');
+ await page.getByRole('button',{name:'Front',exact:true}).click();await shot('05-front-phone');
+ assert.deepEqual(errors,[]);
+ console.log('PASS: keyed RAM extraction/reset, all teardown stages, tower rear/front and phone resize, no page errors');
+} finally {await browser.close();}

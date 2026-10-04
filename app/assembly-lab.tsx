@@ -19,6 +19,7 @@ import FaultPractice from './fault-practice';
 import { ORIENTED_PARTS, RETAINERS, PART_JOBS, PC_FAULTS, placementProblem, fasteningProblems, type Retainer } from './hardware-practice.ts';
 import { readProgress, saveProgress } from './student-progress';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { frameInspectionBounds } from '../lib/inspection-camera.ts';
 import {
   createHardware,
   createChassis,
@@ -465,6 +466,7 @@ export default function AssemblyLab({
     canvas.addEventListener('pointermove', move);
     canvas.addEventListener('pointerup', up);
     canvas.addEventListener('pointercancel', cancel);
+    let framedFace: Action | null = null;
     const resize = () => {
       const w = canvas.clientWidth,
         h = canvas.clientHeight;
@@ -473,6 +475,7 @@ export default function AssemblyLab({
         renderer.setSize(w, h, false);
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
+        if (framedFace && displayRef.current.preview && !displayRef.current.isolated) actionRef.current = framedFace;
       }
     };
     const obs = new ResizeObserver(resize);
@@ -511,12 +514,16 @@ export default function AssemblyLab({
       if (actionRef.current) {
         dirty = true;
         const view = actionRef.current;
+        framedFace = view === 'front' || view === 'rear' ? view : null;
         const cx = d.preview || done ? 2.5 : 0.15;
         controls.target.set(cx, d.preview && d.upright ? 3.4 : 1.1, 0);
         if (view === 'home')
           camera.position.set(cx + 8.5, d.preview && d.upright ? 7.4 : 12, 11);
         if (view === 'front') camera.position.set(14, 4.3, 0);
         if (view === 'rear') camera.position.set(-9, 4.3, 0);
+        if (d.preview && d.upright && (view === 'front' || view === 'rear')) {
+          frameInspectionBounds(camera, controls.target, new T.Box3().setFromObject(assembly), new T.Vector3(view === 'front' ? 1 : -1, 0.04, 0));
+        }
         if (view === 'top') camera.position.set(cx, 17, 0.01);
         actionRef.current = null;
       }

@@ -379,3 +379,44 @@
 .assembly-handling button:disabled { opacity:.5; }
 .assembly-faults summary { cursor:pointer; min-height:44px; }
 .assembly-faults select { width:100%; padding:10px; margin-top:8px; color:#15362d; background:#edf6f2; }
+
+/* Give the model its own space on phones; controls must not cover hardware. */
+@media (max-width: 680px) {
+  .assembly-lab {
+    height: 100dvh;
+    grid-template-rows: 64px max-content max-content max-content;
+    overflow-y: auto;
+  }
+  .assembly-lab .assembly-steps {
+    position: static;
+    grid-row: 2;
+    width: auto;
+    border-radius: 0;
+    padding: 10px;
+  }
+  .assembly-lab .assembly-steps > .assembly-eyebrow,
+  .assembly-lab .assembly-feedback { display: none; }
+  .assembly-lab .assembly-step-list {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .assembly-lab .assembly-step { width: auto; flex: 0 0 auto; }
+  .assembly-lab .assembly-stage {
+    grid-row: 3;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: auto;
+  }
+  .assembly-lab .assembly-view-controls {
+    position: static;
+    padding: 10px;
+    background: #10171d;
+  }
+  .assembly-lab .assembly-stage canvas {
+    height: 420px;
+    flex: 0 0 420px;
+  }
+  .assembly-lab .assembly-detail { grid-row: 4; }
+}

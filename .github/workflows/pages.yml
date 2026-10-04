@@ -129,6 +129,8 @@ jobs:
           const response = await fetch(process.env.ATLAS_TEST_URL+'school/version.json?commit='+process.env.SCHOOL_SHA);
           if (!response.ok || (await response.json()).commit !== process.env.SCHOOL_SHA) throw new Error('School preview does not serve its built commit');
           JS
+          timeout 180s node tests/browser/dell-fit.mjs
+          ATLAS_TEST_URL=https://booksbigchange-rgb.github.io/pc-anatomy/school/ timeout 180s node tests/browser/dell-fit.mjs
           timeout 300s node tests/browser/optiplex.mjs
           timeout 400s node tests/browser/latitude.mjs
           timeout 240s node tests/browser/learning-polish.mjs
