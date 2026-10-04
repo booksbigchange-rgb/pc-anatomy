@@ -10,4 +10,4 @@ The branch and both media files are on GitHub. School preview workflow builds th
 
 Share URL after successful deployment: https://booksbigchange-rgb.github.io/pc-anatomy/school/
 
-GitHub Pages serves one artifact per repository. A later deployment using the older bigchange-school-only workflow replaces this combined artifact; run the school preview workflow again to restore both URLs, or consolidate both publishing workflows before the next main release.
+GitHub Pages serves one artifact per repository. Both publishing workflows now build and preserve the original root preview and the school preview together. Keep Pages Source set to GitHub Actions; branch-folder/Jekyll publishing overwrites the built app. See docs/publishing.md on bigchange-school for release settings and checks.
