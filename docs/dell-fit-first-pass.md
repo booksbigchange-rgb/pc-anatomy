@@ -16,6 +16,8 @@ Local type check, lint, 119 unit tests and production build passed. Browser revi
 
 ## Next priorities
 
+Exterior follow-up: aligned key rows across the keyboard well, widened modifier keys and separated the split-height arrows. Added inset key tops, a touchpad border, hinge barrels and the lower chassis seam. USB-C now has a rounded capsule shell; HDMI has a tapered shell; Ethernet has visible contacts. Connector contacts and the keyboard layout remain simplified illustrations. Existing socket picking and opposite-side occlusion tests pass; a new geometry test checks row alignment and the gaps between keycaps. Browser review checks keyboard/trackpad selection and both port views.
+
 Follow-up cooling pass: replaced rectangular rotor blocks with curved centrifugal vanes, a formed intake casing with a real opening, and a visible side fin stack. Reduced cold-plate thickness and moved its mounting arms beside the CPU contact plate. Reduced repeated motherboard passive sizes and varied their bank counts; removed invented controller labels. Intake ray checks, chassis clearance and cooling-owner movement are covered by a regression test. Assembled, 18/60/78/100% teardown and tilted cooling inspection views were reviewed. These details remain original approximations, not measured Dell CAD.
 
 1. Motherboard component grouping, scale and clearances; replace oversized repeated details with recognisable component shapes.

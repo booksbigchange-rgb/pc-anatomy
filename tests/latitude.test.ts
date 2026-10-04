@@ -7,6 +7,31 @@ import {
   LATITUDE_RAM,
 } from '../app/latitude-5410.ts';
 import { applyLaptopTeardown } from '../app/laptop-internals.ts';
+await test('Latitude keycap rows align within the keyboard well with visible row gaps', () => {
+  const model = buildLatitude5410();
+  const keyboard = model.outside.children.find(o => o.userData.laptopPart === 'keyboard')!;
+  let caps: T.Mesh | undefined;
+  keyboard.traverse(o => {
+    if (o instanceof T.Mesh && o.material instanceof T.MeshStandardMaterial && o.material.color.getHex() === 0x252a2e) caps = o;
+  });
+  assert.ok(caps);
+  const vertices = caps.geometry.getAttribute('position');
+  for (let row = 0; row < 6; row++) {
+    const center = -1.95 + row * 0.405;
+    let min = Infinity, max = -Infinity;
+    for (let i = 0; i < vertices.count; i++) {
+      if (Math.abs(vertices.getZ(i) - center) < 0.18) {
+        min = Math.min(min, vertices.getX(i)); max = Math.max(max, vertices.getX(i));
+      }
+    }
+    assert.ok(Math.abs(min + 3.1975) < 0.001, `row ${row} left edge`);
+    assert.ok(Math.abs(max - 3.1975) < 0.001, `row ${row} right edge`);
+  }
+  // Empty space between the number and letter rows must not contain keycaps.
+  const ray = new T.Raycaster(new T.Vector3(0, 5, -1.95 + 1.5 * 0.405 + model.root.position.z), new T.Vector3(0, -1, 0));
+  model.root.updateMatrixWorld(true);
+  assert.equal(ray.intersectObject(caps).length, 0);
+});
 await test('Latitude blower intake is open and its casing fits inside the chassis', () => {
   const model = buildLatitude5410();
   model.root.updateMatrixWorld(true);

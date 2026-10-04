@@ -197,17 +197,33 @@ function port(
   const trimStart = g.children.length;
   const sx = Math.sign(x);
   if (!round) {
-    for (const dz of [-w / 2, w / 2])
-      add(g, box(0.04, h + 0.025, 0.02, C.steel), x, 0.84, z + dz);
-    for (const dy of [-h / 2, h / 2])
-      add(g, box(0.04, 0.018, w, C.steel), x, 0.84 + dy, z);
-    add(
-      g,
-      box(0.018, 0.022, w * 0.75, id.startsWith('usb-') ? C.blue : C.steel, 0),
-      x + sx * 0.038,
-      0.85,
-      z,
-    );
+    const shell = new T.Shape(), cutout = new T.Path();
+    const isTypeC = id.startsWith('usb-c'), isHdmi = id.startsWith('hdmi');
+    const profile = (path: T.Shape | T.Path, pw: number, ph: number) => {
+      if (isTypeC) {
+        const r = ph / 2;
+        path.moveTo(-pw / 2 + r, -r); path.lineTo(pw / 2 - r, -r);
+        path.absarc(pw / 2 - r, 0, r, -Math.PI / 2, Math.PI / 2, false);
+        path.lineTo(-pw / 2 + r, r);
+        path.absarc(-pw / 2 + r, 0, r, Math.PI / 2, Math.PI * 1.5, false);
+      } else {
+        const inset = isHdmi ? pw * 0.15 : 0;
+        path.moveTo(-pw / 2 + inset, -ph / 2); path.lineTo(pw / 2 - inset, -ph / 2);
+        path.lineTo(pw / 2, ph / 2); path.lineTo(-pw / 2, ph / 2);
+      }
+      path.closePath();
+    };
+    profile(shell, w + 0.024, h + 0.024); profile(cutout, w - 0.012, h - 0.012);
+    shell.holes.push(cutout);
+    const trim = new T.Mesh(new T.ExtrudeGeometry(shell, {depth:0.025, bevelEnabled:false, curveSegments:16}), mat(C.steel));
+    trim.rotation.y = Math.PI / 2;
+    add(g, trim, x + sx * 0.025, 0.84, z); trim.name = `${id} shell`;
+    add(g, box(0.018, isTypeC ? 0.014 : 0.022, w * (isHdmi ? 0.62 : 0.7), id.startsWith('usb-') && !isTypeC ? C.blue : C.dark, 0.002), x + sx * 0.038, 0.85, z);
+    const count = id.startsWith('ethernet') ? 8 : isTypeC ? 10 : isHdmi ? 9 : 4;
+    for (let pin = 0; pin < count; pin++) {
+      const spacing = w * 0.62 / count;
+      add(g, box(0.012, 0.008, spacing * 0.42, C.gold, 0), x + sx * 0.047, 0.862, z + (pin - (count - 1) / 2) * spacing);
+    }
   } else {
     const ring = new T.Mesh(
       new T.TorusGeometry(w / 2, 0.018, 8, 32),
@@ -299,30 +315,26 @@ function exterior() {
     ['Tab', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\\'],
     ['Caps', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'", 'Enter'],
     ['Shift', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 'Shift'],
-    ['Ctrl', 'Fn', 'Win', 'Alt', 'Space', 'Alt', 'Ctrl', 'PgUp', '↑', 'PgDn'],
+    ['Ctrl', 'Fn', 'Win', 'Alt', 'Space', 'Alt', 'Ctrl', '←', '↑', '→'],
   ];
   for (let row = 0; row < rows.length; row++) {
+    const weights = rows[row].map(k => k === 'Space' ? 4.5 : k === 'Shift' ? 2.2 : k === 'Enter' || k === 'Caps' ? 1.8 : k === 'Tab' || k === '⌫' ? 1.5 : 1);
+    const unit = 6.44 / weights.reduce((sum, weight) => sum + weight, 0);
     let x = -3.22;
     for (let i = 0; i < rows[row].length; i++) {
       const k = rows[row][i],
-        kw =
-          k === 'Space'
-            ? 1.85
-            : k === 'Shift'
-              ? 0.72
-              : k === 'Enter'
-                ? 0.67
-                : row === 0
-                  ? 0.43
-                  : 0.455;
+        kw = weights[i] * unit;
+      const keyDepth = row === 0 ? 0.24 : k === '↑' ? 0.16 : 0.35;
+      const keyZ = -1.95 + row * 0.405 - (k === '↑' ? 0.095 : 0);
       const key = box(
         kw - 0.045,
         0.035,
-        row === 0 ? 0.24 : 0.35,
+        keyDepth,
         0x252a2e,
         0.035,
       );
-      add(keyboard, key, x + kw / 2, 1.11, -1.95 + row * 0.405);
+      add(keyboard, key, x + kw / 2, 1.11, keyZ);
+      add(keyboard, box(kw - 0.065, 0.008, keyDepth - 0.025, 0x30363a, 0.012), x + kw / 2, 1.13, keyZ);
       if (typeof document !== 'undefined') {
         const c = document.createElement('canvas');
         c.width = 128;
@@ -335,20 +347,28 @@ function exterior() {
         const tx = new T.CanvasTexture(c);
         tx.colorSpace = T.SRGBColorSpace;
         const label = new T.Mesh(
-          new T.PlaneGeometry(kw - 0.06, 0.22),
+          new T.PlaneGeometry(kw - 0.06, Math.min(0.22, keyDepth - 0.025)),
           new T.MeshBasicMaterial({ map: tx, transparent: true }),
         );
         label.rotation.x = -Math.PI / 2;
-        add(keyboard, label, x + kw / 2, 1.13, -1.95 + row * 0.405);
+        add(keyboard, label, x + kw / 2, 1.136, keyZ);
       }
       x += kw;
     }
   }
   add(keyboard, disk(0.075, 0.028, C.dark), -0.18, 1.145, -0.44);
-  for (const x of [1.89, 2.345, 2.8])
-    add(keyboard, box(0.4, 0.035, 0.17, C.dark, 0.025), x, 1.11, 0.3);
+  // Split-height down-arrow sits directly below up-arrow.
+  add(keyboard, box(0.4702, 0.035, 0.16, 0x252a2e, 0.025), 2.4472, 1.11, 0.17);
+  add(keyboard, box(0.4502, 0.008, 0.135, 0x30363a, 0.012), 2.4472, 1.13, 0.17);
+  add(keyboard, box(0.009, 0.002, 0.048, 0xc5ced3, 0), 2.4472, 1.136, 0.165);
+  for (const side of [-1, 1]) {
+    const stroke = box(0.009, 0.002, 0.032, 0xc5ced3, 0);
+    stroke.rotation.y = side * Math.PI / 4;
+    add(keyboard, stroke, 2.4472 + side * 0.01, 1.136, 0.179);
+  }
   g.add(batch(keyboard));
   const trackpad = owner(new T.Group(), 'trackpad');
+  add(trackpad, box(2.66, 0.012, 1.38, C.dark, 0.055), -0.42, 1.074, 1.23);
   add(trackpad, box(2.6, 0.025, 1.32, 0x717b82, 0.055), -0.42, 1.082, 1.23);
   for (const x of [-1.07, 0.23])
     add(trackpad, box(1.26, 0.02, 0.25, 0x646f76), x, 1.087, 2.07);
@@ -404,8 +424,14 @@ function exterior() {
   lens.rotation.x = Math.PI / 2;
   add(lid, lens, 0, 4.96, 0.041);
   add(lid, box(0.13, 0.014, 0.015, 0x39474d), 0.16, 4.96, 0.053);
-  for (const x of [-2.9, 2.9])
-    add(g, box(0.84, 0.23, 0.33, 0x525d63, 0.055), x, 1.0, -2.56);
+  for (const x of [-2.9, 2.9]) {
+    add(g, box(0.84, 0.15, 0.29, 0x525d63, 0.035), x, 0.97, -2.56);
+    const barrel = disk(0.095, 0.78, 0x525d63); barrel.rotation.z = Math.PI / 2;
+    add(g, barrel, x, 1.035, -2.55);
+  }
+  // Base-cover seam stays below the socket openings.
+  for (const side of [-1, 1]) add(g, box(0.012, 0.009, d - 0.18, 0x3d464c, 0), side * (w / 2 + 0.002), 0.715, 0);
+  add(g, box(w - 0.18, 0.009, 0.012, 0x3d464c, 0), 0, 0.715, d / 2 - 0.001);
   g.add(batch(lid));
   const ports = [
     port(g, 'power-left', -w / 2 + 0.022, -2.15, 0.2, 0.2, true),
