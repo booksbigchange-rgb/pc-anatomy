@@ -12,6 +12,16 @@ try {
  await page.goto(url);
  if(await page.getByRole('button',{name:/Skip intro/}).count()) await page.getByRole('button',{name:/Skip intro/}).click();
  await page.getByRole('button',{name:'Laptop Lab',exact:true}).click();
+ await page.locator('.laptop-part-list button').filter({hasText:'Keyboard'}).click();
+ assert.ok(await page.getByRole('heading',{name:'Keyboard',exact:true}).isVisible());
+ await shot('00-keyboard-exterior');
+ await page.locator('.laptop-part-list button').filter({hasText:'Trackpad'}).click();
+ assert.ok(await page.getByRole('heading',{name:'Trackpad',exact:true}).isVisible());
+ await page.getByRole('button',{name:'Left side',exact:true}).click();
+ await shot('00-left-port-details');
+ await page.getByRole('button',{name:'Right side',exact:true}).click();
+ await shot('00-right-port-details');
+ await page.getByRole('button',{name:'Reset view',exact:true}).click();
  await page.getByRole('button',{name:'Inside',exact:true}).click();
  await page.getByRole('button',{name:'Top view',exact:true}).click();
  await shot('00-assembled-cooling');
