@@ -16,6 +16,8 @@ import {
 import { byId, colors, openLevel, sources, type Concept } from '@/lib/manifest';
 import type { Selection } from '@/lib/explorer-state';
 import { levels, type LevelId } from '@/lib/levels';
+import { localizeConcept } from '@/lib/i18n/concepts';
+import { useI18n } from '@/lib/i18n/provider';
 
 type Props = {
   selected: Concept | null;
@@ -42,7 +44,10 @@ export default function DetailPanel({
   onFocus,
   onHide,
 }: Props) {
+  const { locale, t } = useI18n();
   const opens = selected && openLevel(selected.id);
+  const localized = selected ? localizeConcept(selected, locale) : null;
+
   return (
     <Sheet
       open={!!selected}
@@ -57,31 +62,33 @@ export default function DetailPanel({
         showCloseButton={false}
         initialFocus={false}
       >
-        {selected && (
+        {selected && localized && (
           <>
             <div className="detail-top">
               <span style={{ color: colors[selected.category] }}>
-                {selected.category} /{' '}
+                {t(`category.${selected.category}`)} /{' '}
                 {selected.representationType === 'logical'
-                  ? 'ARCHITECTURE'
-                  : 'HARDWARE'}
+                  ? t('architecture')
+                  : t('hardware')}
               </span>
-              <button aria-label="Close component details" onClick={onClose}>
+              <button aria-label={t('closeDetails')} onClick={onClose}>
                 <X size={17} />
               </button>
             </div>
-            <SheetTitle>{selected.name}</SheetTitle>
+            <SheetTitle>{localized.name}</SheetTitle>
             <div className="instance-label">
               {selection?.instance !== undefined
-                ? 'INSTANCE ' + String(selection.instance + 1).padStart(2, '0')
-                : 'COMPONENT GROUP'}
+                ? t('instance') +
+                  ' ' +
+                  String(selection.instance + 1).padStart(2, '0')
+                : t('componentGroup')}
             </div>
-            <SheetDescription>{selected.description}</SheetDescription>
+            <SheetDescription>{localized.description}</SheetDescription>
             <div className="purpose">
-              <h3>What it does</h3>
-              <p>{selected.purpose}</p>
+              <h3>{t('whatItDoes')}</h3>
+              <p>{localized.purpose}</p>
             </div>
-            <div className="quantity">{selected.quantity}</div>
+            <div className="quantity">{localized.quantity}</div>
             <dl>
               {Object.entries(selected.specifications).map(([k, v]) => (
                 <div key={k}>
@@ -92,9 +99,9 @@ export default function DetailPanel({
             </dl>
             {selected.parent && (
               <div className="parent-link">
-                Part of{' '}
+                {t('partOf')}{' '}
                 <button onClick={() => onSelectConcept(selected.parent!)}>
-                  {byId[selected.parent].shortName}
+                  {localizeConcept(byId[selected.parent], locale).shortName}
                   <ChevronRight size={12} />
                 </button>
               </div>
@@ -104,32 +111,29 @@ export default function DetailPanel({
                 className="open-component"
                 onClick={() => onDive(selected.id)}
               >
-                Take apart {levels[opens].name}
+                {t('takeApart')} {levels[opens].name}
                 <ChevronRight size={17} />
               </button>
             )}
             <div className="detail-actions">
               <button onClick={onIsolate}>
                 <Focus size={14} />
-                {isolated ? 'Show context' : 'Isolate'}
+                {isolated ? t('showContext') : t('isolate')}
               </button>
               <button onClick={onFocus}>
                 <Maximize size={14} />
-                Focus
+                {t('focus')}
               </button>
               <button onClick={() => onHide(selected.id)}>
                 <EyeOff size={14} />
-                Hide
+                {t('hide')}
               </button>
             </div>
             <p className="accuracy">{selected.physicalAccuracy}</p>
             {selected.sources.length > 0 && (
               <div className="source-links">
-                <h3>References & architecture</h3>
-                <p>
-                  Manufacturer documents and standards explain this component
-                  family. Illustrative geometry is not a product schematic.
-                </p>
+                <h3>{t('referencesArchitecture')}</h3>
+                <p>{t('referenceExplanation')}</p>
                 {selected.sources.map((s) => (
                   <a
                     key={s}
