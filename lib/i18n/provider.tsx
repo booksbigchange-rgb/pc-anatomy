@@ -27,17 +27,18 @@ type I18nContextValue = {
 
 const I18nContext = createContext<I18nContextValue | null>(null);
 
-export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocale] = useState<Locale>(defaultLocale);
+function initialLocale(): Locale {
+  if (typeof window === 'undefined') return defaultLocale;
+  try {
+    const saved = window.localStorage.getItem(storageKey);
+    return saved && isLocale(saved) ? saved : defaultLocale;
+  } catch {
+    return defaultLocale;
+  }
+}
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved && isLocale(saved)) setLocale(saved);
-    } catch {
-      // Language switching still works when storage is unavailable.
-    }
-  }, []);
+export function I18nProvider({ children }: { children: ReactNode }) {
+  const [locale, setLocale] = useState<Locale>(initialLocale);
 
   useEffect(() => {
     document.documentElement.lang = locale;
