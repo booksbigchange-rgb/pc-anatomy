@@ -3269,3 +3269,60 @@ a {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* Multilingual controls -------------------------------------------------- */
+.language-picker {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid #404246;
+  border-radius: 5px;
+  background: #161719;
+  color: #cdd1d5;
+}
+.language-picker > svg {
+  color: var(--accent-muted);
+}
+.language-picker select {
+  max-width: 118px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: 12px 'Segoe UI', Arial, sans-serif;
+  cursor: pointer;
+}
+.language-picker option {
+  background: #17191b;
+  color: #eef0f1;
+}
+[dir='rtl'] .detail-panel,
+[dir='rtl'] .search-dialog {
+  text-align: right;
+}
+[dir='rtl'] .detail-actions,
+[dir='rtl'] .source-links a,
+[dir='rtl'] .parent-link,
+[dir='rtl'] .search-hint {
+  direction: rtl;
+}
+[dir='rtl'] .language-picker {
+  direction: rtl;
+}
+@media (max-width: 820px) {
+  .language-picker {
+    padding-inline: 7px;
+  }
+  .language-picker select {
+    max-width: 82px;
+  }
+}
+@media (max-width: 600px) {
+  .language-picker select {
+    width: 64px;
+    text-overflow: ellipsis;
+  }
+}
