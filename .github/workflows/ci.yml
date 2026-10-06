@@ -24,7 +24,6 @@ jobs:
         run: npm ci
 
       - name: Security audit
-        continue-on-error: true
         run: npm audit --audit-level=high
 
       - name: Type check
