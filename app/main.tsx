@@ -1,10 +1,13 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import Home from './page';
+import { I18nProvider } from '@/lib/i18n/provider';
 import './globals.css';
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <Home />
+    <I18nProvider>
+      <Home />
+    </I18nProvider>
   </React.StrictMode>,
 );
