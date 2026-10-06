@@ -2,6 +2,8 @@ name: Verify OptiPlex candidate
 on:
   push:
     branches: [optiplex-reference-model]
+  pull_request:
+    branches: [bigchange-school]
   workflow_dispatch:
 permissions:
   contents: read
