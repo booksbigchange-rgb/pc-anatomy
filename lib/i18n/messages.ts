@@ -31,6 +31,11 @@ export type MessageKey =
   | 'instance'
   | 'componentGroup'
   | 'whatItDoes'
+  | 'whyItMatters'
+  | 'tryIt'
+  | 'computerLab'
+  | 'studentMode'
+  | 'technicalMode'
   | 'partOf'
   | 'takeApart'
   | 'showContext'
@@ -78,6 +83,11 @@ const en: Record<MessageKey, string> = {
   instance: 'INSTANCE',
   componentGroup: 'COMPONENT GROUP',
   whatItDoes: 'What it does',
+  whyItMatters: 'Why it matters',
+  tryIt: 'Try it',
+  computerLab: 'Computer Lab',
+  studentMode: 'Student mode',
+  technicalMode: 'Technical mode',
   partOf: 'Part of',
   takeApart: 'Take apart',
   showContext: 'Show context',
@@ -127,6 +137,11 @@ const ti: Partial<Record<MessageKey, string>> = {
   instance: 'ሓደ ክፍሊ',
   componentGroup: 'ጉጅለ ክፍልታት',
   whatItDoes: 'እንታይ ይገብር',
+  whyItMatters: 'ንምንታይ ኣገዳሲ እዩ',
+  tryIt: 'ፈትኖ',
+  computerLab: 'ኮምፒዩተር ላብ',
+  studentMode: 'ናይ ተማሃራይ ሞድ',
+  technicalMode: 'ቴክኒካዊ ሞድ',
   partOf: 'ክፍሊ ናይ',
   takeApart: 'ፈላልዮ',
   showContext: 'ካልኦት ክፍልታት ኣርኢ',
@@ -176,6 +191,11 @@ const he: Partial<Record<MessageKey, string>> = {
   instance: 'יחידה',
   componentGroup: 'קבוצת רכיבים',
   whatItDoes: 'מה הוא עושה',
+  whyItMatters: 'למה זה חשוב',
+  tryIt: 'נסו',
+  computerLab: 'מעבדת מחשבים',
+  studentMode: 'מצב תלמיד',
+  technicalMode: 'מצב טכני',
   partOf: 'חלק מ־',
   takeApart: 'פירוק',
   showContext: 'הצג הקשר',
