@@ -1429,7 +1429,7 @@ function LaptopScene({
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.98;
+    renderer.toneMappingExposure = 1.03;
 
     // A local studio environment gives the aluminum chassis realistic
     // reflections without any runtime network dependency.
@@ -1437,7 +1437,7 @@ function LaptopScene({
     const roomEnvironment = new RoomEnvironment();
     const environmentTarget = pmremGenerator.fromScene(roomEnvironment, 0.04);
     scene.environment = environmentTarget.texture;
-    scene.environmentIntensity = 0.45;
+    scene.environmentIntensity = lightGraphics ? 0.3 : 0.62;
     roomEnvironment.dispose();
     pmremGenerator.dispose();
 
@@ -1457,14 +1457,14 @@ function LaptopScene({
     controls.maxPolarAngle = Math.PI / 2.02;
     controls.target.set(0, 1.15, 0.15);
 
-    scene.add(new THREE.HemisphereLight(0xd8efff, 0x2f2926, 0.58));
+    scene.add(new THREE.HemisphereLight(0xd8efff, 0x262b30, 0.48));
     const key = new THREE.DirectionalLight(0xfff5ea, 2.05);
     key.position.set(-3.5, 9.5, 4.5);
     key.castShadow = true;
     key.shadow.mapSize.set(2048, 2048);
     key.shadow.bias = -0.00008;
     key.shadow.normalBias = 0.002;
-    key.shadow.radius = 2;
+    key.shadow.radius = lightGraphics ? 1 : 3;
     key.shadow.camera.left = -8;
     key.shadow.camera.right = 8;
     key.shadow.camera.top = 8;
@@ -1488,7 +1488,7 @@ function LaptopScene({
     softbox.lookAt(0, 1.2, 0);
     scene.add(softbox);
 
-    const edgeSoftbox = new THREE.RectAreaLight(0xd9e5ee, 1.4, 5.0, 3.0);
+    const edgeSoftbox = new THREE.RectAreaLight(0xd9e5ee, 1.65, 5.0, 3.0);
     edgeSoftbox.position.set(5.8, 5.4, -5.2);
     edgeSoftbox.lookAt(0, 1.4, -0.8);
     scene.add(edgeSoftbox);
