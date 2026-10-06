@@ -19,6 +19,7 @@ import FaultPractice from './fault-practice';
 import { ORIENTED_PARTS, RETAINERS, PART_JOBS, PC_FAULTS, placementProblem, fasteningProblems, type Retainer } from './hardware-practice.ts';
 import { readProgress, saveProgress } from './student-progress';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { frameInspectionBounds } from '../lib/inspection-camera.ts';
 import {
   createHardware,
@@ -246,7 +247,7 @@ export default function AssemblyLab({
     if (!canvas) return;
     let renderer: T.WebGLRenderer;
     try {
-      renderer = new T.WebGLRenderer({ canvas, antialias: true });
+      renderer = new T.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
     } catch {
       queueMicrotask(() =>
         setError(
@@ -256,7 +257,8 @@ export default function AssemblyLab({
       return;
     }
     const scene = new T.Scene();
-    scene.background = new T.Color(0x111a21);
+    scene.background = new T.Color(0x0d1419);
+    scene.fog = new T.Fog(0x0d1419, 24, 48);
     const camera = new T.PerspectiveCamera(38, 1, 0.1, 100);
     camera.position.set(10.6, 12.8, 12.6);
     renderer.setPixelRatio(Math.min(devicePixelRatio, lightGraphics ? 1 : 1.75));
@@ -268,13 +270,20 @@ export default function AssemblyLab({
       previousIsolation = '';
     renderer.outputColorSpace = T.SRGBColorSpace;
     renderer.toneMapping = T.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
+    renderer.toneMappingExposure = 1.04;
+    const pmremGenerator = new T.PMREMGenerator(renderer);
+    const roomEnvironment = new RoomEnvironment();
+    const environmentTarget = pmremGenerator.fromScene(roomEnvironment, 0.04);
+    scene.environment = environmentTarget.texture;
+    scene.environmentIntensity = lightGraphics ? 0.32 : 0.9;
+    roomEnvironment.dispose();
+    pmremGenerator.dispose();
     const controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true;
     controls.minDistance = 5;
     controls.maxDistance = 28;
     controls.target.set(1.05, 1.15, 0);
-    scene.add(new T.HemisphereLight(0xe4f0ff, 0x4b5262, 1.6));
+    scene.add(new T.HemisphereLight(0xdcecff, 0x252a31, 0.82));
     const key = new T.DirectionalLight(0xfff4e8, 2.8);
     key.position.set(3, 12, 5);
     key.castShadow = true;
@@ -291,7 +300,7 @@ export default function AssemblyLab({
     scene.add(fill);
     const table = new T.Mesh(
       new T.BoxGeometry(15, 0.25, 9.4),
-      new T.MeshStandardMaterial({ color: 0x25333c, roughness: 0.91 }),
+      new T.MeshStandardMaterial({ color: 0x25333c, roughness: 0.74, metalness: 0.05, envMapIntensity: 0.7 }),
     );
     table.position.set(-0.7, 0.39, 0);
     table.receiveShadow = true;
