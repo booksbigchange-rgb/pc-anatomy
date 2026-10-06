@@ -261,7 +261,7 @@ export default function AssemblyLab({
     scene.fog = new T.Fog(0x0d1419, 24, 48);
     const camera = new T.PerspectiveCamera(38, 1, 0.1, 100);
     camera.position.set(10.6, 12.8, 12.6);
-    renderer.setPixelRatio(Math.min(devicePixelRatio, lightGraphics ? 1 : 2));
+    renderer.setPixelRatio(Math.min(devicePixelRatio, lightGraphics ? 1 : 1.75));
     renderer.shadowMap.enabled = !lightGraphics;
     renderer.shadowMap.type = T.PCFSoftShadowMap;
     renderer.shadowMap.autoUpdate = false;
@@ -287,7 +287,7 @@ export default function AssemblyLab({
     const key = new T.DirectionalLight(0xfff4e8, 2.8);
     key.position.set(3, 12, 5);
     key.castShadow = true;
-    key.shadow.mapSize.set(lightGraphics ? 1024 : 2048, lightGraphics ? 1024 : 2048);
+    key.shadow.mapSize.set(1024, 1024);
     key.shadow.camera.left = -10;
     key.shadow.camera.right = 10;
     key.shadow.camera.top = 8;
