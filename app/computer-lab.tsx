@@ -1,7 +1,7 @@
 'use client';
 import AcademyLogo from './academy-logo';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Activity,
   BookOpen,
@@ -772,7 +772,7 @@ export default function ComputerLab({
     connectedRef.current = connected;
   }, [connected]);
 
-  const completeConnectionTask = (task: ConnectionTask) => {
+  const completeConnectionTask = useCallback((task: ConnectionTask) => {
     const nextConnected = connectedRef.current.includes(task.id)
       ? connectedRef.current
       : [...connectedRef.current, task.id];
@@ -788,7 +788,7 @@ export default function ComputerLab({
       taskRef.current = nextIndex;
       setTaskIndex(nextIndex);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1064,7 +1064,7 @@ export default function ComputerLab({
         }
       });
     };
-  }, []);
+  }, [completeConnectionTask]);
 
   const resetConnections = () => {
     connectedRef.current = [];
