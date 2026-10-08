@@ -238,6 +238,16 @@ const CONNECTION_TASKS: LaptopConnectionTask[] = [
   },
 ];
 
+const INTERNAL_CABLES: Array<{
+  id: LaptopInternalCableId;
+  label: string;
+  availableAt: number;
+}> = [
+  { id: 'battery', label: 'Battery cable', availableAt: 24 },
+  { id: 'speaker', label: 'Speaker cable', availableAt: 50 },
+  { id: 'display', label: 'Display cable', availableAt: 90 },
+];
+
 // Teaching geometry follows the approved Framework Laptop 13 CAD proportions
 // so the clickable model and the realistic exterior read as the same machine.
 const LAPTOP_DIMENSIONS = {
@@ -1406,6 +1416,40 @@ function LaptopScene({
     connectedRef.current = connected;
   }, [connected]);
 
+  const completeConnectionTask = (task: LaptopConnectionTask) => {
+    const nextConnected = connectedRef.current.includes(task.id)
+      ? connectedRef.current
+      : [...connectedRef.current, task.id];
+    connectedRef.current = nextConnected;
+    setConnected(nextConnected);
+    setConnectionFeedback('Correct — ' + task.name + ' is connected.');
+
+    const nextIndex = CONNECTIONS.findIndex(
+      (candidate, index) =>
+        index > connectionTaskRef.current &&
+        !nextConnected.includes(candidate.id),
+    );
+    if (nextIndex >= 0) {
+      connectionTaskRef.current = nextIndex;
+      setConnectionTask(nextIndex);
+    }
+  };
+
+  const toggleInternalCable = (cableId: LaptopInternalCableId) => {
+    const next = disconnectedInternalCablesRef.current.includes(cableId)
+      ? disconnectedInternalCablesRef.current.filter((id) => id !== cableId)
+      : [...disconnectedInternalCablesRef.current, cableId];
+    disconnectedInternalCablesRef.current = next;
+    setDisconnectedInternalCables(next);
+    setInternalCableFeedback(
+      next.includes(cableId)
+        ? cableId[0].toUpperCase() +
+            cableId.slice(1) +
+            ' cable unplugged. You can now continue the teardown.'
+        : cableId[0].toUpperCase() + cableId.slice(1) + ' cable reconnected.',
+    );
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -1941,22 +1985,7 @@ function LaptopScene({
           return;
         }
 
-        const nextConnected = connectedRef.current.includes(task.id)
-          ? connectedRef.current
-          : [...connectedRef.current, task.id];
-        connectedRef.current = nextConnected;
-        setConnected(nextConnected);
-        setConnectionFeedback('Correct — ' + task.name + ' is connected.');
-
-        const nextIndex = CONNECTIONS.findIndex(
-          (candidate, index) =>
-            index > connectionTaskRef.current &&
-            !nextConnected.includes(candidate.id),
-        );
-        if (nextIndex >= 0) {
-          connectionTaskRef.current = nextIndex;
-          setConnectionTask(nextIndex);
-        }
+        completeConnectionTask(task);
         return;
       }
 
@@ -1980,22 +2009,7 @@ function LaptopScene({
           | LaptopInternalCableId
           | undefined;
         if (cableId) {
-          const next = disconnectedInternalCablesRef.current.includes(cableId)
-            ? disconnectedInternalCablesRef.current.filter(
-                (id) => id !== cableId,
-              )
-            : [...disconnectedInternalCablesRef.current, cableId];
-          disconnectedInternalCablesRef.current = next;
-          setDisconnectedInternalCables(next);
-          setInternalCableFeedback(
-            next.includes(cableId)
-              ? cableId[0].toUpperCase() +
-                  cableId.slice(1) +
-                  ' cable unplugged. You can now continue the teardown.'
-              : cableId[0].toUpperCase() +
-                  cableId.slice(1) +
-                  ' cable reconnected.',
-          );
+          toggleInternalCable(cableId);
           return;
         }
       }
@@ -3050,6 +3064,17 @@ function LaptopScene({
                 <i className="audio" /> Audio
               </span>
             </div>
+            {!allConnectionsComplete && (
+              <button
+                type="button"
+                className="laptop-primary"
+                onClick={() => completeConnectionTask(currentConnection)}
+                aria-label={`Connect ${currentConnection.name} using the keyboard-accessible alternative`}
+              >
+                Connect highlighted port
+                <span>↵</span>
+              </button>
+            )}
             {allConnectionsComplete && (
               <button
                 type="button"
@@ -3080,6 +3105,34 @@ function LaptopScene({
               <strong>Why it matters</strong>
               <p>{selectedPart.why}</p>
             </div>
+            {mode === 'explore' && view === 'inside' && !guided && (
+              <section
+                className="laptop-cable-controls"
+                aria-label="Keyboard-accessible internal cable controls"
+              >
+                <strong>Internal cables</strong>
+                <p>{internalCableFeedback}</p>
+                <div>
+                  {INTERNAL_CABLES.map((item) => {
+                    const unplugged = disconnectedInternalCables.includes(item.id);
+                    const available = explode >= item.availableAt;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        disabled={!available}
+                        aria-pressed={unplugged}
+                        onClick={() => toggleInternalCable(item.id)}
+                      >
+                        {unplugged ? 'Reconnect ' : 'Unplug '}
+                        {item.label}
+                        {!available ? ` · available at ${item.availableAt}%` : ''}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
             {mode === 'assessment' && (
               <div
                 className={
