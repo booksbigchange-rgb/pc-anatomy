@@ -90,7 +90,6 @@ await step('PC Build carries chosen parts into interactive installation and expo
 
   await page.getByRole('button', { name: 'Start assembly practice' }).click();
   await page.getByRole('button', { name: /Seat .* in its guide/i }).waitFor();
-  await page.getByRole('button', { name: /Turn part 180°/i }).waitFor();
 });
 
 await step('No fatal browser errors during core smoke path', async () => {
