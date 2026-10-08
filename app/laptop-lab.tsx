@@ -1269,7 +1269,7 @@ function LaptopScene({
     'Choose Connections to practise the ports on a laptop.',
   );
   const [internalCableFeedback, setInternalCableFeedback] = useState(
-    'Click a visible internal cable to unplug it before removing its part.',
+    'Click a visible internal cable, or use the cable buttons, to unplug it before removing its part.',
   );
   const [disconnectedInternalCables, setDisconnectedInternalCables] = useState<
     LaptopInternalCableId[]
@@ -2331,7 +2331,7 @@ function LaptopScene({
       disconnectedInternalCablesRef.current = [];
       setDisconnectedInternalCables([]);
       setInternalCableFeedback(
-        'Click a visible internal cable to unplug it before removing its part.',
+        'Click a visible internal cable, or use the cable buttons, to unplug it before removing its part.',
       );
     }
     const first = PARTS.find((part) => part.view === next)!;
@@ -2398,7 +2398,7 @@ function LaptopScene({
     setTroubleshootingSolved(false);
     setTroubleshootingVerified(false);
     setTroubleshootingFeedback(
-      'Read the symptom and click the component you would inspect first.',
+      'Read the symptom and click or choose the component you would inspect first.',
     );
     modeRef.current = 'troubleshooting';
     setMode('troubleshooting');
@@ -2422,7 +2422,7 @@ function LaptopScene({
     setTroubleshootingSolved(false);
     setTroubleshootingVerified(false);
     setTroubleshootingFeedback(
-      'Read the symptom and click the component you would inspect first.',
+      'Read the symptom and click or choose the component you would inspect first.',
     );
     setExplode(scenario.explode);
     selectedRef.current = 'motherboard';
@@ -2960,7 +2960,7 @@ function LaptopScene({
         >
           <Rotate3D size={15} />
           {mode === 'connections'
-            ? 'Drag to orbit · find the glowing port · click to connect'
+            ? 'Drag to orbit · find the glowing port · click or use the Connect button'
             : mode === 'assessment'
               ? assessmentComplete
                 ? 'Assessment complete · review your result or try again'
@@ -2970,7 +2970,7 @@ function LaptopScene({
                 : guided
                   ? lessonStep.action
                   : view === 'inside'
-                    ? 'Drag to orbit · click cables to unplug · use teardown slider'
+                    ? 'Drag to orbit · click cables or use cable buttons · use teardown slider'
                     : 'Drag to orbit · scroll to zoom · click a part'}
         </div>
 
