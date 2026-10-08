@@ -6,6 +6,11 @@ on:
       - school-readiness-beta
     paths:
       - .github/workflows/dependency-refresh.yml
+  pull_request:
+    branches:
+      - bigchange-school
+    paths:
+      - .github/workflows/dependency-refresh.yml
 
 permissions:
   contents: read
