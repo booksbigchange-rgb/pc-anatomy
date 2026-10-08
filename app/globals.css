@@ -46,3 +46,23 @@
   left: -128.8372%;
   top: -7.6087%;
 }
+
+/* Classroom accessibility baseline: make keyboard focus visible across every
+   lab and respect students who request less motion. Component-specific focus
+   styles may be stronger, but no interactive control should lose this fallback. */
+:where(button, a, input, select, textarea, [role='button'], [tabindex]):focus-visible {
+  outline: 3px solid #9fe7f0;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+

@@ -1,7 +1,7 @@
 'use client';
 import AcademyLogo from './academy-logo';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Activity,
   BookOpen,
@@ -22,6 +22,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { CC0_TREE_COMPUTER_TOWER_FBX_BASE64 } from '@/lib/cc0-computer-tower';
 
 type LabPartId =
@@ -207,7 +208,13 @@ function mesh(
 ) {
   return new THREE.Mesh(
     geometry,
-    new THREE.MeshStandardMaterial({ color, roughness, metalness }),
+    new THREE.MeshStandardMaterial({
+      color,
+      roughness,
+      metalness,
+      envMapIntensity: metalness > 0.25 ? 1.25 : 0.9,
+      dithering: true,
+    }),
   );
 }
 
@@ -372,8 +379,10 @@ function standardizeImportedTower(root: THREE.Group) {
         sourceColor.setHex(0x55636b);
       const next = new THREE.MeshStandardMaterial({
         color: sourceColor,
-        roughness: 0.46,
-        metalness: 0.34,
+        roughness: 0.39,
+        metalness: 0.42,
+        envMapIntensity: 1.25,
+        dithering: true,
       });
       if ('opacity' in material && typeof material.opacity === 'number') {
         next.opacity = material.opacity;
@@ -772,6 +781,24 @@ export default function ComputerLab({
     connectedRef.current = connected;
   }, [connected]);
 
+  const completeConnectionTask = useCallback((task: ConnectionTask) => {
+    const nextConnected = connectedRef.current.includes(task.id)
+      ? connectedRef.current
+      : [...connectedRef.current, task.id];
+    connectedRef.current = nextConnected;
+    setConnected(nextConnected);
+    setFeedback('Correct — ' + task.name + ' is connected.');
+
+    const nextIndex = CONNECTION_TASKS.findIndex(
+      (candidate, index) =>
+        index > taskRef.current && !nextConnected.includes(candidate.id),
+    );
+    if (nextIndex >= 0) {
+      taskRef.current = nextIndex;
+      setTaskIndex(nextIndex);
+    }
+  }, []);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -793,7 +820,15 @@ export default function ComputerLab({
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.18;
+    renderer.toneMappingExposure = 1.08;
+
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    const roomEnvironment = new RoomEnvironment();
+    const environmentTarget = pmremGenerator.fromScene(roomEnvironment, 0.04);
+    scene.environment = environmentTarget.texture;
+    scene.environmentIntensity = 0.72;
+    roomEnvironment.dispose();
+    pmremGenerator.dispose();
 
     const controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true;
@@ -805,25 +840,28 @@ export default function ComputerLab({
     controls.maxPolarAngle = Math.PI / 2.03;
     controls.target.set(0.75, 1.7, 0.35);
 
-    scene.add(new THREE.HemisphereLight(0xcfeeff, 0x3a312d, 1.75));
+    scene.add(new THREE.HemisphereLight(0xcfeeff, 0x2b2928, 0.72));
 
     const keyLight = new THREE.DirectionalLight(0xfff4e8, 3.7);
     keyLight.position.set(7.5, 11, 8);
     keyLight.castShadow = true;
-    keyLight.shadow.mapSize.set(1536, 1536);
+    keyLight.shadow.mapSize.set(2048, 2048);
     keyLight.shadow.camera.near = 1;
     keyLight.shadow.camera.far = 30;
     keyLight.shadow.camera.left = -10;
     keyLight.shadow.camera.right = 10;
     keyLight.shadow.camera.top = 10;
     keyLight.shadow.camera.bottom = -10;
+    keyLight.shadow.bias = -0.00012;
+    keyLight.shadow.normalBias = 0.012;
+    keyLight.shadow.radius = 2.8;
     scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight(0x8fb8ff, 1.15);
+    const fillLight = new THREE.DirectionalLight(0x8fb8ff, 0.62);
     fillLight.position.set(-8, 5, 5);
     scene.add(fillLight);
 
-    const rimLight = new THREE.DirectionalLight(0x86e3dc, 1.0);
+    const rimLight = new THREE.DirectionalLight(0x86e3dc, 1.18);
     rimLight.position.set(5, 7, -9);
     scene.add(rimLight);
 
@@ -945,21 +983,7 @@ export default function ComputerLab({
           return;
         }
 
-        const nextConnected = connectedRef.current.includes(task.id)
-          ? connectedRef.current
-          : [...connectedRef.current, task.id];
-        connectedRef.current = nextConnected;
-        setConnected(nextConnected);
-        setFeedback('Correct — ' + task.name + ' is connected.');
-
-        const nextIndex = CONNECTION_TASKS.findIndex(
-          (candidate, index) =>
-            index > taskRef.current && !nextConnected.includes(candidate.id),
-        );
-        if (nextIndex >= 0) {
-          taskRef.current = nextIndex;
-          setTaskIndex(nextIndex);
-        }
+        completeConnectionTask(task);
         return;
       }
 
@@ -1042,6 +1066,7 @@ export default function ComputerLab({
       observer.disconnect();
       canvas.removeEventListener('pointerup', pick);
       controls.dispose();
+      environmentTarget.dispose();
       renderer.dispose();
       scene.traverse((object) => {
         if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
@@ -1060,7 +1085,7 @@ export default function ComputerLab({
         }
       });
     };
-  }, []);
+  }, [completeConnectionTask]);
 
   const resetConnections = () => {
     connectedRef.current = [];
@@ -1265,7 +1290,7 @@ export default function ComputerLab({
           <Rotate3D size={15} />
           {labMode === 'explore'
             ? 'Drag to orbit · scroll to zoom · click a part'
-            : 'Drag to orbit · find the glowing port · click to connect'}
+            : 'Drag to orbit · click the glowing port or use Connect highlighted port'}
         </div>
       </section>
 
@@ -1342,6 +1367,17 @@ export default function ComputerLab({
                 <i className="power" /> Power
               </span>
             </div>
+            {!allConnected && (
+              <button
+                type="button"
+                className="lab-primary-action"
+                onClick={() => completeConnectionTask(currentTask)}
+                aria-label={`Connect ${currentTask.name} using the keyboard-accessible alternative`}
+              >
+                Connect highlighted port
+                <span>↵</span>
+              </button>
+            )}
             {allConnected && (
               <button
                 type="button"

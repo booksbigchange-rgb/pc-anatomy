@@ -1,0 +1,53 @@
+name: School readiness validation
+
+on:
+  push:
+    branches:
+      - school-readiness-beta
+  pull_request:
+    branches:
+      - bigchange-school
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Type check
+        run: npm run check
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+      - name: Production build
+        env:
+          GITHUB_PAGES: 'true'
+        run: npm run build
+      - name: Build portable preview
+        run: npx vite build --base=./ --outDir preview-dist
+      - name: Upload preview build
+        uses: actions/upload-artifact@v4
+        with:
+          name: school-readiness-preview
+          path: preview-dist
+          if-no-files-found: error
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: High-severity dependency audit
+        run: npm audit --audit-level=high
