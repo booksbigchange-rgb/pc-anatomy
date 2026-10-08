@@ -1,0 +1,43 @@
+name: Refresh vulnerable dev dependencies
+
+on:
+  push:
+    branches:
+      - school-readiness-beta
+    paths:
+      - .github/workflows/dependency-refresh.yml
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Refresh formatter and lockfile
+        run: |
+          npm install --save-dev oxfmt@0.72.0
+          npm install --package-lock-only
+      - name: Security audit after refresh
+        run: npm audit --audit-level=high
+      - name: Type check
+        run: npm run check
+      - name: Lint
+        run: npm run lint
+      - name: Test
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Upload refreshed dependency files
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-refresh
+          path: |
+            package.json
+            package-lock.json
