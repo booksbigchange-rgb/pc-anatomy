@@ -1416,7 +1416,7 @@ function LaptopScene({
     connectedRef.current = connected;
   }, [connected]);
 
-  const completeConnectionTask = (task: LaptopConnectionTask) => {
+  const completeConnectionTask = useCallback((task: LaptopConnectionTask) => {
     const nextConnected = connectedRef.current.includes(task.id)
       ? connectedRef.current
       : [...connectedRef.current, task.id];
@@ -1433,9 +1433,9 @@ function LaptopScene({
       connectionTaskRef.current = nextIndex;
       setConnectionTask(nextIndex);
     }
-  };
+  }, [CONNECTIONS]);
 
-  const toggleInternalCable = (cableId: LaptopInternalCableId) => {
+  const toggleInternalCable = useCallback((cableId: LaptopInternalCableId) => {
     const next = disconnectedInternalCablesRef.current.includes(cableId)
       ? disconnectedInternalCablesRef.current.filter((id) => id !== cableId)
       : [...disconnectedInternalCablesRef.current, cableId];
@@ -1448,7 +1448,7 @@ function LaptopScene({
             ' cable unplugged. You can now continue the teardown.'
         : cableId[0].toUpperCase() + cableId.slice(1) + ' cable reconnected.',
     );
-  };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
