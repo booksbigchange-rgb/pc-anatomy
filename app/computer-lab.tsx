@@ -1269,7 +1269,7 @@ export default function ComputerLab({
           <Rotate3D size={15} />
           {labMode === 'explore'
             ? 'Drag to orbit · scroll to zoom · click a part'
-            : 'Drag to orbit · find the glowing port · click to connect'}
+            : 'Drag to orbit · click the glowing port or use Connect highlighted port'}
         </div>
       </section>
 
