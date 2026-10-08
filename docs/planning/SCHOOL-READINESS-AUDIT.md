@@ -12,16 +12,23 @@ Still required: test on at least one classroom-class Chromebook; record cold loa
 Pass condition: primary lesson flow remains usable without crashes, persistent blank canvas or interaction latency that prevents completion.
 
 ## Gate 2 — Accessibility
-Status: PARTIAL / OPEN.
-Positive evidence: labeled search/about/system controls, pressed/expanded states, labeled disassembly slider, dialog primitives, error alert in viewer, chart accessible label, keyboard shortcuts in explorer.
-Gaps requiring verification/fixes:
-- full keyboard-only walkthrough of every school lab;
-- 3D selection has no proven non-pointer equivalent;
-- focus order and focus visibility across all labs;
-- screen-reader announcements for lesson/mission feedback;
-- reduced-motion behavior for animated/pulsing/automatic 3D UI;
-- contrast audit;
-- accessible alternatives where precision dragging is required.
+Status: PARTIAL / VERIFYING.
+Implemented evidence:
+- global visible keyboard focus baseline;
+- reduced-motion baseline for students who request it;
+- main explorer concepts reachable through Systems and Search without clicking the 3D canvas;
+- labeled disassembly slider and semantic camera/tool controls;
+- Computer Lab connection challenge has a keyboard-accessible Connect highlighted port alternative;
+- PC Build has a Seat part button as an alternative to precision dragging, plus button controls for orientation, retainers, cooling, cabling and power-on;
+- Laptop Lab external connection practice has a keyboard-accessible Connect highlighted port alternative;
+- Laptop teardown exposes keyboard-accessible battery/speaker/display cable controls at the correct teardown stages;
+- Laptop troubleshooting exposes component-choice buttons, so the answer is not canvas-only;
+- lesson/feedback regions already use live/semantic output in several activities.
+Still required before PASS:
+- end-to-end keyboard-only browser walkthrough of every required classroom activity;
+- focus-order and screen-reader spot checks;
+- contrast review at classroom brightness;
+- verify no required task depends exclusively on color, mouse precision or motion.
 Pass condition: a student can complete required learning without depending exclusively on mouse precision, color or motion.
 
 ## Gate 3 — Student usability
@@ -41,8 +48,8 @@ Automated multilingual work is not native-speaker approval.
 Pass condition: native-speaker review of student-facing Tigrinya; Hebrew/RTL classroom review; fallback to English remains safe.
 
 ## Gate 6 — Security/dependencies
-Status: OPEN.
-CI includes npm audit at high severity plus typecheck, lint, tests and build. Known inherited audit findings remain release-gate items.
+Status: PASS ON SCHOOL-READINESS-BETA.
+Evidence: the inherited development-dependency advisories were remediated on the beta branch. The refreshed dependency set uses oxfmt 0.72.0, tinypool 2.2.0 and source-map-js 1.2.2. The dependency-refresh validation run passed the high-severity audit, typecheck, lint, tests and production build.
 Pass condition: findings remediated or explicitly documented/risk-accepted.
 
 ## Gate 7 — Deployment
