@@ -31,6 +31,12 @@ jobs:
         env:
           GITHUB_PAGES: 'true'
         run: npm run build
+      - name: Upload preview build
+        uses: actions/upload-artifact@v4
+        with:
+          name: school-readiness-preview
+          path: dist
+          if-no-files-found: error
 
   security:
     runs-on: ubuntu-latest
