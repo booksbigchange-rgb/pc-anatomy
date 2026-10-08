@@ -65,7 +65,7 @@ await step('Laptop teardown exposes non-canvas cable controls', async () => {
   await battery.waitFor();
   await battery.focus();
   await page.keyboard.press('Enter');
-  await page.getByText(/Battery cable unplugged/i).waitFor();
+  await page.getByRole('region', { name: /Keyboard-accessible internal cable controls/i }).getByText(/Battery cable unplugged/i).waitFor();
 });
 
 await step('PC Build exposes button alternative to dragging', async () => {
