@@ -17,11 +17,11 @@ export function createStageRuntime(
   });
   renderer.setPixelRatio(Math.min(devicePixelRatio, compact ? 1.5 : 2));
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = T.PCFShadowMap;
+  renderer.shadowMap.type = T.PCFSoftShadowMap;
   renderer.setClearColor(0, 0);
   renderer.outputColorSpace = T.SRGBColorSpace;
   renderer.toneMapping = T.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.02;
+  renderer.toneMappingExposure = 1.06;
   renderer.domElement.tabIndex = -1;
   host.appendChild(renderer.domElement);
 
@@ -46,16 +46,20 @@ export function createStageRuntime(
     near: 0.1,
     far: 60,
   });
-  key.shadow.bias = -0.0002;
-  key.shadow.normalBias = compact ? 0.03 : 0.017;
+  key.shadow.bias = -0.00016;
+  key.shadow.normalBias = compact ? 0.026 : 0.014;
+  key.shadow.radius = compact ? 1.4 : 2.6;
   scene.add(key);
 
-  const rim = new T.DirectionalLight(0xb6d0e0, 1.75);
-  rim.position.set(-6, 3.5, -5);
+  const rim = new T.DirectionalLight(0xbdd9e9, 1.75);
+  rim.position.set(-6, 4.5, -6);
   scene.add(rim);
-  const kick = new T.DirectionalLight(0xa2bdcf, 0.5);
-  kick.position.set(7, -4, 8);
+  const kick = new T.DirectionalLight(0x9fc3d9, 0.5);
+  kick.position.set(7, -2.5, 8);
   scene.add(kick);
+  const frontFill = new T.DirectionalLight(0xffead8, 0.34);
+  frontFill.position.set(6, 5, 10);
+  scene.add(frontFill);
 
   const camera = new T.PerspectiveCamera(32, 1, 0.1, 200);
   camera.position.set(9, 11, 14);
@@ -85,6 +89,7 @@ export function createStageRuntime(
     key,
     rim,
     kick,
+    frontFill,
     camera,
     controls,
     canvas: renderer.domElement,
@@ -148,10 +153,11 @@ export function createStageLoop(
 export function configureStageLighting(runtime: StageRuntime, level: LevelId) {
   const hardware = isPhysical(level);
   runtime.scene.environmentIntensity =
-    level === 'pc' ? 0.82 : hardware ? 1.05 : 0.48;
-  runtime.key.intensity = level === 'pc' ? 1.85 : hardware ? 2.2 : 0.85;
-  runtime.rim.intensity = hardware ? 1.6 : 0.7;
-  runtime.kick.intensity = hardware ? 0.55 : 0.28;
+    level === 'pc' ? 0.96 : hardware ? 1.18 : 0.54;
+  runtime.key.intensity = level === 'pc' ? 1.95 : hardware ? 2.28 : 0.9;
+  runtime.rim.intensity = hardware ? 1.72 : 0.76;
+  runtime.kick.intensity = hardware ? 0.62 : 0.3;
+  runtime.frontFill.intensity = level === 'pc' ? 0.38 : hardware ? 0.32 : 0.18;
 }
 
 export function collectAnimatedObjects(...roots: T.Object3D[]) {
