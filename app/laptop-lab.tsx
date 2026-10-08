@@ -2317,7 +2317,7 @@ function LaptopScene({
         }
       });
     };
-  }, [model, CONNECTIONS, lightGraphics]);
+  }, [model, CONNECTIONS, lightGraphics, completeConnectionTask, toggleInternalCable]);
 
   const changeView = (next: LaptopView) => {
     setGuided(false);
