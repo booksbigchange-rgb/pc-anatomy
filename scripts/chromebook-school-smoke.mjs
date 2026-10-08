@@ -37,7 +37,7 @@ await step('Computer Lab has a keyboard-accessible connection path', async () =>
   const connections = page.getByRole('button', { name: 'Connections' }).first();
   await connections.focus();
   await page.keyboard.press('Enter');
-  const fallback = page.getByRole('button', { name: /Connect highlighted port/i });
+  const fallback = page.getByRole('button', { name: /keyboard-accessible alternative/i });
   await fallback.waitFor();
   await fallback.focus();
   await page.keyboard.press('Enter');
