@@ -6,10 +6,10 @@ Status: ACTIVE. This is an implementation gate, not a planning-completeness docu
 Suitable for teacher-supervised classroom beta. Not yet approved for independent school-wide production use.
 
 ## Gate 1 — Chromebook performance
-Status: OPEN.
-Evidence already present: static SPA, lazy-loaded viewer engine, local assets/fallbacks, WebGL acceleration warning.
-Still required: test on at least one classroom-class Chromebook; record cold load, interaction responsiveness, assembly dragging, Laptop Lab teardown, comparison, repeated navigation, memory/GPU failures and console errors.
-Pass condition: primary lesson flow remains usable without crashes, persistent blank canvas or interaction latency that prevents completion.
+Status: PARTIAL / PHYSICAL DEVICE TEST STILL REQUIRED.
+Automated evidence: the Chromebook classroom smoke workflow passes at a 1366×768 classroom-style viewport with device scale factor 1 and reduced-motion enabled. It exercises Computer Lab loading, the keyboard-accessible connection path, Laptop Lab loading and connection practice, non-canvas laptop cable controls, the Build Your PC part picker, transfer into interactive installation and the non-drag seat-part control. The run also completes a production build and captures browser evidence.
+Still required: test on at least one real classroom Chromebook; record cold load, interaction responsiveness, assembly dragging, Laptop Lab teardown, comparison, repeated navigation, memory/GPU failures and console errors.
+Pass condition: primary lesson flow remains usable on real classroom hardware without crashes, persistent blank canvas or interaction latency that prevents completion.
 
 ## Gate 2 — Accessibility
 Status: PARTIAL / VERIFYING.
@@ -32,10 +32,10 @@ Still required before PASS:
 Pass condition: a student can complete required learning without depending exclusively on mouse precision, color or motion.
 
 ## Gate 3 — Student usability
-Status: OPEN.
-Test 5–10 students with no developer guidance on: connect desktop, find RAM, explain RAM, remove/inspect SSD, enter Build PC, correct one deliberate error, open Task Manager mission, return to Computer Lab.
-Record completion, wrong turns, teacher interventions and confusing labels.
-Pass condition: no repeated dead ends; core flow is discoverable without developer explanation.
+Status: OPEN / TEST PROTOCOL READY.
+Human test protocol: docs/planning/CLASSROOM-USABILITY-TEST.md.
+Test 5–10 students with no developer guidance on the core Computer Lab, PC explorer, Laptop Lab, Build PC and Task Manager flow. Record completion, wrong turns, teacher interventions and confusing labels.
+Pass condition: the protocol's completion/intervention thresholds pass and no repeated dead ends remain.
 
 ## Gate 4 — Visual/geometry fidelity
 Status: PARTIAL.
@@ -43,9 +43,10 @@ Lighting/material improvements exist on PR #5 but remain separate from geometry-
 Pass condition: recognizable OptiPlex and Latitude silhouettes/service features, no obvious assembly intersections, and browser visual review.
 
 ## Gate 5 — Language classroom review
-Status: OPEN.
+Status: OPEN / REVIEW CHECKLIST READY.
+Human review checklist: docs/planning/LANGUAGE-CLASSROOM-REVIEW.md.
 Automated multilingual work is not native-speaker approval.
-Pass condition: native-speaker review of student-facing Tigrinya; Hebrew/RTL classroom review; fallback to English remains safe.
+Pass condition: native/fluent review of student-facing Tigrinya; Hebrew/RTL classroom review; fallback to English remains safe.
 
 ## Gate 6 — Security/dependencies
 Status: PASS ON SCHOOL-READINESS-BETA.
