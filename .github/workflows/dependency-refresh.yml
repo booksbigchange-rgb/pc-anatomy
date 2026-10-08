@@ -28,7 +28,7 @@ jobs:
       - name: Refresh formatter and lockfile
         run: |
           npm install --save-dev oxfmt@0.72.0
-          npm install --package-lock-only
+          npm audit fix
       - name: Security audit after refresh
         run: npm audit --audit-level=high
       - name: Type check
