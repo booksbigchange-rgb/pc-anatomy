@@ -772,6 +772,24 @@ export default function ComputerLab({
     connectedRef.current = connected;
   }, [connected]);
 
+  const completeConnectionTask = (task: ConnectionTask) => {
+    const nextConnected = connectedRef.current.includes(task.id)
+      ? connectedRef.current
+      : [...connectedRef.current, task.id];
+    connectedRef.current = nextConnected;
+    setConnected(nextConnected);
+    setFeedback('Correct — ' + task.name + ' is connected.');
+
+    const nextIndex = CONNECTION_TASKS.findIndex(
+      (candidate, index) =>
+        index > taskRef.current && !nextConnected.includes(candidate.id),
+    );
+    if (nextIndex >= 0) {
+      taskRef.current = nextIndex;
+      setTaskIndex(nextIndex);
+    }
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -945,21 +963,7 @@ export default function ComputerLab({
           return;
         }
 
-        const nextConnected = connectedRef.current.includes(task.id)
-          ? connectedRef.current
-          : [...connectedRef.current, task.id];
-        connectedRef.current = nextConnected;
-        setConnected(nextConnected);
-        setFeedback('Correct — ' + task.name + ' is connected.');
-
-        const nextIndex = CONNECTION_TASKS.findIndex(
-          (candidate, index) =>
-            index > taskRef.current && !nextConnected.includes(candidate.id),
-        );
-        if (nextIndex >= 0) {
-          taskRef.current = nextIndex;
-          setTaskIndex(nextIndex);
-        }
+        completeConnectionTask(task);
         return;
       }
 
@@ -1342,6 +1346,17 @@ export default function ComputerLab({
                 <i className="power" /> Power
               </span>
             </div>
+            {!allConnected && (
+              <button
+                type="button"
+                className="lab-primary-action"
+                onClick={() => completeConnectionTask(currentTask)}
+                aria-label={`Connect ${currentTask.name} using the keyboard-accessible alternative`}
+              >
+                Connect highlighted port
+                <span>↵</span>
+              </button>
+            )}
             {allConnected && (
               <button
                 type="button"
