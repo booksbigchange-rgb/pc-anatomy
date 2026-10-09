@@ -77,7 +77,7 @@ await test('Latitude SODIMM key fits a real PCB cutout and sockets stay fixed du
     model.root.updateMatrixWorld(true);
   }
 });
-await test('Latitude removable modules reset exactly and expanded layout separates their footprints', () => {
+await test('Latitude removable modules reset exactly and expanded vertical layers stay aligned and separated', () => {
   const model = buildLatitude5410();
   for (const id of ['ssd', 'ram', 'wifi'] as const) {
     const home = model.parts[id].position.clone();
@@ -90,13 +90,20 @@ await test('Latitude removable modules reset exactly and expanded layout separat
     assert.ok(model.parts[id].position.equals(home));
     assert.ok(model.parts[id].rotation.equals(rotation));
   }
-  applyLaptopTeardown(model.teardownParts, 100, null, 0);
+  for (const stage of [18, 60, 78, 100]) {
+    applyLaptopTeardown(model.teardownParts, stage, null, 0);
+    for (const part of model.teardownParts) {
+      assert.equal(part.object.position.x, part.homePosition.x);
+      assert.equal(part.object.position.z, part.homePosition.z);
+      assert.ok(part.object.rotation.equals(part.homeRotation));
+    }
+  }
   const ids = ['battery', 'ram', 'ssd', 'wifi'] as const;
   for (let first = 0; first < ids.length; first++) {
     for (let second = first + 1; second < ids.length; second++) {
       const firstBounds = new T.Box3().setFromObject(model.parts[ids[first]]);
       const secondBounds = new T.Box3().setFromObject(model.parts[ids[second]]);
-      assert.ok(firstBounds.max.x < secondBounds.min.x || secondBounds.max.x < firstBounds.min.x || firstBounds.max.z < secondBounds.min.z || secondBounds.max.z < firstBounds.min.z);
+      assert.ok(firstBounds.max.y < secondBounds.min.y || secondBounds.max.y < firstBounds.min.y);
     }
   }
 });

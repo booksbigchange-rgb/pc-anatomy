@@ -921,16 +921,17 @@ export function buildLatitude5410() {
   );
   inside.add(serviceDisplay);
   const empty = () => new T.Group();
+  // Exploded layers retain each component's socket alignment in X/Z.
   const teardownParts = [
-    step(baseCover, 0, 18, [0, 1.35, 6.5]),
-    step(battery, 24, 34, [0, 0.55, 2.65]),
-    step(ssd, 30, 46, [-1.8, 0.8, 0.45]),
-    step(wifi, 34, 50, [-1.8, 0.65, -0.65]),
-    step(ram, 42, 60, [4.4, 0.8, 2.6]),
-    step(speakers, 50, 68, [0, 0.5, 2.7]),
-    step(cooling, 58, 78, [3.1, 1.3, -2.4]),
-    step(board, 90, 100, [0, 1.15, -1.1]),
-    step(serviceDisplay, 90, 100, [0, -0.08, -0.2]),
+    step(baseCover, 0, 18, [0, 8.6, 0]),
+    step(battery, 24, 34, [0, 7.4, 0]),
+    step(ssd, 30, 46, [0, 6.4, 0]),
+    step(wifi, 34, 50, [0, 5.4, 0]),
+    step(ram, 42, 60, [0, 4.4, 0]),
+    step(speakers, 50, 68, [0, 3.4, 0]),
+    step(cooling, 58, 78, [0, 2.4, 0]),
+    step(board, 90, 100, [0, 1.1, 0]),
+    step(serviceDisplay, 90, 100, [0, -0.08, 0]),
   ];
   const disconnectCables: LaptopInternalCable[] = [
     {
