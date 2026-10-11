@@ -78,11 +78,17 @@ const steel = 0xa4a9ac,
   blue = 0x327eb2,
   gold = 0xc9a34d;
 function material(color: number) {
-  return new T.MeshStandardMaterial({
+  const isSteel = color === steel;
+  const isGold = color === gold;
+  const isBlack = color === black;
+  const material = new T.MeshStandardMaterial({
     color,
-    metalness: color === steel || color === gold ? 0.68 : color === black ? 0 : 0.12,
-    roughness: color === steel ? 0.38 : color === black ? 0.94 : 0.6,
+    metalness: isSteel ? 0.82 : isGold ? 0.92 : isBlack ? 0 : 0.08,
+    roughness: isSteel ? 0.3 : isGold ? 0.24 : isBlack ? 0.68 : 0.54,
+    envMapIntensity: isSteel ? 1.35 : isGold ? 1.5 : isBlack ? 0.82 : 1.0,
   });
+  material.dithering = true;
+  return material;
 }
 function box(w: number, h: number, d: number, color: number, r = 0.012) {
   return new T.Mesh(
