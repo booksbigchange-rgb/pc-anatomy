@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { categories, colors, manifest, type Category } from '@/lib/manifest';
+import { localizeConcept } from '@/lib/i18n/concepts';
+import { useI18n } from '@/lib/i18n/provider';
 
 type Props = {
   visible: Category[];
@@ -25,15 +27,15 @@ export default function SystemsList({
   onSetConceptVisible,
   onSelectConcept,
 }: Props) {
-  // Which system is unfolded to show its parts. Nothing outside this list
-  // cares, so it stays here rather than in the explorer's own state.
   const [expanded, setExpanded] = useState<Category | null>(null);
+  const { locale, t } = useI18n();
+
   return (
     <div className="systems-section">
       <div className="section-heading">
-        VISIBLE SYSTEMS{' '}
+        {t('visibleSystems')}{' '}
         <button onClick={onToggleAll}>
-          {visible.length === categories.length ? 'Hide all' : 'Show all'}
+          {visible.length === categories.length ? t('hideAll') : t('showAll')}
         </button>
       </div>
       <div className="layer-scroll">
@@ -44,13 +46,15 @@ export default function SystemsList({
                 className="category-visibility"
                 aria-pressed={visible.includes(category)}
                 aria-label={
-                  (visible.includes(category) ? 'Hide ' : 'Show ') + category
+                  (visible.includes(category) ? t('hide') : t('show')) +
+                  ' ' +
+                  t(`category.${category}`)
                 }
                 onClick={() => onToggleCategory(category)}
               >
                 <i style={{ background: colors[category] }} />
-                <span>{category}</span>
-                <small>{visible.includes(category) ? 'On' : 'Off'}</small>
+                <span>{t(`category.${category}`)}</span>
+                <small>{visible.includes(category) ? t('on') : t('off')}</small>
               </button>
               <button
                 className="category-expand"
@@ -59,9 +63,11 @@ export default function SystemsList({
                 }
                 aria-expanded={expanded === category}
                 aria-label={
-                  (expanded === category ? 'Hide ' : 'Show ') +
-                  category +
-                  ' components'
+                  (expanded === category ? t('hide') : t('show')) +
+                  ' ' +
+                  t(`category.${category}`) +
+                  ' ' +
+                  t('components')
                 }
               >
                 <ChevronDown size={12} />
@@ -70,28 +76,33 @@ export default function SystemsList({
             {expanded === category && (
               <div className="sublayers">
                 {manifest
-                  .filter((c) => c.category === category && c.id !== 'card')
-                  .map((c) => (
-                    <div key={c.id}>
-                      <button onClick={() => onSelectConcept(c.id)}>
-                        {c.shortName}
-                      </button>
-                      <Switch
-                        size="sm"
-                        checked={
-                          visible.includes(category) && !hidden.includes(c.id)
-                        }
-                        onCheckedChange={(checked) =>
-                          onSetConceptVisible(c.id, category, checked)
-                        }
-                        aria-label={
-                          (visible.includes(category) && !hidden.includes(c.id)
-                            ? 'Hide '
-                            : 'Show ') + c.name
-                        }
-                      />
-                    </div>
-                  ))}
+                  .filter((concept) => concept.category === category && concept.id !== 'card')
+                  .map((concept) => {
+                    const c = localizeConcept(concept, locale);
+                    return (
+                      <div key={c.id}>
+                        <button onClick={() => onSelectConcept(c.id)}>
+                          {c.shortName}
+                        </button>
+                        <Switch
+                          size="sm"
+                          checked={
+                            visible.includes(category) && !hidden.includes(c.id)
+                          }
+                          onCheckedChange={(checked) =>
+                            onSetConceptVisible(c.id, category, checked)
+                          }
+                          aria-label={
+                            (visible.includes(category) && !hidden.includes(c.id)
+                              ? t('hide')
+                              : t('show')) +
+                            ' ' +
+                            c.name
+                          }
+                        />
+                      </div>
+                    );
+                  })}
               </div>
             )}
           </div>

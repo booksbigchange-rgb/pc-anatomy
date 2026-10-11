@@ -16,6 +16,8 @@ import {
 import { byId, colors, openLevel, sources, type Concept } from '@/lib/manifest';
 import type { Selection } from '@/lib/explorer-state';
 import { levels, type LevelId } from '@/lib/levels';
+import { localizeConcept } from '@/lib/i18n/concepts';
+import { useI18n } from '@/lib/i18n/provider';
 
 type Props = {
   selected: Concept | null;
@@ -42,6 +44,17 @@ const studentTips: Record<Concept['category'], string> = {
   Graphics: 'Graphics components calculate and draw images, video and 3D scenes for the display.',
 };
 
+const tigrinyaStudentTips: Record<Concept['category'], string> = {
+  Chassis: 'ኬዝ ሃርድዌር ይከላኸል እና ዋና ክፍልታት ኣብ ትኽክለኛ ቦታኦም ይሕዝ።',
+  Cooling: 'ምዝሓል ሙቐት የውጽእ እና ኮምፒዩተር ብደሓን ንኽሰርሕ ይሕግዝ።',
+  Board: 'ቦርድ ክፍልታት ንኽተሓላለፉ እና ሓበሬታ ንኽለዋወጡ የራኽቦም።',
+  Power: 'ናይ ሓይሊ ክፍልታት ንኻልኦት ክፍልታት ዝግባእ ኤሌክትሪክ ይህቡ።',
+  Memory: 'Memory ኮምፒዩተር ኣብዚ ግዜ ዝጥቀመሉ ሓበሬታ ብቕልጡፍ ይሕዝ።',
+  Storage: 'Storage ኮምፒዩተር ምስ ጠፍአ እውን ፋይላትን ፕሮግራማትን ይሕዝ።',
+  Compute: 'ናይ compute ክፍልታት ስሌታትን መምርሒታትን ብምፍጻም ፕሮግራማት የስርሑ።',
+  Graphics: 'Graphics ክፍልታት ምስልታት፣ ቪድዮን 3D ትዕይንትን ይሰርሑ።',
+};
+
 export default function DetailPanel({
   selected,
   selection,
@@ -55,13 +68,21 @@ export default function DetailPanel({
   onFocus,
   onHide,
 }: Props) {
+  const { locale, t } = useI18n();
   const opens = selected && openLevel(selected.id);
+  const localized = selected ? localizeConcept(selected, locale) : null;
   const specifications = selected
     ? Object.entries(selected.specifications)
     : [];
   const shownSpecifications = studentMode
     ? specifications.slice(0, 3)
     : specifications;
+  const tip =
+    selected && locale === 'ti-ER'
+      ? tigrinyaStudentTips[selected.category]
+      : selected
+        ? studentTips[selected.category]
+        : '';
 
   return (
     <Sheet
@@ -77,35 +98,35 @@ export default function DetailPanel({
         showCloseButton={false}
         initialFocus={false}
       >
-        {selected && (
+        {selected && localized && (
           <>
             <div className="detail-top">
               <span style={{ color: colors[selected.category] }}>
-                {selected.category} /{' '}
+                {t(`category.${selected.category}`)} /{' '}
                 {selected.representationType === 'logical'
-                  ? 'ARCHITECTURE'
-                  : 'HARDWARE'}
+                  ? t('architecture')
+                  : t('hardware')}
               </span>
-              <button aria-label="Close component details" onClick={onClose}>
+              <button aria-label={t('closeDetails')} onClick={onClose}>
                 <X size={17} />
               </button>
             </div>
-            <SheetTitle>{selected.name}</SheetTitle>
+            <SheetTitle>{localized.name}</SheetTitle>
             <div className="instance-label">
               {selection?.instance !== undefined
-                ? 'INSTANCE ' + String(selection.instance + 1).padStart(2, '0')
-                : 'COMPONENT GROUP'}
+                ? t('instance') +
+                  ' ' +
+                  String(selection.instance + 1).padStart(2, '0')
+                : t('componentGroup')}
             </div>
             <SheetDescription>
-              {studentMode ? selected.purpose : selected.description}
+              {studentMode ? localized.purpose : localized.description}
             </SheetDescription>
             <div className="purpose">
-              <h3>{studentMode ? 'Why it matters' : 'What it does'}</h3>
-              <p>
-                {studentMode ? studentTips[selected.category] : selected.purpose}
-              </p>
+              <h3>{studentMode ? t('whyItMatters') : t('whatItDoes')}</h3>
+              <p>{studentMode ? tip : localized.purpose}</p>
             </div>
-            <div className="quantity">{selected.quantity}</div>
+            <div className="quantity">{localized.quantity}</div>
             <dl>
               {shownSpecifications.map(([k, v]) => (
                 <div key={k}>
@@ -116,7 +137,7 @@ export default function DetailPanel({
             </dl>
             {studentMode && (
               <div className="student-task">
-                <h3>Try it</h3>
+                <h3>{t('tryIt')}</h3>
                 <p>
                   {opens && opens !== level
                     ? `Focus on this part, then open ${levels[opens].name} to see what is inside.`
@@ -126,9 +147,9 @@ export default function DetailPanel({
             )}
             {selected.parent && (
               <div className="parent-link">
-                Part of{' '}
+                {t('partOf')}{' '}
                 <button onClick={() => onSelectConcept(selected.parent!)}>
-                  {byId[selected.parent].shortName}
+                  {localizeConcept(byId[selected.parent], locale).shortName}
                   <ChevronRight size={12} />
                 </button>
               </div>
@@ -138,22 +159,22 @@ export default function DetailPanel({
                 className="open-component"
                 onClick={() => onDive(selected.id)}
               >
-                Take apart {levels[opens].name}
+                {t('takeApart')} {levels[opens].name}
                 <ChevronRight size={17} />
               </button>
             )}
             <div className="detail-actions">
               <button onClick={onIsolate}>
                 <Focus size={14} />
-                {isolated ? 'Show context' : 'Isolate'}
+                {isolated ? t('showContext') : t('isolate')}
               </button>
               <button onClick={onFocus}>
                 <Maximize size={14} />
-                Focus
+                {t('focus')}
               </button>
               <button onClick={() => onHide(selected.id)}>
                 <EyeOff size={14} />
-                Hide
+                {t('hide')}
               </button>
             </div>
             {!studentMode && (
@@ -161,11 +182,8 @@ export default function DetailPanel({
                 <p className="accuracy">{selected.physicalAccuracy}</p>
                 {selected.sources.length > 0 && (
                   <div className="source-links">
-                    <h3>References & architecture</h3>
-                    <p>
-                      Manufacturer documents and standards explain this component
-                      family. Illustrative geometry is not a product schematic.
-                    </p>
+                    <h3>{t('referencesArchitecture')}</h3>
+                    <p>{t('referenceExplanation')}</p>
                     {selected.sources.map((s) => (
                       <a
                         key={s}

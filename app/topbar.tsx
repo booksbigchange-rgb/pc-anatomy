@@ -4,10 +4,12 @@ import {
   Cpu,
   GraduationCap,
   Info,
+  Languages,
   Layers3,
   Monitor,
   Search,
 } from 'lucide-react';
+import { locales, useI18n, type Locale } from '@/lib/i18n/provider';
 import { GUIDE, UPSTREAM_REPOSITORY } from './links';
 
 type Props = {
@@ -31,6 +33,8 @@ export default function Topbar({
   onSearch,
   onAbout,
 }: Props) {
+  const { locale, setLocale, t } = useI18n();
+
   return (
     <header className="topbar">
       <button
@@ -57,6 +61,21 @@ export default function Topbar({
         </span>
       </a>
       <div className="header-actions">
+        <label className="language-picker" title={t('language')}>
+          <Languages size={15} aria-hidden="true" />
+          <span className="sr-only">{t('language')}</span>
+          <select
+            aria-label={t('language')}
+            value={locale}
+            onChange={(event) => setLocale(event.target.value as Locale)}
+          >
+            {Object.values(locales).map((language) => (
+              <option key={language.code} value={language.code}>
+                {language.nativeLabel}
+              </option>
+            ))}
+          </select>
+        </label>
         <button
           type="button"
           className="student-mode-button"
@@ -64,7 +83,7 @@ export default function Topbar({
           title="Return to the whole computer setup"
         >
           <Monitor size={16} />
-          <span>Computer Lab</span>
+          <span>{t('computerLab')}</span>
         </button>
         <button
           type="button"
@@ -74,20 +93,20 @@ export default function Topbar({
           title="Switch between student and technical explanations"
         >
           <GraduationCap size={16} />
-          <span>{studentMode ? 'Student mode' : 'Technical mode'}</span>
+          <span>{studentMode ? t('studentMode') : t('technicalMode')}</span>
         </button>
         <a
           className="guide-link"
           href={GUIDE}
           title="Learn about PC components"
         >
-          Guide
+          {t('guide')}
         </a>
         <button
           type="button"
           className="mobile-layers"
           onClick={onToggleLayers}
-          aria-label="Toggle systems"
+          aria-label={t('toggleSystems')}
           aria-expanded={layers}
         >
           <Layers3 size={19} />
@@ -95,17 +114,17 @@ export default function Topbar({
         <button
           type="button"
           className="search-button"
-          aria-label="Find a component"
+          aria-label={t('findComponent')}
           onClick={onSearch}
         >
           <Search size={16} />
-          <span>Search components</span>
+          <span>{t('searchComponents')}</span>
           <kbd>/</kbd>
         </button>
         <button
           type="button"
           className="info-button"
-          aria-label="About and sources"
+          aria-label={t('aboutSources')}
           onClick={onAbout}
         >
           <Info size={19} />
