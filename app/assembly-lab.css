@@ -220,6 +220,23 @@
     box-shadow: 0 16px 50px #0009;
   }
 }
+@media (min-width: 681px) and (max-width: 980px) {
+  main.assembly-lab {
+    height: auto;
+    grid-template-rows: 72px minmax(600px, 75dvh) auto;
+  }
+  .assembly-steps { grid-row: 2; max-height: 75dvh; }
+  .assembly-stage { grid-row: 2; }
+  .assembly-detail {
+    position: static;
+    grid-column: 1 / -1;
+    grid-row: 3;
+    width: auto;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
 @media (max-width: 680px) {
   .assembly-lab {
     grid-template-columns: 1fr;

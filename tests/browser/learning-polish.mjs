@@ -60,6 +60,14 @@ try {
     assert.match(await page.locator('.fault-practice').innerText(),/Verified: the simulated fault is resolved/);
   }
   await shot('03-desktop-diagnosis');
+  for (const width of [702, 768, 980]) {
+    await page.setViewportSize({width,height:1024});
+    const stage=await page.locator('.assembly-stage').boundingBox();
+    const notes=await page.locator('.assembly-detail').boundingBox();
+    assert.ok(notes.y >= stage.y + stage.height - 1, `Component notes must not cover the model at ${width}px`);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
+  }
+  await shot('03b-tablet-notes-below-model');
   await page.setViewportSize({width:390,height:844});
   await page.getByRole('button',{name:'USB port',exact:true}).click();
   await page.locator('.assembly-detail h2').scrollIntoViewIfNeeded();
