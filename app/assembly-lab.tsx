@@ -19,6 +19,7 @@ import FaultPractice from './fault-practice';
 import { ORIENTED_PARTS, RETAINERS, PART_JOBS, PC_FAULTS, placementProblem, fasteningProblems, type Retainer } from './hardware-practice.ts';
 import { readProgress, saveProgress } from './student-progress';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { frameInspectionBounds } from '../lib/inspection-camera.ts';
 import {
   createHardware,
@@ -106,7 +107,7 @@ const PARTS: Part[] = [
     snap: 0.32,
   },
 ];
-type Action = 'home' | 'front' | 'rear' | 'top';
+type Action = 'home' | 'front' | 'rear' | 'top' | 'cooling';
 export default function AssemblyLab({
   onBack,
   previewOnly = false,
@@ -269,35 +270,51 @@ export default function AssemblyLab({
     renderer.outputColorSpace = T.SRGBColorSpace;
     renderer.toneMapping = T.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.0;
+    const pmrem = new T.PMREMGenerator(renderer);
+    const room = new RoomEnvironment();
+    const environment = pmrem.fromScene(room, .04);
+    scene.environment = environment.texture;
+    scene.environmentIntensity = .48;
+    room.dispose();
+    pmrem.dispose();
     const controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true;
     controls.minDistance = 5;
     controls.maxDistance = 28;
     controls.target.set(1.05, 1.15, 0);
-    scene.add(new T.HemisphereLight(0xe4f0ff, 0x4b5262, 1.6));
-    const key = new T.DirectionalLight(0xfff4e8, 2.8);
+    scene.add(new T.HemisphereLight(0xe4f0ff, 0x343b43, .6));
+    const key = new T.DirectionalLight(0xfff4e8, 2.1);
     key.position.set(3, 12, 5);
     key.castShadow = true;
-    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.mapSize.set(2048, 2048);
     key.shadow.camera.left = -10;
     key.shadow.camera.right = 10;
     key.shadow.camera.top = 8;
     key.shadow.camera.bottom = -8;
-    key.shadow.bias = -0.0004;
+    key.shadow.bias = -0.00008;
+    key.shadow.radius = 2;
     key.shadow.normalBias = 0.003;
     scene.add(key);
-    const fill = new T.DirectionalLight(0xbadfff, 1.5);
+    const fill = new T.DirectionalLight(0xd5e5ff, .45);
     fill.position.set(-5, 6, -7);
     scene.add(fill);
+    const rim = new T.DirectionalLight(0xe6efff, .65);
+    rim.position.set(7, 6, -4);
+    scene.add(rim);
     const table = new T.Mesh(
       new T.BoxGeometry(15, 0.25, 9.4),
-      new T.MeshStandardMaterial({ color: 0x25333c, roughness: 0.91 }),
+      new T.MeshStandardMaterial({ color: 0x30383b, roughness: 0.91 }),
     );
     table.position.set(-0.7, 0.39, 0);
     table.receiveShadow = true;
     scene.add(table);
     const grid = new T.GridHelper(15, 30, 0x3c5865, 0x2e444f);
     grid.position.set(-0.7, 0.522, 0);
+    for (const material of Array.isArray(grid.material) ? grid.material : [grid.material]) {
+      material.transparent = true;
+      material.opacity = .16;
+      material.depthWrite = false;
+    }
     scene.add(grid);
     const { group: chassis, cover, driveCage } = createChassis();
     const assembly = new T.Group();
@@ -511,6 +528,7 @@ export default function AssemblyLab({
         controls.enabled = true;
         resetRef.current = false;
       }
+      const inspectCooling = actionRef.current === 'cooling';
       if (actionRef.current) {
         dirty = true;
         const view = actionRef.current;
@@ -553,6 +571,13 @@ export default function AssemblyLab({
         });
       }
       for (const [id,ghost] of ghosts) ghost.visible=!d.preview && !done && id===PARTS[currentRef.current].id;
+      if (inspectCooling) {
+        assembly.updateMatrixWorld(true);
+        const bounds = new T.Box3().setFromObject(groups.get('cpu')!);
+        bounds.union(new T.Box3().setFromObject(groups.get('cooler')!)).expandByScalar(.35);
+        controls.minDistance = 2;
+        frameInspectionBounds(camera, controls.target, bounds, new T.Vector3(-.65, 1.4, 1));
+      }
       if (!d.preview && !done) {
         const g = groups.get(PARTS[currentRef.current].id)!;
         const saved = g.position.clone();
@@ -581,7 +606,7 @@ export default function AssemblyLab({
           controls.minDistance = 1;
           controls.target.copy(sphere.center);
           camera.position.copy(sphere.center).addScaledVector(new T.Vector3(0.7, 0.8, 1).normalize(), distance);
-        } else actionRef.current = 'home';
+        } else if (!inspectCooling) actionRef.current = 'home';
         dirty = true;
       }
       const cameraChanged = controls.update();
@@ -618,6 +643,7 @@ export default function AssemblyLab({
       geometries.forEach((g) => g.dispose());
       materials.forEach((m) => m.dispose());
       textures.forEach((t) => t.dispose());
+      environment.dispose();
       renderer.dispose();
     };
   }, [lightGraphics]);
@@ -668,6 +694,12 @@ export default function AssemblyLab({
           </button>
         )}
         <button aria-pressed={lightGraphics} onClick={() => { actionRef.current='home'; setLightGraphics(!lightGraphics); }}>{lightGraphics ? 'Full graphics' : 'Light graphics'}</button>
+        {preview && <button onClick={() => {
+          setSelected('cooler'); setCaseTarget(null); setCaseInstance(null); setBoardTarget(null); setSelectedCable(null);
+          setUpright(false); setClosed(false); setCageOpen(true); setIsolated(false); setExploded(true);
+          actionRef.current = 'cooling';
+          setFeedback('Cooler lifted straight above the CPU. Click the exposed processor to learn about it.');
+        }}>Reveal CPU</button>}
         {(['home', 'front', 'rear', 'top'] as Action[]).map((view) => (
           <button
             key={view}

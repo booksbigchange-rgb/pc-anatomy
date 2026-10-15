@@ -5,6 +5,7 @@
 import * as T from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { addPcbArtwork } from './pcb-artwork.ts';
 export type HardwareId =
   | 'motherboard'
   | 'cpu'
@@ -80,8 +81,8 @@ const steel = 0xa4a9ac,
 function material(color: number) {
   return new T.MeshStandardMaterial({
     color,
-    metalness: color === steel || color === gold ? 0.68 : color === black ? 0 : 0.12,
-    roughness: color === steel ? 0.38 : color === black ? 0.94 : 0.6,
+    metalness: color === steel ? 0.85 : color === gold ? 0.78 : color === black ? 0 : 0.04,
+    roughness: color === steel ? 0.3 : color === black ? 0.72 : 0.62,
   });
 }
 function box(w: number, h: number, d: number, color: number, r = 0.012) {
@@ -235,7 +236,17 @@ export function createHardware(id: HardwareId) {
   const g = new T.Group();
   g.name = id;
   if (id === 'motherboard') {
-    put(g, box(3.6, 0.055, 3.84, 0x24614d));
+    put(g, box(3.6, 0.055, 3.84, 0x194b3c));
+    const outline = new T.Shape();
+    outline.moveTo(-1.8, -1.92); outline.lineTo(1.8, -1.92);
+    outline.lineTo(1.8, 1.92); outline.lineTo(-1.8, 1.92); outline.closePath();
+    addPcbArtwork(g, outline, [-1.8, -1.92, 1.8, 1.92], .029, [
+      { from: [-.25, -.95], to: [.75, -.35], lanes: 14 },
+      { from: [-.65, -.55], to: [-.15, .7], lanes: 12 },
+      { from: [.35, .25], to: [1.5, -.25], lanes: 8 },
+      { from: [-1.5, -.35], to: [-.9, .45], lanes: 7 },
+      { from: [.95, .95], to: [1.65, 1.6], lanes: 6 },
+    ], [['DIMM', .62, -1.8], ['PCIe x16', -.8, .64], ['PCIe', -.8, 1.42], ['SATA', 1.35, 1.88], ['CPU FAN', -.95, -1.81]]);
     // Keep learning targets separate so picking survives geometry batching.
     let start = g.children.length;
     put(g, box(0.76, 0.06, 0.76, steel), -0.6, 0.07, -0.98);
@@ -352,6 +363,12 @@ export function createHardware(id: HardwareId) {
     put(g, box(0.55, 0.05, 0.55, steel), 0, 0.055, 0);
     put(g,box(.065,.004,.065,gold,0),-.22,.082,-.22);
     label(g, 'Intel Core', 0.45, 0.12, 0, 0.082, 0);
+    // Contact lands are flush with the substrate, visible during inspection.
+    for (let x = 0; x < 16; x++) for (let z = 0; z < 16; z++) {
+      if (x > 4 && x < 11 && z > 4 && z < 11) continue;
+      put(g, box(.022, .002, .022, gold, .002), -.265 + x * .0353, -.031, -.265 + z * .0353);
+    }
+    put(g, box(.19, .012, .19, black, .004), 0, -.036, 0);
   }
   if (id === 'cooler') {
     put(g, box(1.05, 0.13, 1.05, steel), 0, 0, 0);

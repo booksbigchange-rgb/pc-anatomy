@@ -6,6 +6,7 @@
 import * as T from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { addPcbArtwork } from '../lib/pcb-artwork.ts';
 import type {
   LaptopTeardownPart,
   LaptopInternalCable,
@@ -33,7 +34,7 @@ const C = {
   shell: 0x7d858b,
   dark: 0x171b1f,
   steel: 0x9aa3aa,
-  board: 0x205569,
+  board: 0x174653,
   gold: 0xc3a05d,
   blue: 0x208aca,
 };
@@ -553,6 +554,13 @@ export function buildLatitude5410() {
   );
   pcb.rotation.x = Math.PI / 2;
   board.add(pcb);
+  addPcbArtwork(board, shape, [-3.73, -1.35, 3.65, 3.45], 0.003, [
+    { from: [-.75, -.7], to: [-1.5, .65], lanes: 12 },
+    { from: [-.3, -.7], to: [.6, .65], lanes: 12 },
+    { from: [-2.4, -.85], to: [-3.15, .5], lanes: 7 },
+    { from: [-2.7, .4], to: [-3.15, 2.8], lanes: 6 },
+    { from: [.65, -.95], to: [2.85, -.75], lanes: 6 },
+  ], [['DIMM A', -2.3, .16], ['DIMM B', -.25, .16], ['WLAN', -3.6, -.2], ['M.2 PCIe', -3.6, 2.4], ['SYS BOARD', 1.4, -1.22]]);
   for (const x of [-1.45, -1.12, -0.79]) {
     add(board, box(0.21, 0.07, 0.22, 0x505960, 0.018), x, 0.055, -1.02);
     add(board, box(0.16, 0.006, 0.16, 0x899298, 0.012), x, 0.093, -1.02);
