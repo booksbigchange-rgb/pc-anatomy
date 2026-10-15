@@ -63,6 +63,14 @@ try {
     .getByRole('button', { name: 'Remove side cover', exact: true })
     .click();
   await page.getByRole('button', { name: 'Service view', exact: true }).click();
+  await page.getByRole('button', { name: 'Isolate selected', exact: true }).click();
+  await page.getByRole('button', { name: 'Reveal CPU', exact: true }).click();
+  assert.equal(await page.getByRole('combobox', { name: 'Select component' }).inputValue(), 'cooler');
+  assert.equal(await page.getByRole('button', { name: 'Return selected', exact: true }).getAttribute('aria-pressed'), 'true');
+  assert.equal(await page.getByRole('button', { name: 'Isolate selected', exact: true }).getAttribute('aria-pressed'), 'false');
+  assert.ok(await page.getByRole('button', { name: 'Tower view', exact: true }).isVisible());
+  await shot('05b-reveal-cpu');
+  await page.getByRole('button', { name: 'Return selected', exact: true }).click();
   await page.getByRole('button', { name: 'Top', exact: true }).click();
   await shot('06-top');
   // Verify direct object picking, not only the component dropdown.
