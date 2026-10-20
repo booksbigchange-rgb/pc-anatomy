@@ -34,6 +34,14 @@ const ORDER = ['motherboard', 'cpu', 'cooler', 'ram', 'ssd', 'gpu', 'psu'];
 const placed = async () => page.locator('.assembly-progress-label').innerText();
 const coach = () => page.locator('.assembly-feedback');
 
+/** The school build opens with a skippable video; the original build goes straight to the lab. */
+async function open() {
+  await page.goto(url);
+  const skip = page.getByRole('button', { name: /Skip intro/ });
+  await page.getByRole('button', { name: /Skip intro|Build.*PC/i }).first().waitFor();
+  if (await skip.count()) await skip.click();
+}
+
 async function choosePartsAndEnter() {
   await page.getByRole('button', { name: /Build.*PC/i }).first().click();
   assert.match(await page.locator('.build-picker').innerText(), /Dell CPU Heatsink & Fan/, 'The cooler is part of the build and starts chosen');
@@ -43,7 +51,7 @@ async function choosePartsAndEnter() {
 }
 
 try {
-  await page.goto(url);
+  await open();
   await choosePartsAndEnter();
   await page.getByRole('button', { name: 'Light graphics', exact: true }).click();
   await page.waitForTimeout(1200);
@@ -164,7 +172,7 @@ try {
 
   // Phone: the picker fits, and the whole build works with buttons only.
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(url);
+  await open();
   await choosePartsAndEnter();
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'No sideways scrolling on a phone');
   const seat = () => page.getByRole('button', { name: /^Seat .* in its guide$/ }).click();

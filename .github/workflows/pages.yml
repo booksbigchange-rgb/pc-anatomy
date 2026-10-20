@@ -136,6 +136,8 @@ jobs:
           timeout 240s node tests/browser/learning-polish.mjs
           timeout 180s node tests/browser/course.mjs
           timeout 180s node tests/browser/visual-priorities.mjs
+          timeout 900s node tests/browser/build-pc.mjs
+          ATLAS_TEST_URL=https://booksbigchange-rgb.github.io/pc-anatomy/school/ timeout 900s node branding/tests/browser/build-pc.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
