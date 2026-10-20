@@ -341,7 +341,19 @@ export default function AssemblyLab({
     };
     for (const connection of PC_CONNECTIONS) {
       const path = new T.CatmullRomCurve3(routes[connection.id].map(point => new T.Vector3(...point)));
-      const visual = new T.Mesh(new T.TubeGeometry(path, 24, connection.id === 'mains' ? 0.045 : 0.024, 6, false), new T.MeshStandardMaterial({ color: connection.id === 'fan' ? 0xc9aa52 : 0x30383e, roughness: 0.75 }));
+      // Cable colours a student can tell apart: yellow fan lead, grey front-panel lead, black power and display cables.
+      const colour = connection.id === 'fan' ? 0xc9aa52 : connection.id === 'switch' ? 0x8b9399 : connection.id === 'display' ? 0x1f2a44 : 0x22282c;
+      const radius = connection.id === 'mains' ? 0.045 : connection.id === 'board-power' ? 0.04 : 0.024;
+      const visual = new T.Mesh(new T.TubeGeometry(path, 32, radius, 8, false), new T.MeshStandardMaterial({ color: colour, roughness: 0.7 }));
+      // Rubber-moulded plugs at both ends show where each cable seats.
+      for (const end of [0, 1]) {
+        const plug = new T.Mesh(new T.BoxGeometry(radius * 3.4, radius * 2.6, radius * 4.2), new T.MeshStandardMaterial({ color: 0x101315, roughness: 0.85 }));
+        plug.position.copy(path.getPointAt(end));
+        plug.lookAt(path.getPointAt(end).add(path.getTangentAt(end)));
+        plug.userData.connectionId = connection.id;
+        plug.castShadow = true;
+        visual.add(plug);
+      }
       visual.userData.connectionId = connection.id;
       visual.visible = false;
       visual.castShadow = true;
