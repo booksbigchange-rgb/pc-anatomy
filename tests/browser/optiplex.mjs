@@ -18,10 +18,16 @@ page.on('pageerror', (e) => errors.push(e.message));
 const shot = async (name) => {
   await page.waitForTimeout(450);
   console.log(`Capture ${name}`);
-  await page.screenshot({
-    path: `verification/optiplex/${name}.png`,
-    timeout: 30000,
-  });
+  // Screenshots are evidence, not assertions: the software renderer on hosted
+  // runners can time out while the page still works, and later steps assert it.
+  try {
+    await page.screenshot({
+      path: `verification/optiplex/${name}.png`,
+      timeout: 60000,
+    });
+  } catch (error) {
+    console.warn(`Screenshot skipped ${name}: ${error.message.split('\n')[0]}`);
+  }
 };
 try {
   await page.goto(process.env.ATLAS_TEST_URL ?? 'http://127.0.0.1:5173/');
