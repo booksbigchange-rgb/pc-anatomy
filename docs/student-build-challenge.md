@@ -1,5 +1,19 @@
 # Student build and power milestone
 
+## Version 1 Build Your PC flow (October 2026)
+
+Choose parts (the stock CPU cooler is included and pre-selected) → start 3D practice → inspect any part → place parts → turn keyed parts → secure retainers → paste and cooler corners 1 → 3 → 2 → 4 → cables → close drive cage and side cover → POST → PC Builder result → restart.
+
+- The rules live in `app/build-session.ts` and are unit-tested in `tests/build-session.test.ts`. Dragging and the "Seat [part] in its guide" button both call them, so the two methods cannot disagree.
+- The coach recommends the order motherboard → CPU → cooler → RAM → SSD → card → PSU. A part may go in early once what it sits on is installed (for example the PSU at any time, RAM after the motherboard).
+- Every list item stays selectable during practice. Selection shows status (Installed, Next step, Ready, Needs … first), job, example, connection, safety note and whether it is removable. Selecting never changes progress.
+- Any loose part can be picked up. Guides accept drops within 1.35 × each part's snap radius. Missed drops, drops on another part's guide, wrong direction and missing paste all return the part to the tray with a reason. Coach messages are drawn over the 3D scene.
+- CPU, RAM, SSD and card carry a yellow direction arrow; the cyan guide carries a matching arrow. "Turn part 180°" turns the part and explains why direction matters.
+- A failed power test explains the first problem in plain words (missing part, loose cable, open case, cooler not ready, loose part). A passed test shows the PC Builder result: completed steps, lessons, XP (10 per step) and mistakes fixed.
+- `tests/browser/build-pc.mjs` runs the whole flow by dragging on desktop and by buttons only on a 390 px phone, and is part of the live Pages checks.
+
+Limits: placement, direction and fastening are simplified learning actions. They do not model insertion force, torque, cable lengths or exact Dell interior geometry.
+
 Build Your PC retains the OptiPlex-compatible parts picker and seven drag-to-seat steps. After placement, students choose a cable and match it to a named socket. Six routes appear in the service scene: board power, CPU power, fan, front switch, display and wall power. Routes and socket matching are illustrative; this is not a physical wiring guide. The M.2 SSD and illustrative slot-powered expansion card need no extra cable.
 
 The power test rejects missing hardware, missing connections, an open drive cage or an unfitted side cover. Internal connection changes are blocked while wall power is connected; all socket changes are disabled during simulated operation. A successful test shows simulated POST, RAM, SSD and display checks. No operating system is booted, and actual electrical compatibility is not simulated. Cooling preparation adds a visible paste dot before cooler seating and four corner buttons in a simplified diagonal sequence (1, 3, 2, 4). Power-on requires both steps. Corner buttons represent fastening, not physical torque or a universal manufacturer sequence. Restart clears cooling preparation. The existing parts picker retains its supported-configuration checks.
