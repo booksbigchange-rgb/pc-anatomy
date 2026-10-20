@@ -114,6 +114,10 @@ try {
   assert.match(await page.locator('.assembly-direction').innerText(), /matches/);
   await drag('cpu', PARTS.cpu.mount);
   assert.equal(await placed(), '2 / 7 placed', 'A correctly turned CPU installs');
+  // Clicking the installed CPU in the 3D scene identifies it.
+  const cpuAt = screen(new T.Vector3(1.48, 1.01, -1.68));
+  await page.mouse.click(cpuAt.x, cpuAt.y);
+  assert.equal(await page.locator('.assembly-detail h2').innerText(), PARTS.cpu.name, 'Direct CPU click');
 
   // Selecting a different part after progress keeps the progress.
   await page.locator('.assembly-step').filter({ hasText: PARTS.ssd.name }).click();
@@ -139,6 +143,18 @@ try {
   await drag('psu', PARTS.psu.mount);
   assert.equal(await placed(), '7 / 7 placed');
   await shot('04-all-parts-placed');
+  // Direct clicks from the top view identify RAM, SSD and the motherboard, and say they are removable.
+  await page.getByRole('button', { name: 'Top', exact: true }).click();
+  await page.waitForTimeout(1200);
+  const top = new T.PerspectiveCamera(38, rect.width / rect.height, 0.1, 100);
+  top.position.set(2.5, 17, 0.01); top.lookAt(2.5, 1.1, 0); top.updateMatrixWorld();
+  for (const [id, point] of [['ram', [2.91, 1.37, -1.2]], ['ssd', [3.64, 0.98, -0.3]], ['motherboard', [3.6, 0.8, -1.4]]]) {
+    const q = new T.Vector3(...point).project(top);
+    await page.mouse.click(rect.x + ((q.x + 1) * rect.width) / 2, rect.y + ((1 - q.y) * rect.height) / 2);
+    await page.waitForTimeout(250);
+    assert.equal(await page.locator('.assembly-detail h2').innerText(), PARTS[id].name, `Direct ${String(id)} click`);
+    assert.match(await page.locator('.assembly-detail').innerText(), /Removable part/);
+  }
 
   // Securing, cooling order, cables, case and POST.
   await page.getByRole('button', { name: 'Test power-on', exact: true }).click();
@@ -169,6 +185,36 @@ try {
   assert.equal(await placed(), '0 / 7 placed');
   assert.equal(await result.count(), 0);
   assert.equal(await page.getByRole('button', { name: 'Apply thermal paste', exact: true }).isEnabled(), false, 'Restart clears paste and needs a CPU again');
+
+  // Tablet: picker and assembly fit without sideways scrolling, and the 3D stage stays usable.
+  await page.setViewportSize({ width: 820, height: 1180 });
+  await open();
+  await page.getByRole('button', { name: /Build.*PC/i }).first().click();
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'Picker fits a tablet');
+  await shot('05b-tablet-picker');
+  for (const id of ['cpu', 'motherboard', 'ram', 'ssd', 'gpu', 'psu']) await page.getByRole('button', { name: new RegExp(PARTS[id].name) }).last().click();
+  await page.getByRole('button', { name: /Enter interactive/ }).click();
+  await page.getByRole('button', { name: 'Start assembly practice', exact: true }).click();
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'Assembly fits a tablet');
+  const tabletStage = await page.locator('.assembly-stage canvas').boundingBox();
+  assert.ok(tabletStage && tabletStage.height >= 400 && tabletStage.width >= 560, 'Tablet stage stays large enough to drag parts');
+  // The parts tray stays on screen: tapping the tray motherboard (camera stepped back as in the app) picks it up.
+  const aspect = tabletStage.width / tabletStage.height;
+  const tabletCamera = new T.PerspectiveCamera(38, aspect, 0.1, 100);
+  const look = new T.Vector3(0.15, 1.1, 0);
+  tabletCamera.position.set(8.65, 12, 11).sub(look).multiplyScalar(aspect < 1.03 ? 1.03 / aspect : 1).add(look);
+  tabletCamera.lookAt(look); tabletCamera.updateMatrixWorld();
+  for (const id of ['motherboard', 'cpu', 'ram', 'ssd']) {
+    const q = new T.Vector3(...PARTS[id].start).project(tabletCamera);
+    assert.ok(Math.abs(q.x) < 0.95 && Math.abs(q.y) < 0.95, `${id} tray position is inside the tablet stage`);
+  }
+  const trayBoard = new T.Vector3(...PARTS.motherboard.start).project(tabletCamera);
+  await page.waitForTimeout(800);
+  await page.mouse.click(tabletStage.x + ((trayBoard.x + 1) * tabletStage.width) / 2, tabletStage.y + ((1 - trayBoard.y) * tabletStage.height) / 2);
+  assert.match(await coach().innerText(), /Motherboard picked up/, 'Tray parts can be reached on a tablet');
+  await page.getByRole('button', { name: /^Seat .* in its guide$/ }).scrollIntoViewIfNeeded();
+  assert.ok(await page.getByRole('button', { name: /^Seat .* in its guide$/ }).isVisible());
+  await shot('05c-tablet-assembly');
 
   // Phone: the picker fits, and the whole build works with buttons only.
   await page.setViewportSize({ width: 390, height: 844 });
