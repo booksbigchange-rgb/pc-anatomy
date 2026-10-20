@@ -129,15 +129,23 @@ jobs:
           const response = await fetch(process.env.ATLAS_TEST_URL+'school/version.json?commit='+process.env.SCHOOL_SHA);
           if (!response.ok || (await response.json()).commit !== process.env.SCHOOL_SHA) throw new Error('School preview does not serve its built commit');
           JS
-          timeout 180s node tests/browser/dell-fit.mjs
-          ATLAS_TEST_URL=https://booksbigchange-rgb.github.io/pc-anatomy/school/ timeout 180s node tests/browser/dell-fit.mjs
-          timeout 300s node tests/browser/optiplex.mjs
-          timeout 400s node tests/browser/latitude.mjs
-          timeout 240s node tests/browser/learning-polish.mjs
-          timeout 180s node tests/browser/course.mjs
-          timeout 180s node tests/browser/visual-priorities.mjs
-          timeout 900s node tests/browser/build-pc.mjs
-          ATLAS_TEST_URL=https://booksbigchange-rgb.github.io/pc-anatomy/school/ timeout 900s node branding/tests/browser/build-pc.mjs
+          # Report which live suite failed, and its last lines, as an annotation readable from the Actions API.
+          live() {
+            local name=$1 log; shift; log=$(mktemp)
+            "$@" >"$log" 2>&1 && { cat "$log"; return 0; }
+            local code=$?; cat "$log"
+            echo "::error title=Live check failed: $name (exit $code)::$(tail -n 8 "$log" | tr '\n' ' ' | cut -c1-900)"
+            return $code
+          }
+          live 'dell-fit' timeout 180s node tests/browser/dell-fit.mjs
+          ATLAS_TEST_URL=https://booksbigchange-rgb.github.io/pc-anatomy/school/ live 'dell-fit (school)' timeout 180s node tests/browser/dell-fit.mjs
+          live 'optiplex' timeout 300s node tests/browser/optiplex.mjs
+          live 'latitude' timeout 400s node tests/browser/latitude.mjs
+          live 'learning-polish' timeout 240s node tests/browser/learning-polish.mjs
+          live 'course' timeout 180s node tests/browser/course.mjs
+          live 'visual-priorities' timeout 180s node tests/browser/visual-priorities.mjs
+          live 'build-pc' timeout 900s node tests/browser/build-pc.mjs
+          ATLAS_TEST_URL=https://booksbigchange-rgb.github.io/pc-anatomy/school/ live 'build-pc (school)' timeout 900s node branding/tests/browser/build-pc.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
