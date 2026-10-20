@@ -12,10 +12,11 @@ import {
   RotateCcw,
   ShieldCheck,
   Zap,
+  Fan,
 } from 'lucide-react';
 import AssemblyLab from './assembly-lab';
 
-type Slot = 'cpu' | 'motherboard' | 'ram' | 'ssd' | 'gpu' | 'psu';
+type Slot = 'cpu' | 'cooler' | 'motherboard' | 'ram' | 'ssd' | 'gpu' | 'psu';
 type Choice = {
   id: string;
   name: string;
@@ -25,9 +26,10 @@ type Choice = {
   watts?: number;
   draw?: number;
 };
-const ORDER: Slot[] = ['cpu', 'motherboard', 'ram', 'ssd', 'gpu', 'psu'];
+const ORDER: Slot[] = ['cpu', 'cooler', 'motherboard', 'ram', 'ssd', 'gpu', 'psu'];
 const LABEL: Record<Slot, string> = {
   cpu: 'CPU',
+  cooler: 'CPU Cooler',
   motherboard: 'Motherboard',
   ram: 'Memory',
   ssd: 'Storage',
@@ -36,11 +38,22 @@ const LABEL: Record<Slot, string> = {
 };
 const ICON = {
   cpu: Cpu,
+  cooler: Fan,
   motherboard: Microchip,
   ram: MemoryStick,
   ssd: HardDrive,
   gpu: PackageCheck,
   psu: Zap,
+};
+/** Short, plain-English reasons each part is needed, shown while choosing. */
+const WHY: Record<Slot, string> = {
+  cpu: 'The CPU follows instructions and does calculations.',
+  cooler: 'The cooler stops the CPU getting too hot.',
+  motherboard: 'The motherboard connects all the parts.',
+  ram: 'RAM helps the computer keep several apps open.',
+  ssd: 'The SSD stores files even when the computer is off.',
+  gpu: 'The expansion card adds a feature, such as a monitor output.',
+  psu: 'The power supply gives every part safe power.',
 };
 const CATALOG: Record<Slot, Choice[]> = {
   cpu: [
@@ -50,6 +63,14 @@ const CATALOG: Record<Slot, Choice[]> = {
       detail: '6th generation · LGA1151 · training configuration',
       socket: 'LGA1151',
       draw: 65,
+    },
+  ],
+  cooler: [
+    {
+      id: 'stock-cooler',
+      name: 'Dell CPU Heatsink & Fan',
+      detail: 'Fits the LGA1151 socket · comes with this case',
+      socket: 'LGA1151',
     },
   ],
   motherboard: [
@@ -102,8 +123,11 @@ const CATALOG: Record<Slot, Choice[]> = {
   ],
 };
 
+/** The cooler ships with the case, so it starts chosen. */
+const INCLUDED: Partial<Record<Slot, Choice>> = { cooler: CATALOG.cooler[0] };
+
 export default function BuildPcLab({ onBack }: { onBack: () => void }) {
-  const [selected, setSelected] = useState<Partial<Record<Slot, Choice>>>({});
+  const [selected, setSelected] = useState<Partial<Record<Slot, Choice>>>(INCLUDED);
   const [slot, setSlot] = useState<Slot>('cpu');
   const [building, setBuilding] = useState(true);
   const issues = useMemo(() => {
@@ -112,6 +136,9 @@ export default function BuildPcLab({ onBack }: { onBack: () => void }) {
       board = selected.motherboard,
       ram = selected.ram,
       psu = selected.psu;
+    const cooler = selected.cooler;
+    if (cpu && cooler && cpu.socket !== cooler.socket)
+      out.push(`${cooler.name} does not fit the ${cpu.socket} socket.`);
     if (cpu && board && cpu.socket !== board.socket)
       out.push(
         `${cpu.name} uses ${cpu.socket}, but ${board.name} uses ${board.socket}.`,
@@ -125,8 +152,9 @@ export default function BuildPcLab({ onBack }: { onBack: () => void }) {
   const complete = ORDER.every((id) => selected[id]);
 
   const choose = (id: Slot, c: Choice) => {
-    setSelected((o) => ({ ...o, [id]: c }));
-    const next = ORDER[ORDER.indexOf(id) + 1];
+    const chosen = { ...selected, [id]: c };
+    setSelected(chosen);
+    const next = ORDER.find((slot) => !chosen[slot]);
     if (next) setSlot(next);
   };
   if (!building)
@@ -140,6 +168,7 @@ export default function BuildPcLab({ onBack }: { onBack: () => void }) {
     );
   return (
     <main
+      className="build-picker"
       style={{
         minHeight: '100vh',
         background: '#091116',
@@ -148,8 +177,9 @@ export default function BuildPcLab({ onBack }: { onBack: () => void }) {
       }}
     >
       <header
+        className="build-picker-header"
         style={{
-          height: 66,
+          minHeight: 66,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -169,7 +199,7 @@ export default function BuildPcLab({ onBack }: { onBack: () => void }) {
         </div>
         <button
           onClick={() => {
-            setSelected({});
+            setSelected(INCLUDED);
             setSlot('cpu');
           }}
           style={button}
@@ -177,13 +207,7 @@ export default function BuildPcLab({ onBack }: { onBack: () => void }) {
           <RotateCcw size={15} /> Reset
         </button>
       </header>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '290px minmax(480px,1fr) 330px',
-          height: 'calc(100vh - 66px)',
-        }}
-      >
+      <div className="build-picker-grid">
         <aside
           style={{
             padding: 16,
@@ -239,9 +263,9 @@ export default function BuildPcLab({ onBack }: { onBack: () => void }) {
           </div>
         </aside>
         <section
+          className="build-picker-stage"
           style={{
             position: 'relative',
-            minHeight: 500,
             background:
               'radial-gradient(circle at 50% 40%,#19323b 0,#0b151a 55%,#071014 100%)',
             overflow: 'hidden',
@@ -265,6 +289,8 @@ export default function BuildPcLab({ onBack }: { onBack: () => void }) {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 10,
               padding: '12px 15px',
               border: '1px solid #294048',
               borderRadius: 13,
@@ -273,7 +299,9 @@ export default function BuildPcLab({ onBack }: { onBack: () => void }) {
             }}
           >
             <span style={{ color: '#8da7ad' }}>
-              Choose each training part, then start assembly practice.
+              {complete
+                ? 'All parts chosen. Start the 3D practice.'
+                : `Choose each part. ${ORDER.filter((id) => selected[id]).length} of ${ORDER.length} chosen.`}
             </span>
             <button
               disabled={!complete || issues.length > 0}
@@ -299,6 +327,7 @@ export default function BuildPcLab({ onBack }: { onBack: () => void }) {
         >
           <div style={eye}>CHOOSE {LABEL[slot].toUpperCase()}</div>
           <h2 style={{ margin: '7px 0 5px' }}>{LABEL[slot]}</h2>
+          <p style={{ fontSize: 14, color: '#b9cdd2' }}>{WHY[slot]}</p>
           <p style={{ fontSize: 13, color: '#829ba1' }}>
             Select a part for the OptiPlex training build.
           </p>
