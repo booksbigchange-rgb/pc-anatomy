@@ -52,6 +52,8 @@ type LabPart = {
   icon: typeof Monitor;
   description: string;
   lesson: string;
+  example: string;
+  connects: string;
 };
 
 type ConnectionTask = {
@@ -72,6 +74,8 @@ const PARTS: LabPart[] = [
       'The monitor shows the pictures, text and video produced by the computer.',
     lesson:
       'A display cable such as HDMI or DisplayPort carries the picture from the computer to the monitor.',
+    example: 'When you watch a video, the picture you see comes out of the monitor.',
+    connects: 'Display cable (HDMI or DisplayPort) and a power cable',
   },
   {
     id: 'tower',
@@ -81,6 +85,8 @@ const PARTS: LabPart[] = [
       'The system unit contains the main hardware that processes, stores and powers the computer.',
     lesson:
       'Open it to explore the motherboard, CPU, RAM, storage, GPU, cooling and power supply.',
+    example: 'When you save a file, the system unit stores it inside on the SSD.',
+    connects: 'Monitor, keyboard, mouse, network cable and power cable',
   },
   {
     id: 'keyboard',
@@ -89,6 +95,8 @@ const PARTS: LabPart[] = [
     description:
       'The keyboard is an input device used to type letters, numbers and commands.',
     lesson: 'Most classroom keyboards connect to a USB port.',
+    example: 'When you type your name, the keyboard sends each letter to the computer.',
+    connects: 'USB port on the system unit',
   },
   {
     id: 'mouse',
@@ -97,6 +105,8 @@ const PARTS: LabPart[] = [
     description:
       'The mouse is an input device used to point, click, drag and select.',
     lesson: 'A wired mouse commonly connects to a USB port.',
+    example: 'When you click a button on screen, the mouse tells the computer where you clicked.',
+    connects: 'USB port on the system unit',
   },
   {
     id: 'network',
@@ -106,6 +116,8 @@ const PARTS: LabPart[] = [
       'A router or network switch connects the computer to a local network and often to the internet.',
     lesson:
       'A wired Ethernet cable connects the network equipment to the computer’s Ethernet port.',
+    example: 'When you open a website, the data comes through the network.',
+    connects: 'Ethernet port on the system unit',
   },
   {
     id: 'power-strip',
@@ -115,6 +127,8 @@ const PARTS: LabPart[] = [
       'The computer and monitor need electrical power before any data connection can work.',
     lesson:
       'Power cables connect the equipment to a safe outlet or power strip. Students should not handle mains wiring inside a real power supply.',
+    example: 'If the power cable is unplugged, the computer cannot start.',
+    connects: 'Wall socket or power strip, then the computer and monitor',
   },
 ];
 
@@ -1279,6 +1293,8 @@ export default function ComputerLab({
             </p>
             <h2>{selectedPart.name}</h2>
             <p>{selectedPart.description}</p>
+            <p><strong>Example:</strong> {selectedPart.example}</p>
+            <p><strong>Connects to:</strong> {selectedPart.connects}</p>
             <div className="lab-lesson">
               <strong>{guided ? 'Why it matters' : 'What students learn next'}</strong>
               <p>{selectedPart.lesson}</p>
