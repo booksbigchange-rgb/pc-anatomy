@@ -9,19 +9,19 @@ export const RETAINERS = {
 export type Retainer = keyof typeof RETAINERS;
 export function placementProblem(id: HardwareId, aligned: boolean) {
   return ORIENTED_PARTS.includes(id) && !aligned
-    ? 'Wrong direction. Turn the part to match the socket guide. Never force it.' : null;
+    ? 'Wrong direction. Turn the part to match the guide. Never force it.' : null;
 }
 export function fasteningProblems(fastened: Retainer[]) {
   return (Object.keys(RETAINERS) as Retainer[]).filter(id => !fastened.includes(id)).map(id => RETAINERS[id] + '.');
 }
 export const PART_JOBS: Record<HardwareId, { job: string; example: string; connection: string }> = {
-  motherboard: { job: 'Connects the computer parts.', example: 'An app needs the CPU, RAM and storage to communicate through the board.', connection: 'Case standoffs and power supply' },
-  cpu: { job: 'Follows instructions and processes data.', example: 'Exporting a video gives the CPU more work.', connection: 'CPU socket, with a cooler above it' },
-  cooler: { job: 'Moves heat away from the CPU.', example: 'A loose cooler or stopped fan can make the CPU hot and slow.', connection: 'CPU surface and fan header' },
-  ram: { job: 'Holds working data for open apps.', example: 'More open browser tabs need more RAM. Saved files stay on the SSD.', connection: 'Matching DDR4 memory slot' },
-  ssd: { job: 'Keeps apps and saved files when power is off.', example: 'Opening a saved photo reads it from storage. Saving changes writes it back.', connection: 'M.2 socket and mounting screw' },
-  gpu: { job: 'Helps produce the picture on the screen.', example: 'A 3D scene needs graphics processing. This training card is illustrative.', connection: 'PCIe slot and monitor cable' },
-  psu: { job: 'Supplies electrical power to the computer.', example: 'A missing board-power connection can stop the computer starting.', connection: 'Wall supply and matching board connectors' },
+  motherboard: { job: 'The main board. It connects all the parts so they can work together.', example: 'When you open an app, the CPU, RAM and SSD talk to each other through the motherboard.', connection: 'Screws onto standoffs in the case. Gets power from the power supply.' },
+  cpu: { job: 'The CPU follows instructions and does calculations.', example: 'When you make a video, the CPU does a lot of the work.', connection: 'Sits in the CPU socket. The cooler sits on top of it.' },
+  cooler: { job: 'The cooler takes heat away from the CPU.', example: 'If the fan stops, the CPU gets hot and the computer slows down.', connection: 'Sits on the CPU with thermal paste. Its fan plugs into the CPU fan header.' },
+  ram: { job: 'RAM helps the computer keep several apps open.', example: 'Many browser tabs need more RAM. When the power goes off, RAM forgets everything.', connection: 'Clips into a DDR4 memory slot on the motherboard.' },
+  ssd: { job: 'The SSD stores files even when the computer is off.', example: 'Your saved photos and apps live on the SSD.', connection: 'Plugs into the M.2 socket. One small screw holds it down.' },
+  gpu: { job: 'The expansion card adds a feature. This one helps make the picture on the screen.', example: 'Games and 3D models need graphics power. This card is a training example.', connection: 'Pushes into the PCIe slot. The monitor cable plugs into its back.' },
+  psu: { job: 'The power supply changes wall power into safe power for the parts.', example: 'If the board power cable is not plugged in, the computer will not start.', connection: 'Wall socket on one side. Power cables to the motherboard on the other.' },
 };
 
 export type FaultCase = {
