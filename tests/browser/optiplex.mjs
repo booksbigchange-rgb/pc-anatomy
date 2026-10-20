@@ -213,7 +213,7 @@ try {
       await page.mouse.down();
       await page.mouse.move(from.x + 35, from.y + 45, { steps: 8 });
       await page.mouse.up();
-      await page.getByText(/missed its mounting guide/).waitFor();
+      await page.locator('.assembly-feedback').getByText(/missed its mounting guide/).waitFor();
       assert.match(
         await page.locator('.assembly-progress-label').innerText(),
         /^0 \/ 7/,
