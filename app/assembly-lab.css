@@ -471,13 +471,13 @@
 .assembly-result {
   position: absolute;
   inset: 56px 16px 16px auto;
-  z-index: 4;
+  z-index: 6;
   width: min(420px, calc(100% - 32px));
   overflow: auto;
   padding: 18px 20px;
   border: 1px solid #69c6a0;
   border-radius: 14px;
-  background: rgba(10, 32, 26, 0.97);
+  background: #0a201a;
   color: #e9fbf2;
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
 }
