@@ -96,107 +96,68 @@ type LaptopPart = {
   view: LaptopView;
   description: string;
   why: string;
+  example: string;
+  connects: string;
+  /** Whether a student could take it out during service, or it stays fixed. */
+  removable: boolean;
 };
 
 const PARTS: LaptopPart[] = [
-  {
-    id: 'display',
-    name: 'Display',
-    icon: Monitor,
-    view: 'outside',
-    description:
-      'The display turns the computer’s video signal into the pictures, text and motion you see.',
-    why: 'Without a working display path, the laptop can still run but you may see a black screen.',
-  },
-  {
-    id: 'keyboard',
-    name: 'Keyboard',
-    icon: Keyboard,
-    view: 'outside',
-    description:
-      'The built-in keyboard is an input device connected directly to the laptop’s main board.',
-    why: 'It lets you type, use shortcuts and control software without an external keyboard.',
-  },
-  {
-    id: 'trackpad',
-    name: 'Trackpad',
-    icon: MousePointer2,
-    view: 'outside',
-    description:
-      'The trackpad senses finger movement and gestures and turns them into pointer input.',
-    why: 'It replaces the mouse when the laptop is used away from a desk.',
-  },
-  {
-    id: 'battery',
-    name: 'Battery',
-    icon: BatteryCharging,
-    view: 'inside',
-    description:
-      'The battery stores electrical energy so the laptop can run without being plugged in.',
-    why: 'Battery capacity, age and power use determine how long the laptop can run unplugged.',
-  },
-  {
-    id: 'motherboard',
-    name: 'Motherboard',
-    icon: CircuitBoard,
-    view: 'inside',
-    description:
-      'The motherboard connects the laptop’s processor, memory, storage, ports and power system.',
-    why: 'Most laptop components are smaller and more tightly integrated than in a desktop PC.',
-  },
-  {
-    id: 'cpu',
-    name: 'Processor (CPU)',
-    icon: Cpu,
-    view: 'inside',
-    description:
-      'The processor is a compact package mounted on the motherboard under the cooling system.',
-    why: 'It executes program instructions and produces much of the heat carried away by the heat pipes and fan.',
-  },
-  {
-    id: 'ram',
-    name: 'RAM / SODIMM',
-    icon: MemoryStick,
-    view: 'inside',
-    description:
-      'Laptop memory uses compact SODIMM modules installed in dedicated memory sockets.',
-    why: 'RAM holds working data for running programs and can often be upgraded separately from storage.',
-  },
-  {
-    id: 'ssd',
-    name: 'M.2 SSD',
-    icon: HardDrive,
-    view: 'inside',
-    description:
-      'The solid-state drive stores the operating system, apps and student files.',
-    why: 'Storage keeps data even when the laptop is switched off.',
-  },
-  {
-    id: 'fan',
-    name: 'Cooling fan',
-    icon: Fan,
-    view: 'inside',
-    description:
-      'The fan moves air through the laptop to carry heat away from the processor.',
-    why: 'Good cooling helps the processor stay fast and prevents overheating.',
-  },
-  {
-    id: 'wifi',
-    name: 'Wi-Fi card',
-    icon: Wifi,
-    view: 'inside',
-    description:
-      'The Wi-Fi module connects the laptop to wireless networks and often also provides Bluetooth.',
-    why: 'It lets a portable computer reach the internet without an Ethernet cable.',
-  },
-  {
-    id: 'speakers',
-    name: 'Speakers',
-    icon: Volume2,
-    view: 'inside',
-    description: 'Small speakers turn electrical audio signals into sound.',
-    why: 'They let students hear lessons, videos and alerts without external speakers.',
-  },
+  { id: 'display', name: 'Display', icon: Monitor, view: 'outside',
+    description: 'The display shows pictures, text and video.',
+    why: 'If the display cable is loose, the laptop may run but the screen stays black.',
+    example: 'When you watch a lesson video, you see it on the display.',
+    connects: 'A thin display cable through the hinge to the motherboard.', removable: false },
+  { id: 'keyboard', name: 'Keyboard', icon: Keyboard, view: 'outside',
+    description: 'The keyboard lets you type letters, numbers and commands.',
+    why: 'You can type without plugging in an extra keyboard.',
+    example: 'When you type your name, each key press goes to the motherboard.',
+    connects: 'A flat ribbon cable to the motherboard.', removable: false },
+  { id: 'trackpad', name: 'Trackpad', icon: MousePointer2, view: 'outside',
+    description: 'The trackpad feels your finger move and moves the pointer.',
+    why: 'It does the job of a mouse when you are away from a desk.',
+    example: 'Slide one finger to move the pointer. Tap to click.',
+    connects: 'A flat ribbon cable to the motherboard.', removable: false },
+  { id: 'battery', name: 'Battery', icon: BatteryCharging, view: 'inside',
+    description: 'The battery stores power so the laptop works without a charger.',
+    why: 'An old battery holds less power, so the laptop runs for less time.',
+    example: 'A full battery can last a school morning. An old one may last one lesson.',
+    connects: 'A battery cable to the motherboard. Unplug it first when you work inside.', removable: true },
+  { id: 'motherboard', name: 'Motherboard', icon: CircuitBoard, view: 'inside',
+    description: 'The motherboard connects the CPU, RAM, SSD, ports and power.',
+    why: 'Laptop parts are small and packed close together on this one board.',
+    example: 'When you open an app, the CPU, RAM and SSD talk through the motherboard.',
+    connects: 'Every other part, by sockets, cables and small screws.', removable: true },
+  { id: 'cpu', name: 'Processor (CPU)', icon: Cpu, view: 'inside',
+    description: 'The CPU follows instructions and does calculations.',
+    why: 'It makes most of the heat, so the heat pipes and fan sit on top of it.',
+    example: 'Making a video gives the CPU a lot of work, and the fan gets louder.',
+    connects: 'Soldered onto the motherboard, under the cooling system.', removable: false },
+  { id: 'ram', name: 'RAM / SODIMM', icon: MemoryStick, view: 'inside',
+    description: 'RAM helps the laptop keep several apps open. Laptops use small RAM sticks called SODIMMs.',
+    why: 'More RAM helps with many tabs. RAM forgets everything when the power goes off.',
+    example: 'Twenty browser tabs need more RAM than two.',
+    connects: 'Clips into a memory socket on the motherboard.', removable: true },
+  { id: 'ssd', name: 'M.2 SSD', icon: HardDrive, view: 'inside',
+    description: 'The SSD stores files even when the laptop is off.',
+    why: 'Your apps, photos and saved work live on the SSD.',
+    example: 'Your saved homework is still there tomorrow because it is on the SSD.',
+    connects: 'Plugs into the M.2 socket. One small screw holds it down.', removable: true },
+  { id: 'fan', name: 'Cooling fan', icon: Fan, view: 'inside',
+    description: 'The fan pushes hot air out of the laptop.',
+    why: 'Cool parts stay fast. Hot parts slow down to protect themselves.',
+    example: 'If dust blocks the vent, the laptop gets hot and slow.',
+    connects: 'A small fan cable to the motherboard, and heat pipes from the CPU.', removable: true },
+  { id: 'wifi', name: 'Wi-Fi card', icon: Wifi, view: 'inside',
+    description: 'The Wi-Fi card connects the laptop to wireless networks. It often does Bluetooth too.',
+    why: 'You can use the internet without a network cable.',
+    example: 'When you join the school Wi-Fi, this card does the work.',
+    connects: 'An M.2 socket on the motherboard, and two thin antenna wires.', removable: true },
+  { id: 'speakers', name: 'Speakers', icon: Volume2, view: 'inside',
+    description: 'The speakers turn sound signals into sound you can hear.',
+    why: 'You can hear lessons, videos and alerts without headphones.',
+    example: 'A video call sound comes out of these small speakers.',
+    connects: 'A small speaker cable to the motherboard.', removable: true },
 ];
 
 const CONNECTION_TASKS: LaptopConnectionTask[] = [
@@ -2675,10 +2636,10 @@ function LaptopScene({
                         ? 'Closed Latitude 5410 reference model. Switch to the open model to inspect ports and controls.'
                         : 'This closed CAD reference preserves Framework Laptop 13 exterior proportions.'
                       : model === 'latitude'
-                        ? 'Latitude 5410 reference geometry: 14-inch 16:9 display, fixed side ports and a conventional keyboard deck. Interior dimensions are estimated from Dell service illustrations.'
+                        ? 'Latitude 5410 reference model: a 14-inch screen, ports on both sides and a normal keyboard. Inside sizes are estimated from Dell service pictures.'
                         : 'Framework reference geometry with aluminum materials, recessed keys and display glass.'
                     : model === 'latitude'
-                      ? 'Underside access · 68 Wh configuration · two SODIMM sockets. Component shapes and spacing are estimated from service references.'
+                      ? 'Bottom cover off. You can see the battery, two RAM sockets, the SSD, the fan and the Wi-Fi card. Shapes and spacing are estimated from Dell service pictures.'
                       : 'Laptop parts are smaller and packed closer together than desktop components.'}
         </p>
         {(guided || mode === 'assessment') && (
@@ -3080,6 +3041,9 @@ function LaptopScene({
               <strong>Why it matters</strong>
               <p>{selectedPart.why}</p>
             </div>
+            <p className="laptop-part-facts"><strong>Example:</strong> {selectedPart.example}</p>
+            <p className="laptop-part-facts"><strong>Connects to:</strong> {selectedPart.connects}</p>
+            <p className="laptop-part-facts">{selectedPart.removable ? 'Removable part: it can be taken out for repair or upgrade.' : 'Fixed part: it stays in place during normal service.'}</p>
             {mode === 'assessment' && (
               <div
                 className={

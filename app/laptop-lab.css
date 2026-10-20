@@ -1084,3 +1084,7 @@
   .laptop-detail { grid-row: 4; }
   .laptop-camera-views { top: 8px; left: 8px; right: 8px; flex-wrap: wrap; }
 }
+
+/* Example, connection and removable/fixed lines under "Why it matters". */
+.laptop-part-facts { margin: 10px 0 0; font-size: 13px; line-height: 1.45; color: #b8c9ce; }
+.laptop-part-facts strong { color: #e6f2f4; }
