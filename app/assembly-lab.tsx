@@ -14,9 +14,13 @@ import {
   Fan,
 } from 'lucide-react';
 import * as T from 'three';
-import { PC_CONNECTIONS, COOLER_ORDER, checkCooling, canConnect, checkPcPower, type PcConnection } from './pc-power-challenge';
+import { PC_CONNECTIONS, COOLER_ORDER, canConnect, type PcConnection } from './pc-power-challenge';
+import {
+  DIRECTION_REASON, FIXED_NOTE, LEARNED, REMOVABLE_NOTE, SAFETY, SHORT_NAME, TOTAL_STEPS, XP_PER_STEP,
+  completedSteps, diagnosis, dropPart, installPart, installProblem, nextPart, partStatus, postProblems, turnPart, type BuildState,
+} from './build-session.ts';
 import FaultPractice from './fault-practice';
-import { ORIENTED_PARTS, RETAINERS, PART_JOBS, PC_FAULTS, placementProblem, fasteningProblems, type Retainer } from './hardware-practice.ts';
+import { ORIENTED_PARTS, RETAINERS, PART_JOBS, PC_FAULTS, type Retainer } from './hardware-practice.ts';
 import { readProgress, saveProgress } from './student-progress';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -48,7 +52,7 @@ const PARTS: Part[] = [
     name: 'Q170 System Board',
     icon: Microchip,
     instruction: 'Drag the board onto the cyan standoff guide.',
-    why: 'Dell’s proprietary board includes an LGA1151 socket, four DDR4 DIMM slots, four expansion slots and an M.2 socket.',
+    why: 'This Dell board has a CPU socket, four RAM slots, four expansion slots and an M.2 socket for the SSD.',
     start: [-3.15, 0.75, 0],
     snap: 0.4,
   },
@@ -57,7 +61,7 @@ const PARTS: Part[] = [
     name: 'Intel Core Processor',
     icon: Cpu,
     instruction: 'Align the processor with the LGA1151 socket.',
-    why: 'This chassis supports sixth-generation Intel Core processors. Socket alignment matters before the retention mechanism is closed.',
+    why: 'This case uses 6th generation Intel Core processors. Line up the triangle before you close the socket lever.',
     start: [-5.2, 0.82, 2.3],
     snap: 0.24,
   },
@@ -66,7 +70,7 @@ const PARTS: Part[] = [
     name: 'CPU Heatsink & Fan',
     icon: Fan,
     instruction: 'Seat the cooling assembly above the processor.',
-    why: 'The heatsink and fan remove CPU heat. Connect the fan lead after placement. Apply paste before seating the cooler, then fasten the four marked corners. This is simplified practice, not a torque guide.',
+    why: 'The metal fins and fan pull heat away from the CPU. Put thermal paste on first, then fasten the four corners. This is simple practice, not a repair guide.',
     start: [-4.8, 1.01, -2.2],
     snap: 0.32,
   },
@@ -75,7 +79,7 @@ const PARTS: Part[] = [
     name: 'DDR4 Memory',
     icon: MemoryStick,
     instruction: 'Align the module with the highlighted DIMM slot.',
-    why: 'The 7040 MT uses DDR4-2133 UDIMMs. Match the notch and close the two retention tabs.',
+    why: 'This PC uses DDR4 memory sticks. Match the notch, push down, and close the two clips.',
     start: [-3.5, 1.14, 2.8],
     snap: 0.24,
   },
@@ -84,7 +88,7 @@ const PARTS: Part[] = [
     name: 'M.2 2280 SSD',
     icon: HardDrive,
     instruction: 'Align the SSD with its Socket 3 mounting guide.',
-    why: 'The board accepts a 22 × 80 mm M.2 SSD. The screw at the far end secures it.',
+    why: 'The SSD is 22 mm wide and 80 mm long. One small screw at the end holds it down.',
     start: [-2.3, 0.85, 2.8],
     snap: 0.24,
   },
@@ -93,7 +97,7 @@ const PARTS: Part[] = [
     name: 'Slot-powered PCIe Card',
     icon: PackageCheck,
     instruction: 'Align the card with the blue PCIe x16 slot.',
-    why: 'This is an illustrative small expansion card, not a specific retail GPU. Exact card support requires checking Dell’s configuration and power limits.',
+    why: 'This is a training card, not a real product. Real cards must fit the case and the power supply.',
     start: [-2.15, 1.27, -2.45],
     snap: 0.3,
   },
@@ -102,7 +106,7 @@ const PARTS: Part[] = [
     name: 'Dell 240 W Power Supply',
     icon: Zap,
     instruction: 'Seat the power supply in the lower rear bay.',
-    why: 'Dell specifies a 240 W PSU and proprietary board power connections. Generic modern ATX PSU choices have been removed.',
+    why: 'Dell uses a 240 W power supply with its own special plugs. Normal desktop power supplies do not fit.',
     start: [-4.9, 1.2, -0.5],
     snap: 0.32,
   },
@@ -118,8 +122,7 @@ export default function AssemblyLab({
   componentNames?: Partial<Record<HardwareId, string>>;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null),
-    installedRef = useRef<HardwareId[]>([]),
-    currentRef = useRef(0);
+    installedRef = useRef<HardwareId[]>([]);
   const [preview, setPreview] = useState(true),
     [upright, setUpright] = useState(true),
     [closed, setClosed] = useState(false),
@@ -128,46 +131,46 @@ export default function AssemblyLab({
     [isolated, setIsolated] = useState(false);
   const [aligned, setAligned] = useState<HardwareId[]>([]);
   const [fastened, setFastened] = useState<Retainer[]>([]);
-  const preparationRef = useRef({ aligned: [] as HardwareId[], fastened: [] as Retainer[] });
-  useEffect(() => { preparationRef.current = { aligned, fastened }; }, [aligned, fastened]);
   const [fault, setFault] = useState(0);
   const [lightGraphics, setLightGraphics] = useState(false);
   const [caseTarget, setCaseTarget] = useState<CaseTargetId | null>(null);
   const [caseInstance, setCaseInstance] = useState<string | null>(null);
   const [selectedCable, setSelectedCable] = useState<PcConnection | null>(null);
   const [boardTarget, setBoardTarget] = useState<BoardTargetId | null>(null);
-  const selectHardware = (id: HardwareId) => { setSelected(id); setBoardTarget(null); setCaseTarget(null); setSelectedCable(null); };
   const [selected, setSelected] = useState<HardwareId>('ssd'),
     [installed, setInstalled] = useState<HardwareId[]>([]),
-    [current, setCurrent] = useState(0),
     [error, setError] = useState('');
+  const selectHardware = (id: HardwareId) => { setSelected(id); setBoardTarget(null); setCaseTarget(null); setSelectedCable(null); };
   const [feedback, setFeedback] = useState(
     'Explore the assembled reference model, or choose Start assembly practice.',
   );
   const [pasteApplied, setPasteApplied] = useState(false);
   const [screws, setScrews] = useState<number[]>([]);
-  const coolingRef = useRef({ pasteApplied: false, screws: [] as number[] });
-  useEffect(() => { coolingRef.current = { pasteApplied, screws }; }, [pasteApplied, screws]);
   const [connections, setConnections] = useState<PcConnection[]>([]);
   const [cable, setCable] = useState<PcConnection>('board-power');
   const [powerOn, setPowerOn] = useState(false);
+  const [mistakes, setMistakes] = useState(0);
+  const [showResult, setShowResult] = useState(false);
   const [buildEarned, setBuildEarned] = useState(() => readProgress().pcBuilt);
   const [powerProblems, setPowerProblems] = useState<string[]>([]);
-  const connectionRef = useRef<PcConnection[]>([]);
-  useEffect(() => { connectionRef.current = preview ? [] : connections; }, [connections, preview]);
+  const build: BuildState = { installed, aligned, fastened, pasteApplied, screws, connections, coverClosed: closed, cageOpen, powerOn, mistakes };
+  // The 3D event handlers live in one long-lived effect, so they read the build through a ref.
+  const buildRef = useRef(build);
+  useEffect(() => { buildRef.current = { ...build, installed: installedRef.current }; });
   const connect = (target: string) => {
     const problem = canConnect(cable, target, installed, connections);
-    if (problem) { setFeedback(problem); return; }
+    if (problem) { setMistakes(count => count + 1); setFeedback(problem); return; }
     setConnections(previous => [...new Set([...previous, cable])]);
     setPowerProblems([]);
-    setFeedback('Cable connected. M.2 storage and this slot-powered card do not need separate power cables.');
+    setFeedback(cable === 'mains' ? 'Wall power connected. Unplug it before you change anything inside.' : 'Cable connected. The M.2 SSD and this card get power through their slots, so they need no extra cable.');
   };
   const testPower = () => {
-    const problems = [...checkPcPower(installed, connections, closed, !cageOpen), ...checkCooling({ pasteApplied, screws }), ...fasteningProblems(fastened)];
+    const problems = postProblems(build);
     setPowerProblems(problems);
     setPowerOn(problems.length === 0);
-    if (!problems.length) { saveProgress({ pcBuilt: true }); setBuildEarned(true); }
-    setFeedback(problems.length ? 'Power-on check stopped. Fix the items below and try again.' : 'POST passed in the simulation. Memory and storage detected. Your virtual PC is ready.');
+    if (!problems.length) { saveProgress({ pcBuilt: true }); setBuildEarned(true); setShowResult(true); }
+    else setMistakes(count => count + 1);
+    setFeedback(problems.length ? `Power-on check stopped. ${diagnosis(problems)} Fix the items below and try again.` : 'POST passed in the simulation. Memory and storage detected. Your virtual PC is ready.');
   };
   const displayRef = useRef({
     preview: true,
@@ -198,22 +201,22 @@ export default function AssemblyLab({
     };
   }, [preview, upright, closed, cageOpen, exploded, isolated, selected, boardTarget, caseTarget, caseInstance, selectedCable]);
   const complete = installed.length === PARTS.length,
-    active = preview || complete ? PARTS.find((p) => p.id === selected)! : PARTS[current];
+    active = PARTS.find((p) => p.id === selected)!;
   const name = (p: Part) => componentNames?.[p.id] ?? p.name;
   const practice = () => {
     setAligned([]); setFastened([]);
-    preparationRef.current = { aligned: [], fastened: [] };
     setPasteApplied(false);
     setScrews([]);
-    coolingRef.current = { pasteApplied: false, screws: [] };
     setConnections([]);
     setPowerOn(false);
     setPowerProblems([]);
+    setMistakes(0);
+    setShowResult(false);
     installedRef.current = [];
-    currentRef.current = 0;
+    buildRef.current = { ...buildRef.current, installed: [], aligned: [], fastened: [], pasteApplied: false, screws: [], connections: [], coverClosed: false, cageOpen: true, powerOn: false, mistakes: 0 };
     resetRef.current = true;
     setInstalled([]);
-    setCurrent(0);
+    selectHardware('motherboard');
     setPreview(false);
     setUpright(false);
     setClosed(false);
@@ -222,26 +225,33 @@ export default function AssemblyLab({
     setIsolated(false);
     actionRef.current = 'home';
     setFeedback(
-      'Install the glowing system board first. Wrong placements return the part to the tray.',
+      'Start with the glowing motherboard. Drag any part into its cyan guide. Wrong drops go back to the tray.',
     );
   };
-  const recordPlacement = (id: HardwareId) => {
-    if (installedRef.current.includes(id) || PARTS[currentRef.current].id !== id) return;
-    installedRef.current = [...installedRef.current, id];
-    setInstalled([...installedRef.current]);
-    currentRef.current = Math.min(currentRef.current + 1, PARTS.length - 1);
-    setCurrent(currentRef.current);
-    setFeedback(`Installed: ${PARTS.find(part => part.id === id)!.name}. ${installedRef.current.length === PARTS.length ? 'Parts placed. Secure the retainers, match the cables, close the cage, fit the cover, then test power.' : 'Continue with the next highlighted part.'}`);
+  /** Apply the result of a drop or seat attempt. Shared by dragging and the seat button. */
+  const applyAttempt = (id: HardwareId, result: ReturnType<typeof installPart>) => {
+    setFeedback(result.message);
+    if (!result.ok) { setMistakes(count => count + 1); return false; }
+    installedRef.current = result.state.installed;
+    buildRef.current = { ...buildRef.current, installed: result.state.installed };
+    setInstalled(result.state.installed);
+    const next = nextPart(result.state);
+    if (next) selectHardware(next);
+    return true;
   };
   const seatPart = () => {
-    if (preview || complete) return;
-    const id = PARTS[currentRef.current].id;
-    const problem = placementProblem(id, preparationRef.current.aligned.includes(id));
-    if (problem) { setFeedback(problem); return; }
-    if (id === 'cooler' && !coolingRef.current.pasteApplied) { setFeedback('Apply thermal paste to the CPU before seating the cooler.'); return; }
-    if (closed || !cageOpen || connections.includes('mains') || powerOn) { setFeedback('Open the cover and drive cage, and unplug wall power before installing parts.'); return; }
-    recordPlacement(id);
+    if (preview || installed.includes(selected)) return;
+    const problem = installProblem(buildRef.current, selected);
+    if (problem) { setMistakes(count => count + 1); setFeedback(problem); return; }
+    applyAttempt(selected, installPart(buildRef.current, selected));
   };
+  const turnSelected = () => {
+    setAligned(previous => turnPart({ ...buildRef.current, aligned: previous }, selected).aligned);
+    setFeedback(`${SHORT_NAME[selected][0].toUpperCase() + SHORT_NAME[selected].slice(1)} turned 180°. Compare its yellow arrow with the cyan arrow on the guide.`);
+  };
+  // The 3D handlers call these through a ref so they always see the latest state setters.
+  const handlersRef = useRef({ applyAttempt, selectHardware, setFeedback });
+  useEffect(() => { Object.assign(handlersRef.current, { applyAttempt, selectHardware }); });
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -352,6 +362,22 @@ export default function AssemblyLab({
       ghost.traverse(object => { if (object instanceof T.Mesh) { object.material=new T.MeshBasicMaterial({color:0x70dce5,transparent:true,opacity:.22,depthWrite:false}); object.castShadow=false; } });
       ghosts.set(id,ghost); assembly.add(ghost);
     }
+    // Direction arrows: yellow on the part, cyan on its guide. They point the same way only when the part is turned correctly.
+    const markers = new Map<HardwareId, T.Mesh>();
+    for (const id of ORIENTED_PARTS) {
+      const sample = createHardware(id);
+      const bounds = new T.Box3().setFromObject(sample);
+      sample.traverse(object => { if (object instanceof T.Mesh) object.geometry.dispose(); });
+      const size = bounds.getSize(new T.Vector3());
+      const length = T.MathUtils.clamp(Math.min(size.x, size.z) * 0.5, 0.12, 0.26);
+      const arrow = new T.ConeGeometry(length * 0.42, length, 3);
+      arrow.rotateZ(-Math.PI / 2);
+      const place = (mesh: T.Mesh) => { mesh.position.set(bounds.max.x - length * 0.6, bounds.max.y + length * 0.5, (bounds.min.z + bounds.max.z) / 2); mesh.name = `${id}-direction`; };
+      const onPart = new T.Mesh(arrow, new T.MeshStandardMaterial({ color: 0xffc94d, emissive: 0x6b4a00, roughness: 0.5 }));
+      place(onPart); groups.get(id)!.add(onPart); markers.set(id, onPart);
+      const onGuide = new T.Mesh(arrow, new T.MeshBasicMaterial({ color: 0x70dce5, transparent: true, opacity: 0.85, depthWrite: false }));
+      place(onGuide); ghosts.get(id)!.add(onGuide);
+    }
     const paste = new T.Mesh(new T.SphereGeometry(0.075, 16, 8), new T.MeshStandardMaterial({ color: 0xb6bcc2, roughness: 0.9 }));
     paste.scale.y = 0.2;
     paste.position.set(MOUNTS.cpu[0], MOUNTS.cpu[1] + 0.09, MOUNTS.cpu[2]);
@@ -368,6 +394,13 @@ export default function AssemblyLab({
       offset = new T.Vector3();
     let dragging: HardwareId | null = null,
       press: { x: number; y: number } | null = null;
+    const assembling = () => !displayRef.current.preview && installedRef.current.length < PARTS.length;
+    /** The part the cyan guide and glow point at: the one in hand, else the selected loose part, else the next step. */
+    const focusPart = () => {
+      if (dragging) return dragging;
+      const selected = displayRef.current.selected;
+      return installedRef.current.includes(selected) ? nextPart({ installed: installedRef.current }) : selected;
+    };
     const pointerAt = (e: PointerEvent) => {
       const r = canvas.getBoundingClientRect();
       pointer.set(
@@ -378,25 +411,31 @@ export default function AssemblyLab({
     };
     const down = (e: PointerEvent) => {
       press = { x: e.clientX, y: e.clientY };
-      if (
-        displayRef.current.preview ||
-        installedRef.current.length === PARTS.length
-      )
-        return;
+      if (!assembling()) return;
       pointerAt(e);
-      const p = PARTS[currentRef.current],
+      const loose = PARTS.filter(p => !installedRef.current.includes(p.id));
+      const hits = loose
+        .map(p => ({ p, hit: ray.intersectObject(groups.get(p.id)!, true)[0] }))
+        .filter(({ hit }) => hit)
+        .sort((a, b) => a.hit.distance - b.hit.distance);
+      if (!hits.length) return;
+      const p = hits[0].p,
         g = groups.get(p.id)!;
-      if (!ray.intersectObject(g, true).length) return;
-      const orientationProblem = placementProblem(p.id, preparationRef.current.aligned.includes(p.id));
-      if (orientationProblem) { setFeedback(orientationProblem); return; }
-      if (p.id === 'cooler' && !coolingRef.current.pasteApplied) { setFeedback('Apply thermal paste to the CPU before seating the cooler.'); return; }
       dragging = p.id;
+      dirty = true;
+      handlersRef.current.selectHardware(p.id);
       controls.enabled = false;
       plane.constant = -MOUNTS[p.id][1];
       if (ray.ray.intersectPlane(plane, point))
         offset.copy(g.position).sub(point);
       canvas.setPointerCapture(e.pointerId);
-      setFeedback(`${p.name} selected. Drag it into the cyan guide.`);
+      const build = buildRef.current;
+      const warning = p.id === 'cooler' && !build.pasteApplied && build.installed.includes('cpu')
+        ? 'You can move the cooler, but it will not go in until thermal paste is on the CPU.'
+        : ORIENTED_PARTS.includes(p.id) && !build.aligned.includes(p.id)
+          ? 'Wrong direction. The yellow arrow does not match the cyan guide. Use “Turn part 180°” before it can go in.'
+          : `${SHORT_NAME[p.id][0].toUpperCase() + SHORT_NAME[p.id].slice(1)} picked up. Drag it into the cyan guide.`;
+      handlersRef.current.setFeedback(warning);
       e.stopPropagation();
     };
     const move = (e: PointerEvent) => {
@@ -419,26 +458,24 @@ export default function AssemblyLab({
         if (canvas.hasPointerCapture(e.pointerId))
           canvas.releasePointerCapture(e.pointerId);
         const p = PARTS.find((p) => p.id === id)!,
-          g = groups.get(id)!,
-          target = MOUNTS[id];
-        if (
-          !cancelled &&
-          Math.hypot(g.position.x - target[0], g.position.z - target[2]) <=
-            p.snap
-        ) {
-          g.position.set(...target);
-          recordPlacement(id);
-        } else {
+          g = groups.get(id)!;
+        const moved = press ? Math.hypot(e.clientX - press.x, e.clientY - press.y) : 0;
+        press = null;
+        if (cancelled) {
           g.position.set(...p.start);
-          setFeedback(
-            cancelled
-              ? 'Drag cancelled. Part returned to the tray.'
-              : `${p.name} missed its mounting guide. Try again.`,
-          );
+          handlersRef.current.setFeedback('Drag cancelled. The part went back to the tray.');
+          return;
         }
+        // A tap picks a part up to inspect it; it is not a failed drop.
+        if (moved < 5) { g.position.set(...p.start); return; }
+        const distances = Object.fromEntries(PARTS.map(part => [part.id, Math.hypot(g.position.x - MOUNTS[part.id][0], g.position.z - MOUNTS[part.id][2])])) as Record<HardwareId, number>;
+        const snaps = Object.fromEntries(PARTS.map(part => [part.id, part.snap])) as Record<HardwareId, number>;
+        const result = dropPart(buildRef.current, id, distances, snaps);
+        if (result.ok) g.position.set(...MOUNTS[id]);
+        else g.position.set(...p.start);
+        handlersRef.current.applyAttempt(id, result);
       } else if (
         !cancelled &&
-        (displayRef.current.preview || installedRef.current.length === PARTS.length) &&
         press &&
         Math.hypot(e.clientX - press.x, e.clientY - press.y) < 5
       ) {
@@ -470,8 +507,10 @@ export default function AssemblyLab({
           if (target) setExploded(false);
           if (!groups.has(o.name as HardwareId)) { press = null; return; }
           setSelected(o.name as HardwareId);
-          setFeedback(
-            'Selected component. Use Explode selected or Isolate selected to inspect it.',
+          handlersRef.current.setFeedback(
+            displayRef.current.preview
+              ? 'Selected component. Use Explode selected or Isolate selected to inspect it.'
+              : `${SHORT_NAME[o.name as HardwareId][0].toUpperCase() + SHORT_NAME[o.name as HardwareId].slice(1)} selected. Read about it in the notes.`,
           );
         }
       }
@@ -506,16 +545,14 @@ export default function AssemblyLab({
       const signature = JSON.stringify([
         d,
         installedRef.current,
-        currentRef.current,
-        connectionRef.current,
-        coolingRef.current,
-        preparationRef.current,
+        buildRef.current,
+        dragging,
       ]);
       if (signature !== previousDisplay) {
         dirty = true;
         previousDisplay = signature;
       }
-      for (const [id, visual] of cableVisuals) visual.visible = !d.preview && connectionRef.current.includes(id);
+      for (const [id, visual] of cableVisuals) visual.visible = !d.preview && buildRef.current.connections.includes(id);
       assembly.rotation.x = d.preview && d.upright ? Math.PI / 2 : 0;
       assembly.position.set(
         0,
@@ -545,8 +582,9 @@ export default function AssemblyLab({
         if (view === 'top') camera.position.set(cx, 17, 0.01);
         actionRef.current = null;
       }
-      for (const id of ['motherboard','gpu'] as HardwareId[]) setHardwareRetainers(groups.get(id)!, d.preview ? ['ram','ssd','gpu'] : preparationRef.current.fastened);
-      paste.visible = !d.preview && coolingRef.current.pasteApplied && !installedRef.current.includes('cooler');
+      for (const id of ['motherboard','gpu'] as HardwareId[]) setHardwareRetainers(groups.get(id)!, d.preview ? ['ram','ssd','gpu'] : buildRef.current.fastened);
+      paste.visible = !d.preview && buildRef.current.pasteApplied && !installedRef.current.includes('cooler');
+      const focus = !d.preview && !done ? focusPart() : null;
       chassis.visible = !(d.preview && d.isolated);
       driveCage.rotation.z = !d.closed && (d.cageOpen || (!d.preview && !done)) ? -Math.PI / 2.4 : 0;
       cover.visible = d.closed && (d.preview || done) && !d.isolated;
@@ -558,19 +596,22 @@ export default function AssemblyLab({
           if (d.preview && d.exploded && d.selected === p.id)
             g.position.y += 2.3;
         } else if (dragging !== p.id) g.position.set(...p.start);
-        g.rotation.y = !d.preview && !installedRef.current.includes(p.id) && ORIENTED_PARTS.includes(p.id) && !preparationRef.current.aligned.includes(p.id) ? Math.PI : 0;
-        const on = !d.preview && !done && p.id === PARTS[currentRef.current].id;
+        g.rotation.y = !d.preview && !installedRef.current.includes(p.id) && ORIENTED_PARTS.includes(p.id) && !buildRef.current.aligned.includes(p.id) ? Math.PI : 0;
+        const marker = markers.get(p.id);
+        if (marker) marker.visible = !d.preview && !installedRef.current.includes(p.id);
+        const on = p.id === focus;
         g.traverse((o) => {
           if (
             o instanceof T.Mesh &&
-            o.material instanceof T.MeshStandardMaterial
+            o.material instanceof T.MeshStandardMaterial &&
+            o !== marker
           ) {
             o.material.emissive.setHex(on ? 0x13616b : 0);
             o.material.emissiveIntensity = on ? 0.35 : 0;
           }
         });
       }
-      for (const [id,ghost] of ghosts) ghost.visible=!d.preview && !done && id===PARTS[currentRef.current].id;
+      for (const [id,ghost] of ghosts) ghost.visible=id===focus;
       if (inspectCooling) {
         assembly.updateMatrixWorld(true);
         const bounds = new T.Box3().setFromObject(groups.get('cpu')!);
@@ -578,18 +619,18 @@ export default function AssemblyLab({
         controls.minDistance = 2;
         frameInspectionBounds(camera, controls.target, bounds, new T.Vector3(-.65, 1.4, 1));
       }
-      if (!d.preview && !done) {
-        const g = groups.get(PARTS[currentRef.current].id)!;
+      if (focus) {
+        const g = groups.get(focus)!;
         const saved = g.position.clone();
         const savedRotation=g.rotation.y; g.rotation.y=0;
-        g.position.set(...MOUNTS[PARTS[currentRef.current].id]);
+        g.position.set(...MOUNTS[focus]);
         g.updateMatrixWorld(true);
         guide.setFromObject(g);
         g.position.copy(saved); g.rotation.y=savedRotation;
         g.updateMatrixWorld(true);
         guide.visible = true;
       } else guide.visible = false;
-      highlight.visible = (d.preview || done) && (!d.closed || d.caseTarget !== null);
+      highlight.visible = d.preview || done ? !d.closed || d.caseTarget !== null : installedRef.current.includes(d.selected) && !dragging;
       const selectedRoot = groups.get(d.selected)!;
       const caseObject = d.caseTarget && !d.caseInstance ? (() => { let found: T.Object3D | undefined; chassis.traverse(object => { if (!found && object.userData.caseTarget === d.caseTarget) found=object; }); return found ?? chassis; })() : chassis;
       const inspectionObject = d.caseTarget ? (d.caseInstance ? chassis.getObjectByName(d.caseInstance) : caseObject) : d.selectedCable ? cableVisuals.get(d.selectedCable) : d.selected === 'motherboard' && d.boardTarget ? selectedRoot.getObjectByName(d.boardTarget) : selectedRoot;
@@ -750,11 +791,37 @@ export default function AssemblyLab({
           {error}
         </div>
       )}
+      {!preview && !previewOnly && !showResult && (
+        <div className={'assembly-stage-coach' + (/Wrong|missed|first|not |Unplug|stopped|That is the/.test(feedback) ? ' warn' : '')} aria-hidden="true">
+          {feedback}
+        </div>
+      )}
+      {!preview && showResult && (
+        <section className="assembly-result" aria-labelledby="assembly-result-title">
+          <p className="assembly-eyebrow">ACHIEVEMENT UNLOCKED</p>
+          <h2 id="assembly-result-title">🏅 PC Builder</h2>
+          <p className="assembly-result-xp"><strong>{completedSteps(build) * XP_PER_STEP} XP</strong> · {completedSteps(build)} of {TOTAL_STEPS} steps · {mistakes === 0 ? 'no mistakes' : `${mistakes} mistake${mistakes === 1 ? '' : 's'} found and fixed`}</p>
+          <h3>You completed</h3>
+          <ul>
+            <li>Installed all 7 parts in the right places</li>
+            <li>Turned the CPU, RAM, SSD and card the right way</li>
+            <li>Put on thermal paste and fastened the cooler 1 → 3 → 2 → 4</li>
+            <li>Closed the RAM clips, SSD screw and card bracket</li>
+            <li>Connected all {PC_CONNECTIONS.length} cables, closed the case and passed POST</li>
+          </ul>
+          <h3>You learned</h3>
+          <ul>{LEARNED.map(item => <li key={item}>{item}</li>)}</ul>
+          <div className="assembly-result-actions">
+            <button className="assembly-primary" onClick={practice}>Restart practice ↻</button>
+            <button onClick={() => setShowResult(false)}>Keep exploring this PC</button>
+          </div>
+        </section>
+      )}
       <div className="assembly-stage-tip">
         <Rotate3D size={15} />
         {preview
           ? 'Drag empty space: rotate · Wheel: zoom · Click hardware: select'
-          : 'Drag glowing hardware into cyan guide · Empty space: rotate'}
+          : 'Drag any loose part into its cyan guide · Empty space: rotate'}
       </div>
     </section>
   );
@@ -784,13 +851,13 @@ export default function AssemblyLab({
         <p className="assembly-eyebrow">
           {preview ? 'EXPLORE THE HARDWARE' : 'ASSEMBLY PRACTICE'}
         </p>
-        <h1>{powerOn ? 'PC ready' : !preview && complete ? 'Parts placed' : name(active)}</h1>
+        <h1>{powerOn ? 'PC ready' : !preview && complete ? 'Parts placed' : preview ? name(active) : `Step ${installed.length + 1} of ${PARTS.length}`}</h1>
         <p className="assembly-intro">
           {preview
             ? 'Select any component, isolate it, or lift just that part out of the case.'
             : complete
-              ? 'Parts are seated. Connect the cables and run the power-on check.'
-              : active.instruction}
+              ? 'Parts are seated. Secure them, connect the cables and run the power-on check.'
+              : `Next: ${name(PARTS.find(p => p.id === nextPart(build))!)}. Tap any part to learn about it. Your progress is kept.`}
         </p>
         <div className="assembly-progress">
           <span
@@ -798,15 +865,24 @@ export default function AssemblyLab({
           />
         </div>
         <div className="assembly-step-list">
-          {PARTS.map((p, i) => {
+          {PARTS.map((p) => {
             const Icon = p.icon,
-              done = installed.includes(p.id),
-              on = preview ? selected === p.id : i === current && !complete;
+              done = !preview && installed.includes(p.id),
+              status = partStatus(build, p.id),
+              on = selected === p.id;
             return (
               <button
                 key={p.id}
-                disabled={!preview && !complete}
-                onClick={() => selectHardware(p.id)}
+                aria-pressed={on}
+                aria-label={preview ? name(p) : `${name(p)}: ${status}`}
+                onClick={() => {
+                  selectHardware(p.id);
+                  if (!preview && !powerOn) setFeedback(
+                    status === 'Installed' ? `${name(p)} is installed. Read about it in the notes.`
+                      : status.startsWith('Needs') ? `${name(p)}: ${status.toLowerCase()}. You can still pick it up and look at it.`
+                        : `${name(p)}: ${status === 'Next step' ? 'this is the next step' : 'ready'}. Drag it into the cyan guide, or use the Seat button.`,
+                  );
+                }}
                 className={
                   'assembly-step ' +
                   (done ? 'done ' : '') +
@@ -814,7 +890,7 @@ export default function AssemblyLab({
                 }
               >
                 {done ? <CheckCircle2 size={17} /> : <Icon size={17} />}
-                <span>{name(p)}</span>
+                <span>{name(p)}{!preview && <small className={'assembly-step-status' + (status === 'Next step' ? ' next' : '')}>{status}</small>}</span>
               </button>
             );
           })}
@@ -834,16 +910,22 @@ export default function AssemblyLab({
           <div>{(Object.keys(BOARD_TARGETS) as BoardTargetId[]).map(id => <button key={id} aria-pressed={selected === 'motherboard' && boardTarget === id} onClick={() => { setSelected('motherboard'); setCaseTarget(null); setSelectedCable(null); setBoardTarget(id); setExploded(false); setFeedback('Highlighted on the motherboard. Sockets and holders remain attached to the board.'); }}>{BOARD_TARGETS[id].name}</button>)}</div>
         </section>}
         {caseTarget && <p><strong>Connects to:</strong> {CASE_TARGETS[caseTarget].connects}</p>}
-        {!boardTarget && !caseTarget && !selectedCable && <div className="assembly-job"><strong>Its job:</strong> {PART_JOBS[active.id].job}<p>{PART_JOBS[active.id].example}</p><p><strong>Connects to:</strong> {PART_JOBS[active.id].connection}</p></div>}
+        {!boardTarget && !caseTarget && !selectedCable && <div className="assembly-job">
+          {!preview && <p className={'assembly-part-status' + (partStatus(build, active.id) === 'Next step' ? ' next' : '')}><strong>Status:</strong> {partStatus(build, active.id)}{partStatus(build, active.id) === 'Next step' ? ' — this is the next installation step.' : ''}</p>}
+          <strong>Its job:</strong> {PART_JOBS[active.id].job}<p><strong>Example:</strong> {PART_JOBS[active.id].example}</p><p><strong>Connects to:</strong> {PART_JOBS[active.id].connection}</p>
+          <p className="assembly-safety"><strong>Safety:</strong> {SAFETY[active.id]}</p>
+          <p className="assembly-fixed-note">{REMOVABLE_NOTE}</p>
+        </div>}
+        {(boardTarget || caseTarget) && <p className="assembly-fixed-note">{caseTarget === 'chassis' ? 'Fixed part: this is the case itself.' : FIXED_NOTE.replace('the board', caseTarget ? 'the case' : 'the board')}</p>}
         {preview && <section className="assembly-board-targets" aria-label="Case port learning targets"><h3>Ports and case</h3><div>{(Object.keys(CASE_TARGETS) as CaseTargetId[]).filter(id => id !== 'optical').map(id => <button key={id} onClick={() => { setCaseTarget(id); setCaseInstance(null); setBoardTarget(null); setSelectedCable(null); setIsolated(false); actionRef.current = id === 'button' ? 'front' : 'rear'; }}>{CASE_TARGETS[id].name}</button>)}</div></section>}
-        {!preview && !complete && <section className="assembly-handling" aria-label="Touch assembly">
-          <h3>Place this part</h3><p>Drag into the cyan guide, or use this button. Both methods check direction. Secure clips and screws afterward.</p>
+        {!preview && !installed.includes(active.id) && <section className="assembly-handling" aria-label="Touch assembly">
+          <h3>Place this part</h3><p>Drag it into the cyan guide, or use this button. Both follow the same rules.</p>
           <button onClick={seatPart}>Seat {name(active)} in its guide</button>
         </section>}
-        {!preview && !complete && ORIENTED_PARTS.includes(active.id) && <section className="assembly-handling" aria-label="Part orientation">
-          <h3>Match the direction</h3><p>Compare the part with its cyan guide. Turn it before placing it. This checks direction; it does not model insertion force.</p>
-          <button aria-pressed={aligned.includes(active.id)} onClick={() => { setAligned(previous => previous.includes(active.id) ? previous.filter(id => id !== active.id) : [...previous, active.id]); setFeedback('Direction changed. Compare the contacts and socket guide, then drag the part.'); }}>Turn part 180°</button>
-          <p>{aligned.includes(active.id) ? 'Contacts match the guide.' : 'Contacts face the wrong direction.'}</p>
+        {!preview && !installed.includes(active.id) && ORIENTED_PARTS.includes(active.id) && <section className="assembly-handling" aria-label="Part orientation">
+          <h3>Match the direction</h3><p>{DIRECTION_REASON[active.id]} The yellow arrow on the part must point the same way as the cyan arrow on the guide.</p>
+          <button aria-pressed={aligned.includes(active.id)} onClick={turnSelected}>Turn part 180°</button>
+          <p className={aligned.includes(active.id) ? 'assembly-direction ok' : 'assembly-direction'}>{aligned.includes(active.id) ? '✓ Direction matches the guide.' : '✗ Wrong direction. Turn the part.'}</p>
         </section>}
         {!preview && <section className="assembly-handling" aria-label="Module retainers"><h3>Secure installed parts</h3>
           {(Object.keys(RETAINERS) as Retainer[]).map(id => <button key={id} disabled={!installed.includes(id) || fastened.includes(id) || connections.includes('mains') || powerOn} onClick={() => { setFastened(previous => [...previous, id]); setFeedback(`${RETAINERS[id]}: secured. The retainer holds the part in place.`); }}>{fastened.includes(id) ? '✓ ' : ''}{RETAINERS[id]}</button>)}
@@ -879,7 +961,7 @@ export default function AssemblyLab({
             <div className="assembly-sockets">{PC_CONNECTIONS.map(connection => <button key={connection.id} disabled={powerOn} onClick={() => connect(connection.target)}>{connection.target}</button>)}</div>
             <p>{connections.length} / {PC_CONNECTIONS.length} cables connected</p>
             <button className="assembly-back" disabled={powerOn || !connections.includes('mains')} onClick={() => { setConnections(previous => previous.filter(id => id !== 'mains')); setFeedback('Wall power unplugged. You can change connections.'); }}>Unplug wall power</button>
-            <button className="assembly-primary" onClick={() => { if (powerOn) { setPowerOn(false); setFeedback('Virtual PC shut down.'); } else testPower(); }}>{powerOn ? 'Shut down PC' : 'Test power-on'}</button>
+            <button className="assembly-primary" onClick={() => { if (powerOn) { setPowerOn(false); setShowResult(false); setFeedback('Virtual PC shut down.'); } else testPower(); }}>{powerOn ? 'Shut down PC' : 'Test power-on'}</button>
             {powerProblems.length > 0 && <ul>{powerProblems.map(problem => <li key={problem}>{problem}</li>)}</ul>}
             {powerOn && <output className="assembly-boot"><strong>✓ POST passed</strong><p>RAM detected · NVMe SSD detected · Display signal ready</p><small>Simulated checks. No real operating system starts.</small></output>}
           </section>

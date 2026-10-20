@@ -437,3 +437,82 @@
   }
   .assembly-lab .assembly-detail { grid-row: 4; }
 }
+
+/* Build Your PC: coach over the 3D scene, part status, completion result. */
+.assembly-stage-coach {
+  position: absolute;
+  left: 50%;
+  bottom: 64px;
+  transform: translateX(-50%);
+  z-index: 3;
+  width: min(560px, calc(100% - 24px));
+  padding: 10px 14px;
+  border: 1px solid #3d8f97;
+  border-radius: 10px;
+  background: rgba(8, 30, 36, 0.92);
+  color: #e6fbfc;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: center;
+  pointer-events: none;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+.assembly-stage-coach.warn { border-color: #e0a659; background: rgba(46, 30, 10, 0.94); color: #ffe2b8; }
+.assembly-step span { display: grid; gap: 2px; }
+.assembly-step-status { font-size: 11px; font-weight: 500; color: #8da7ad; }
+.assembly-step-status.next { color: #7fe3ec; font-weight: 700; }
+.assembly-step.done .assembly-step-status { color: #8fe1b1; }
+.assembly-part-status { margin: 0 0 8px; }
+.assembly-part-status.next { color: #7fe3ec; }
+.assembly-safety { padding: 8px 10px; border-left: 3px solid #e0a659; background: rgba(224, 166, 89, 0.08); border-radius: 4px; }
+.assembly-fixed-note { font-size: 12px; color: #9fb7bd; }
+.assembly-direction { font-weight: 700; color: #ffb38a; }
+.assembly-direction.ok { color: #8fe1b1; }
+.assembly-result {
+  position: absolute;
+  inset: 56px 16px 16px auto;
+  z-index: 4;
+  width: min(420px, calc(100% - 32px));
+  overflow: auto;
+  padding: 18px 20px;
+  border: 1px solid #69c6a0;
+  border-radius: 14px;
+  background: rgba(10, 32, 26, 0.97);
+  color: #e9fbf2;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+}
+.assembly-result h2 { margin: 4px 0; font-size: 26px; }
+.assembly-result h3 { margin: 14px 0 4px; font-size: 14px; color: #9ae6b4; }
+.assembly-result ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.5; }
+.assembly-result-xp { margin: 0; color: #c6f0d8; }
+.assembly-result-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.assembly-result-actions button { padding: 9px 12px; border-radius: 8px; border: 1px solid #3f6b5c; background: #13342a; color: inherit; cursor: pointer; }
+.assembly-lab button:focus-visible, .assembly-stage button:focus-visible, .assembly-lab select:focus-visible { outline: 3px solid #ffd166; outline-offset: 2px; }
+@media (max-width: 680px) {
+  .assembly-stage-coach { bottom: 52px; font-size: 13px; }
+  .assembly-result { inset: 8px; width: auto; }
+}
+
+/* Build Your PC parts picker: three columns on wide screens, stacked on tablets and phones. */
+.build-picker-grid {
+  display: grid;
+  grid-template-columns: 290px minmax(420px, 1fr) 330px;
+  height: calc(100vh - 66px);
+}
+.build-picker-stage { min-height: 500px; }
+.build-picker-header { flex-wrap: wrap; gap: 8px; }
+.build-picker button:focus-visible { outline: 3px solid #ffd166; outline-offset: 2px; }
+@media (max-width: 1100px) {
+  .build-picker-grid { grid-template-columns: 260px 1fr; grid-template-rows: auto minmax(420px, 60vh); height: auto; }
+  .build-picker-grid > aside:first-child { grid-row: 1; grid-column: 1; }
+  .build-picker-grid > aside:last-child { grid-row: 1; grid-column: 2; }
+  .build-picker-stage { grid-row: 2; grid-column: 1 / -1; min-height: 420px; }
+}
+@media (max-width: 680px) {
+  .build-picker-header { padding: 8px 12px !important; }
+  .build-picker-header > div { order: -1; flex-basis: 100%; }
+  .build-picker-grid { grid-template-columns: 1fr; grid-template-rows: none; }
+  .build-picker-grid > aside:first-child, .build-picker-grid > aside:last-child, .build-picker-stage { grid-column: 1; grid-row: auto; }
+  .build-picker-grid > aside:last-child { order: -1; }
+  .build-picker-stage { min-height: 460px; }
+}
