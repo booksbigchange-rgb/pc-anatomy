@@ -112,6 +112,8 @@ const PARTS: Part[] = [
   },
 ];
 type Action = 'home' | 'front' | 'rear' | 'top' | 'cooling';
+/** Below this width/height ratio the overview camera steps back in proportion. */
+const PORTRAIT_ASPECT = 1.03;
 export default function AssemblyLab({
   onBack,
   previewOnly = false,
@@ -541,9 +543,11 @@ export default function AssemblyLab({
       if (w && h) {
         dirty = true;
         renderer.setSize(w, h, false);
+        const wasPortrait = camera.aspect < PORTRAIT_ASPECT;
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
         if (framedFace && displayRef.current.preview && !displayRef.current.isolated) actionRef.current = framedFace;
+        else if (wasPortrait !== camera.aspect < PORTRAIT_ASPECT && !displayRef.current.isolated) actionRef.current = 'home';
       }
     };
     const obs = new ResizeObserver(resize);
@@ -584,8 +588,11 @@ export default function AssemblyLab({
         framedFace = view === 'front' || view === 'rear' ? view : null;
         const cx = d.preview || done ? 2.5 : 0.15;
         controls.target.set(cx, d.preview && d.upright ? 3.4 : 1.1, 0);
-        if (view === 'home')
+        if (view === 'home') {
           camera.position.set(cx + 8.5, d.preview && d.upright ? 7.4 : 12, 11);
+          // Tall, narrow stages (portrait tablets, phones) would crop the parts tray: step back to keep it in view.
+          if (camera.aspect < PORTRAIT_ASPECT) camera.position.sub(controls.target).multiplyScalar(PORTRAIT_ASPECT / camera.aspect).add(controls.target);
+        }
         if (view === 'front') camera.position.set(14, 4.3, 0);
         if (view === 'rear') camera.position.set(-9, 4.3, 0);
         if (d.preview && d.upright && (view === 'front' || view === 'rear')) {
