@@ -12,6 +12,10 @@ Choose parts (the stock CPU cooler is included and pre-selected) → start 3D pr
 - A failed power test explains the first problem in plain words (missing part, loose cable, open case, cooler not ready, loose part). A passed test shows the PC Builder result: completed steps, lessons, XP (10 per step) and mistakes fixed.
 - `tests/browser/build-pc.mjs` runs the whole flow by dragging on desktop and by buttons only on a 390 px phone, and is part of the live Pages checks.
 
+- Graphics pass: the PSU has a zinc finish, top fan grille, side vents, side label, grommet, sleeved bundle and board connector; the CPU shows a thin heat-spreader flange with the green substrate and capacitors visible; build cables have per-type colours and plugs at both ends.
+- On tall, narrow stages (portrait tablets, phones) the overview camera steps back by 1.03 ÷ aspect so every tray part stays on screen. Desktop framing is unchanged.
+- The browser test also clicks the CPU, RAM, SSD and motherboard directly in the 3D scene, and checks an 820 px tablet: no sideways scroll, a usable stage, and a reachable parts tray.
+
 Limits: placement, direction and fastening are simplified learning actions. They do not model insertion force, torque, cable lengths or exact Dell interior geometry.
 
 Build Your PC retains the OptiPlex-compatible parts picker and seven drag-to-seat steps. After placement, students choose a cable and match it to a named socket. Six routes appear in the service scene: board power, CPU power, fan, front switch, display and wall power. Routes and socket matching are illustrative; this is not a physical wiring guide. The M.2 SSD and illustrative slot-powered expansion card need no extra cable.
