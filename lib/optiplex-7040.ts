@@ -75,14 +75,16 @@ export function setHardwareRetainers(board: T.Group, fastened: readonly string[]
   if (screw) screw.position.y=fastened.includes('ssd') ? 0 : .12;
 }
 const steel = 0xa4a9ac,
+  psuSteel = 0x7d868b,
+  psuEdge = 0x5c6469,
   black = 0x090b0d,
   blue = 0x327eb2,
   gold = 0xc9a34d;
 function material(color: number) {
   return new T.MeshStandardMaterial({
     color,
-    metalness: color === steel ? 0.85 : color === gold ? 0.78 : color === black ? 0 : 0.04,
-    roughness: color === steel ? 0.3 : color === black ? 0.72 : 0.62,
+    metalness: color === steel ? 0.85 : color === gold ? 0.78 : color === psuSteel || color === psuEdge ? 0.7 : color === black ? 0 : 0.04,
+    roughness: color === steel ? 0.3 : color === psuSteel || color === psuEdge ? 0.48 : color === black ? 0.72 : 0.62,
   });
 }
 function box(w: number, h: number, d: number, color: number, r = 0.012) {
@@ -360,9 +362,15 @@ export function createHardware(id: HardwareId) {
   }
   if (id === 'cpu') {
     put(g, box(0.62, 0.06, 0.62, 0x315445));
-    put(g, box(0.55, 0.05, 0.55, steel), 0, 0.055, 0);
-    put(g,box(.065,.004,.065,gold,0),-.22,.082,-.22);
-    label(g, 'Intel Core', 0.45, 0.12, 0, 0.082, 0);
+    // Heat spreader: a thin flange and a raised lid, leaving the green substrate edge visible.
+    // The lid top stays at y = 0.08 so the cooler base still meets it.
+    put(g, box(0.5, 0.012, 0.5, steel, 0.006), 0, 0.036, 0);
+    put(g, box(0.44, 0.038, 0.44, steel, 0.01), 0, 0.061, 0);
+    // Key notches on two edges, and small capacitors on the exposed substrate.
+    for (const z of [-0.18, 0.18]) put(g, box(0.035, 0.062, 0.05, 0x1d2a25, 0), -0.302, 0, z);
+    for (let i = 0; i < 6; i++) put(g, box(0.022, 0.012, 0.012, 0x8a6e3c, 0), 0.268, 0.034, -0.15 + i * 0.06);
+    put(g,box(.065,.004,.065,gold,0),-.25,.032,-.25);
+    label(g, 'Intel Core', 0.36, 0.1, 0, 0.0805, 0);
     // Contact lands are flush with the substrate, visible during inspection.
     for (let x = 0; x < 16; x++) for (let z = 0; z < 16; z++) {
       if (x > 4 && x < 11 && z > 4 && z < 11) continue;
@@ -441,8 +449,19 @@ export function createHardware(id: HardwareId) {
       put(g, box(0.04, 0.16, 0.13, black), -1.42, y, 0);
   }
   if (id === 'psu') {
-    put(g, box(2.17, 1.08, 1.25, steel));
-    label(g, '240 W / OEM PSU', 1.64, 0.67, 0, 0.55, 0);
+    // Zinc-coated housing, darker than the case steel so it reads as a separate part.
+    put(g, box(2.17, 1.08, 1.25, psuSteel, 0.02));
+    // Folded sheet-metal rails along the long edges.
+    for (const y of [-0.53, 0.53]) for (const z of [-0.61, 0.61]) put(g, box(2.12, 0.035, 0.035, psuEdge, 0.008), 0, y, z);
+    // Top intake fan behind a round wire grille.
+    put(g, cyl(0.43, 0.012, 0x23282b), 0.35, 0.546, 0);
+    for (const r of [0.14, 0.24, 0.34, 0.42]) { const ring = new T.Mesh(new T.TorusGeometry(r, 0.008, 6, 40), material(psuEdge)); ring.rotation.x = Math.PI / 2; put(g, ring, 0.35, 0.556, 0); }
+    for (const a of [0, Math.PI / 2]) { const bar = box(0.86, 0.01, 0.016, psuEdge, 0); bar.rotation.y = a; put(g, bar, 0.35, 0.556, 0); }
+    put(g, cyl(0.07, 0.016, 0x23282b), 0.35, 0.558, 0);
+    for (const x of [-0.25, 0.95]) for (const z of [-0.52, 0.52]) screw(g, x, 0.548, z);
+    // Side vent slots and the rating label on the visible side.
+    for (let x = -0.55; x <= 0.55; x += 0.11) put(g, box(0.05, 0.3, 0.006, 0x1a1e20, 0), x, 0.18, 0.627);
+    const tag = new T.Group(); label(tag, '240 W / OEM PSU', 1.0, 0.42, 0, 0, 0); tag.rotation.x = Math.PI / 2; put(g, tag, 0.5, -0.18, 0.629);
     for (let z = -0.48; z <= 0.49; z += 0.095)
       for (let y = -0.4; y <= 0.4; y += 0.11)
         put(g, box(0.006, 0.046, 0.052, black, 0), -1.088, y, z);
@@ -451,6 +470,8 @@ export function createHardware(id: HardwareId) {
     for(const [y,z] of [[-.04,.07],[.12,.07],[.04,-.07]])put(g,box(.012,.034,.06,steel,0),-1.116,y,z);
     for(const [y,z] of [[-.43,-.5],[.43,-.5],[.43,.5]]) {const head=cyl(.039,.014,steel);head.rotation.z=Math.PI/2;put(g,head,-1.096,y,z);}
     put(g, box(0.04, 0.035, 0.045, 0x6cad55), -1.11, -0.24, 0.31);
+    // Rubber grommet where the cables leave, a sleeved bundle, and a keyed board connector.
+    const grommet = cyl(0.11, 0.05, black); grommet.rotation.z = Math.PI / 2; put(g, grommet, 1.09, -0.22, -0.27);
     for (let i = 0; i < 6; i++)
       cable(
         g,
@@ -462,6 +483,9 @@ export function createHardware(id: HardwareId) {
         i % 2 ? 0xd9b343 : black,
         0.018,
       );
+    cable(g, [[1.1, -0.22, -0.27], [1.3, -0.38, -0.32], [1.4, -0.5, -0.7]], 0x15191b, 0.062);
+    put(g, box(0.16, 0.12, 0.28, 0x111416, 0.012), 1.42, -0.48, -0.86);
+    put(g, box(0.06, 0.05, 0.07, 0x111416, 0.006), 1.42, -0.4, -0.86);
   }
   const batchTargets = (root: T.Group) => {
     for (const child of root.children) if (child instanceof T.Group) { batchTargets(child); if (child.userData.boardTarget || child.userData.retainer) shadows(child); }
