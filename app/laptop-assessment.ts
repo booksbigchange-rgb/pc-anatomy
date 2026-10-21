@@ -22,7 +22,7 @@ export const LAPTOP_ASSESSMENT_QUESTIONS:
   {
     id: 'battery-role',
     title: 'Portable power',
-    prompt: 'Which component stores energy so the laptop can run away from a charger?',
+    prompt: 'Which part stores power so the laptop works without a charger?',
     part: 'battery',
     explode: 18,
     options: [
@@ -31,13 +31,13 @@ export const LAPTOP_ASSESSMENT_QUESTIONS:
       { id: 'ram', label: 'RAM' },
     ],
     answer: 'battery',
-    explanation: 'The battery stores electrical energy for portable operation.',
+    explanation: 'The battery stores power for when you are away from a charger.',
     review: 'Battery and power path',
   },
   {
     id: 'service-safety',
     title: 'Safe service order',
-    prompt: 'Before removing internal components, what should you disconnect first?',
+    prompt: 'Before you take parts out, what should you unplug first?',
     part: 'battery',
     explode: 18,
     options: [
@@ -46,13 +46,13 @@ export const LAPTOP_ASSESSMENT_QUESTIONS:
       { id: 'wifi-antenna', label: 'Wi-Fi antenna' },
     ],
     answer: 'battery-cable',
-    explanation: 'Disconnecting battery power reduces the chance of powering the board while you work.',
+    explanation: 'Unplug the battery first, so no power reaches the board while you work.',
     review: 'Battery disconnect before service',
   },
   {
     id: 'ram-role',
     title: 'Working memory',
-    prompt: 'Which component holds working data for programs that are currently running?',
+    prompt: 'Which part helps the laptop keep several apps open?',
     part: 'ram',
     explode: 60,
     options: [
@@ -61,13 +61,13 @@ export const LAPTOP_ASSESSMENT_QUESTIONS:
       { id: 'wifi', label: 'Wi-Fi card' },
     ],
     answer: 'ram',
-    explanation: 'RAM holds active working data used by running programs.',
+    explanation: 'RAM holds the apps and files you are using right now.',
     review: 'RAM versus storage',
   },
   {
     id: 'storage-role',
     title: 'Persistent storage',
-    prompt: 'Which removable module keeps the operating system and files when power is off?',
+    prompt: 'Which part keeps Windows and your files when the power is off?',
     part: 'ssd',
     explode: 46,
     options: [
@@ -76,13 +76,13 @@ export const LAPTOP_ASSESSMENT_QUESTIONS:
       { id: 'cpu', label: 'CPU' },
     ],
     answer: 'ssd',
-    explanation: 'The SSD stores the operating system, applications and files persistently.',
+    explanation: 'The SSD keeps Windows, apps and files, even when the laptop is off.',
     review: 'SSD and M.2 storage',
   },
   {
     id: 'cooling-path',
     title: 'Heat removal',
-    prompt: 'What carries processor heat toward the fan and fin stack?',
+    prompt: 'What carries heat from the CPU to the fan and metal fins?',
     part: 'fan',
     explode: 78,
     options: [
@@ -91,13 +91,13 @@ export const LAPTOP_ASSESSMENT_QUESTIONS:
       { id: 'speaker-wires', label: 'Speaker wires' },
     ],
     answer: 'heat-pipes',
-    explanation: 'Heat pipes move heat from the CPU cold plate toward the fin stack where airflow removes it.',
+    explanation: 'Heat pipes carry heat from the CPU to the metal fins. The fan blows the heat out.',
     review: 'Cooling assembly and heat path',
   },
   {
     id: 'wireless-path',
     title: 'Wireless networking',
-    prompt: 'Which small removable module connects to two thin antenna leads?',
+    prompt: 'Which small card has two thin antenna wires?',
     part: 'wifi',
     explode: 50,
     options: [
@@ -106,13 +106,13 @@ export const LAPTOP_ASSESSMENT_QUESTIONS:
       { id: 'battery', label: 'Battery' },
     ],
     answer: 'wifi',
-    explanation: 'The Wi-Fi module uses two antenna connections routed through the chassis.',
+    explanation: 'The Wi-Fi card uses two antenna wires that run through the case.',
     review: 'Wi-Fi card and antennas',
   },
   {
     id: 'motherboard-role',
     title: 'Central connection',
-    prompt: 'Which part links the CPU, memory, storage, ports and power system together?',
+    prompt: 'Which part connects the CPU, RAM, SSD, ports and power together?',
     part: 'motherboard',
     explode: 100,
     options: [
@@ -121,13 +121,13 @@ export const LAPTOP_ASSESSMENT_QUESTIONS:
       { id: 'display', label: 'Display' },
     ],
     answer: 'motherboard',
-    explanation: 'The motherboard is the central electrical and mechanical connection point for the laptop hardware.',
+    explanation: 'The motherboard connects all the laptop parts together.',
     review: 'Motherboard connections',
   },
   {
     id: 'display-path',
     title: 'Built-in screen path',
-    prompt: 'A laptop powers on but its built-in screen stays black. Which hardware path should you inspect first?',
+    prompt: 'A laptop turns on but its screen stays black. What should you check first?',
     part: 'display',
     explode: 89,
     options: [
@@ -136,7 +136,7 @@ export const LAPTOP_ASSESSMENT_QUESTIONS:
       { id: 'battery', label: 'Battery only' },
     ],
     answer: 'display-path',
-    explanation: 'The display assembly and its routed cable are the most relevant hardware path for a black built-in screen.',
+    explanation: 'The screen and its cable carry the picture. Check them first when the screen is black.',
     review: 'Display cable and hinge routing',
   },
 ] as const;
