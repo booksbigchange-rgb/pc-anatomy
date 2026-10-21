@@ -516,3 +516,4 @@
   .build-picker-grid > aside:last-child { order: -1; }
   .build-picker-stage { min-height: 460px; }
 }
+.assembly-stage canvas:focus-visible { outline: 3px solid #ffd166; outline-offset: -3px; }

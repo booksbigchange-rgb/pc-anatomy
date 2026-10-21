@@ -536,6 +536,22 @@ export default function AssemblyLab({
     canvas.addEventListener('pointermove', move);
     canvas.addEventListener('pointerup', up);
     canvas.addEventListener('pointercancel', cancel);
+    // Keyboard orbit for students who cannot drag: arrows rotate, + and - zoom.
+    const orbitByKey = (e: KeyboardEvent) => {
+      const turn = { ArrowLeft: [-0.17, 0], ArrowRight: [0.17, 0], ArrowUp: [0, -0.12], ArrowDown: [0, 0.12] }[e.key];
+      const zoom = e.key === '+' || e.key === '=' ? 0.88 : e.key === '-' || e.key === '_' ? 1.14 : 1;
+      if (!turn && zoom === 1) return;
+      e.preventDefault();
+      const orbit = new T.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
+      if (turn) {
+        orbit.theta += turn[0];
+        orbit.phi = T.MathUtils.clamp(orbit.phi + turn[1], 0.12, Math.PI / 2 - 0.04);
+      }
+      orbit.radius = T.MathUtils.clamp(orbit.radius * zoom, controls.minDistance, controls.maxDistance);
+      camera.position.copy(controls.target).add(new T.Vector3().setFromSpherical(orbit));
+      dirty = true;
+    };
+    canvas.addEventListener('keydown', orbitByKey);
     let framedFace: Action | null = null;
     const resize = () => {
       const w = canvas.clientWidth,
@@ -684,6 +700,7 @@ export default function AssemblyLab({
       canvas.removeEventListener('pointermove', move);
       canvas.removeEventListener('pointerup', up);
       canvas.removeEventListener('pointercancel', cancel);
+      canvas.removeEventListener('keydown', orbitByKey);
       controls.dispose();
       const geometries = new Set<T.BufferGeometry>(),
         materials = new Set<T.Material>(),
@@ -803,7 +820,8 @@ export default function AssemblyLab({
       </div>
       <canvas
         ref={canvasRef}
-        aria-label="OptiPlex 7040 reference model — rotate, select and inspect hardware"
+        tabIndex={0}
+        aria-label="OptiPlex 7040 reference model. Arrow keys rotate, plus and minus zoom. Use the parts list and buttons to select and place parts."
       />
       {error && (
         <div className="assembly-render-error" role="alert">
@@ -839,8 +857,8 @@ export default function AssemblyLab({
       <div className="assembly-stage-tip">
         <Rotate3D size={15} />
         {preview
-          ? 'Drag empty space: rotate · Wheel: zoom · Click hardware: select'
-          : 'Drag any loose part into its cyan guide · Empty space: rotate'}
+          ? 'Drag empty space: rotate · Wheel: zoom · Click hardware: select · Keys: arrows, + −'
+          : 'Drag any loose part into its cyan guide · Empty space: rotate · Keys: arrows, + −'}
       </div>
     </section>
   );

@@ -74,6 +74,19 @@ try {
     assert.equal(await placed(), '0 / 7 placed', 'Selecting a part must not change progress');
   }
   assert.match(await page.locator('.assembly-step').first().innerText(), /Next step/);
+
+  // Keyboard users can orbit and zoom: focus the 3D view, press arrows and +, and the picture changes.
+  const canvas = page.locator('.assembly-stage canvas');
+  await canvas.focus();
+  assert.equal(await page.evaluate(() => document.activeElement?.tagName), 'CANVAS', 'The 3D view can take keyboard focus');
+  await page.waitForTimeout(400);
+  const before = await canvas.screenshot({ timeout: 90000 });
+  for (const key of ['ArrowLeft', 'ArrowLeft', 'ArrowUp', '+']) await page.keyboard.press(key);
+  await page.waitForTimeout(800);
+  const after = await canvas.screenshot({ timeout: 90000 });
+  assert.ok(!before.equals(after), 'Arrow keys and + must move the camera');
+  await page.getByRole('button', { name: 'Overview', exact: true }).click();
+  await page.waitForTimeout(800);
   await shot('01-assembly-start');
 
   const camera = new T.PerspectiveCamera(38, rect.width / rect.height, 0.1, 100);
