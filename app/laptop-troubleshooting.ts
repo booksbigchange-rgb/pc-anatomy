@@ -17,72 +17,72 @@ export const LAPTOP_TROUBLESHOOTING_SCENARIOS:
     id: 'battery-runtime',
     title: 'Runs only when plugged in',
     symptom:
-      'The laptop works with the charger connected, but shuts down when the charger is removed.',
-    clue: 'Think about which component stores energy for portable use.',
+      'The laptop works with the charger. It turns off when you unplug the charger.',
+    clue: 'Which part stores power for when there is no charger?',
     explode: 18,
     options: ['battery', 'ssd', 'ram'],
     answer: 'battery',
     explanation:
-      'The battery is the first component to inspect because it stores the energy used when the charger is disconnected.',
+      'Check the battery first. It gives power when the charger is not plugged in.',
   },
   {
     id: 'overheating',
     title: 'Hot and slowing down',
     symptom:
-      'The laptop becomes very hot, the fan sounds unusual, and performance drops during heavy work.',
-    clue: 'Look for the hardware responsible for moving heat away from the processor.',
+      'The laptop gets very hot. The fan sounds strange. Big jobs become slow.',
+    clue: 'Which part moves heat away from the CPU?',
     explode: 58,
     options: ['fan', 'wifi', 'ssd'],
     answer: 'fan',
     explanation:
-      'The cooling assembly is the best place to investigate because the fan, fin stack and heat pipes remove processor heat.',
+      'Check the cooling parts. The fan, metal fins and heat pipes take heat away from the CPU.',
   },
   {
     id: 'multitasking',
     title: 'Slow with many apps open',
     symptom:
-      'The laptop starts normally, but switching between several open apps becomes very slow.',
-    clue: 'Which component holds the working data used by running programs?',
+      'The laptop starts normally. It gets very slow when many apps are open.',
+    clue: 'Which part helps the laptop keep several apps open?',
     explode: 42,
     options: ['ram', 'battery', 'wifi'],
     answer: 'ram',
     explanation:
-      'RAM holds active working data. Limited or faulty memory can make multitasking slow even when storage is healthy.',
+      'RAM holds the apps you are using now. Too little RAM, or a bad RAM stick, makes many open apps slow.',
   },
   {
     id: 'storage',
     title: 'System cannot find storage',
     symptom:
-      'The laptop powers on, but the operating system or saved files cannot be found.',
-    clue: 'Look for the removable module that keeps data when power is off.',
+      'The laptop turns on, but it cannot find Windows or your saved files.',
+    clue: 'Which part keeps files when the power is off?',
     explode: 30,
     options: ['ssd', 'ram', 'speakers'],
     answer: 'ssd',
     explanation:
-      'The M.2 SSD stores the operating system, applications and saved files, so its connection and health are relevant here.',
+      'The SSD stores Windows, apps and saved files. Check that it is seated and working.',
   },
   {
     id: 'wireless',
     title: 'Wi-Fi disappears',
     symptom:
-      'The laptop works normally but no wireless networks appear.',
-    clue: 'Find the small card connected to two thin antenna leads.',
+      'The laptop works, but no Wi-Fi networks appear.',
+    clue: 'Find the small card with two thin antenna wires.',
     explode: 34,
     options: ['wifi', 'ssd', 'fan'],
     answer: 'wifi',
     explanation:
-      'The Wi-Fi module and its antenna connections provide wireless networking, so they are the most relevant hardware to inspect.',
+      'The Wi-Fi card and its antenna wires make wireless work. Check them first.',
   },
   {
     id: 'black-display',
     title: 'Power on, black display',
     symptom:
-      'The laptop appears to power on, but the built-in screen stays black.',
-    clue: 'Trace the display path from the mainboard toward the hinge and screen.',
+      'The laptop seems to turn on, but the screen stays black.',
+    clue: 'Follow the screen cable from the motherboard, through the hinge, to the screen.',
     explode: 89,
     options: ['display', 'battery', 'speakers'],
     answer: 'display',
     explanation:
-      'The display assembly and its routed display cable are the first hardware path to inspect when the computer appears to run but the screen stays black.',
+      'Check the screen and its cable first. If the computer runs but the screen is black, the picture may not be reaching the screen.',
   },
 ] as const;
