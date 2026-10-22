@@ -199,6 +199,70 @@ try {
   assert.equal(await result.count(), 0);
   assert.equal(await page.getByRole('button', { name: 'Apply thermal paste', exact: true }).isEnabled(), false, 'Restart clears paste and needs a CPU again');
 
+  // Keyboard placement inside the 3D view: 1–7 choose, T turns, Enter seats, with the same rules as the buttons.
+  await page.locator('.assembly-stage canvas').focus();
+  await page.keyboard.press('1');
+  await page.keyboard.press('Enter');
+  assert.equal(await placed(), '1 / 7 placed', 'Enter seats the chosen motherboard');
+  await page.keyboard.press('2');
+  assert.match(await coach().innerText(), /Press T to turn it/);
+  await page.keyboard.press('Enter');
+  assert.match(await coach().innerText(), /Wrong direction/, 'Keyboard seating obeys direction');
+  assert.equal(await placed(), '1 / 7 placed');
+  await page.keyboard.press('t');
+  await page.keyboard.press('Enter');
+  assert.equal(await placed(), '2 / 7 placed', 'Turned CPU seats from the keyboard');
+  await page.keyboard.press('3');
+  await page.keyboard.press('Enter');
+  assert.match(await coach().innerText(), /thermal paste/, 'Keyboard seating obeys the paste rule');
+
+  // Touch: on an emulated touch tablet, a finger drag moves parts into their guides.
+  const touchPage = await browser.newPage({ viewport: { width: 1024, height: 768 }, hasTouch: true });
+  touchPage.on('pageerror', error => errors.push(error.message));
+  touchPage.setDefaultTimeout(30000);
+  await touchPage.goto(url);
+  const touchSkip = touchPage.getByRole('button', { name: /Skip intro/ });
+  await touchPage.getByRole('button', { name: /Skip intro|Build.*PC/i }).first().waitFor();
+  if (await touchSkip.count()) await touchSkip.click();
+  await touchPage.getByRole('button', { name: /Build.*PC/i }).first().click();
+  for (const id of ['cpu', 'motherboard', 'ram', 'ssd', 'gpu', 'psu']) await touchPage.getByRole('button', { name: new RegExp(PARTS[id].name) }).last().click();
+  await touchPage.getByRole('button', { name: /Enter interactive/ }).click();
+  await touchPage.getByRole('button', { name: 'Start assembly practice', exact: true }).click();
+  await touchPage.getByRole('button', { name: 'Light graphics', exact: true }).click();
+  await touchPage.waitForTimeout(1500);
+  const touchRect = await touchPage.locator('.assembly-stage canvas').boundingBox();
+  const touchAspect = touchRect.width / touchRect.height;
+  const touchCamera = new T.PerspectiveCamera(38, touchAspect, 0.1, 100);
+  const touchLook = new T.Vector3(0.15, 1.1, 0);
+  touchCamera.position.set(8.65, 12, 11).sub(touchLook).multiplyScalar(touchAspect < 1.03 ? 1.03 / touchAspect : 1).add(touchLook);
+  touchCamera.lookAt(touchLook); touchCamera.updateMatrixWorld();
+  const toScreen = v => { const q = v.clone().project(touchCamera); return { x: touchRect.x + ((q.x + 1) * touchRect.width) / 2, y: touchRect.y + ((1 - q.y) * touchRect.height) / 2 }; };
+  const cdp = await touchPage.context().newCDPSession(touchPage);
+  const touch = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points.map(({ x, y }) => ({ x, y, id: 1, radiusX: 4, radiusY: 4, force: 1 })) });
+  async function fingerDrag(id) {
+    const { start, mount } = PARTS[id];
+    const origin = new T.Vector3(...start), from = toScreen(origin);
+    const ray = new T.Raycaster();
+    ray.setFromCamera(new T.Vector2(((from.x - touchRect.x) / touchRect.width) * 2 - 1, -((from.y - touchRect.y) / touchRect.height) * 2 + 1), touchCamera);
+    const hit = new T.Vector3();
+    ray.ray.intersectPlane(new T.Plane(new T.Vector3(0, 1, 0), -mount[1]), hit);
+    const drop = new T.Vector3(...mount).sub(origin.clone().sub(hit)); drop.y = mount[1];
+    const to = toScreen(drop);
+    await touch('touchStart', [from]);
+    for (let i = 1; i <= 12; i++) await touch('touchMove', [{ x: from.x + ((to.x - from.x) * i) / 12, y: from.y + ((to.y - from.y) * i) / 12 }]);
+    await touch('touchEnd', []);
+    await touchPage.waitForTimeout(300);
+  }
+  const touchPlaced = () => touchPage.locator('.assembly-progress-label').innerText();
+  await fingerDrag('motherboard');
+  assert.equal(await touchPlaced(), '1 / 7 placed', 'A finger drag installs the motherboard');
+  await touchPage.locator('.assembly-step').filter({ hasText: PARTS.cpu.name }).tap();
+  await touchPage.getByRole('button', { name: 'Turn part 180°', exact: true }).tap();
+  await fingerDrag('cpu');
+  assert.equal(await touchPlaced(), '2 / 7 placed', 'A finger drag installs the turned CPU');
+  await touchPage.screenshot({ path: `${out}/05a-touch-drag.png`, timeout: 90000 }).catch(error => console.warn('Screenshot skipped 05a-touch-drag', error.message.split('\n')[0]));
+  await touchPage.close();
+
   // Tablet: picker and assembly fit without sideways scrolling, and the 3D stage stays usable.
   await page.setViewportSize({ width: 820, height: 1180 });
   await open();
