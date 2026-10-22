@@ -252,8 +252,22 @@ export default function AssemblyLab({
     setFeedback(`${SHORT_NAME[selected][0].toUpperCase() + SHORT_NAME[selected].slice(1)} turned 180°. Compare its yellow arrow with the cyan arrow on the guide.`);
   };
   // The 3D handlers call these through a ref so they always see the latest state setters.
-  const handlersRef = useRef({ applyAttempt, selectHardware, setFeedback });
-  useEffect(() => { Object.assign(handlersRef.current, { applyAttempt, selectHardware }); });
+  /** Keys while the 3D view has focus: 1–7 choose a part, T turns it, Enter seats it. Same rules as the buttons. */
+  const keyAction = (key: string) => {
+    if (preview || powerOn) return false;
+    const index = Number(key) - 1;
+    if (Number.isInteger(index) && index >= 0 && index < PARTS.length) {
+      const part = PARTS[index];
+      selectHardware(part.id);
+      setFeedback(`${name(part)}: ${partStatus(build, part.id)}.${installed.includes(part.id) ? '' : `${ORIENTED_PARTS.includes(part.id) ? ' Press T to turn it.' : ''} Press Enter to seat it.`}`);
+      return true;
+    }
+    if ((key === 't' || key === 'T') && ORIENTED_PARTS.includes(selected) && !installed.includes(selected)) { turnSelected(); return true; }
+    if (key === 'Enter' && !installed.includes(selected)) { seatPart(); return true; }
+    return false;
+  };
+  const handlersRef = useRef({ applyAttempt, selectHardware, setFeedback, keyAction });
+  useEffect(() => { Object.assign(handlersRef.current, { applyAttempt, selectHardware, keyAction }); });
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -540,7 +554,10 @@ export default function AssemblyLab({
     const orbitByKey = (e: KeyboardEvent) => {
       const turn = { ArrowLeft: [-0.17, 0], ArrowRight: [0.17, 0], ArrowUp: [0, -0.12], ArrowDown: [0, 0.12] }[e.key];
       const zoom = e.key === '+' || e.key === '=' ? 0.88 : e.key === '-' || e.key === '_' ? 1.14 : 1;
-      if (!turn && zoom === 1) return;
+      if (!turn && zoom === 1) {
+        if (handlersRef.current.keyAction(e.key)) e.preventDefault();
+        return;
+      }
       e.preventDefault();
       const orbit = new T.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
       if (turn) {
@@ -821,7 +838,7 @@ export default function AssemblyLab({
       <canvas
         ref={canvasRef}
         tabIndex={0}
-        aria-label="OptiPlex 7040 reference model. Arrow keys rotate, plus and minus zoom. Use the parts list and buttons to select and place parts."
+        aria-label="OptiPlex 7040 reference model. Arrow keys rotate, plus and minus zoom. In practice, press 1 to 7 to choose a part, T to turn it and Enter to seat it."
       />
       {error && (
         <div className="assembly-render-error" role="alert">
@@ -956,7 +973,7 @@ export default function AssemblyLab({
         {(boardTarget || caseTarget) && <p className="assembly-fixed-note">{caseTarget === 'chassis' ? 'Fixed part: this is the case itself.' : FIXED_NOTE.replace('the board', caseTarget ? 'the case' : 'the board')}</p>}
         {preview && <section className="assembly-board-targets" aria-label="Case port learning targets"><h3>Ports and case</h3><div>{(Object.keys(CASE_TARGETS) as CaseTargetId[]).filter(id => id !== 'optical').map(id => <button key={id} onClick={() => { setCaseTarget(id); setCaseInstance(null); setBoardTarget(null); setSelectedCable(null); setIsolated(false); actionRef.current = id === 'button' ? 'front' : 'rear'; }}>{CASE_TARGETS[id].name}</button>)}</div></section>}
         {!preview && !installed.includes(active.id) && <section className="assembly-handling" aria-label="Touch assembly">
-          <h3>Place this part</h3><p>Drag it into the cyan guide, or use this button. Both follow the same rules.</p>
+          <h3>Place this part</h3><p>Drag it into the cyan guide, or use this button. Both follow the same rules.</p><p className="assembly-fixed-note">Keyboard: select the 3D view, press 1–7 to choose a part, T to turn it, Enter to seat it.</p>
           <button onClick={seatPart}>Seat {name(active)} in its guide</button>
         </section>}
         {!preview && !installed.includes(active.id) && ORIENTED_PARTS.includes(active.id) && <section className="assembly-handling" aria-label="Part orientation">
