@@ -2,7 +2,7 @@
 
 Teacher Hermon Tesfay · 15–20 minutes · 3–5 learners
 
-Use one older computer and one phone. Open the public preview. Use Light graphics if the model feels slow. Students can drag parts or use Seat in its guide. Do not record student names.
+Use one older computer, one tablet and one phone. Open the public preview. Use Light graphics if the model feels slow. Students can drag parts or use Seat in its guide. Do not record student names.
 
 ## Student tasks
 
@@ -15,18 +15,22 @@ Use one older computer and one phone. Open the public preview. Use Light graphic
 
 ## Observe and record
 
-| Check | Computer | Phone | Fix needed |
-| --- | --- | --- | --- |
-| Model loads and can rotate | | | |
-| Part/port names are easy to find | | | |
-| Learner can finish assembly without teacher clicks | | | |
-| Wrong direction feedback makes sense | | | |
-| Learner explains RAM versus saved storage | | | |
-| Learner uses evidence before choosing a fix | | | |
-| Buttons are reachable; no sideways page scrolling | | | |
-| Light graphics is usable on this device | | | |
+| Check | Computer | Tablet | Phone | Fix needed |
+| --- | --- | --- | --- | --- |
+| Model loads and can rotate | | | | |
+| Part/port names are easy to find | | | | |
+| Learner can finish assembly without teacher clicks | | | | |
+| Wrong direction feedback makes sense | | | | |
+| Learner explains RAM versus saved storage | | | | |
+| Learner uses evidence before choosing a fix | | | | |
+| Buttons are reachable; no sideways page scrolling | | | | |
+| Light graphics is usable on this device | | | | |
+| A finger drag moves a part into its cyan guide (tablet/phone) | | | | |
+| The whole parts tray is visible without zooming | | | | |
+| Keyboard only: 1–7, T and Enter in the 3D view seat a part | | | | |
+| The PC Builder result is readable and Restart works | | | | |
 
-Record device/browser, time to load, noticeable freezes, confusing words and unsuccessful taps. Mark each row Pass, Needs help or Failed. Browser automation is not a substitute for these observations.
+Record device/browser, time to load, noticeable freezes, confusing words and unsuccessful taps. Mark each row Pass, Needs help or Failed. Browser automation is not a substitute for these observations. Automated checks emulate touch and keyboard input in Chromium; they do not prove behaviour on a real tablet, in other browsers, or with students.
 
 ## Visual review
 
