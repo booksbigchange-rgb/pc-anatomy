@@ -237,6 +237,8 @@ try {
   const touchPage = await browser.newPage({ viewport: { width: 1024, height: 768 }, hasTouch: true });
   touchPage.on('pageerror', error => errors.push(error.message));
   touchPage.setDefaultTimeout(30000);
+  // The school opening is covered by school-branding.mjs; here the learner has already seen it this session.
+  await touchPage.addInitScript(() => { try { sessionStorage.setItem('bigchange-school-opening-v1', 'seen'); } catch { /* Storage may be blocked. */ } });
   await touchPage.goto(url);
   const touchSkip = touchPage.getByRole('button', { name: /Skip intro/ });
   await touchPage.getByRole('button', { name: /Skip intro|Build.*PC/i }).first().waitFor({ timeout: 90000 });
