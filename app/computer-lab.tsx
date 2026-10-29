@@ -1009,6 +1009,8 @@ export default function ComputerLab({
 
     canvas.addEventListener('pointerup', pick);
 
+    // Set by resizes, camera moves and state changes; the draw loop renders only when it is true.
+    let redraw = true;
     const resize = () => {
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
@@ -1016,14 +1018,25 @@ export default function ComputerLab({
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
+      redraw = true;
     };
     const observer = new ResizeObserver(resize);
     observer.observe(canvas);
     resize();
 
-    let frame = 0;
+    // Draw only when something changes; the pulsing target port needs ~20 frames a second.
+    let frame = 0, lastState = '', lastPulse = 0;
+    const requestRedraw = () => { redraw = true; };
+    controls.addEventListener('change', requestRedraw);
     const draw = () => {
       frame = requestAnimationFrame(draw);
+      const now = performance.now();
+      const state = JSON.stringify([modeRef.current, selectedRef.current, taskRef.current, connectedRef.current]);
+      if (state !== lastState) { lastState = state; redraw = true; }
+      if (modeRef.current === 'connect' && now - lastPulse > 50) { lastPulse = now; redraw = true; }
+      controls.update();
+      if (!redraw) return;
+      redraw = false;
 
       const activeTask = CONNECTION_TASKS[taskRef.current];
       for (const item of towerBuild.ports) {
@@ -1071,7 +1084,6 @@ export default function ComputerLab({
         });
       }
 
-      controls.update();
       renderer.render(scene, camera);
     };
     draw();
@@ -1079,6 +1091,7 @@ export default function ComputerLab({
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
+      controls.removeEventListener('change', requestRedraw);
       environment.dispose();
       const textures = (monitor.userData.screen as THREE.Mesh).userData.textures as Record<string, THREE.Texture | null>;
       for (const texture of Object.values(textures)) texture?.dispose();
