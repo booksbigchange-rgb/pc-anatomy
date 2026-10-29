@@ -618,7 +618,7 @@ export default function AssemblyLab({
     for (const g of [...groups.values(), chassis]) g.traverse(o => { if (o.userData.spin) rotors.push(o); });
     const powerLamp: T.MeshStandardMaterial[] = [];
     chassis.traverse(o => { if (o.userData.caseTarget === 'button') o.traverse(m => { if (m instanceof T.Mesh && m.material instanceof T.MeshStandardMaterial) { m.material = m.material.clone(); powerLamp.push(m.material); } }); });
-    let fanSpeed = 0, lastTime = performance.now();
+    let fanSpeed = 0, lastTime = performance.now(), lastSpinFrame = 0;
     let frame = 0;
     const draw = () => {
       frame = requestAnimationFrame(draw);
@@ -692,7 +692,12 @@ export default function AssemblyLab({
       const powered = !d.preview && buildRef.current.powerOn;
       const wanted = powered ? 22 : 0;
       if (fanSpeed !== wanted) { fanSpeed = wanted > fanSpeed ? Math.min(wanted, fanSpeed + dt * 14) : Math.max(0, fanSpeed - dt * 9); animating = true; }
-      if (fanSpeed > 0) { for (const rotor of rotors) rotor.rotation.y += fanSpeed * dt; animating = true; }
+      // A steady spin only needs ~15 frames a second; this keeps a powered-on PC light on school computers.
+      let spinFrame = false;
+      if (fanSpeed > 0) {
+        for (const rotor of rotors) rotor.rotation.y += fanSpeed * dt;
+        if (now - lastSpinFrame > 66) { spinFrame = true; lastSpinFrame = now; }
+      }
       for (const lamp of powerLamp) { lamp.emissive.setHex(powered ? 0x3be37a : 0); lamp.emissiveIntensity = powered ? 1.4 : 0; }
       paste.visible = !d.preview && buildRef.current.pasteApplied && !installedRef.current.includes('cooler');
       const focus = !d.preview && !done ? focusPart() : null;
@@ -771,7 +776,7 @@ export default function AssemblyLab({
         dirty = true;
       }
       const cameraChanged = controls.update();
-      if (dirty || cameraChanged || animating) {
+      if (dirty || cameraChanged || animating || spinFrame) {
         if (dirty) renderer.shadowMap.needsUpdate = true;
         renderer.render(scene, camera);
         dirty = false;
