@@ -417,9 +417,10 @@ export default function AssemblyLab({
     // Direction arrows: yellow on the part, cyan on its guide. They point the same way only when the part is turned correctly.
     const markers = new Map<HardwareId, T.Mesh>();
     for (const id of ORIENTED_PARTS) {
-      const sample = createHardware(id);
-      const bounds = new T.Box3().setFromObject(sample);
-      sample.traverse(object => { if (object instanceof T.Mesh) object.geometry.dispose(); });
+      // Measure the part already built (it sits at its mount, unrotated) instead of building another copy.
+      const part = groups.get(id)!;
+      part.updateMatrixWorld(true);
+      const bounds = new T.Box3().setFromObject(part).translate(part.position.clone().negate());
       const size = bounds.getSize(new T.Vector3());
       const length = T.MathUtils.clamp(Math.min(size.x, size.z) * 0.5, 0.12, 0.26);
       const arrow = new T.ConeGeometry(length * 0.42, length, 3);
