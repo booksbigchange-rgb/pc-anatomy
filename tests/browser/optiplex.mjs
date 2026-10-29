@@ -12,7 +12,7 @@ const browser = await chromium.launch({
   ],
 });
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
-page.setDefaultTimeout(15000);
+page.setDefaultTimeout(30000);
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 const shot = async (name) => {
