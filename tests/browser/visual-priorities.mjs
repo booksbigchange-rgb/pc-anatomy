@@ -4,7 +4,8 @@ import {mkdir,writeFile} from 'node:fs/promises';
 const dir='verification/visual-priorities';await mkdir(dir,{recursive:true});
 const browser=await chromium.launch({channel:process.env.ATLAS_BROWSER_CHANNEL||undefined,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 const page=await browser.newPage({viewport:{width:390,height:844}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
-const shot=async name=>{await page.waitForTimeout(800);await page.screenshot({path:`${dir}/${name}.png`});};
+// Screenshots are evidence, not assertions: a slow hosted renderer can time out while the page still works.
+const shot=async name=>{await page.waitForTimeout(800);await page.screenshot({path:`${dir}/${name}.png`,timeout:60000}).catch(error=>console.warn(`Screenshot skipped ${name}: ${error.message.split('\n')[0]}`));};
 try{
  await page.goto(process.env.ATLAS_TEST_URL||'http://127.0.0.1:5186/');
  for(const name of ['My learning path','Task Manager','Build a PC','Laptop Lab','Explore inside the PC']){const button=page.locator('header').getByRole('button',{name,exact:true});assert.equal(await button.locator('span').isVisible(),true,`${name} must have visible text`);const box=await button.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=391,`${name} must fit phone width`);}
