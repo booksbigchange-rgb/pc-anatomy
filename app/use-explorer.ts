@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useState } from 'react';
 import { byId, categories, openLevel, type Category } from '@/lib/manifest';
-import { airflowShown } from '@/lib/airflow';
+import { airflowShown } from '@/lib/airflow-mode';
 import {
   initialState,
   selectSearch,

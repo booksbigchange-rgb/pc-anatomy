@@ -9,7 +9,7 @@ import {
   Wind,
 } from 'lucide-react';
 import { byId, colors } from '@/lib/manifest';
-import { airflowShown, hasAirflow, type AirflowMode } from '@/lib/airflow';
+import { airflowShown, hasAirflow, type AirflowMode } from '@/lib/airflow-mode';
 import type { ExplorerState } from '@/lib/explorer-state';
 import type { LevelId } from '@/lib/levels';
 
