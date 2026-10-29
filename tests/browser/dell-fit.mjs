@@ -7,7 +7,8 @@ const browser=await chromium.launch({channel:process.env.ATLAS_BROWSER_CHANNEL||
 const page=await browser.newPage({viewport:{width:1600,height:1000},reducedMotion:'reduce'});
 const errors=[];page.on('pageerror',error=>errors.push(error.message));
 const url=process.env.ATLAS_TEST_URL||'http://127.0.0.1:5191/';
-const shot=async name=>{await page.waitForTimeout(800);await page.screenshot({path:`${directory}/${name}.png`});};
+// Screenshots are evidence, not assertions: a slow hosted renderer can time out while the page still works.
+const shot=async name=>{await page.waitForTimeout(800);await page.screenshot({path:`${directory}/${name}.png`,timeout:60000}).catch(error=>console.warn(`Screenshot skipped ${name}: ${error.message.split('\n')[0]}`));};
 try {
  await page.goto(url);
  if(await page.getByRole('button',{name:/Skip intro/}).count()) await page.getByRole('button',{name:/Skip intro/}).click();

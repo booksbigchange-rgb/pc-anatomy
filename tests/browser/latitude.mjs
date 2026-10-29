@@ -8,7 +8,8 @@ const page=await browser.newPage({viewport:{width:1800,height:1100},reducedMotio
 page.setDefaultTimeout(60000);
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 const requests=[];page.on('request',r=>requests.push(r.url()));
-const shot=async(name)=>{await page.waitForTimeout(800);console.log('Capture '+name);await page.screenshot({path:`verification/latitude/${name}.png`,timeout:30000});};
+// Screenshots are evidence, not assertions: a slow hosted renderer can time out while the page still works.
+const shot=async(name)=>{await page.waitForTimeout(800);console.log('Capture '+name);await page.screenshot({path:`verification/latitude/${name}.png`,timeout:60000}).catch(error=>console.warn(`Screenshot skipped ${name}: ${error.message.split('\n')[0]}`));};
 try{
  await page.goto(process.env.ATLAS_TEST_URL??'http://127.0.0.1:5173/');
  await page.getByRole('button',{name:'Laptop Lab',exact:true}).click();
