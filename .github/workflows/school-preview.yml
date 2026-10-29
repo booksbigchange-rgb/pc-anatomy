@@ -74,7 +74,7 @@ jobs:
   verify-live:
     runs-on: ubuntu-latest
     needs: [build, deploy]
-    timeout-minutes: 8
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -88,7 +88,15 @@ jobs:
           ATLAS_TEST_URL: https://booksbigchange-rgb.github.io/pc-anatomy/school/
           STABLE_SHA: ${{ needs.build.outputs.stable-sha }}
         run: |
-          node --input-type=module - <<'JS'
+          # Report which live check failed, and how long each took, as annotations readable from the Actions API.
+          live() {
+            local name=$1 log start=$SECONDS; shift; log=$(mktemp)
+            "$@" >"$log" 2>&1 && { cat "$log"; echo "::notice title=Live check passed: $name::$((SECONDS - start)) s"; return 0; }
+            local code=$?; cat "$log"
+            echo "::error title=Live check failed: $name (exit $code, $((SECONDS - start)) s)::$(tail -n 8 "$log" | tr '\n' ' ' | cut -c1-900)"
+            return $code
+          }
+          cat > release-check.mjs <<'JS'
           const urls = [[process.env.ATLAS_TEST_URL, process.env.GITHUB_SHA], ['https://booksbigchange-rgb.github.io/pc-anatomy/', process.env.STABLE_SHA]];
           for (const [url, sha] of urls) {
             let matched = false;
@@ -100,9 +108,10 @@ jobs:
             if (!matched) throw new Error('Unexpected live release at '+url);
           }
           JS
-          timeout 240s node tests/browser/school-branding.mjs
-          timeout 900s node tests/browser/build-pc.mjs
-          timeout 300s node tests/browser/desk-setup.mjs
+          live 'release markers' node release-check.mjs
+          live 'school-branding' timeout 240s node tests/browser/school-branding.mjs
+          live 'build-pc' timeout 900s node tests/browser/build-pc.mjs
+          live 'desk-setup' timeout 300s node tests/browser/desk-setup.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
