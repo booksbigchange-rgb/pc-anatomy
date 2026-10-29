@@ -20,9 +20,9 @@ import {
 } from 'lucide-react';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { CC0_TREE_COMPUTER_TOWER_FBX_BASE64 } from '@/lib/cc0-computer-tower';
+import { createChassis } from '@/lib/optiplex-7040';
 
 type LabPartId =
   | 'monitor'
@@ -189,6 +189,15 @@ const CONNECTION_TASKS: ConnectionTask[] = [
   },
 ];
 
+/** Port names for the button list, front to back. */
+const PORT_NAMES: Record<PortId, string> = {
+  'tower-usb-1': 'Front USB 1',
+  'tower-usb-2': 'Front USB 2',
+  'tower-hdmi': 'Rear HDMI',
+  'tower-ethernet': 'Rear Ethernet',
+  'tower-power': 'Power inlet',
+};
+
 const PORT_TYPES: Record<PortId, PortType> = {
   'tower-usb-1': 'usb',
   'tower-usb-2': 'usb',
@@ -199,18 +208,17 @@ const PORT_TYPES: Record<PortId, PortType> = {
 
 const COLORS = {
   background: 0x111820,
-  floor: 0x151b20,
+  floor: 0x2a2724,
   desk: 0x8b7663,
   deskEdge: 0x665546,
   dark: 0x171c21,
   panel: 0x2b333a,
   panelSoft: 0x39434a,
-  keys: 0xe6e8e9,
-  keyDark: 0xaeb8bd,
+  keys: 0x2b3136,
+  keyDark: 0x23292d,
   accent: 0x78cbd6,
   accentSoft: 0xa7dfe5,
-  screenBlue: 0x102a3a,
-  wall: 0x1a2229,
+  wall: 0x2c3236,
 };
 
 function mesh(
@@ -283,64 +291,139 @@ function port(
   return item;
 }
 
-function screenTexture() {
+function canvasTexture(width: number, height: number, paint: (context: CanvasRenderingContext2D) => void) {
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 576;
+  canvas.width = width;
+  canvas.height = height;
   const context = canvas.getContext('2d');
   if (!context) return null;
-
-  const background = context.createLinearGradient(0, 0, 1024, 576);
-  background.addColorStop(0, '#0b2533');
-  background.addColorStop(0.55, '#153c4b');
-  background.addColorStop(1, '#234d57');
-  context.fillStyle = background;
-  context.fillRect(0, 0, 1024, 576);
-
-  const glow = context.createRadialGradient(745, 155, 20, 745, 155, 430);
-  glow.addColorStop(0, 'rgba(116, 224, 225, .42)');
-  glow.addColorStop(1, 'rgba(116, 224, 225, 0)');
-  context.fillStyle = glow;
-  context.fillRect(0, 0, 1024, 576);
-
-  context.fillStyle = 'rgba(255,255,255,.08)';
-  context.fillRect(60, 52, 904, 1);
-  context.fillRect(60, 488, 904, 1);
-
-  context.fillStyle = '#dff8fb';
-  context.font = '700 58px Segoe UI, Arial, sans-serif';
-  context.fillText('BIG CHANGE', 72, 230);
-  context.fillStyle = '#8fd5dd';
-  context.font = '600 28px Segoe UI, Arial, sans-serif';
-  context.fillText('COMPUTER LAB', 74, 276);
-  context.fillStyle = 'rgba(235,249,250,.72)';
-  context.font = '400 20px Segoe UI, Arial, sans-serif';
-  context.fillText('Explore • Connect • Build • Troubleshoot', 74, 332);
-
+  paint(context);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 4;
   return texture;
 }
 
+/** A working desktop: wallpaper, an open lesson window and a taskbar with a clock. */
+function desktopTexture() {
+  return canvasTexture(1024, 576, (context) => {
+    const wallpaper = context.createLinearGradient(0, 0, 1024, 576);
+    wallpaper.addColorStop(0, '#0d3b5c');
+    wallpaper.addColorStop(0.6, '#1d6a8a');
+    wallpaper.addColorStop(1, '#3a8f9e');
+    context.fillStyle = wallpaper;
+    context.fillRect(0, 0, 1024, 576);
+    const glow = context.createRadialGradient(780, 140, 10, 780, 140, 420);
+    glow.addColorStop(0, 'rgba(180,240,245,.35)');
+    glow.addColorStop(1, 'rgba(180,240,245,0)');
+    context.fillStyle = glow;
+    context.fillRect(0, 0, 1024, 576);
+    // Desktop icons.
+    for (const [y, label] of [[40, 'Files'], [120, 'Browser'], [200, 'Notes']] as const) {
+      context.fillStyle = 'rgba(255,255,255,.85)';
+      context.fillRect(34, y, 44, 36);
+      context.fillStyle = '#eaf6f8';
+      context.font = '15px Segoe UI, Arial, sans-serif';
+      context.fillText(label, 30, y + 56);
+    }
+    // An open lesson window.
+    context.fillStyle = 'rgba(0,0,0,.25)';
+    context.fillRect(222, 96, 560, 330);
+    context.fillStyle = '#f4f7f8';
+    context.fillRect(214, 88, 560, 330);
+    context.fillStyle = '#1f4f63';
+    context.fillRect(214, 88, 560, 34);
+    context.fillStyle = '#ffffff';
+    context.font = '600 17px Segoe UI, Arial, sans-serif';
+    context.fillText('Big Change Computer Lab', 228, 111);
+    context.fillStyle = '#e45d50';
+    context.fillRect(744, 98, 18, 14);
+    context.fillStyle = '#1b2b31';
+    context.font = '700 30px Segoe UI, Arial, sans-serif';
+    context.fillText('Meet the whole computer', 240, 170);
+    context.fillStyle = '#4a5c63';
+    context.font = '18px Segoe UI, Arial, sans-serif';
+    for (const [index, line] of ['The monitor shows the picture.', 'The keyboard and mouse send input.', 'The system unit does the work.'].entries())
+      context.fillText(line, 240, 212 + index * 32);
+    context.fillStyle = '#2c8f9d';
+    context.fillRect(240, 330, 150, 40);
+    context.fillStyle = '#ffffff';
+    context.font = '600 17px Segoe UI, Arial, sans-serif';
+    context.fillText('Start lesson', 266, 356);
+    // Taskbar.
+    context.fillStyle = 'rgba(14,24,30,.92)';
+    context.fillRect(0, 534, 1024, 42);
+    context.fillStyle = '#5fc3cf';
+    context.fillRect(14, 544, 22, 22);
+    for (const x of [54, 90, 126]) {
+      context.fillStyle = 'rgba(255,255,255,.55)';
+      context.fillRect(x, 546, 20, 18);
+    }
+    context.fillStyle = '#e6f1f3';
+    context.font = '16px Segoe UI, Arial, sans-serif';
+    context.fillText('09:41', 958, 561);
+  });
+}
+
+/** What a monitor shows when its cable or the computer's power is missing. */
+function noSignalTexture() {
+  return canvasTexture(1024, 576, (context) => {
+    context.fillStyle = '#020304';
+    context.fillRect(0, 0, 1024, 576);
+    context.strokeStyle = 'rgba(255,255,255,.55)';
+    context.lineWidth = 2;
+    context.strokeRect(362, 238, 300, 100);
+    context.fillStyle = '#e9eef0';
+    context.font = '600 30px Segoe UI, Arial, sans-serif';
+    context.fillText('No signal', 446, 285);
+    context.fillStyle = 'rgba(233,238,240,.7)';
+    context.font = '17px Segoe UI, Arial, sans-serif';
+    context.fillText('Check the HDMI cable and computer power', 345 + 10, 318);
+  });
+}
+
+/** Faint wood grain so the desk reads as a laminated classroom table. */
+function woodTexture() {
+  const texture = canvasTexture(512, 512, (context) => {
+    context.fillStyle = '#8b7663';
+    context.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 140; i++) {
+      const y = (i * 37) % 512, wave = 3 + (i % 5);
+      context.strokeStyle = `rgba(${i % 3 ? 70 : 120},${i % 3 ? 52 : 92},${i % 3 ? 38 : 70},${0.06 + (i % 4) * 0.025})`;
+      context.lineWidth = 1 + (i % 3);
+      context.beginPath();
+      for (let x = 0; x <= 512; x += 16) context.lineTo(x, y + Math.sin((x + i * 13) / 60) * wave);
+      context.stroke();
+    }
+  });
+  if (texture) { texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(2, 1); }
+  return texture;
+}
+
 function buildMonitor() {
   const group = new THREE.Group();
 
-  const frame = rounded(4.72, 2.88, 0.24, 0.12, COLORS.dark, 0.32, 0.42);
-  frame.position.y = 3.28;
+  const frame = rounded(4.62, 2.78, 0.22, 0.08, COLORS.dark, 0.32, 0.42);
+  frame.position.y = 3.24;
   group.add(frame);
 
-  const screenGeometry = new THREE.PlaneGeometry(4.3, 2.43);
-  const texture = screenTexture();
+  const screenGeometry = new THREE.PlaneGeometry(4.42, 2.5);
+  const desktop = desktopTexture();
+  const noSignal = noSignalTexture();
   const screen = new THREE.Mesh(
     screenGeometry,
-    new THREE.MeshBasicMaterial({
-      color: COLORS.screenBlue,
-      map: texture ?? undefined,
-    }),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, map: desktop ?? undefined, toneMapped: false }),
   );
-  screen.position.set(0, 3.28, 0.125);
+  screen.position.set(0, 3.3, 0.125);
+  screen.userData.textures = { desktop, noSignal };
   group.add(screen);
+  // Power light under the screen: green when the monitor shows a picture, amber when it has no signal.
+  const powerLight = mesh(new THREE.SphereGeometry(0.035, 12, 8), 0x2bd46f, 0.3, 0);
+  powerLight.position.set(1.95, 2.02, 0.17);
+  powerLight.userData.powerLight = true;
+  group.add(powerLight);
+  group.userData.screen = screen;
+  group.userData.powerLight = powerLight;
 
   const chin = rounded(4.32, 0.12, 0.04, 0.035, COLORS.panel, 0.42, 0.28);
   chin.position.set(0, 2.02, 0.14);
@@ -362,168 +445,55 @@ function buildMonitor() {
   return tag(group, 'monitor');
 }
 
-function decodeBase64(value: string) {
-  const binary = atob(value);
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index++)
-    bytes[index] = binary.charCodeAt(index);
-  return bytes.buffer;
-}
-
-function standardizeImportedTower(root: THREE.Group) {
-  root.traverse((object) => {
-    if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
-    const item = object as THREE.Mesh;
-    const original = Array.isArray(item.material)
-      ? item.material
-      : [item.material];
-    const converted = original.map((material, index) => {
-      const sourceColor =
-        'color' in material && material.color instanceof THREE.Color
-          ? material.color.clone()
-          : new THREE.Color(index % 2 === 0 ? 0x232a30 : 0x303940);
-      if (sourceColor.r + sourceColor.g + sourceColor.b > 2.55)
-        sourceColor.setHex(0x55636b);
-      const next = new THREE.MeshStandardMaterial({
-        color: sourceColor,
-        roughness: 0.46,
-        metalness: 0.34,
-      });
-      if ('opacity' in material && typeof material.opacity === 'number') {
-        next.opacity = material.opacity;
-        next.transparent = material.opacity < 1;
-      }
-      return next;
-    });
-    item.material = Array.isArray(item.material) ? converted : converted[0];
-    item.castShadow = true;
-    item.receiveShadow = true;
-  });
-
-  root.updateMatrixWorld(true);
-  let bounds = new THREE.Box3().setFromObject(root);
-  let size = bounds.getSize(new THREE.Vector3());
-
-  if (size.x > size.z * 1.2) {
-    root.rotation.y += Math.PI / 2;
-    root.updateMatrixWorld(true);
-    bounds = new THREE.Box3().setFromObject(root);
-    size = bounds.getSize(new THREE.Vector3());
-  }
-
-  const scale = 4.15 / Math.max(size.y, 0.001);
-  root.scale.setScalar(scale);
-  root.updateMatrixWorld(true);
-
-  bounds = new THREE.Box3().setFromObject(root);
-  const center = bounds.getCenter(new THREE.Vector3());
-  root.position.x -= center.x;
-  root.position.z -= center.z;
-  root.position.y -= bounds.min.y;
-  root.updateMatrixWorld(true);
-  return root;
-}
-
-function fallbackTowerShell() {
-  const shell = new THREE.Group();
-  const body = rounded(2.3, 4.25, 3.35, 0.16, 0x20272d, 0.38, 0.34);
-  body.position.y = 2.15;
-  shell.add(body);
-
-  const glass = rounded(2.34, 3.65, 2.72, 0.11, 0x263a45, 0.18, 0.14);
-  glass.position.set(0, 2.2, 0.17);
-  const material = glass.material as THREE.MeshStandardMaterial;
-  material.transparent = true;
-  material.opacity = 0.32;
-  shell.add(glass);
-
-  for (const y of [1.25, 2.18, 3.11]) {
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(0.42, 0.055, 8, 28),
-      new THREE.MeshStandardMaterial({
-        color: COLORS.accent,
-        roughness: 0.32,
-        metalness: 0.18,
-        emissive: new THREE.Color(0x14353a),
-        emissiveIntensity: 0.55,
-      }),
-    );
-    ring.rotation.y = Math.PI / 2;
-    ring.position.set(-1.16, y, -0.58);
-    shell.add(ring);
-  }
-  return shell;
-}
-
+/**
+ * The system unit is the same OptiPlex 7040 mini-tower students later build,
+ * stood upright with its front toward the keyboard and scaled to the desk.
+ * Port targets sit on the model's own rear and front connectors.
+ */
 function buildTower() {
   const group = new THREE.Group();
-  const ports: THREE.Mesh[] = [];
+  const { group: chassis, cover, driveCage } = createChassis();
+  cover.visible = true;
+  driveCage.rotation.z = 0;
+  chassis.rotation.x = Math.PI / 2;
+  const upright = new THREE.Group();
+  upright.add(chassis);
+  upright.rotation.y = -Math.PI / 2;
+  const fit = new THREE.Group();
+  fit.add(upright);
+  fit.updateMatrixWorld(true);
+  let bounds = new THREE.Box3().setFromObject(fit);
+  fit.scale.setScalar(4.15 / bounds.getSize(new THREE.Vector3()).y);
+  fit.updateMatrixWorld(true);
+  bounds = new THREE.Box3().setFromObject(fit);
+  const center = bounds.getCenter(new THREE.Vector3());
+  fit.position.set(-center.x, -bounds.min.y, -center.z);
+  group.add(fit);
+  group.updateMatrixWorld(true);
+  bounds = new THREE.Box3().setFromObject(fit);
 
-  try {
-    const loader = new FBXLoader();
-    const imported = loader.parse(
-      decodeBase64(CC0_TREE_COMPUTER_TOWER_FBX_BASE64),
-      '',
-    );
-    group.add(standardizeImportedTower(imported));
-  } catch {
-    group.add(fallbackTowerShell());
-  }
-
-  const accentRail = rounded(
-    0.08,
-    3.35,
-    0.08,
-    0.025,
-    COLORS.accent,
-    0.32,
-    0.2,
-  );
-  accentRail.position.set(-1.13, 2.2, 1.58);
-  group.add(accentRail);
-
-  const powerButton = mesh(
-    new THREE.CylinderGeometry(0.095, 0.095, 0.045, 20),
-    COLORS.accentSoft,
-    0.24,
-    0.34,
-  );
-  powerButton.rotation.x = Math.PI / 2;
-  powerButton.position.set(0.62, 4.03, 1.72);
-  group.add(powerButton);
-
-  const usb1 = port(
-    'tower-usb-1',
-    [0.3, 0.12, 0.055],
-    [-0.36, 4.02, 1.72],
-    0x4e8394,
-  );
-  const usb2 = port(
-    'tower-usb-2',
-    [0.3, 0.12, 0.055],
-    [0.02, 4.02, 1.72],
-    0x4e8394,
-  );
-  const hdmi = port(
-    'tower-hdmi',
-    [0.4, 0.14, 0.055],
-    [0.42, 2.72, -1.72],
-    0x8e7ca8,
-  );
-  const ethernet = port(
-    'tower-ethernet',
-    [0.36, 0.3, 0.055],
-    [0.42, 2.2, -1.72],
-    0x658f79,
-  );
-  const power = port(
-    'tower-power',
-    [0.44, 0.4, 0.055],
-    [-0.35, 0.65, -1.72],
-    0xa98265,
-  );
-
-  ports.push(usb1, usb2, hdmi, ethernet, power);
+  const features: Partial<Record<string, THREE.Vector3[]>> = {};
+  chassis.traverse((object) => {
+    const id = object.userData.caseTarget as string | undefined;
+    if (!id) return;
+    (features[id] ??= []).push(new THREE.Box3().setFromObject(object).getCenter(new THREE.Vector3()));
+  });
+  const front = bounds.max.z + 0.03,
+    rear = bounds.min.z - 0.03;
+  const at = (id: string, face: 'front' | 'rear', fallback: THREE.Vector3, index = 0) => {
+    const matches = (features[id] ?? []).filter((point) => (face === 'front' ? point.z > 0 : point.z < 0)).sort((a, b) => b.y - a.y || a.x - b.x);
+    const point = (matches[index] ?? fallback).clone();
+    point.z = face === 'front' ? front : rear;
+    return point.toArray() as [number, number, number];
+  };
+  const top = bounds.max.y;
+  const usb1 = port('tower-usb-1', [0.22, 0.09, 0.05], at('usb', 'front', new THREE.Vector3(-0.32, top - 0.42, 0), 0), 0x4e8394);
+  const usb2 = port('tower-usb-2', [0.22, 0.09, 0.05], at('usb', 'front', new THREE.Vector3(-0.02, top - 0.42, 0), 1), 0x4e8394);
+  const hdmi = port('tower-hdmi', [0.26, 0.11, 0.05], at('hdmi', 'rear', new THREE.Vector3(0.3, top - 0.9, 0)), 0x8e7ca8);
+  const ethernet = port('tower-ethernet', [0.24, 0.2, 0.05], at('network', 'rear', new THREE.Vector3(0.3, top - 1.2, 0)), 0x658f79);
+  // The power inlet is on the power supply, low on the rear panel.
+  const power = port('tower-power', [0.34, 0.26, 0.05], at('psu-inlet', 'rear', new THREE.Vector3(-0.35, 0.62, 0)), 0xa98265);
+  const ports = [usb1, usb2, hdmi, ethernet, power];
   group.add(...ports);
   group.position.set(4.15, 0.02, -0.42);
   return { group: tag(group, 'tower'), ports };
@@ -661,25 +631,36 @@ function buildPowerStrip() {
   return tag(group, 'power-strip');
 }
 
-function cableLine(start: THREE.Vector3, end: THREE.Vector3) {
+/** Real cable colours: black power and video leads, grey USB, blue network patch cable. */
+const CABLE_COLOURS: Record<ConnectionId, number> = {
+  'keyboard-usb': 0x3a4045,
+  'mouse-usb': 0x3a4045,
+  'monitor-hdmi': 0x15181a,
+  'network-ethernet': 0x2f6fb0,
+  'tower-power': 0x111315,
+};
+
+function cableLine(start: THREE.Vector3, end: THREE.Vector3, id: ConnectionId) {
   const middle = start.clone().lerp(end, 0.5);
   middle.y = Math.max(0.58, Math.min(start.y, end.y) - 0.35);
   const curve = new THREE.CatmullRomCurve3([start, middle, end]);
-  const geometry = new THREE.TubeGeometry(curve, 30, 0.035, 8, false);
-  const material = new THREE.MeshStandardMaterial({
-    color: 0x7fc4d0,
-    roughness: 0.5,
-    metalness: 0.05,
-    emissive: 0x102d32,
-    emissiveIntensity: 0.35,
-  });
+  const geometry = new THREE.TubeGeometry(curve, 30, id === 'tower-power' ? 0.05 : 0.035, 10, false);
+  const material = new THREE.MeshStandardMaterial({ color: CABLE_COLOURS[id], roughness: 0.55, metalness: 0.02 });
   const cable = new THREE.Mesh(geometry, material);
   cable.castShadow = true;
+  // A moulded plug where the cable meets the port.
+  const plug = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 0.2), new THREE.MeshStandardMaterial({ color: 0x1b1f22, roughness: 0.6 }));
+  plug.position.copy(end);
+  plug.lookAt(curve.getPointAt(0.97));
+  plug.castShadow = true;
+  cable.add(plug);
   return cable;
 }
 
 function addDesk(scene: THREE.Scene) {
-  const desktop = rounded(13.8, 0.5, 7.25, 0.18, COLORS.desk, 0.7, 0.05);
+  const desktop = rounded(13.8, 0.5, 7.25, 0.18, 0xffffff, 0.62, 0.04);
+  const grain = woodTexture();
+  if (grain) (desktop.material as THREE.MeshStandardMaterial).map = grain;
   desktop.position.set(0.35, 0.38, 0.35);
   desktop.receiveShadow = true;
   scene.add(desktop);
@@ -725,6 +706,20 @@ function addRoom(scene: THREE.Scene) {
   backWall.receiveShadow = true;
   scene.add(backWall);
 
+  // A classroom whiteboard and skirting make the room read as a school lab.
+  const boardFrame = rounded(9.4, 4.0, 0.12, 0.05, 0x9aa3a8, 0.35, 0.6);
+  boardFrame.position.set(0.4, 6.4, -7.12);
+  scene.add(boardFrame);
+  const board = rounded(9.1, 3.7, 0.06, 0.03, 0xf1f4f2, 0.3, 0.02);
+  board.position.set(0.4, 6.4, -7.04);
+  scene.add(board);
+  const tray = rounded(5.2, 0.1, 0.32, 0.03, 0x9aa3a8, 0.35, 0.6);
+  tray.position.set(0.4, 4.36, -6.92);
+  scene.add(tray);
+  const skirting = rounded(34, 0.35, 0.08, 0.02, 0x23292d, 0.7, 0.05);
+  skirting.position.set(0, -1.93, -7.15);
+  scene.add(skirting);
+
   const grid = new THREE.GridHelper(34, 34, 0x34464e, 0x26343a);
   grid.position.y = -2.085;
   const materials = Array.isArray(grid.material) ? grid.material : [grid.material];
@@ -753,6 +748,7 @@ export default function ComputerLab({
   const modeRef = useRef<LabMode>('explore');
   const taskRef = useRef(0);
   const connectedRef = useRef<ConnectionId[]>([]);
+  const connectPortRef = useRef<((id: PortId) => void) | null>(null);
 
   const [selected, setSelected] = useState<LabPartId>('tower');
   const [labMode, setLabMode] = useState<LabMode>('explore');
@@ -808,6 +804,14 @@ export default function ComputerLab({
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.18;
+    // Soft room reflections so metal, plastic and glass look different from each other.
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const roomEnvironment = new RoomEnvironment();
+    const environment = pmrem.fromScene(roomEnvironment, 0.04);
+    scene.environment = environment.texture;
+    scene.environmentIntensity = 0.42;
+    roomEnvironment.dispose();
+    pmrem.dispose();
 
     const controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true;
@@ -819,7 +823,7 @@ export default function ComputerLab({
     controls.maxPolarAngle = Math.PI / 2.03;
     controls.target.set(0.75, 1.7, 0.35);
 
-    scene.add(new THREE.HemisphereLight(0xcfeeff, 0x3a312d, 1.75));
+    scene.add(new THREE.HemisphereLight(0xcfeeff, 0x3a312d, 1.25));
 
     const keyLight = new THREE.DirectionalLight(0xfff4e8, 3.7);
     keyLight.position.set(7.5, 11, 8);
@@ -880,6 +884,7 @@ export default function ComputerLab({
         cableLine(
           new THREE.Vector3(-0.35, 0.9, 3.05),
           portPosition('tower-usb-1'),
+          'keyboard-usb',
         ),
       ],
       [
@@ -887,6 +892,7 @@ export default function ComputerLab({
         cableLine(
           new THREE.Vector3(3.0, 0.96, 2.76),
           portPosition('tower-usb-2'),
+          'mouse-usb',
         ),
       ],
       [
@@ -894,6 +900,7 @@ export default function ComputerLab({
         cableLine(
           new THREE.Vector3(0.05, 1.1, -1.48),
           portPosition('tower-hdmi'),
+          'monitor-hdmi',
         ),
       ],
       [
@@ -901,6 +908,7 @@ export default function ComputerLab({
         cableLine(
           new THREE.Vector3(-4.45, 0.9, -0.98),
           portPosition('tower-ethernet'),
+          'network-ethernet',
         ),
       ],
       [
@@ -908,6 +916,7 @@ export default function ComputerLab({
         cableLine(
           new THREE.Vector3(4.55, 0.84, 2.72),
           portPosition('tower-power'),
+          'tower-power',
         ),
       ],
     ]);
@@ -919,6 +928,49 @@ export default function ComputerLab({
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
+
+    /** One connection attempt, from a 3D click or from the port buttons. Same checks either way. */
+    const tryPort = (id: PortId) => {
+      const clickedType = PORT_TYPES[id];
+      const task = CONNECTION_TASKS[taskRef.current];
+
+      if (clickedType !== task.portType) {
+        setFeedback(
+          'Not quite. ' +
+            task.name +
+            ' needs a ' +
+            task.portType.toUpperCase() +
+            ' connection.',
+        );
+        return;
+      }
+
+      if (id !== task.targetPort) {
+        setFeedback(
+          'That is the right kind of port, but this exercise uses the other ' +
+            task.portType.toUpperCase() +
+            ' socket. Try the highlighted target.',
+        );
+        return;
+      }
+
+      const nextConnected = connectedRef.current.includes(task.id)
+        ? connectedRef.current
+        : [...connectedRef.current, task.id];
+      connectedRef.current = nextConnected;
+      setConnected(nextConnected);
+      setFeedback('Correct — ' + task.name + ' is connected.');
+
+      const nextIndex = CONNECTION_TASKS.findIndex(
+        (candidate, index) =>
+          index > taskRef.current && !nextConnected.includes(candidate.id),
+      );
+      if (nextIndex >= 0) {
+        taskRef.current = nextIndex;
+        setTaskIndex(nextIndex);
+      }
+    };
+    connectPortRef.current = tryPort;
 
     const pick = (event: PointerEvent) => {
       const rect = canvas.getBoundingClientRect();
@@ -935,45 +987,7 @@ export default function ComputerLab({
           return;
         }
 
-        const id = portHit.object.userData.labPort as PortId;
-        const clickedType = PORT_TYPES[id];
-        const task = CONNECTION_TASKS[taskRef.current];
-
-        if (clickedType !== task.portType) {
-          setFeedback(
-            'Not quite. ' +
-              task.name +
-              ' needs a ' +
-              task.portType.toUpperCase() +
-              ' connection.',
-          );
-          return;
-        }
-
-        if (id !== task.targetPort) {
-          setFeedback(
-            'That is the right kind of port, but this exercise uses the other ' +
-              task.portType.toUpperCase() +
-              ' socket. Try the highlighted target.',
-          );
-          return;
-        }
-
-        const nextConnected = connectedRef.current.includes(task.id)
-          ? connectedRef.current
-          : [...connectedRef.current, task.id];
-        connectedRef.current = nextConnected;
-        setConnected(nextConnected);
-        setFeedback('Correct — ' + task.name + ' is connected.');
-
-        const nextIndex = CONNECTION_TASKS.findIndex(
-          (candidate, index) =>
-            index > taskRef.current && !nextConnected.includes(candidate.id),
-        );
-        if (nextIndex >= 0) {
-          taskRef.current = nextIndex;
-          setTaskIndex(nextIndex);
-        }
+        tryPort(portHit.object.userData.labPort as PortId);
         return;
       }
 
@@ -1027,10 +1041,21 @@ export default function ComputerLab({
       for (const [id, cable] of cables)
         cable.visible = connectedRef.current.includes(id);
 
+      // The monitor only shows a picture when it is cabled and the computer has power.
+      const screen = monitor.userData.screen as THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
+      const { desktop: lit, noSignal } = screen.userData.textures as { desktop: THREE.Texture | null; noSignal: THREE.Texture | null };
+      const signal = modeRef.current !== 'connect' || (connectedRef.current.includes('monitor-hdmi') && connectedRef.current.includes('tower-power'));
+      const wanted = (signal ? lit : noSignal) ?? null;
+      if (screen.material.map !== wanted) { screen.material.map = wanted; screen.material.needsUpdate = true; }
+      const lamp = (monitor.userData.powerLight as THREE.Mesh).material as THREE.MeshStandardMaterial;
+      lamp.color.setHex(signal ? 0x2bd46f : 0xe0a23b);
+      lamp.emissive.setHex(signal ? 0x2bd46f : 0xe0a23b);
+      lamp.emissiveIntensity = 1.6;
+
       for (const [partId, group] of groups) {
         group.traverse((object) => {
           if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
-          if (object.userData.labPort) return;
+          if (object.userData.labPort || object.userData.powerLight) return;
           const item = object as THREE.Mesh;
           const materials = Array.isArray(item.material)
             ? item.material
@@ -1054,6 +1079,9 @@ export default function ComputerLab({
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
+      environment.dispose();
+      const textures = (monitor.userData.screen as THREE.Mesh).userData.textures as Record<string, THREE.Texture | null>;
+      for (const texture of Object.values(textures)) texture?.dispose();
       canvas.removeEventListener('pointerup', pick);
       controls.dispose();
       renderer.dispose();
@@ -1265,8 +1293,8 @@ export default function ComputerLab({
         )}
 
         <div className="lab-next">
-          <strong>Graphic upgrade</strong>
-          <span>CC0 low-poly tower · original Big Change peripherals</span>
+          <strong>About this model</strong>
+          <span>Tower: Dell OptiPlex 7040 reference model, interior estimated. Monitor, keyboard and mouse: original Big Change models.</span>
         </div>
       </aside>
 
@@ -1344,20 +1372,15 @@ export default function ComputerLab({
               <strong>Feedback</strong>
               <p>{feedback}</p>
             </div>
-            <div className="lab-port-key">
-              <span>
-                <i className="usb" /> USB
-              </span>
-              <span>
-                <i className="hdmi" /> HDMI
-              </span>
-              <span>
-                <i className="ethernet" /> Ethernet
-              </span>
-              <span>
-                <i className="power" /> Power
-              </span>
-            </div>
+            <fieldset className="lab-port-key">
+              <legend className="sr-only">Ports on the system unit</legend>
+              {(Object.keys(PORT_NAMES) as PortId[]).map((id) => (
+                <button key={id} type="button" disabled={allConnected} onClick={() => connectPortRef.current?.(id)}>
+                  <i className={PORT_TYPES[id]} /> {PORT_NAMES[id]}
+                </button>
+              ))}
+            </fieldset>
+            <p className="lab-port-hint">Click the glowing port in 3D, or choose it here.</p>
             {allConnected && (
               <button
                 type="button"

@@ -58,11 +58,15 @@
   font-size: 11px;
 }
 .lab-port-key {
+  min-width: 0;
+  padding: 0;
+  border: 0;
   margin-top: 18px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 7px;
 }
+.lab-port-key button,
 .lab-port-key span {
   min-height: 30px;
   display: flex;
@@ -175,3 +179,9 @@
 .lab-guide-controls button:disabled {
   opacity: .35;
 }
+
+.lab-port-key button { cursor: pointer; text-align: left; font: inherit; font-size: 12px; }
+.lab-port-key button:hover:not(:disabled) { border-color: #78cbd6; color: #e6f6f8; }
+.lab-port-key button:focus-visible { outline: 3px solid #ffd166; outline-offset: 2px; }
+.lab-port-key button:disabled { opacity: 0.55; cursor: default; }
+.lab-port-hint { margin: 8px 0 0; font-size: 12px; color: #8fa2a8; }
