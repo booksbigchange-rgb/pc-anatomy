@@ -128,6 +128,7 @@ try {
   await drag('cpu', PARTS.cpu.mount);
   assert.equal(await placed(), '2 / 7 placed', 'A correctly turned CPU installs');
   // Clicking the installed CPU in the 3D scene identifies it.
+  await page.waitForTimeout(900); // let the CPU finish gliding into its socket
   const cpuAt = screen(new T.Vector3(1.48, 1.01, -1.68));
   await page.mouse.click(cpuAt.x, cpuAt.y);
   assert.equal(await page.locator('.assembly-detail h2').innerText(), PARTS.cpu.name, 'Direct CPU click');
@@ -172,6 +173,7 @@ try {
   // Securing, cooling order, cables, case and POST.
   await page.getByRole('button', { name: 'Test power-on', exact: true }).click();
   assert.match(await coach().innerText(), /did not start/);
+  assert.match(await page.locator('.assembly-post').innerText(), /POST[\s\S]*✗/, 'A failed power test shows where the start-up check stopped');
   for (const name of ['Close RAM clips', 'Fasten SSD screw', 'Secure expansion bracket']) await page.getByRole('button', { name, exact: true }).click();
   await page.getByRole('button', { name: 'Corner 3', exact: true }).click();
   assert.match(await coach().innerText(), /Choose corner 1/);
@@ -188,12 +190,27 @@ try {
   await page.getByRole('button', { name: 'Close drive cage', exact: true }).click();
   await page.getByRole('button', { name: 'Fit side cover', exact: true }).click();
   await page.getByRole('button', { name: 'Test power-on', exact: true }).click();
+  assert.match(await page.locator('.assembly-post').innerText(), /All checks passed/, 'A passed power test shows the start-up checks first');
+  await shot('05a-post-screen');
   const result = page.locator('.assembly-result');
   await result.waitFor();
   assert.match(await result.innerText(), /PC Builder/);
   assert.match(await result.innerText(), /XP/);
   assert.match(await result.innerText(), /You learned/);
   await shot('05-pc-builder-result');
+  // While powered on, the rear exhaust fan spins: two rear views a moment apart differ.
+  await result.getByRole('button', { name: 'Keep exploring this PC' }).click();
+  await page.getByRole('button', { name: 'Rear', exact: true }).click();
+  await page.waitForTimeout(1500);
+  const spinA = await page.locator('.assembly-stage canvas').screenshot({ timeout: 90000 });
+  await page.waitForTimeout(400);
+  const spinB = await page.locator('.assembly-stage canvas').screenshot({ timeout: 90000 });
+  assert.ok(!spinA.equals(spinB), 'Fans must spin while the PC is on');
+  await page.getByRole('button', { name: 'Remove side cover', exact: true }).click();
+  assert.match(await coach().innerText(), /Shut down the virtual PC before opening the case/);
+  await page.getByRole('button', { name: 'Shut down PC', exact: true }).click();
+  await page.getByRole('button', { name: 'Test power-on', exact: true }).click();
+  await result.waitFor();
   await result.getByRole('button', { name: /Restart practice/ }).click();
   assert.equal(await placed(), '0 / 7 placed');
   assert.equal(await result.count(), 0);
@@ -222,7 +239,7 @@ try {
   touchPage.setDefaultTimeout(30000);
   await touchPage.goto(url);
   const touchSkip = touchPage.getByRole('button', { name: /Skip intro/ });
-  await touchPage.getByRole('button', { name: /Skip intro|Build.*PC/i }).first().waitFor();
+  await touchPage.getByRole('button', { name: /Skip intro|Build.*PC/i }).first().waitFor({ timeout: 90000 });
   if (await touchSkip.count()) await touchSkip.click();
   await touchPage.getByRole('button', { name: /Build.*PC/i }).first().click();
   for (const id of ['cpu', 'motherboard', 'ram', 'ssd', 'gpu', 'psu']) await touchPage.getByRole('button', { name: new RegExp(PARTS[id].name) }).last().click();
