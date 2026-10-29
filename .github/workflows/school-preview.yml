@@ -102,6 +102,7 @@ jobs:
           JS
           timeout 240s node tests/browser/school-branding.mjs
           timeout 900s node tests/browser/build-pc.mjs
+          timeout 300s node tests/browser/desk-setup.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
