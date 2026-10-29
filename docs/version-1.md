@@ -25,3 +25,18 @@ Scope excludes measured CAD remodelling, account systems, teacher dashboards, pa
 ## Acceptance evidence
 
 Automated course tests cover OS startup gates, saved-versus-unsaved data, delete/restore, malformed progress, unavailable storage, assessment scoring, browser persistence, export, keyboard and phone layout. Existing hardware regressions remain required on the published commit. Classroom pilot and teacher visual accuracy approval remain uncollected.
+
+## Version 1.1 — feels real (October 2026)
+
+Goal: the first screen and the build practice should look and behave like real equipment, without claiming exact Dell geometry.
+
+Delivered:
+
+- **Desk setup.** The system unit is the same OptiPlex 7040 reference tower used in Build Your PC, upright and scaled to the desk. Port targets sit on its own front USB and rear HDMI and Ethernet connectors; the power inlet is low on the rear, where the power supply sits. The embedded CC0 low-poly tower was removed. The monitor shows a desktop when it has a signal and "No signal" with an amber power light until HDMI and power are connected. Dark keycaps, wood-grain desk, whiteboard, skirting, room reflections, and cables in real colours with moulded plugs.
+- **Connections without a mouse.** The port list is now buttons that run the same checks as a 3D click.
+- **Build Your PC motion.** Seated parts glide from the tray in a short arc into their socket. RAM clips and the card bracket swing closed and the SSD screw turns as it drives down. At power-on the fans spin up (and coast down at shutdown) and the case power button lights. Opening the case while the PC is on is refused.
+- **Start-up screen.** Test power-on shows a simulated POST screen line by line: CPU, memory, storage, CPU fan and display. A failed check stops at the failing line with a plain-English reason.
+
+Evidence: `tests/browser/desk-setup.mjs` (room, honest model note, 3D and button connections, completion, reset) and `tests/browser/build-pc.mjs` (now also: POST screen on pass and fail, fans spinning while on, cover refused while on). Both run against the live preview after each deploy.
+
+Limits: fans, retainers and the POST screen are teaching animations, not timing or electrical simulation. The PSU fan does not spin (its grille is static). Cooler corner screws do not move individually. No real operating system starts.
