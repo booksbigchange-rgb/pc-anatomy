@@ -517,3 +517,28 @@
   .build-picker-stage { min-height: 460px; }
 }
 .assembly-stage canvas:focus-visible { outline: 3px solid #ffd166; outline-offset: -3px; }
+
+/* Simulated POST screen: lines appear one by one, like a real start-up check. */
+.assembly-post {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 5;
+  transform: translate(-50%, -50%);
+  width: min(520px, calc(100% - 24px));
+  display: grid;
+  gap: 6px;
+  padding: 18px 20px;
+  border: 10px solid #15181a;
+  border-radius: 10px;
+  background: #020504;
+  color: #c9f5d7;
+  font: 14px/1.4 ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+}
+.assembly-post span { opacity: 0; animation: post-line 0.2s ease-out forwards; }
+.assembly-post span:first-child { color: #ffffff; font-weight: 700; }
+.assembly-post.failed span:nth-child(3) { color: #ff8f7a; font-weight: 700; }
+.assembly-post small { margin-top: 6px; color: #6f8f7b; font-size: 11px; }
+@keyframes post-line { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .assembly-post span { animation: none; opacity: 1; } }
