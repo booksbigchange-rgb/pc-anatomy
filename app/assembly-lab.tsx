@@ -153,6 +153,10 @@ export default function AssemblyLab({
   const [powerOn, setPowerOn] = useState(false);
   const [mistakes, setMistakes] = useState(0);
   const [showResult, setShowResult] = useState(false);
+  // The simulated start-up screen shown after Test power-on, before the result.
+  const [boot, setBoot] = useState<{ ok: boolean; lines: string[] } | null>(null);
+  const bootTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(bootTimer.current), []);
   const [buildEarned, setBuildEarned] = useState(() => readProgress().pcBuilt);
   const [powerProblems, setPowerProblems] = useState<string[]>([]);
   const build: BuildState = { installed, aligned, fastened, pasteApplied, screws, connections, coverClosed: closed, cageOpen, powerOn, mistakes };
@@ -170,8 +174,26 @@ export default function AssemblyLab({
     const problems = postProblems(build);
     setPowerProblems(problems);
     setPowerOn(problems.length === 0);
-    if (!problems.length) { saveProgress({ pcBuilt: true }); setBuildEarned(true); setShowResult(true); }
-    else setMistakes(count => count + 1);
+    const checks = [
+      'Dell OptiPlex 7040 · training model',
+      'Power-on self-test (POST)',
+      `CPU: ${componentNames?.cpu ?? 'Intel Core processor'} ........ OK`,
+      `Memory: ${componentNames?.ram ?? 'DDR4 memory'} ........ OK`,
+      'Storage: M.2 SSD ........ found',
+      'CPU fan ........ spinning',
+      'Display signal ........ OK',
+    ];
+    window.clearTimeout(bootTimer.current);
+    setShowResult(false);
+    if (!problems.length) {
+      saveProgress({ pcBuilt: true }); setBuildEarned(true);
+      setBoot({ ok: true, lines: [...checks, 'All checks passed. Starting up…'] });
+      bootTimer.current = window.setTimeout(() => { setBoot(null); setShowResult(true); }, 2600);
+    } else {
+      setMistakes(count => count + 1);
+      setBoot({ ok: false, lines: [checks[0], checks[1], `✗ ${problems[0].replace(/\.$/, '')}`, diagnosis(problems), 'The PC stops here. Fix it and try again.'] });
+      bootTimer.current = window.setTimeout(() => setBoot(null), 3200);
+    }
     setFeedback(problems.length ? `Power-on check stopped. ${diagnosis(problems)} Fix the items below and try again.` : 'POST passed in the simulation. Memory and storage detected. Your virtual PC is ready.');
   };
   const displayRef = useRef({
@@ -214,6 +236,8 @@ export default function AssemblyLab({
     setPowerProblems([]);
     setMistakes(0);
     setShowResult(false);
+    window.clearTimeout(bootTimer.current);
+    setBoot(null);
     installedRef.current = [];
     buildRef.current = { ...buildRef.current, installed: [], aligned: [], fastened: [], pasteApplied: false, screws: [], connections: [], coverClosed: false, cageOpen: true, powerOn: false, mistakes: 0 };
     resetRef.current = true;
@@ -499,8 +523,8 @@ export default function AssemblyLab({
         const distances = Object.fromEntries(PARTS.map(part => [part.id, Math.hypot(g.position.x - MOUNTS[part.id][0], g.position.z - MOUNTS[part.id][2])])) as Record<HardwareId, number>;
         const snaps = Object.fromEntries(PARTS.map(part => [part.id, part.snap])) as Record<HardwareId, number>;
         const result = dropPart(buildRef.current, id, distances, snaps);
-        if (result.ok) g.position.set(...MOUNTS[id]);
-        else g.position.set(...p.start);
+        // A good drop glides the last few centimetres into its socket in the draw loop.
+        if (!result.ok) g.position.set(...p.start);
         handlersRef.current.applyAttempt(id, result);
       } else if (
         !cancelled &&
@@ -586,9 +610,21 @@ export default function AssemblyLab({
     const obs = new ResizeObserver(resize);
     obs.observe(canvas);
     resize();
+    // Physical motion: parts glide into sockets, retainers swing or turn, fans spin when powered.
+    const seating = new Map<HardwareId, { from: T.Vector3; start: number; duration: number }>();
+    let seen: HardwareId[] = [];
+    const retainerProgress = { ram: 1, ssd: 1, gpu: 1 };
+    const rotors: T.Object3D[] = [];
+    for (const g of [...groups.values(), chassis]) g.traverse(o => { if (o.userData.spin) rotors.push(o); });
+    const powerLamp: T.MeshStandardMaterial[] = [];
+    chassis.traverse(o => { if (o.userData.caseTarget === 'button') o.traverse(m => { if (m instanceof T.Mesh && m.material instanceof T.MeshStandardMaterial) { m.material = m.material.clone(); powerLamp.push(m.material); } }); });
+    let fanSpeed = 0, lastTime = performance.now();
     let frame = 0;
     const draw = () => {
       frame = requestAnimationFrame(draw);
+      const now = performance.now(), dt = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
+      let animating = false;
       const d = displayRef.current,
         done = installedRef.current.length === PARTS.length;
       const signature = JSON.stringify([
@@ -634,7 +670,30 @@ export default function AssemblyLab({
         if (view === 'top') camera.position.set(cx, 17, 0.01);
         actionRef.current = null;
       }
-      for (const id of ['motherboard','gpu'] as HardwareId[]) setHardwareRetainers(groups.get(id)!, d.preview ? ['ram','ssd','gpu'] : buildRef.current.fastened);
+      for (const id of ['ram', 'ssd', 'gpu'] as const) {
+        const target = d.preview || buildRef.current.fastened.includes(id) ? 1 : 0;
+        const current = retainerProgress[id];
+        if (current !== target) {
+          retainerProgress[id] = target > current ? Math.min(target, current + dt * 2.2) : Math.max(target, current - dt * 4);
+          animating = true;
+          if (retainerProgress[id] === target) dirty = true;
+        }
+      }
+      for (const id of ['motherboard','gpu'] as HardwareId[]) setHardwareRetainers(groups.get(id)!, d.preview ? ['ram','ssd','gpu'] : buildRef.current.fastened, retainerProgress);
+      // Newly installed parts start a glide from wherever they are now.
+      if (installedRef.current.length < seen.length) seating.clear();
+      for (const id of installedRef.current) if (!seen.includes(id) && !d.preview) {
+        const from = groups.get(id)!.position.clone();
+        const distance = from.distanceTo(new T.Vector3(...MOUNTS[id]));
+        seating.set(id, { from, start: now, duration: Math.min(850, 260 + distance * 70) });
+      }
+      seen = [...installedRef.current];
+      // Fans spin up at power-on and coast down at shutdown; the power button glows while on.
+      const powered = !d.preview && buildRef.current.powerOn;
+      const wanted = powered ? 22 : 0;
+      if (fanSpeed !== wanted) { fanSpeed = wanted > fanSpeed ? Math.min(wanted, fanSpeed + dt * 14) : Math.max(0, fanSpeed - dt * 9); animating = true; }
+      if (fanSpeed > 0) { for (const rotor of rotors) rotor.rotation.y += fanSpeed * dt; animating = true; }
+      for (const lamp of powerLamp) { lamp.emissive.setHex(powered ? 0x3be37a : 0); lamp.emissiveIntensity = powered ? 1.4 : 0; }
       paste.visible = !d.preview && buildRef.current.pasteApplied && !installedRef.current.includes('cooler');
       const focus = !d.preview && !done ? focusPart() : null;
       chassis.visible = !(d.preview && d.isolated);
@@ -645,6 +704,15 @@ export default function AssemblyLab({
         g.visible = !(d.preview && d.isolated && d.selected !== p.id);
         if (d.preview || installedRef.current.includes(p.id)) {
           g.position.set(...MOUNTS[p.id]);
+          const glide = seating.get(p.id);
+          if (glide && !d.preview) {
+            const t = Math.min(1, (now - glide.start) / glide.duration), eased = 1 - (1 - t) ** 3;
+            const lift = Math.min(1.3, glide.from.distanceTo(g.position) * 0.22);
+            g.position.lerpVectors(glide.from, g.position, eased);
+            g.position.y += Math.sin(Math.PI * t) * lift;
+            animating = true;
+            if (t >= 1) { seating.delete(p.id); g.position.set(...MOUNTS[p.id]); dirty = true; }
+          }
           if (d.preview && d.exploded && d.selected === p.id)
             g.position.y += 2.3;
         } else if (dragging !== p.id) g.position.set(...p.start);
@@ -703,7 +771,7 @@ export default function AssemblyLab({
         dirty = true;
       }
       const cameraChanged = controls.update();
-      if (dirty || cameraChanged) {
+      if (dirty || cameraChanged || animating) {
         if (dirty) renderer.shadowMap.needsUpdate = true;
         renderer.render(scene, camera);
         dirty = false;
@@ -845,7 +913,13 @@ export default function AssemblyLab({
           {error}
         </div>
       )}
-      {!preview && !previewOnly && !showResult && (
+      {!preview && boot && (
+        <output className={'assembly-post' + (boot.ok ? '' : ' failed')} aria-live="polite">
+          {boot.lines.map((line, index) => <span key={line} style={{ animationDelay: `${index * 0.28}s` }}>{line}</span>)}
+          <small>Simulated start-up screen</small>
+        </output>
+      )}
+      {!preview && !previewOnly && !showResult && !boot && (
         <div className={'assembly-stage-coach' + (/Wrong|missed|first|not |Unplug|stopped|That is the/.test(feedback) ? ' warn' : '')} aria-hidden="true">
           {feedback}
         </div>
@@ -1015,7 +1089,7 @@ export default function AssemblyLab({
             <div className="assembly-sockets">{PC_CONNECTIONS.map(connection => <button key={connection.id} disabled={powerOn} onClick={() => connect(connection.target)}>{connection.target}</button>)}</div>
             <p>{connections.length} / {PC_CONNECTIONS.length} cables connected</p>
             <button className="assembly-back" disabled={powerOn || !connections.includes('mains')} onClick={() => { setConnections(previous => previous.filter(id => id !== 'mains')); setFeedback('Wall power unplugged. You can change connections.'); }}>Unplug wall power</button>
-            <button className="assembly-primary" onClick={() => { if (powerOn) { setPowerOn(false); setShowResult(false); setFeedback('Virtual PC shut down.'); } else testPower(); }}>{powerOn ? 'Shut down PC' : 'Test power-on'}</button>
+            <button className="assembly-primary" onClick={() => { if (powerOn) { setPowerOn(false); setShowResult(false); window.clearTimeout(bootTimer.current); setBoot(null); setFeedback('Virtual PC shut down.'); } else testPower(); }}>{powerOn ? 'Shut down PC' : 'Test power-on'}</button>
             {powerProblems.length > 0 && <ul>{powerProblems.map(problem => <li key={problem}>{problem}</li>)}</ul>}
             {powerOn && <output className="assembly-boot"><strong>✓ POST passed</strong><p>RAM detected · NVMe SSD detected · Display signal ready</p><small>Simulated checks. No real operating system starts.</small></output>}
           </section>

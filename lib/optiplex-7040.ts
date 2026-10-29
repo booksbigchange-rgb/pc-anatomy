@@ -64,15 +64,23 @@ function markRetainer(g: T.Group, start: number, id: string) {
   for (const child of g.children.slice(start)) target.add(child);
   g.add(target);
 }
-export function setHardwareRetainers(board: T.Group, fastened: readonly string[]) {
+/**
+ * Pose the RAM clips, card bracket and SSD screw. `progress` (0 open … 1 secured) lets a
+ * caller animate between the two states; without it each retainer is fully open or closed.
+ */
+export function setHardwareRetainers(board: T.Group, fastened: readonly string[], progress: Partial<Record<'ram' | 'ssd' | 'gpu', number>> = {}) {
+  const amount = (id: 'ram' | 'ssd' | 'gpu') => progress[id] ?? (fastened.includes(id) ? 1 : 0);
+  // Fully secured is exactly 0, not -0, so callers can compare poses.
+  const openBy = (id: 'ram' | 'ssd' | 'gpu', distance: number) => (amount(id) >= 1 ? 0 : (1 - amount(id)) * distance);
   for (const name of ['ram-clip-left','ram-clip-right']) {
     const clip=board.getObjectByName(name);
-    if (clip) clip.rotation.x=fastened.includes('ram') ? 0 : (name.endsWith('left') ? -.4 : .4);
+    if (clip) clip.rotation.x=openBy('ram', name.endsWith('left') ? -.4 : .4);
   }
   const bracket=board.getObjectByName('gpu-retainer');
-  if (bracket) bracket.rotation.x=fastened.includes('gpu') ? 0 : .55;
+  if (bracket) bracket.rotation.x=openBy('gpu', .55);
   const screw=board.getObjectByName('ssd-retainer');
-  if (screw) screw.position.y=fastened.includes('ssd') ? 0 : .12;
+  // The screw turns as it drives down: three full turns from loose to tight.
+  if (screw) { screw.position.y=openBy('ssd', .12); screw.rotation.y=amount('ssd') * Math.PI * 6; }
 }
 const steel = 0xa4a9ac,
   psuSteel = 0x7d868b,
@@ -156,6 +164,11 @@ function fan(size = 1.05) {
   );
   ring.rotation.x = Math.PI / 2;
   g.add(ring);
+  // Blades and hub form a rotor that stays separate from batching, so it can spin at power-on.
+  const rotor = new T.Group();
+  rotor.name = 'fan-rotor';
+  rotor.userData.spin = true;
+  g.add(rotor);
   for (let i = 0; i < 7; i++) {
     const outline = new T.Shape();
     outline.moveTo(r * .18, -.035);
@@ -165,9 +178,9 @@ function fan(size = 1.05) {
     const blade = new T.Mesh(new T.ExtrudeGeometry(outline, {depth:.024,bevelEnabled:true,bevelSize:.007,bevelThickness:.004,bevelSegments:1,steps:1}),material(0x303638));
     blade.rotation.x = -Math.PI / 2;
     const bladeRoot = new T.Group(); bladeRoot.rotation.y = i * Math.PI * 2 / 7;
-    bladeRoot.add(blade);g.add(bladeRoot);
+    bladeRoot.add(blade);rotor.add(bladeRoot);
   }
-  put(g, cyl(size * 0.12, 0.09, black), 0, 0.04, 0);
+  put(rotor, cyl(size * 0.12, 0.09, black), 0, 0.04, 0);
   for (const x of [-1, 1])
     for (const z of [-1, 1]) screw(g, x * size * 0.4, 0.075, z * size * 0.4);
   return g;
@@ -194,7 +207,7 @@ function shadows(g: T.Group) {
     o.receiveShadow = true;
     let ancestor: T.Object3D | null = o.parent;
     while (ancestor && ancestor !== g) {
-      if (ancestor.name === 'cover' || ancestor.name === 'drive-cage' || ancestor.userData.boardTarget || ancestor.userData.caseTarget || ancestor.userData.retainer) return;
+      if (ancestor.name === 'cover' || ancestor.name === 'drive-cage' || ancestor.userData.boardTarget || ancestor.userData.caseTarget || ancestor.userData.retainer || ancestor.userData.spin) return;
       ancestor = ancestor.parent;
     }
     if (o.material.map) return;
