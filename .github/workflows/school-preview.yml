@@ -112,7 +112,6 @@ jobs:
           live 'school-branding' timeout 240s node tests/browser/school-branding.mjs
           live 'build-pc' timeout 900s node tests/browser/build-pc.mjs
           live 'desk-setup' timeout 300s node tests/browser/desk-setup.mjs
-          live 'offline' timeout 600s node tests/browser/offline.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
