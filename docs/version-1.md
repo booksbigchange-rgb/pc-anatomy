@@ -39,7 +39,9 @@ Delivered:
 
 Evidence: `tests/browser/desk-setup.mjs` (room, honest model note, 3D and button connections, completion, reset) and `tests/browser/build-pc.mjs` (now also: POST screen on pass and fail, fans spinning while on, cover refused while on). Both run against the live preview after each deploy.
 
-Limits: fans, retainers and the POST screen are teaching animations, not timing or electrical simulation. The PSU fan does not spin (its grille is static). Cooler corner screws do not move individually. No real operating system starts.
+Limits: fans, retainers and the POST screen are teaching animations, not timing or electrical simulation. No real operating system starts.
+
+Update (October 2026): the power-supply fan now spins with the others at power-on, and each cooler corner screw drives down and turns as its corner is fastened (order 1 → 3 → 2 → 4 still enforced). `tests/optiplex.test.ts` checks the four separate screws and both fan rotors.
 
 ## Habesha touches (October 2026)
 
