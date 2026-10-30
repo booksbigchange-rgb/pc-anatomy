@@ -234,6 +234,9 @@ try {
   assert.match(await coach().innerText(), /thermal paste/, 'Keyboard seating obeys the paste rule');
 
   // Touch: on an emulated touch tablet, a finger drag moves parts into their guides.
+  // Free the first page's 3D scene first (the tablet check below reloads it): two software-rendered
+  // scenes at once can starve a slow hosted runner.
+  await page.goto('about:blank');
   const touchPage = await browser.newPage({ viewport: { width: 1024, height: 768 }, hasTouch: true });
   touchPage.on('pageerror', error => errors.push(error.message));
   touchPage.setDefaultTimeout(30000);
@@ -241,7 +244,10 @@ try {
   await touchPage.addInitScript(() => { try { sessionStorage.setItem('bigchange-school-opening-v1', 'seen'); } catch { /* Storage may be blocked. */ } });
   await touchPage.goto(url);
   const touchSkip = touchPage.getByRole('button', { name: /Skip intro/ });
-  await touchPage.getByRole('button', { name: /Skip intro|Build.*PC/i }).first().waitFor({ timeout: 90000 });
+  await touchPage.getByRole('button', { name: /Skip intro|Build.*PC/i }).first().waitFor({ timeout: 90000 }).catch(async error => {
+    await touchPage.screenshot({ path: `${out}/touch-page-stuck.png` }).catch(() => undefined);
+    throw error;
+  });
   if (await touchSkip.count()) await touchSkip.click();
   await touchPage.getByRole('button', { name: /Build.*PC/i }).first().click();
   for (const id of ['cpu', 'motherboard', 'ram', 'ssd', 'gpu', 'psu']) await touchPage.getByRole('button', { name: new RegExp(PARTS[id].name) }).last().click();
