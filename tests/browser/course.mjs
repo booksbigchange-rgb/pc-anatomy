@@ -19,6 +19,16 @@ try {
     await click(answer); await click(i === 4 ? 'Finish photo practice' : 'Next step');
   }
   assert.match(await page.locator('.course-lab').innerText(), /Photo saved/);
+  // Coffee ceremony lesson: a wrong answer hints, then each step is matched to its computer part.
+  await click('Coffee ceremony');
+  await click('Output: screen and speakers');
+  assert.match(await page.locator('.course-lab output').innerText(), /try again/);
+  for (const [i, answer] of ['Input: keyboard and mouse', 'CPU', 'CPU', 'RAM', 'Output: screen and speakers', 'SSD'].entries()) {
+    await click(answer); await click(i === 5 ? 'Serve the coffee' : 'Next step');
+  }
+  assert.match(await page.locator('.course-lab').innerText(), /Coffee is served/);
+  assert.equal(await page.locator('.coffee-route li.matched').count(), 6);
+  await shot('01b-coffee-lesson');
   await click('OS and files');
   await click('Power on'); await click('Sign in'); await click('Open Notes');
   await page.getByRole('textbox', { name: 'My note' }).fill('BigChange lesson'); await click('Save note');
@@ -40,7 +50,8 @@ try {
   await shot('03-final-review');
   await page.reload(); await click('My learning path');
   assert.match(await page.getByRole('region', { name: 'Learning path' }).innerText(), /7 \/ 8 correct/);
-  assert.equal(await page.getByText('✓ Practice completed', { exact: true }).count(), 2);
+  // Photo, coffee ceremony and OS practice all stay recorded after a reload.
+  assert.equal(await page.getByText('✓ Practice completed', { exact: true }).count(), 3);
   await page.setViewportSize({ width: 390, height: 844 }); await shot('04-phone-path');
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   // Keyboard navigation and visible focus must reach the active section.

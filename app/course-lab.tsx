@@ -2,6 +2,7 @@ import { useState } from 'react';
 import AcademyLogo from './academy-logo';
 import { readProgress } from './student-progress';
 import { EMPTY_OS, FINAL_QUESTIONS, assessmentResult, osAction, readCourse, saveCourse, type CourseProgress } from './course-model';
+import { COFFEE_INTRO, COFFEE_STEPS, COFFEE_SUMMARY, coffeeFeedback } from './coffee-lesson';
 import './course-lab.css';
 
 const FLOW = [
@@ -11,7 +12,7 @@ const FLOW = [
   { title: 'Save your edit', question: 'Where must the edited file be written?', choices: ['Fan', 'SSD', 'RAM only'], answer: 'SSD', explanation: 'Saving writes changes back to storage. Closing without saving can lose the edit.' },
   { title: 'Shut down', question: 'What happens to the working copy in RAM?', choices: ['It is cleared without power', 'It becomes a cable', 'It replaces the SSD'], answer: 'It is cleared without power', explanation: 'Saved changes remain on the SSD. Working RAM needs power.' },
 ];
-type Tab = 'path' | 'flow' | 'os' | 'check';
+type Tab = 'path' | 'flow' | 'coffee' | 'os' | 'check';
 export default function CourseLab({ onBack, onActivity }: { onBack: () => void; onActivity: (activity: 'laptop' | 'assembly' | 'task-manager-pc') => void }) {
   const [tab, setTab] = useState<Tab>('path');
   const [progress, setProgress] = useState(readCourse);
@@ -22,6 +23,10 @@ export default function CourseLab({ onBack, onActivity }: { onBack: () => void; 
   const [flowCorrect, setFlowCorrect] = useState(false);
   const [flowFeedback, setFlowFeedback] = useState('Choose the part that handles this step.');
   const [flowDone, setFlowDone] = useState(false);
+  const [coffeeStep, setCoffeeStep] = useState(0);
+  const [coffeeCorrect, setCoffeeCorrect] = useState(false);
+  const [coffeeMessage, setCoffeeMessage] = useState('Choose the computer part that does the same kind of job.');
+  const [coffeeDone, setCoffeeDone] = useState(false);
   const [os, setOs] = useState(EMPTY_OS);
   const [osFeedback, setOsFeedback] = useState('Start with Power on. This desktop and its files are simulated.');
   const [cycled, setCycled] = useState(false);
@@ -40,17 +45,18 @@ export default function CourseLab({ onBack, onActivity }: { onBack: () => void; 
     const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' }));
     const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'bigchange-my-learning.json'; anchor.click(); URL.revokeObjectURL(url);
   };
-  const completed = [hardware.pcBuilt, hardware.taskManager.length === 4, progress.laptopScore !== null, progress.flow, progress.os, result.complete].filter(Boolean).length;
+  const completed = [hardware.pcBuilt, hardware.taskManager.length === 4, progress.laptopScore !== null, progress.flow, progress.coffee, progress.os, result.complete].filter(Boolean).length;
   return <main className="course-lab">
     <header><button onClick={onBack}>← Computer Lab</button><AcademyLogo /><div><h1>My learning path</h1><p>BigChange Academy · Version 1 · Teacher Hermon Tesfay</p></div></header>
-    <nav aria-label="Course sections">{([['path', 'Learning path'], ['flow', 'How parts work together'], ['os', 'OS and files'], ['check', 'Final knowledge check']] as const).map(([id, label]) => <button key={id} aria-current={tab === id ? 'page' : undefined} onClick={() => setTab(id)}>{label}</button>)}</nav>
+    <nav aria-label="Course sections">{([['path', 'Learning path'], ['flow', 'How parts work together'], ['coffee', 'Coffee ceremony'], ['os', 'OS and files'], ['check', 'Final knowledge check']] as const).map(([id, label]) => <button key={id} aria-current={tab === id ? 'page' : undefined} onClick={() => setTab(id)}>{label}</button>)}</nav>
     {saveFailed && <p role="alert">This browser could not save your latest result. Keep this page open and download your results before leaving.</p>}
-    {tab === 'path' && <section aria-label="Learning path"><h2>Explore → Build → Test → Explain</h2><p>{completed} / 6 results recorded. A recorded attempt is not always a passing score.</p><progress max={6} value={completed} />
+    {tab === 'path' && <section aria-label="Learning path"><h2>Explore → Build → Test → Explain</h2><p>{completed} / 7 results recorded. A recorded attempt is not always a passing score.</p><progress max={7} value={completed} />
       <ol className="course-path">
         <li><h3>Explore the laptop</h3><p>Find parts, follow the Guided lesson, practise connections and troubleshooting. Finish its Knowledge check.</p><p>{progress.laptopScore === null ? 'Knowledge check not recorded yet' : `Latest knowledge check: ${progress.laptopScore}%`}</p><button onClick={() => onActivity('laptop')}>Open Laptop Lab</button></li>
         <li><h3>Build your PC</h3><p>Orient, seat and secure parts. Connect cables and pass the power-on check.</p><p>{hardware.pcBuilt ? '✓ Simulated POST passed' : 'Build not completed yet'}</p><button onClick={() => onActivity('assembly')}>Open PC Build</button></li>
         <li><h3>Use Task Manager</h3><p>Finish all four challenges. Explain what changed in the before/after readings.</p><p>{hardware.taskManager.length} / 4 challenges</p><button onClick={() => onActivity('task-manager-pc')}>Open Task Manager</button></li>
         <li><h3>Follow the data</h3><p>Open, edit and save a photo. Explain CPU, RAM and storage.</p><p>{progress.flow ? '✓ Practice completed' : 'Not completed'}</p><button onClick={() => setTab('flow')}>Follow a photo</button></li>
+        <li><h3>Coffee ceremony computer</h3><p>Follow the coffee ceremony. Match each step to the computer part that does the same job.</p><p>{progress.coffee ? '✓ Practice completed' : 'Not completed'}</p><button onClick={() => setTab('coffee')}>Start the coffee lesson</button></li>
         <li><h3>Use an operating system</h3><p>Create, save, reopen, delete and restore a virtual file.</p><p>{progress.os ? '✓ Practice completed' : 'Not completed'}</p><button onClick={() => setTab('os')}>Start OS practice</button></li>
         <li><h3>Check your understanding</h3><p>Answer eight questions. Review mistakes and practise again.</p><p>{result.complete ? `${result.correct} / 8 correct · ${result.percent}%` : `${result.answered} / 8 answered`}</p><button onClick={() => setTab('check')}>Start final check</button></li>
       </ol><button onClick={download}>Download my results</button><p>Results stay in this browser. They are not shared with the teacher automatically. Clearing browser data removes them.</p>
@@ -58,6 +64,16 @@ export default function CourseLab({ onBack, onActivity }: { onBack: () => void; 
     {tab === 'flow' && <section aria-label="Data flow practice"><h2>Follow a photo</h2><p>A simplified route. Real apps also use caches, drivers and other services.</p>
       <div className="course-flow" aria-label="Photo data route">{['SSD: saved photo', 'RAM: working copy', 'CPU: edit instructions', 'SSD: saved changes'].map((label, i) => <div key={label} className={i === Math.min(flowStep, 3) ? 'current' : ''}>{label}<span aria-hidden="true"> →</span></div>)}</div>
       {flowDone ? <><h3>✓ Photo saved. Working memory cleared.</h3><p>Your saved edit stays on the SSD after shutdown.</p><button onClick={() => { setFlowStep(0); setFlowCorrect(false); setFlowDone(false); setFlowFeedback('Choose the part that handles this step.'); }}>Practise again</button></> : <><p>Step {flowStep + 1} / {FLOW.length}</p><h3>{FLOW[flowStep].title}</h3><p>{FLOW[flowStep].question}</p><div className="course-choices">{FLOW[flowStep].choices.map(choice => <button key={choice} disabled={flowCorrect} onClick={() => { const correct = choice === FLOW[flowStep].answer; setFlowCorrect(correct); setFlowFeedback(correct ? FLOW[flowStep].explanation : 'Try again. Think about this part’s job.'); }}>{choice}</button>)}</div><output>{flowFeedback}</output><button disabled={!flowCorrect} onClick={() => { if (flowStep === FLOW.length - 1) { setFlowDone(true); update({ flow: true }); } else { setFlowStep(flowStep + 1); setFlowCorrect(false); setFlowFeedback('Choose the part that handles this step.'); } }}>{flowStep === FLOW.length - 1 ? 'Finish photo practice' : 'Next step'}</button></>}
+    </section>}
+    {tab === 'coffee' && <section aria-label="Coffee ceremony lesson"><h2>Coffee ceremony computer</h2><p>{COFFEE_INTRO}</p>
+      <ol className="coffee-route" aria-label="Coffee ceremony steps">{COFFEE_STEPS.map((step, i) => {
+        const matched = coffeeDone || i < coffeeStep || (i === coffeeStep && coffeeCorrect);
+        return <li key={step.title} className={!coffeeDone && i === coffeeStep ? 'current' : matched ? 'matched' : ''}><strong>{step.title}</strong><span>{matched ? '→ ' + step.answer.split(':')[0] : '…'}</span></li>;
+      })}</ol>
+      {coffeeDone ? <><h3>✓ Coffee is served</h3><output>{COFFEE_SUMMARY}</output><p>This is a comparison to help you remember. Real computers have many more steps.</p><button onClick={() => { setCoffeeStep(0); setCoffeeCorrect(false); setCoffeeDone(false); setCoffeeMessage('Choose the computer part that does the same kind of job.'); }}>Practise again</button></> : <><p>Step {coffeeStep + 1} / {COFFEE_STEPS.length}</p><h3>{COFFEE_STEPS[coffeeStep].title}</h3><p>{COFFEE_STEPS[coffeeStep].scene}</p><p><strong>{COFFEE_STEPS[coffeeStep].question}</strong></p>
+        <div className="course-choices">{COFFEE_STEPS[coffeeStep].choices.map(choice => <button key={choice} disabled={coffeeCorrect} onClick={() => { const feedback = coffeeFeedback(COFFEE_STEPS[coffeeStep], choice); setCoffeeCorrect(feedback.correct); setCoffeeMessage(feedback.text); }}>{choice}</button>)}</div>
+        <output>{coffeeMessage}</output>
+        <button disabled={!coffeeCorrect} onClick={() => { if (coffeeStep === COFFEE_STEPS.length - 1) { setCoffeeDone(true); update({ coffee: true }); } else { setCoffeeStep(coffeeStep + 1); setCoffeeCorrect(false); setCoffeeMessage('Choose the computer part that does the same kind of job.'); } }}>{coffeeStep === COFFEE_STEPS.length - 1 ? 'Serve the coffee' : 'Next step'}</button></>}
     </section>}
     {tab === 'os' && <section aria-label="Operating system practice"><h2>OS and files</h2><p>The OS manages apps, files and access to hardware. This is a teaching desktop, not Windows or a real OS installation.</p><p>Challenge: save a note → shut down → power on and sign in → reopen it → delete and restore it.</p>
       <div className="course-desktop"><div className="course-status">{!os.powered ? 'Computer off' : !os.signedIn ? 'OS loaded · Sign-in screen' : 'Virtual desktop'}</div>
