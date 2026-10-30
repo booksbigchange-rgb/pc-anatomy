@@ -305,9 +305,14 @@ try {
     assert.ok(Math.abs(q.x) < 0.95 && Math.abs(q.y) < 0.95, `${id} tray position is inside the tablet stage`);
   }
   const trayBoard = new T.Vector3(...PARTS.motherboard.start).project(tabletCamera);
-  await page.waitForTimeout(800);
-  await page.mouse.click(tabletStage.x + ((trayBoard.x + 1) * tabletStage.width) / 2, tabletStage.y + ((1 - trayBoard.y) * tabletStage.height) / 2);
-  assert.match(await coach().innerText(), /Motherboard picked up/, 'Tray parts can be reached on a tablet');
+  // The overview reframes for the tall stage a moment after practice starts; tap once it has settled.
+  let pickedUp = false;
+  for (let attempt = 0; attempt < 8 && !pickedUp; attempt++) {
+    await page.waitForTimeout(700);
+    await page.mouse.click(tabletStage.x + ((trayBoard.x + 1) * tabletStage.width) / 2, tabletStage.y + ((1 - trayBoard.y) * tabletStage.height) / 2);
+    pickedUp = /Motherboard picked up/.test(await coach().innerText());
+  }
+  assert.ok(pickedUp, 'Tray parts can be reached on a tablet');
   await page.getByRole('button', { name: /^Seat .* in its guide$/ }).scrollIntoViewIfNeeded();
   assert.ok(await page.getByRole('button', { name: /^Seat .* in its guide$/ }).isVisible());
   await shot('05c-tablet-assembly');
