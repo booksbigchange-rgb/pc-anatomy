@@ -64,21 +64,12 @@ Wording: English, with jebena and sini, which Tigrinya and Amharic speakers shar
 
 Evidence: `tests/coffee-lesson.test.ts` (answers, coverage of input/CPU/RAM/output/storage, feedback) and the course browser check (wrong answer, all six steps, result kept after reload).
 
-## Offline mode (October 2026)
+## Offline mode — paused (October 2026)
 
-The lab works without internet after one visit, for schools with weak or no connection.
+Offline mode was built and briefly published, then paused at the project owner's request.
 
-- **Saved automatically on the first visit:** the app itself (code, styles, fonts, icons, the no-JavaScript guide), about 4 MB. The Computer Lab, Build Your PC, Task Manager and the lessons then open offline.
-- **Saved on request:** "Save all labs for offline use" in the Computer Lab panel downloads every 3D laptop model and the school intro video (about 14 MB) with progress. Models opened online are also kept as they are used.
-- Pages always try the network first, so a new release appears when online; the saved copy is used only when the network fails. Each release replaces the saved app; models are refreshed in the background.
-- The main lab and the school edition keep separate saved copies and do not interfere.
-- Learning progress was already stored in the browser and is unchanged.
-
-How it works: `public/sw.js` (service worker) and a build step in `vite.config.ts` that writes `offline-manifest.json` (app files, model pack and its size). Only the published build registers the worker.
-
-Evidence: `tests/browser/offline.mjs` saves everything, switches the browser fully offline, and checks the lab, Build Your PC and every Laptop Lab model load with no errors. It runs against the live site after each release.
-
-Limits: a browser must visit once with internet; clearing browser data removes the saved copy; very old browsers without service workers still need internet.
+- Browsers that installed it get a cleanup worker (`public/sw.js`) on their next visit. It deletes the lab's saved files and unregisters itself, without reloading open pages, so no work is lost. The app no longer registers a worker.
+- The design is recorded in git history (commits "Let the lab work without internet after one visit" and "Check offline mode in the browser and on the live site") so it can be restored later: app shell saved on the first visit, 3D models saved on request, network-first pages, separate copies for the main lab and the school edition.
 
 ## Faster first load (October 2026)
 
