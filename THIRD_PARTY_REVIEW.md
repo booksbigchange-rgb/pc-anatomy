@@ -11,6 +11,15 @@ The school edition treats public GitHub availability as **insufficient permissio
 - Usage: codebase and procedural Three.js hardware.
 - Requirement: retain MIT notice and upstream attribution.
 
+## Approved fonts
+
+### Google / Noto Sans Ethiopic
+
+- Package: `@fontsource/noto-sans-ethiopic` 5.3.0 (npm, pinned).
+- License: SIL Open Font License 1.1.
+- Usage: Ge'ez script for the Tigrinya welcome (page text and the 3D whiteboard), so every school computer shows the same letters without an installed Ethiopic font.
+- Integration: bundled with the build; the browser downloads the Ethiopic subset (about 75 KB per weight) only when Ge'ez text is shown. No runtime request to a third-party host.
+
 ## Approved visual assets
 
 ### Skywolf Game Studios / CC0Tree — Computer Tower
@@ -18,10 +27,9 @@ The school edition treats public GitHub availability as **insufficient permissio
 - Source: https://github.com/SkywolfGameStudios/CC0Tree
 - Asset: `Assets/SM_ComputerTower.fbx`
 - License: CC0 1.0 Universal.
-- Decision: **approved and integrated**.
-- Usage: exterior system-unit shell in the Big Change Computer Lab.
-- Integration: vendored into the repository as base64 so the classroom build makes no runtime request to a third-party host.
-- Big Change keeps its own teaching ports, selection state, connection exercises and internal PC Anatomy explorer; the CC0 model is visual geometry only.
+- Decision: approved, then **retired in Version 1.1** (October 2026).
+- Former usage: exterior system-unit shell in the Big Change Computer Lab, vendored as base64.
+- Replacement: the original OptiPlex 7040 reference tower from `lib/optiplex-7040.ts`. The vendored file `lib/cc0-computer-tower.ts` was removed.
 
 ### Framework Computer / Framework Laptop 13 simplified CAD
 

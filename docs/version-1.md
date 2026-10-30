@@ -40,3 +40,16 @@ Delivered:
 Evidence: `tests/browser/desk-setup.mjs` (room, honest model note, 3D and button connections, completion, reset) and `tests/browser/build-pc.mjs` (now also: POST screen on pass and fail, fans spinning while on, cover refused while on). Both run against the live preview after each deploy.
 
 Limits: fans, retainers and the POST screen are teaching animations, not timing or electrical simulation. The PSU fan does not spin (its grille is static). Cooler corner screws do not move individually. No real operating system starts.
+
+## Habesha touches (October 2026)
+
+Chosen with the project owner: Tigrinya for Ge'ez text, tibeb patterns, coffee-ceremony objects and a welcome sign. English stays the teaching language.
+
+- **Welcome:** "እንቋዕ ብደሓን መጻእኩም · Welcome" opens the Computer Lab panel and is written on the classroom whiteboard, beside a teacher's sketch of keyboard → CPU → screen. Text is marked `lang="ti"`. The open-licence Noto Sans Ethiopic font is bundled; the board repaints once it loads so it never shows empty boxes.
+- **Tibeb:** a woven-border band (cream cloth, indigo edges, red and green diamonds, gold crosses) under the top bar of every lab, and a tibeb runner along the back of the desk.
+- **Coffee ceremony:** a clay jebena on a woven ring and six sini cups on a wooden rekebot tray beside the keyboard; a banded woven mesob stands in front of the desk. These are decoration only and cannot be selected.
+- **Other fix found on the way:** the system unit now stands on the desk top instead of sinking into it.
+
+Review needed: a Tigrinya-speaking teacher should confirm the welcome wording and spelling before classroom use. No flags or national symbols are used, so the room fits both Eritrean and Ethiopian learners.
+
+Evidence: `tests/browser/desk-setup.mjs` also checks the Tigrinya welcome, its language tag, that the Ge'ez font loads and that the tibeb band is drawn.
