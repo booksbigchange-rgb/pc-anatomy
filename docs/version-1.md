@@ -79,3 +79,10 @@ How it works: `public/sw.js` (service worker) and a build step in `vite.config.t
 Evidence: `tests/browser/offline.mjs` saves everything, switches the browser fully offline, and checks the lab, Build Your PC and every Laptop Lab model load with no errors. It runs against the live site after each release.
 
 Limits: a browser must visit once with internet; clearing browser data removes the saved copy; very old browsers without service workers still need internet.
+
+## Faster first load (October 2026)
+
+A first visit to the main lab now downloads about 0.44 MB before the Computer Lab appears, down from about 2 MB.
+
+- The header logo uses a 25 KB crop of the shield (`public/bigchange-logo-shield.png`, 132 × 144) instead of the 1.5 MB artwork sheet. The sheet stays in the repository unchanged and is no longer saved for offline use. The school edition already used its own small logo.
+- The Laptop Lab, Build Your PC, Task Manager, the learning path and the comparison view load only when opened (Laptop Lab 55 KB, Build Your PC 18 KB compressed). They are part of the offline app, so they still open without internet once saved.
