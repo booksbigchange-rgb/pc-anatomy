@@ -27,7 +27,7 @@ function offlineManifest(): Plugin {
         }
       };
       walk(outDir);
-      const skip = /^(sw\.js|offline-manifest\.json|version\.json|robots\.txt|sitemap\.xml|social-preview\.png|pc-assembled\.png)$/;
+      const skip = /^(sw\.js|offline-manifest\.json|version\.json|robots\.txt|sitemap\.xml|social-preview\.png|pc-assembled\.png|bigchange-logo-original\.png)$/;
       const isPack = (file: string) => file.startsWith('models/') || /\.(mp4|vtt)$/.test(file);
       const shell = files.filter(file => !skip.test(file) && !isPack(file)).sort();
       const pack = files.filter(isPack).sort();
