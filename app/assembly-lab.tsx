@@ -32,6 +32,7 @@ import {
   BOARD_TARGETS,
   CASE_TARGETS,
   setHardwareRetainers,
+  setCoolerScrews,
   type CaseTargetId,
   type BoardTargetId,
   type HardwareId,
@@ -615,6 +616,7 @@ export default function AssemblyLab({
     const seating = new Map<HardwareId, { from: T.Vector3; start: number; duration: number }>();
     let seen: HardwareId[] = [];
     const retainerProgress = { ram: 1, ssd: 1, gpu: 1 };
+    const screwProgress: Record<1 | 2 | 3 | 4, number> = { 1: 1, 2: 1, 3: 1, 4: 1 };
     const rotors: T.Object3D[] = [];
     for (const g of [...groups.values(), chassis]) g.traverse(o => { if (o.userData.spin) rotors.push(o); });
     const powerLamp: T.MeshStandardMaterial[] = [];
@@ -681,6 +683,17 @@ export default function AssemblyLab({
         }
       }
       for (const id of ['motherboard','gpu'] as HardwareId[]) setHardwareRetainers(groups.get(id)!, d.preview ? ['ram','ssd','gpu'] : buildRef.current.fastened, retainerProgress);
+      // Each cooler corner screw drives down when its corner is fastened.
+      for (const corner of [1, 2, 3, 4] as const) {
+        const target = d.preview || buildRef.current.screws.includes(corner) ? 1 : 0;
+        const current = screwProgress[corner];
+        if (current !== target) {
+          screwProgress[corner] = target > current ? Math.min(target, current + dt * 2) : Math.max(target, current - dt * 4);
+          animating = true;
+          if (screwProgress[corner] === target) dirty = true;
+        }
+      }
+      setCoolerScrews(groups.get('cooler')!, screwProgress);
       // Newly installed parts start a glide from wherever they are now.
       if (installedRef.current.length < seen.length) seating.clear();
       for (const id of installedRef.current) if (!seen.includes(id) && !d.preview) {

@@ -68,6 +68,23 @@ function markRetainer(g: T.Group, start: number, id: string) {
  * Pose the RAM clips, card bracket and SSD screw. `progress` (0 open … 1 secured) lets a
  * caller animate between the two states; without it each retainer is fully open or closed.
  */
+/** Cooler corner screws: [corner, x, z], clockwise from top-left. */
+const COOLER_CORNERS = [[1, -0.58, -0.58], [2, 0.58, -0.58], [3, 0.58, 0.58], [4, -0.58, 0.58]] as const;
+
+/**
+ * Pose the four cooler screws. `progress[corner]` runs 0 (loose, raised) to 1 (driven down);
+ * a screw turns two full turns as it goes down.
+ */
+export function setCoolerScrews(cooler: T.Group, progress: Partial<Record<1 | 2 | 3 | 4, number>>) {
+  for (const [corner] of COOLER_CORNERS) {
+    const screw = cooler.getObjectByName(`cooler-screw-${corner}`);
+    if (!screw) continue;
+    const amount = progress[corner] ?? 0;
+    screw.position.y = 0.48 + (amount >= 1 ? 0 : (1 - amount) * 0.14);
+    screw.rotation.y = amount * Math.PI * 4;
+  }
+}
+
 export function setHardwareRetainers(board: T.Group, fastened: readonly string[], progress: Partial<Record<'ram' | 'ssd' | 'gpu', number>> = {}) {
   const amount = (id: 'ram' | 'ssd' | 'gpu') => progress[id] ?? (fastened.includes(id) ? 1 : 0);
   // Fully secured is exactly 0, not -0, so callers can compare poses.
@@ -396,11 +413,20 @@ export function createHardware(id: HardwareId) {
     for (let i = 0; i < 27; i++)
       put(g, box(0.028, 0.5, 1.02, steel), -0.49 + i * 0.038, 0.3, 0);
     put(g, fan(1.06), 0, 0.61, 0);
-    for (const x of [-0.58, 0.58])
-      for (const z of [-0.58, 0.58]) {
-        put(g, cyl(0.03, 0.5, steel), x, 0.22, z);
-        screw(g, x, 0.48, z);
-      }
+    // Corner posts, and four spring screws kept separate so each one can drive down in turn.
+    // Corners run clockwise from top-left as seen on the Build Your PC buttons: 1, 2, 3, 4.
+    for (const [corner, x, z] of COOLER_CORNERS) {
+      put(g, cyl(0.03, 0.5, steel), x, 0.22, z);
+      const start = g.children.length;
+      screw(g, x, 0, z);
+      put(g, cyl(0.018, 0.16, steel), x, -0.08, z);
+      const holder = new T.Group();
+      holder.position.set(x, 0.48, z);
+      for (const child of g.children.slice(start)) { child.position.x -= x; child.position.z -= z; holder.add(child); }
+      holder.name = `cooler-screw-${corner}`;
+      holder.userData.retainer = holder.name;
+      g.add(holder);
+    }
     cable(
       g,
       [
@@ -466,8 +492,21 @@ export function createHardware(id: HardwareId) {
     put(g, box(2.17, 1.08, 1.25, psuSteel, 0.02));
     // Folded sheet-metal rails along the long edges.
     for (const y of [-0.53, 0.53]) for (const z of [-0.61, 0.61]) put(g, box(2.12, 0.035, 0.035, psuEdge, 0.008), 0, y, z);
-    // Top intake fan behind a round wire grille.
-    put(g, cyl(0.43, 0.012, 0x23282b), 0.35, 0.546, 0);
+    // Top intake fan behind a round wire grille; the blades form a rotor that spins at power-on.
+    put(g, cyl(0.43, 0.012, 0x23282b), 0.35, 0.541, 0);
+    const psuRotor = new T.Group();
+    psuRotor.name = 'fan-rotor';
+    psuRotor.userData.spin = true;
+    for (let i = 0; i < 7; i++) {
+      const blade = box(0.2, 0.004, 0.085, 0x3a4246, 0);
+      blade.position.x = 0.17;
+      blade.rotation.y = 0.35;
+      const arm = new T.Group();
+      arm.rotation.y = (i * Math.PI * 2) / 7;
+      arm.add(blade);
+      psuRotor.add(arm);
+    }
+    put(g, psuRotor, 0.35, 0.551, 0);
     for (const r of [0.14, 0.24, 0.34, 0.42]) { const ring = new T.Mesh(new T.TorusGeometry(r, 0.008, 6, 40), material(psuEdge)); ring.rotation.x = Math.PI / 2; put(g, ring, 0.35, 0.556, 0); }
     for (const a of [0, Math.PI / 2]) { const bar = box(0.86, 0.01, 0.016, psuEdge, 0); bar.rotation.y = a; put(g, bar, 0.35, 0.556, 0); }
     put(g, cyl(0.07, 0.016, 0x23282b), 0.35, 0.558, 0);

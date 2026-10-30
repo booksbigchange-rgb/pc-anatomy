@@ -6,6 +6,7 @@ import {
   createChassis,
   MOUNTS,
   setHardwareRetainers,
+  setCoolerScrews,
   type HardwareId,
 } from '../lib/optiplex-7040.ts';
 
@@ -115,4 +116,20 @@ void test('A ray into the Ethernet opening identifies the socket backing before 
   const hit=ray.intersectObject(group,true)[0]; assert.ok(hit);
   let object=hit.object; while(object.parent && !object.userData.caseTarget) object=object.parent;
   assert.equal(object.userData.caseTarget,'network');
+});
+void test('Cooler corner screws drive down one by one, and the cooler and PSU fans can spin', () => {
+  const cooler = createHardware('cooler');
+  const screws = [1, 2, 3, 4].map(corner => cooler.getObjectByName(`cooler-screw-${corner}`));
+  assert.ok(screws.every(Boolean), 'Four separate corner screws survive geometry batching');
+  setCoolerScrews(cooler, { 1: 1 });
+  assert.equal(screws[0]!.position.y, 0.48, 'A fastened screw sits on its post');
+  assert.ok(screws[1]!.position.y > 0.6 && screws[2]!.position.y > 0.6, 'Loose screws stand raised');
+  setCoolerScrews(cooler, { 1: 1, 2: 1, 3: 1, 4: 1 });
+  assert.ok(screws.every(screw => screw!.position.y === 0.48));
+  for (const id of ['cooler', 'psu'] as HardwareId[]) {
+    const rotors: T.Object3D[] = [];
+    createHardware(id).traverse(object => { if (object.userData.spin) rotors.push(object); });
+    assert.equal(rotors.length, 1, `${id} has one spinning fan rotor`);
+    assert.ok(rotors[0].children.length >= 7, `${id} rotor keeps its blades as separate meshes`);
+  }
 });
