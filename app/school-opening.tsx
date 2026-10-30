@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import AcademyLogo from './academy-logo';
+import { TIGRINYA_WELCOME } from './habesha';
 import './school-opening.css';
 
 const sessionKey = 'bigchange-school-opening-v1';
@@ -22,7 +23,7 @@ export default function SchoolOpening({ onEnter }: { onEnter: () => void }) {
     void video.current?.play().catch(() => setStatus(current => current || 'Press Play to watch, or enter the lab.'));
   }, [reducedMotion]);
   return <main className="school-opening" aria-label="Welcome to BigChange Academy">
-    <header><AcademyLogo /><h1>Welcome to BigChange Academy</h1></header>
+    <header><AcademyLogo /><div><p className="school-geez" lang="ti">{TIGRINYA_WELCOME}</p><h1>Welcome to BigChange Academy</h1></div></header>
     <video ref={video} src={`${import.meta.env.BASE_URL}bigchange-school-intro.mp4`}
       poster={`${import.meta.env.BASE_URL}bigchange-school-logo.png`}
       aria-label="BigChange Academy opening animation" autoPlay={!reducedMotion}

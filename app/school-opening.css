@@ -10,3 +10,6 @@
 @media(max-width:600px) { .school-opening { padding:12px; } .school-opening header { gap:12px; } }
 
 
+.school-opening header { position: relative; padding-bottom: 14px; }
+.school-opening header::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 7px; background: var(--tibeb) repeat-x left center / auto 7px; }
+.school-opening .school-geez { margin: 0 0 4px; font-size: clamp(18px, 2.6vw, 26px); font-weight: 700; color: #ffd06a; }
