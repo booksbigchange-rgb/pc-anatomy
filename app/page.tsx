@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { EyeOff } from 'lucide-react';
 import { levelPath } from '@/lib/levels';
 import { useExplorer } from './use-explorer';
@@ -14,12 +14,15 @@ import Disassembly from './disassembly';
 import SearchDialog from './search-dialog';
 import DetailPanel from './detail-panel';
 import AboutDialog from './about-dialog';
-import ComparisonWorkbench from './comparison-workbench';
 import ComputerLab from './computer-lab';
-import LaptopLab from './laptop-lab';
-import BuildPcLab from './build-pc-lab';
-import TaskManagerLab from './task-manager-lab';
-import CourseLab from './course-lab';
+
+// The Computer Lab opens first; the other labs load only when a student opens them.
+const ComparisonWorkbench = lazy(() => import('./comparison-workbench'));
+const LaptopLab = lazy(() => import('./laptop-lab'));
+const BuildPcLab = lazy(() => import('./build-pc-lab'));
+const TaskManagerLab = lazy(() => import('./task-manager-lab'));
+const CourseLab = lazy(() => import('./course-lab'));
+const loading = <output className="lab-loading">Opening the lab…</output>;
 
 export default function Home() {
   const explorer = useExplorer();
@@ -56,12 +59,12 @@ export default function Home() {
     return () => window.removeEventListener('keydown', key);
   }, [about, choose, mode, navigate, search, state.level]);
 
-  if (mode === 'course') return <CourseLab onBack={() => setMode('lab')} onActivity={setMode} />;
+  if (mode === 'course') return <Suspense fallback={loading}><CourseLab onBack={() => setMode('lab')} onActivity={setMode} /></Suspense>;
   if (mode === 'lab') return <ComputerLab onOpenCourse={() => setMode('course')} onOpenPC={() => setMode('explorer')} onOpenLaptop={() => setMode('laptop')} onOpenAssembly={() => setMode('assembly')} onOpenTaskManager={() => setMode('task-manager-pc')} />;
-  if (mode === 'laptop') return <LaptopLab onBack={() => setMode('lab')} onOpenTaskManager={() => setMode('task-manager-laptop')} />;
-  if (mode === 'task-manager-pc' || mode === 'task-manager-laptop') return <TaskManagerLab device={mode === 'task-manager-laptop' ? 'laptop' : 'pc'} onBack={() => setMode(mode === 'task-manager-laptop' ? 'laptop' : 'lab')} />;
-  if (mode === 'assembly') return <BuildPcLab onBack={() => setMode('lab')} />;
-  if (mode === 'comparison') return <ComparisonWorkbench onExit={() => { setMode('explorer'); requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('.compare-button')?.focus()); }} />;
+  if (mode === 'laptop') return <Suspense fallback={loading}><LaptopLab onBack={() => setMode('lab')} onOpenTaskManager={() => setMode('task-manager-laptop')} /></Suspense>;
+  if (mode === 'task-manager-pc' || mode === 'task-manager-laptop') return <Suspense fallback={loading}><TaskManagerLab device={mode === 'task-manager-laptop' ? 'laptop' : 'pc'} onBack={() => setMode(mode === 'task-manager-laptop' ? 'laptop' : 'lab')} /></Suspense>;
+  if (mode === 'assembly') return <Suspense fallback={loading}><BuildPcLab onBack={() => setMode('lab')} /></Suspense>;
+  if (mode === 'comparison') return <Suspense fallback={loading}><ComparisonWorkbench onExit={() => { setMode('explorer'); requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('.compare-button')?.focus()); }} /></Suspense>;
 
   return (
     <main className={'workbench' + (selected ? ' has-selection' : '') + (logical ? ' logical' : '')}>
