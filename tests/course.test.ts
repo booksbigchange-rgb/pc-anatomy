@@ -32,6 +32,7 @@ await test('Course progress survives reload, rejects corrupt values, and reports
   try {
     assert.equal(saveCourse({ flow: true }), true); saveCourse({ os: true, laptopScore: 80 });
     assert.equal(readCourse().flow, true); assert.equal(readCourse().os, true); assert.equal(readCourse().laptopScore, 80);
+    assert.equal(readCourse().coffee, false); saveCourse({ coffee: true }); assert.equal(readCourse().coffee, true);
     value = '{"flow":"true","laptopScore":101,"finalAnswers":{"cpu":"fake","ram":"RAM"}}';
     assert.equal(readCourse().flow, false); assert.equal(readCourse().laptopScore, null); assert.deepEqual(readCourse().finalAnswers, { ram: 'RAM' });
     value = 'null'; assert.equal(readCourse().os, false);

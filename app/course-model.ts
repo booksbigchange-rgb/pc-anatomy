@@ -1,6 +1,6 @@
 const KEY = 'bigchange-course-v1';
-export type CourseProgress = { flow: boolean; os: boolean; laptopScore: number | null; finalAnswers: Record<string, string> };
-export const EMPTY_COURSE: CourseProgress = { flow: false, os: false, laptopScore: null, finalAnswers: {} };
+export type CourseProgress = { flow: boolean; os: boolean; coffee: boolean; laptopScore: number | null; finalAnswers: Record<string, string> };
+export const EMPTY_COURSE: CourseProgress = { flow: false, os: false, coffee: false, laptopScore: null, finalAnswers: {} };
 export const FINAL_QUESTIONS = [
   { id: 'cpu', prompt: 'You export a video. Which part follows the processing instructions?', options: ['CPU', 'SSD', 'Speaker'], answer: 'CPU', why: 'The CPU processes instructions. Storage keeps the files.' },
   { id: 'ram', prompt: 'You close many browser tabs. Which working space is released?', options: ['SSD storage', 'RAM', 'Power supply'], answer: 'RAM', why: 'RAM holds working data for open apps.' },
@@ -17,7 +17,7 @@ export function readCourse(): CourseProgress {
     if (!data || typeof data !== 'object') return { ...EMPTY_COURSE, finalAnswers: {} };
     const answers: Record<string, string> = {};
     for (const question of FINAL_QUESTIONS) if (question.options.some(value => value === data.finalAnswers?.[question.id])) answers[question.id] = data.finalAnswers[question.id];
-    return { flow: data.flow === true, os: data.os === true, laptopScore: Number.isInteger(data.laptopScore) && data.laptopScore >= 0 && data.laptopScore <= 100 ? data.laptopScore : null, finalAnswers: answers };
+    return { flow: data.flow === true, os: data.os === true, coffee: data.coffee === true, laptopScore: Number.isInteger(data.laptopScore) && data.laptopScore >= 0 && data.laptopScore <= 100 ? data.laptopScore : null, finalAnswers: answers };
   } catch { return { ...EMPTY_COURSE, finalAnswers: {} }; }
 }
 export function saveCourse(update: Partial<CourseProgress>) {
