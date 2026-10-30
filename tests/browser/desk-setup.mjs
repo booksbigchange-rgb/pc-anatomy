@@ -26,6 +26,11 @@ try {
   if (await skip.count()) await skip.click();
   await page.waitForTimeout(2500);
   assert.match(await page.locator('.lab-next').innerText(), /OptiPlex 7040 reference model, interior estimated/);
+  // Habesha touches: a Tigrinya welcome in Ge'ez with its own font, and the tibeb band under the top bar.
+  const welcome = page.locator('.lab-welcome [lang="ti"]');
+  assert.equal(await welcome.innerText(), 'እንቋዕ ብደሓን መጻእኩም');
+  assert.ok(await page.evaluate(() => document.fonts.load("700 20px 'Noto Sans Ethiopic'", 'እንቋዕ').then(faces => faces.length > 0)), 'The bundled Ge\'ez font loads');
+  assert.match(await page.evaluate(() => getComputedStyle(document.querySelector('.lab-topbar'), '::after').backgroundImage), /svg/, 'Tibeb band under the top bar');
   await shot('01-explore');
 
   await page.getByRole('button', { name: 'Connections', exact: true }).first().click();
@@ -46,10 +51,10 @@ try {
   camera.lookAt(0.75, 1.7, 0.35);
   camera.updateMatrixWorld();
   let connected = false;
-  // Front USB 1 sits on the tower front at about (3.95, 2.63, 1.3); search a small area around it.
+  // Front USB 1 sits on the tower front at about (3.95, 3.24, 1.3); search a small area around it.
   search: for (let dy = -0.12; dy <= 0.12; dy += 0.04)
     for (let dx = -0.15; dx <= 0.15; dx += 0.03) {
-      const q = new T.Vector3(3.95 + dx, 2.63 + dy, 1.3).project(camera);
+      const q = new T.Vector3(3.95 + dx, 3.24 + dy, 1.3).project(camera);
       await page.mouse.click(rect.x + ((q.x + 1) * rect.width) / 2, rect.y + ((1 - q.y) * rect.height) / 2);
       if (/Correct/.test(await feedback())) { connected = true; break search; }
     }

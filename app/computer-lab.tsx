@@ -23,6 +23,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createChassis } from '@/lib/optiplex-7040';
+import { GEEZ_FONT, TIGRINYA_WELCOME, TigrinyaWelcome, paintTibeb } from './habesha';
 
 type LabPartId =
   | 'monitor'
@@ -495,7 +496,7 @@ function buildTower() {
   const power = port('tower-power', [0.34, 0.26, 0.05], at('psu-inlet', 'rear', new THREE.Vector3(-0.35, 0.62, 0)), 0xa98265);
   const ports = [usb1, usb2, hdmi, ethernet, power];
   group.add(...ports);
-  group.position.set(4.15, 0.02, -0.42);
+  group.position.set(4.15, DESK_TOP, -0.42);
   return { group: tag(group, 'tower'), ports };
 }
 
@@ -657,6 +658,93 @@ function cableLine(start: THREE.Vector3, end: THREE.Vector3, id: ConnectionId) {
   return cable;
 }
 
+/**
+ * A coffee-ceremony set: a clay jebena on a woven ring, and six sini cups on a small
+ * wooden tray. Decoration only; it is not a learning target and cannot be selected.
+ */
+function buildCoffeeSet() {
+  const set = new THREE.Group();
+  const clay = new THREE.MeshStandardMaterial({ color: 0x2b1b14, roughness: 0.82, metalness: 0.02 });
+  // Jebena: round body, narrow neck, flared lip (unit ≈ 11 cm, about 22 cm tall).
+  const profile = [
+    [0.0, 0.0], [0.34, 0.02], [0.52, 0.22], [0.56, 0.45], [0.48, 0.72], [0.28, 0.92],
+    [0.13, 1.08], [0.1, 1.45], [0.11, 1.7], [0.17, 1.86], [0.15, 1.9],
+  ].map(([x, y]) => new THREE.Vector2(x, y));
+  const jebena = new THREE.Mesh(new THREE.LatheGeometry(profile, 40), clay);
+  jebena.castShadow = true;
+  const spout = new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(0.38, 0.75, 0), new THREE.Vector3(0.62, 1.05, 0), new THREE.Vector3(0.76, 1.42, 0)]), 16, 0.055, 10, false),
+    clay,
+  );
+  const handle = new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(-0.12, 1.5, 0), new THREE.Vector3(-0.42, 1.38, 0), new THREE.Vector3(-0.56, 1.0, 0), new THREE.Vector3(-0.46, 0.66, 0)]), 20, 0.045, 10, false),
+    clay,
+  );
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.07, 10, 32), new THREE.MeshStandardMaterial({ color: 0xc89b45, roughness: 0.9 }));
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = 0.06;
+  const pot = new THREE.Group();
+  pot.add(jebena, spout, handle);
+  pot.position.y = 0.06;
+  set.add(ring, pot);
+  // Rekebot: a small wooden tray with six handleless sini cups.
+  const tray = rounded(1.5, 0.12, 0.95, 0.04, 0x6b4426, 0.72, 0.04);
+  tray.position.set(1.45, 0.06, 0.15);
+  set.add(tray);
+  const porcelain = new THREE.MeshStandardMaterial({ color: 0xf6f3ec, roughness: 0.28, metalness: 0.02 });
+  const band = new THREE.MeshStandardMaterial({ color: 0x2f7d4f, roughness: 0.4 });
+  for (let i = 0; i < 6; i++) {
+    const cup = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.09, 0.17, 20, 1, true), porcelain);
+    body.material.side = THREE.DoubleSide;
+    const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.02, 20), porcelain);
+    foot.position.y = -0.08;
+    const stripe = new THREE.Mesh(new THREE.CylinderGeometry(0.128, 0.12, 0.025, 20, 1, true), band);
+    stripe.position.y = 0.045;
+    cup.add(body, foot, stripe);
+    cup.position.set(1.0 + (i % 3) * 0.45, 0.21, -0.12 + Math.floor(i / 3) * 0.52);
+    set.add(cup);
+  }
+  set.traverse((object) => { if (object instanceof THREE.Mesh) { object.castShadow = true; object.receiveShadow = true; } });
+  return set;
+}
+
+/** A small woven mesob with its lid, in banded straw colours. Decoration only. */
+function buildMesob() {
+  const weave = document.createElement('canvas');
+  weave.width = 256;
+  weave.height = 512;
+  const context = weave.getContext('2d');
+  if (context) {
+    const bands = ['#d8b26a', '#b8322e', '#d8b26a', '#2f7d4f', '#e3c27a', '#5a2d6b', '#d8b26a', '#d9a441', '#b8322e', '#d8b26a'];
+    bands.forEach((colour, index) => { context.fillStyle = colour; context.fillRect(0, index * 51.2, 256, 51.2); });
+    // Fine coil lines and a zig-zag, like hand-woven grass.
+    context.strokeStyle = 'rgba(60,35,15,.35)';
+    for (let y = 0; y < 512; y += 6) { context.beginPath(); context.moveTo(0, y); context.lineTo(256, y); context.stroke(); }
+    context.strokeStyle = '#2b1b14';
+    context.lineWidth = 4;
+    context.beginPath();
+    for (let x = 0; x <= 256; x += 16) context.lineTo(x, 230 + ((x / 16) % 2 ? 14 : -14));
+    context.stroke();
+  }
+  const texture = new THREE.CanvasTexture(weave);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.repeat.set(6, 1);
+  const material = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.95, metalness: 0, side: THREE.DoubleSide });
+  const profile = [
+    [0.0, 0.0], [0.62, 0.0], [0.5, 0.18], [0.36, 0.6], [0.5, 0.9], [0.92, 1.18], [1.02, 1.3],
+    [0.98, 1.36], [0.9, 1.5], [0.66, 1.95], [0.36, 2.4], [0.18, 2.7], [0.14, 2.86], [0.0, 2.9],
+  ].map(([x, y]) => new THREE.Vector2(x, y));
+  const mesob = new THREE.Mesh(new THREE.LatheGeometry(profile, 48), material);
+  mesob.castShadow = true;
+  mesob.receiveShadow = true;
+  return mesob;
+}
+
+/** Height of the desk's top surface. */
+const DESK_TOP = 0.63;
+
 function addDesk(scene: THREE.Scene) {
   const desktop = rounded(13.8, 0.5, 7.25, 0.18, 0xffffff, 0.62, 0.04);
   const grain = woodTexture();
@@ -678,12 +766,32 @@ function addDesk(scene: THREE.Scene) {
     }
   }
 
+  // A tibeb runner along the back of the desk, under the monitor and tower.
+  const runnerCanvas = document.createElement('canvas');
+  runnerCanvas.width = 2048;
+  runnerCanvas.height = 192;
+  const runnerContext = runnerCanvas.getContext('2d');
+  if (runnerContext) {
+    runnerContext.fillStyle = '#f3ead8';
+    runnerContext.fillRect(0, 0, 2048, 192);
+    paintTibeb(runnerContext, 0, 0, 2048, 44);
+    paintTibeb(runnerContext, 0, 148, 2048, 44);
+    const runnerTexture = new THREE.CanvasTexture(runnerCanvas);
+    runnerTexture.colorSpace = THREE.SRGBColorSpace;
+    runnerTexture.anisotropy = 4;
+    const runner = new THREE.Mesh(new THREE.BoxGeometry(11.6, 0.012, 1.15), new THREE.MeshStandardMaterial({ map: runnerTexture, roughness: 0.9, metalness: 0 }));
+    runner.position.set(0.6, DESK_TOP + 0.006, -1.1);
+    runner.receiveShadow = true;
+    scene.add(runner);
+  }
+
   const mat = rounded(6.5, 0.035, 2.45, 0.1, 0x20282d, 0.82, 0.02);
   mat.position.set(0.35, 0.655, 2.2);
   mat.receiveShadow = true;
   scene.add(mat);
 }
 
+/** Builds the room; returns a repaint hook so the board can redraw once the Ge'ez font arrives. */
 function addRoom(scene: THREE.Scene) {
   const floor = mesh(
     new THREE.PlaneGeometry(42, 42),
@@ -713,6 +821,44 @@ function addRoom(scene: THREE.Scene) {
   const board = rounded(9.1, 3.7, 0.06, 0.03, 0xf1f4f2, 0.3, 0.02);
   board.position.set(0.4, 6.4, -7.04);
   scene.add(board);
+  // The board's writing: a Tigrinya welcome and a teacher's sketch of input → processing → output.
+  const writing = document.createElement('canvas');
+  writing.width = 1820;
+  writing.height = 740;
+  const paintBoard = () => {
+    const context = writing.getContext('2d');
+    if (!context) return;
+    context.fillStyle = '#f4f6f4';
+    context.fillRect(0, 0, writing.width, writing.height);
+    paintTibeb(context, 0, 0, writing.width, 46);
+    context.fillStyle = '#1d3f8a';
+    context.textAlign = 'center';
+    context.font = `700 138px ${GEEZ_FONT}`;
+    context.fillText(TIGRINYA_WELCOME, writing.width / 2, 250);
+    context.fillStyle = '#2a3138';
+    context.font = '600 64px Segoe UI, Arial, sans-serif';
+    context.fillText('Welcome to the Computer Lab', writing.width / 2, 350);
+    context.strokeStyle = '#b8322e';
+    context.lineWidth = 7;
+    context.font = '600 52px Segoe UI, Arial, sans-serif';
+    const boxes = [['Keyboard', 330], ['CPU', 910], ['Screen', 1490]] as const;
+    for (const [label, x] of boxes) {
+      context.strokeRect(x - 190, 470, 380, 130);
+      context.fillStyle = '#2a3138';
+      context.fillText(label, x, 553);
+    }
+    context.strokeStyle = '#2f7d4f';
+    for (const x of [540, 1120]) {
+      context.beginPath(); context.moveTo(x, 535); context.lineTo(x + 140, 535); context.lineTo(x + 112, 512); context.moveTo(x + 140, 535); context.lineTo(x + 112, 558); context.stroke();
+    }
+  };
+  paintBoard();
+  const boardTexture = new THREE.CanvasTexture(writing);
+  boardTexture.colorSpace = THREE.SRGBColorSpace;
+  boardTexture.anisotropy = 4;
+  const boardFace = new THREE.Mesh(new THREE.PlaneGeometry(9.0, 3.6), new THREE.MeshStandardMaterial({ map: boardTexture, roughness: 0.35, metalness: 0 }));
+  boardFace.position.set(0.4, 6.4, -7.0);
+  scene.add(boardFace);
   const tray = rounded(5.2, 0.1, 0.32, 0.03, 0x9aa3a8, 0.35, 0.6);
   tray.position.set(0.4, 4.36, -6.92);
   scene.add(tray);
@@ -728,6 +874,7 @@ function addRoom(scene: THREE.Scene) {
     material.opacity = 0.22;
   }
   scene.add(grid);
+  return () => { paintBoard(); boardTexture.needsUpdate = true; };
 }
 
 export default function ComputerLab({
@@ -845,8 +992,15 @@ export default function ComputerLab({
     rimLight.position.set(5, 7, -9);
     scene.add(rimLight);
 
-    addRoom(scene);
+    const repaintBoard = addRoom(scene);
     addDesk(scene);
+    const coffee = buildCoffeeSet();
+    coffee.position.set(-5.55, DESK_TOP, 1.0);
+    coffee.rotation.y = 0.35;
+    scene.add(coffee);
+    const mesob = buildMesob();
+    mesob.position.set(-3.4, -2.1, 5.0);
+    scene.add(mesob);
 
     const groups = new Map<LabPartId, THREE.Group>();
     const monitor = buildMonitor();
@@ -1011,6 +1165,13 @@ export default function ComputerLab({
 
     // Set by resizes, camera moves and state changes; the draw loop renders only when it is true.
     let redraw = true;
+    // Repaint the board once the bundled Ge'ez font has loaded, so it never shows empty boxes.
+    let mounted = true;
+    void document.fonts?.load(`700 64px 'Noto Sans Ethiopic'`, TIGRINYA_WELCOME).then(() => {
+      if (!mounted) return;
+      repaintBoard();
+      redraw = true;
+    }).catch(() => undefined);
     const resize = () => {
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
@@ -1089,6 +1250,7 @@ export default function ComputerLab({
     draw();
 
     return () => {
+      mounted = false;
       cancelAnimationFrame(frame);
       observer.disconnect();
       controls.removeEventListener('change', requestRedraw);
@@ -1214,6 +1376,7 @@ export default function ComputerLab({
       </header>
 
       <aside className="lab-parts" aria-label="Computer setup learning panel">
+        {!guided && labMode === 'explore' && <TigrinyaWelcome className="lab-welcome" />}
         <p className="lab-eyebrow">
           {guided
             ? `GUIDED LESSON · ${guideIndex + 1} / ${GUIDE_ORDER.length}`
