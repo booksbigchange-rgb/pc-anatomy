@@ -185,3 +185,12 @@
 .lab-port-key button:focus-visible { outline: 3px solid #ffd166; outline-offset: 2px; }
 .lab-port-key button:disabled { opacity: 0.55; cursor: default; }
 .lab-port-hint { margin: 8px 0 0; font-size: 12px; color: #8fa2a8; }
+
+/* Offline use card in the Computer Lab panel. */
+.offline-card { margin-top: 12px; padding: 12px 14px; border: 1px solid #2f3b40; border-radius: 10px; background: #12181b; color: #b8c9ce; font-size: 13px; line-height: 1.45; }
+.offline-card strong { display: block; color: #e6f2f4; margin-bottom: 4px; }
+.offline-card p { margin: 4px 0; }
+.offline-card button { margin-top: 6px; min-height: 36px; padding: 6px 10px; border: 1px solid #3d8f97; border-radius: 8px; background: #102a30; color: #e6fbfc; font: inherit; cursor: pointer; }
+.offline-card button:disabled { opacity: 0.55; cursor: default; }
+.offline-card button:focus-visible { outline: 3px solid #ffd166; outline-offset: 2px; }
+.offline-card progress { width: 100%; accent-color: #78cbd6; }
