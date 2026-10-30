@@ -23,3 +23,4 @@
 }
 .lab-welcome { margin: 0 0 10px; font-size: 15px; color: #f3d48a; }
 .course-lab > header { padding-bottom: 14px; }
+.lab-loading { min-height: 100vh; display: grid; place-items: center; background: #0d1418; color: #cfe3e7; font-size: 16px; }
