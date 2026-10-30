@@ -1,7 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import Home from './page';
-import { registerOffline } from './offline';
 import './globals.css';
 import '@fontsource/noto-sans-ethiopic/400.css';
 import '@fontsource/noto-sans-ethiopic/700.css';
@@ -12,5 +11,3 @@ createRoot(document.getElementById('root')!).render(
     <Home />
   </React.StrictMode>,
 );
-
-registerOffline();
