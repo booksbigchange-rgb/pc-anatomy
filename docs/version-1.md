@@ -63,3 +63,19 @@ Evidence: `tests/browser/desk-setup.mjs` also checks the Tigrinya welcome, its l
 Wording: English, with jebena and sini, which Tigrinya and Amharic speakers share. Round names such as abol are left out because they differ between languages. The lesson says plainly that it is a comparison to help remember, not an exact model.
 
 Evidence: `tests/coffee-lesson.test.ts` (answers, coverage of input/CPU/RAM/output/storage, feedback) and the course browser check (wrong answer, all six steps, result kept after reload).
+
+## Offline mode (October 2026)
+
+The lab works without internet after one visit, for schools with weak or no connection.
+
+- **Saved automatically on the first visit:** the app itself (code, styles, fonts, icons, the no-JavaScript guide), about 4 MB. The Computer Lab, Build Your PC, Task Manager and the lessons then open offline.
+- **Saved on request:** "Save all labs for offline use" in the Computer Lab panel downloads every 3D laptop model and the school intro video (about 14 MB) with progress. Models opened online are also kept as they are used.
+- Pages always try the network first, so a new release appears when online; the saved copy is used only when the network fails. Each release replaces the saved app; models are refreshed in the background.
+- The main lab and the school edition keep separate saved copies and do not interfere.
+- Learning progress was already stored in the browser and is unchanged.
+
+How it works: `public/sw.js` (service worker) and a build step in `vite.config.ts` that writes `offline-manifest.json` (app files, model pack and its size). Only the published build registers the worker.
+
+Evidence: `tests/browser/offline.mjs` saves everything, switches the browser fully offline, and checks the lab, Build Your PC and every Laptop Lab model load with no errors. It runs against the live site after each release.
+
+Limits: a browser must visit once with internet; clearing browser data removes the saved copy; very old browsers without service workers still need internet.
