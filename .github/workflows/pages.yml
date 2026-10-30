@@ -145,6 +145,7 @@ jobs:
           live 'course' timeout 180s node tests/browser/course.mjs
           live 'visual-priorities' timeout 180s node tests/browser/visual-priorities.mjs
           live 'desk-setup' timeout 300s node tests/browser/desk-setup.mjs
+          live 'offline' timeout 600s node tests/browser/offline.mjs
           live 'build-pc' timeout 900s node tests/browser/build-pc.mjs
           ATLAS_TEST_URL=https://booksbigchange-rgb.github.io/pc-anatomy/school/ live 'build-pc (school)' timeout 900s node branding/tests/browser/build-pc.mjs
       - uses: actions/upload-artifact@v4
