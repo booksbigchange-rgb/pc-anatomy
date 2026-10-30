@@ -1,0 +1,25 @@
+/* Ge'ez script uses a bundled Noto Sans Ethiopic so every school computer shows the same letters. */
+[lang='ti'] { font-family: 'Noto Sans Ethiopic', 'Ebrima', 'Nyala', sans-serif; }
+.geez-welcome { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0 2px; }
+.geez-welcome [lang='ti'] { font-weight: 700; letter-spacing: 0.02em; }
+
+/* Tibeb: the woven border of a habesha kemis or netela, as a thin band under each lab's top bar. */
+:root {
+  --tibeb: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='14'%3E%3Crect width='44' height='14' fill='%23f3ead8'/%3E%3Crect width='44' height='2' fill='%232b4c8c'/%3E%3Crect y='12' width='44' height='2' fill='%232b4c8c'/%3E%3Cpath d='M11 3l4 4-4 4-4-4z' fill='%23b8322e' stroke='%23d9a441' stroke-width='.8'/%3E%3Cpath d='M33 3l4 4-4 4-4-4z' fill='%232f7d4f' stroke='%23d9a441' stroke-width='.8'/%3E%3Cpath d='M21 5h2v1h1v2h-1v1h-2v-1h-1v-2h1zM43 5h1v4h-1zM0 5h1v4H0z' fill='%23d9a441'/%3E%3C/svg%3E");
+}
+.lab-topbar, .assembly-topbar, .laptop-topbar, .tm-header, .build-picker-header, .course-lab > header { position: relative; }
+.lab-topbar::after, .assembly-topbar::after, .laptop-topbar::after, .tm-header::after, .build-picker-header::after, .course-lab > header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 7px;
+  background: var(--tibeb) repeat-x left center / auto 7px;
+  pointer-events: none;
+}
+@media (forced-colors: active) {
+  .lab-topbar::after, .assembly-topbar::after, .laptop-topbar::after, .tm-header::after, .build-picker-header::after, .course-lab > header::after { display: none; }
+}
+.lab-welcome { margin: 0 0 10px; font-size: 15px; color: #f3d48a; }
+.course-lab > header { padding-bottom: 14px; }
