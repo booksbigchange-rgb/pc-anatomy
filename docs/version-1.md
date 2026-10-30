@@ -55,3 +55,11 @@ Chosen with the project owner: Tigrinya for Ge'ez text, tibeb patterns, coffee-c
 Review needed: a Tigrinya-speaking teacher should confirm the welcome wording and spelling before classroom use. No flags or national symbols are used, so the room fits both Eritrean and Ethiopian learners.
 
 Evidence: `tests/browser/desk-setup.mjs` also checks the Tigrinya welcome, its language tag, that the Ge'ez font loads and that the tibeb band is drawn.
+
+## Coffee ceremony lesson (October 2026)
+
+"My learning path" has a seventh activity, **Coffee ceremony computer**. Students follow six ceremony steps and match each to the computer part that does the same job: green beans → input, roasting → CPU, grinding → CPU (many small steps), brewing in the jebena → RAM, serving the sini cups → output, keeping beans in a jar → SSD (storage). A wrong choice gives a hint; a right one explains the comparison. Finishing records a result on the learning path (now 7 results).
+
+Wording: English, with jebena and sini, which Tigrinya and Amharic speakers share. Round names such as abol are left out because they differ between languages. The lesson says plainly that it is a comparison to help remember, not an exact model.
+
+Evidence: `tests/coffee-lesson.test.ts` (answers, coverage of input/CPU/RAM/output/storage, feedback) and the course browser check (wrong answer, all six steps, result kept after reload).
