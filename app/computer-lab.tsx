@@ -24,6 +24,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createChassis } from '@/lib/optiplex-7040';
 import { GEEZ_FONT, TIGRINYA_WELCOME, TigrinyaWelcome, paintTibeb } from './habesha';
+import { OfflineControl } from './offline';
 
 type LabPartId =
   | 'monitor'
@@ -1472,6 +1473,7 @@ export default function ComputerLab({
           <strong>About this model</strong>
           <span>Tower: Dell OptiPlex 7040 reference model, interior estimated. Monitor, keyboard and mouse: original Big Change models.</span>
         </div>
+        <OfflineControl />
       </aside>
 
       <section className="lab-stage" aria-label="Interactive 3D computer setup">
