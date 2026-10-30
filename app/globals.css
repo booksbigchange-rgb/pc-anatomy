@@ -25,8 +25,7 @@
   --radius-lg: 8px;
 }
 
-/* Viewport onto the selected top-centre shield in the supplied logo sheet.
-   The source artwork remains byte-for-byte unchanged. */
+/* The shield cropped from the supplied logo sheet; the sheet itself stays unchanged. */
 .academy-logo,
 .tm-brand > .academy-logo {
   position: relative;
@@ -39,10 +38,7 @@
   border-radius: 5px;
 }
 .academy-logo img {
-  position: absolute;
-  width: 357.2093%;
-  max-width: none;
-  height: auto;
-  left: -128.8372%;
-  top: -7.6087%;
+  display: block;
+  width: 100%;
+  height: 100%;
 }

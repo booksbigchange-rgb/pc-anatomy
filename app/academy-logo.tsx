@@ -1,14 +1,17 @@
-/** Display the chosen shield from the original artwork sheet without redrawing it. */
+/**
+ * The chosen shield, cropped and resized from the original artwork sheet
+ * (public/bigchange-logo-original.png, kept unchanged) so headers load 25 KB, not 1.5 MB.
+ */
 export default function AcademyLogo() {
   return (
     <span className="academy-logo">
-      {/* Vite serves this original artwork directly; Next Image is not available. */}
+      {/* Vite serves this artwork directly; Next Image is not available. */}
       {/* oxlint-disable-next-line next/no-img-element */}
       <img
-        src={`${import.meta.env.BASE_URL}bigchange-logo-original.png`}
+        src={`${import.meta.env.BASE_URL}bigchange-logo-shield.png`}
         alt="BigChange Academy — navy and gold shield with graduation cap, books and laurel"
-        width="1536"
-        height="1024"
+        width="132"
+        height="144"
       />
     </span>
   );
