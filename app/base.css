@@ -1,0 +1,116 @@
+/*
+ * Shared page base: colours, resets, focus ring and reduced motion.
+ * Kept from the original explorer stylesheet (pc-anatomy by Yoseph, MIT) when the explorer was retired.
+ */
+:root {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: #e4e7e9;
+  background: #0c0d0e;
+  font-synthesis: none;
+  color-scheme: dark;
+  --background: #0f1011;
+  --foreground: #eef0f1;
+  --primary: #79bfcc;
+  --accent: #79bfcc;
+  --accent-bright: #a1d9e2;
+  --accent-violet: #b497cf;
+  --accent-muted: #9dc5cc;
+  --muted: #232427;
+  --muted-foreground: #b3b5ba;
+  /* The notch, the rounded corners and the home indicator, as four lengths.
+     Every browser that does not know about them reports 0px, so the same
+     rules hold on a desktop monitor. */
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+}
+* {
+  box-sizing: border-box;
+}
+/* Each lab is a fixed stage, not a document: there is nothing below the
+   fold to reach. Letting the page itself scroll on a phone only produces the
+   iOS rubber-band and a pull-to-refresh that fires mid-orbit. */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  /* The stage gradient lives here rather than on .workbench so that it also
+     fills the safe-area margins. Otherwise the rounded corners of a phone
+     screen show a seam in landscape. */
+  background: radial-gradient(
+    ellipse at 62% 45%,
+    #1b1d1e 0%,
+    #0f1011 44%,
+    #070808 80%
+  );
+}
+button,
+input,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+:where(
+  button,
+  a,
+  input,
+  [role='slider'],
+  [role='switch'],
+  [tabindex]:not([tabindex='-1'])
+):focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 4px;
+}
+button:hover {
+  color: #fff;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+svg {
+  flex-shrink: 0;
+}
+button svg {
+  display: block;
+}
+button,
+a {
+  touch-action: manipulation;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+/* Respect reduced motion everywhere. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

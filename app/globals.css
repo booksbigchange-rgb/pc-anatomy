@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-@import './workbench.css';
+@import './base.css';
 @import './computer-lab.css';
 @import './computer-lab-connections.css';
 @import './laptop-lab.css';
@@ -39,7 +39,7 @@
 
 /* Theme token: dark surfaces use a gold wordmark; light surfaces retain the
    supplied gold symbol and black lettering. No solid logo tile is needed. */
-.school-opening, .computer-lab, .laptop-lab, .workbench {
+.school-opening, .computer-lab, .laptop-lab {
   --academy-logo-filter: brightness(0) saturate(100%) invert(86%) sepia(54%) saturate(915%) hue-rotate(326deg) brightness(105%) contrast(102%);
 }
 .tm-lab, .course-lab { --academy-logo-filter: none; }

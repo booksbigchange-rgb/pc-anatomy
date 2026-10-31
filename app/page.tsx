@@ -1,92 +1,26 @@
 'use client';
-import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
-import { EyeOff } from 'lucide-react';
-import { levelPath } from '@/lib/levels';
-import { useExplorer } from './use-explorer';
-import Viewer from './viewer';
-import PerformanceTip from './performance-tip';
-import Topbar from './topbar';
-import ScaleNav from './scale-nav';
-import SystemsList from './systems-list';
-import StageHeading from './stage-heading';
-import StageTools from './stage-tools';
-import Disassembly from './disassembly';
-import SearchDialog from './search-dialog';
-import DetailPanel from './detail-panel';
-import AboutDialog from './about-dialog';
+import { Suspense, lazy, useState } from 'react';
 import ComputerLab from './computer-lab';
 import SchoolOpening, { needsSchoolOpening } from './school-opening';
 
 // The Computer Lab opens first; the other labs load only when a student opens them.
-const ComparisonWorkbench = lazy(() => import('./comparison-workbench'));
 const LaptopLab = lazy(() => import('./laptop-lab'));
 const BuildPcLab = lazy(() => import('./build-pc-lab'));
+const InsidePc = lazy(() => import('./assembly-lab'));
 const TaskManagerLab = lazy(() => import('./task-manager-lab'));
 const CourseLab = lazy(() => import('./course-lab'));
 const loading = <output className="lab-loading">Opening the lab…</output>;
 
 export default function Home() {
   const [opening, setOpening] = useState(needsSchoolOpening);
-  const explorer = useExplorer();
-  const { state, selected, logical, layers, selectConcept, choose, navigate } = explorer;
-  const [search, setSearch] = useState(false),
-    [query, setQuery] = useState(''),
-    [about, setAbout] = useState(false),
-    [studentMode, setStudentMode] = useState(true),
-    [mode, setMode] = useState<'lab' | 'laptop' | 'assembly' | 'explorer' | 'comparison' | 'task-manager-pc' | 'task-manager-laptop' | 'course'>('lab'),
-    [count, setCount] = useState<number | null>(null);
-
-  const selectResult = useCallback((id: string) => {
-    selectConcept(id);
-    setSearch(false);
-    setQuery('');
-  }, [selectConcept]);
-
-  useEffect(() => {
-    const key = (event: KeyboardEvent) => {
-      const el = event.target;
-      if (el instanceof Element && el.closest('input,textarea,[contenteditable=true]')) return;
-      if (search || about || mode !== 'explorer') return;
-      if (event.key === '/') { event.preventDefault(); setSearch(true); }
-      if (event.key === 'Escape') choose(null);
-      if (event.key === 'Backspace') {
-        const currentPath = levelPath(state.level);
-        if (currentPath.length > 1) {
-          event.preventDefault();
-          navigate(currentPath[currentPath.length - 2]);
-        }
-      }
-    };
-    window.addEventListener('keydown', key);
-    return () => window.removeEventListener('keydown', key);
-  }, [about, choose, mode, navigate, search, state.level]);
+  const [mode, setMode] = useState<'lab' | 'laptop' | 'assembly' | 'inside' | 'task-manager-pc' | 'task-manager-laptop' | 'course'>('lab');
 
   if (opening) return <SchoolOpening onEnter={() => setOpening(false)} />;
   if (mode === 'course') return <Suspense fallback={loading}><CourseLab onBack={() => setMode('lab')} onActivity={setMode} /></Suspense>;
-  if (mode === 'lab') return <ComputerLab onOpenCourse={() => setMode('course')} onOpenPC={() => setMode('explorer')} onOpenLaptop={() => setMode('laptop')} onOpenAssembly={() => setMode('assembly')} onOpenTaskManager={() => setMode('task-manager-pc')} />;
   if (mode === 'laptop') return <Suspense fallback={loading}><LaptopLab onBack={() => setMode('lab')} onOpenTaskManager={() => setMode('task-manager-laptop')} /></Suspense>;
   if (mode === 'task-manager-pc' || mode === 'task-manager-laptop') return <Suspense fallback={loading}><TaskManagerLab device={mode === 'task-manager-laptop' ? 'laptop' : 'pc'} onBack={() => setMode(mode === 'task-manager-laptop' ? 'laptop' : 'lab')} /></Suspense>;
   if (mode === 'assembly') return <Suspense fallback={loading}><BuildPcLab onBack={() => setMode('lab')} /></Suspense>;
-  if (mode === 'comparison') return <Suspense fallback={loading}><ComparisonWorkbench onExit={() => { setMode('explorer'); requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('.compare-button')?.focus()); }} /></Suspense>;
-
-  return (
-    <main className={'workbench' + (selected ? ' has-selection' : '') + (logical ? ' logical' : '')}>
-      <Topbar layers={layers} studentMode={studentMode} onReset={explorer.reset} onOpenLab={() => setMode('lab')} onToggleLayers={() => explorer.setLayers(!layers)} onToggleStudentMode={() => setStudentMode((value) => !value)} onSearch={() => setSearch(true)} onAbout={() => setAbout(true)} />
-      <PerformanceTip ready={count !== null && count > 0} />
-      {layers && <button className="drawer-scrim" aria-label="Close systems" onClick={() => explorer.setLayers(false)} />}
-      <aside className={'explorer' + (layers ? ' mobile-open' : '')} aria-label="System visibility">
-        <ScaleNav level={state.level} shownMenu={explorer.shownMenu} shownSubmenu={explorer.shownSubmenu} onOpenMenu={explorer.showMenu} onOpenSubmenu={explorer.showSubmenu} onNavigate={navigate} onCompare={() => setMode('comparison')} onClose={() => explorer.setLayers(false)} />
-        <SystemsList visible={state.visible} hidden={state.hidden} onToggleCategory={explorer.toggleCategory} onToggleAll={explorer.toggleAllCategories} onSetConceptVisible={explorer.setConceptVisible} onSelectConcept={selectResult} />
-      </aside>
-      <StageHeading level={state.level} explode={state.explode} logical={logical} selected={selected} count={count} onNavigate={navigate} />
-      <Viewer state={state} onSelect={choose} onCount={setCount} onDived={explorer.arrive} />
-      {count === null && <div className="empty-scene loading"><h3>Loading components for you…</h3></div>}
-      {count === 0 && <div className="empty-scene"><EyeOff size={27} /><h3>No structures visible</h3><button onClick={explorer.showEverything}>Show all systems</button></div>}
-      <StageTools view={state.view} level={state.level} explode={state.explode} logical={logical} airflow={state.airflow} hidden={state.hidden} hiddenMenuOpen={explorer.hiddenMenuOpen} onToggleHiddenMenu={() => explorer.setHiddenMenuOpen((open) => !open)} onSetView={explorer.setView} onToggleAirflow={explorer.toggleAirflow} onUnhide={explorer.unhide} onClearHidden={explorer.clearHidden} />
-      <Disassembly level={state.level} explode={state.explode} logical={logical} playing={explorer.playing} onToggleAuto={explorer.toggleAuto} onSetExplode={explorer.setExplode} onReset={explorer.reset} />
-      <SearchDialog open={search} onOpenChange={setSearch} query={query} onQueryChange={setQuery} onSelect={selectResult} />
-      <DetailPanel selected={selected} selection={state.selection} level={state.level} isolated={state.isolated} studentMode={studentMode} onClose={() => choose(null)} onSelectConcept={selectResult} onDive={explorer.dive} onIsolate={explorer.toggleIsolate} onFocus={explorer.refocus} onHide={explorer.hide} />
-      <AboutDialog open={about} onOpenChange={setAbout} />
-    </main>
-  );
+  // Explore inside the PC: our OptiPlex reference model with its take-apart timeline.
+  if (mode === 'inside') return <Suspense fallback={loading}><InsidePc onBack={() => setMode('lab')} backLabel="Computer Lab" /></Suspense>;
+  return <ComputerLab onOpenCourse={() => setMode('course')} onOpenPC={() => setMode('inside')} onOpenLaptop={() => setMode('laptop')} onOpenAssembly={() => setMode('assembly')} onOpenTaskManager={() => setMode('task-manager-pc')} />;
 }

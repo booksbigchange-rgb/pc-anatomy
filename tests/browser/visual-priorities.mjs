@@ -14,6 +14,6 @@ try{
  const parts=await page.locator('.laptop-parts').boundingBox(),stage=await page.locator('.laptop-stage').boundingBox();assert.ok(parts.y+parts.height<=stage.y+1,'Parts panel must not cover model');
  await shot('02-phone-laptop');await page.setViewportSize({width:1440,height:900});
  for(const value of ['18','60','78','100']){await page.getByRole('slider',{name:'Laptop teardown progress'}).fill(value);await shot(`03-teardown-${value}`);}
- await page.goto(process.env.ATLAS_TEST_URL||'http://127.0.0.1:5186/');await page.locator('header').getByRole('button',{name:'Explore inside the PC',exact:true}).click();await page.locator('.empty-scene.loading').waitFor({state:'hidden',timeout:60000});assert.match(await page.locator('body').ariaSnapshot(), /visible parts/);
- assert.deepEqual(errors,[]);await writeFile(`${dir}/result.json`,JSON.stringify({passed:true,errors,checks:['phone navigation labels and bounds','parts panel clear of laptop stage','teardown screenshots 18/60/78/100','explorer loads']},null,2));
+ await page.goto(process.env.ATLAS_TEST_URL||'http://127.0.0.1:5186/');await page.locator('header').getByRole('button',{name:'Explore inside the PC',exact:true}).click();await page.getByRole('region',{name:'PC teardown timeline'}).waitFor({timeout:60000});assert.match(await page.locator('.assembly-topbar').innerText(),/Computer Lab/);
+ assert.deepEqual(errors,[]);await writeFile(`${dir}/result.json`,JSON.stringify({passed:true,errors,checks:['phone navigation labels and bounds','parts panel clear of laptop stage','teardown screenshots 18/60/78/100','inside-the-PC view loads']},null,2));
 }finally{await browser.close();}
