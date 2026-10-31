@@ -18,6 +18,7 @@ Until October 2026 this repository also contained the original PC Anatomy explor
 | `app/computer-lab.tsx` | Desk scene: OptiPlex tower, monitor, keyboard, mouse, cables, port practice (3D click and buttons share one check), Habesha touches. On-demand rendering. |
 | `app/assembly-lab.tsx` | The OptiPlex 7040 reference model. Inspection mode (select, isolate, lift one part, board and case targets, **Take apart** timeline) and assembly practice (drag/seat, orient, retainers, paste, cooler screws, cables, simulated POST). Used by Explore inside the PC (`backLabel="Computer Lab"`) and by Build a PC. |
 | `app/pc-teardown.ts` | Pure rules of the take-apart timeline: step windows on 0–100, service order, bench positions, part path (lift, then across), retainer release. Unit-tested. |
+| `app/pc-reassembly.ts` | Put-it-back-together lesson rules: what each step needs first, hints, success tips. Unit-tested. |
 | `app/use-disassembly-playback.ts` | Shared Auto/Pause playback of a 0–100 value (11 %/s, reduced motion jumps to the end). Used by the PC and laptop timelines. Kept from the original explorer. |
 | `app/build-session.ts` | Pure build rules: install order, prerequisites, drops, orientation, POST problems, scoring. |
 | `app/build-pc-lab.tsx` | Parts picker and compatibility checks before assembly. |
@@ -40,6 +41,8 @@ One value, 0–100, drives the inspection model. `TEARDOWN` in `app/pc-teardown.
 `cover 0–8 → drive cage 8–15 → card 15–26 → memory 26–36 → SSD 36–46 → cooler 46–58 → CPU 58–68 → power supply 68–80 → motherboard 80–100`.
 
 In the first quarter of a part's window its retainer or screws come undone (RAM clips, card bracket, SSD screw, cooler screws) through the same `setHardwareRetainers` / `setCoolerScrews` poses used in assembly practice. Then the part lifts straight up to `LIFT_HEIGHT` and moves across to its `BENCH` spot on the table. A unit test checks that every bench spot rests on the table and that no two parts, or a part and the case, overlap.
+
+In the **Put it back together** lesson the same poses run backwards, but each step has its own progress (animated in the draw loop from `rebuild`), so steps can happen in any order the rules in `app/pc-reassembly.ts` allow.
 
 Starting the timeline lays the PC on its side and frames the bench. Tools that work on the assembled PC (tower view, cover, drive cage, Reveal CPU, Explode/Isolate selected, assembly practice) reset the timeline first.
 

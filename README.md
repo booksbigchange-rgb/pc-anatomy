@@ -8,7 +8,7 @@ A browser-based computer hardware lab for beginner students. Everything runs in 
 ## What students can do
 
 - **Computer Lab (desk setup).** Connect a keyboard, mouse, monitor, network and power to an OptiPlex 7040 reference tower, by clicking the ports in 3D or with the port buttons.
-- **Explore inside the PC.** Inspect the OptiPlex 7040 reference model: select parts, isolate or lift one out, explore the motherboard sockets and case ports, and use **Take apart** — press **Auto** or drag the timeline to remove every part in service order (cover, drive cage, card, memory, SSD, cooler, CPU, power supply, motherboard) and lay it out on the bench. **Reset** puts it back together.
+- **Explore inside the PC.** Inspect the OptiPlex 7040 reference model: select parts, isolate or lift one out, explore the motherboard sockets and case ports, and use **Take apart** — press **Auto** or drag the timeline to remove every part in service order (cover, drive cage, card, memory, SSD, cooler, CPU, power supply, motherboard) and lay it out on the bench. **Reset** puts it back together. Once it is fully apart, the **Put it back together** lesson asks students to choose each part in a working order, with a hint for each wrong choice.
 - **Build a PC.** Choose compatible parts, then assemble them: orient, seat and secure each part, apply thermal paste, fasten the cooler, connect cables, close the case and pass a simulated power-on self-test.
 - **Laptop Lab.** Dell Latitude 5410 reference laptop: teardown timeline, guided lesson, connections, troubleshooting and a knowledge check.
 - **Task Manager.** Practise reading CPU, memory, disk and network use.
