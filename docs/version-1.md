@@ -88,3 +88,14 @@ A first visit to the main lab now downloads about 0.44 MB before the Computer La
 - **Limits.** The order is a teaching sequence based on Dell's manual, not a repair guide. The socket lever, cables and screws other than the ones above are not animated. Playback speed was checked only in a software renderer in CI (3–5 frames a second), not on school computers.
 
 Evidence: `tests/pc-teardown.test.ts` (no gaps in the timeline, service order, release before move, lift then place, bench layout on the table without overlaps) and `tests/browser/pc-teardown.mjs` (route from the Computer Lab, step names while scrubbing, step buttons, part selection while apart, reset, Auto and Pause, tools reset the timeline, practice still starts, back to the Computer Lab).
+
+## Put it back together — reassembly lesson (October 2026)
+
+When every part is out on the bench, **Put it back together — lesson** appears under the timeline. Students choose which part goes back next, from buttons (in A–Z order, so the list does not give the answer away) or by clicking the part on the bench.
+
+- Any order that works on a real PC is accepted: the motherboard first; then the power supply, CPU, memory, SSD and card in any order; the cooler only after the CPU; the drive cage closes once every part is in; the cover goes on last.
+- A wrong choice changes nothing and explains what has to go in first (for example: "The cooler sits on top of the CPU. Put the CPU in first."). A right one moves the part from the bench into its mount, closes its clips or screws, and gives a short real-world tip (CPU triangle and lever, fresh thermal paste, RAM notch, SSD angle and screw).
+- The end shows the number of wrong choices, with **Practise again** and **Done**. **Stop lesson** returns to the laid-out bench.
+- Limits: the result is not saved to the learning path. Cables, thermal paste and the CPU lever are described in words, not shown.
+
+Evidence: `tests/pc-reassembly.test.ts` (reverse order accepted, another working order accepted, rules match the removal order, hints for wrong choices) and `tests/browser/pc-teardown.mjs` (lesson only offered when fully apart, bench click chooses a part, hints, a full working order with three wrong choices, finish and return to the assembled PC). The end positions were checked in screenshots with reduced motion; the animated version was only seen at the slow frame rate of the test renderer.
