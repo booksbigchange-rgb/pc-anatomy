@@ -236,7 +236,9 @@ try {
   // Touch: on an emulated touch tablet, a finger drag moves parts into their guides.
   // Free the first page's 3D scene first (the tablet check below reloads it): two software-rendered
   // scenes at once can starve a slow hosted runner.
-  await page.goto('about:blank');
+  // Freeing is a speed-up, not a check: a busy runner may take long to unload the scene, so carry on
+  // if it times out. The page is reused below, so a truly stuck page still fails the test there.
+  await page.goto('about:blank', { timeout: 120000 }).catch(error => console.warn('Freeing the first page timed out; continuing.', error.message.split('\n')[0]));
   const touchPage = await browser.newPage({ viewport: { width: 1024, height: 768 }, hasTouch: true });
   touchPage.on('pageerror', error => errors.push(error.message));
   touchPage.setDefaultTimeout(30000);
