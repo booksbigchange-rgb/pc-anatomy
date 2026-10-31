@@ -542,3 +542,139 @@
 .assembly-post small { margin-top: 6px; color: #6f8f7b; font-size: 11px; }
 @keyframes post-line { to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .assembly-post span { animation: none; opacity: 1; } }
+
+/* Take-apart timeline in inspection mode: Auto, named steps, scrubber, ruler, readout, reset. */
+.pc-teardown {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  z-index: 3;
+  width: min(720px, calc(100% - 28px));
+  transform: translateX(-50%);
+  padding: 11px 14px 9px;
+  border: 1px solid #3a4c54;
+  border-radius: 12px;
+  background: rgba(10, 19, 24, 0.9);
+  backdrop-filter: blur(8px);
+  color: #dce8eb;
+  user-select: none;
+}
+.pc-teardown-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+}
+.pc-teardown-head button {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid #4b6670;
+  border-radius: 8px;
+  background: #142229;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.pc-teardown-play {
+  border-color: #6fcbd5 !important;
+  background: #1b3a41 !important;
+  font-weight: 700;
+}
+.pc-teardown-play.idle {
+  box-shadow: 0 0 0 0 rgba(111, 203, 213, 0.5);
+  animation: pc-teardown-pulse 2.4s ease-out infinite;
+}
+.pc-teardown-play.running {
+  background: #24505a !important;
+}
+@keyframes pc-teardown-pulse {
+  70% { box-shadow: 0 0 0 9px rgba(111, 203, 213, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(111, 203, 213, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pc-teardown-play.idle { animation: none; }
+}
+.pc-teardown-label {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.pc-teardown-label strong {
+  font-size: 13px;
+}
+.pc-teardown-label span {
+  overflow: hidden;
+  color: #93a7ae;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pc-teardown output {
+  min-width: 46px;
+  color: #8be3ec;
+  font: 700 17px/1 monospace;
+  text-align: right;
+}
+.pc-teardown-phases {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  margin: 10px 0 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pc-teardown-phases button {
+  flex: none;
+  padding: 3px 5px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: #7d9098;
+  font: 600 10px/1.2 system-ui, sans-serif;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.pc-teardown-phases button.active {
+  background: #1d3b42;
+  color: #a6f0f6;
+}
+.pc-teardown input[type='range'] {
+  width: 100%;
+  margin: 6px 0 2px;
+  accent-color: #6fcbd5;
+  cursor: pointer;
+}
+.pc-teardown-ruler {
+  display: flex;
+  justify-content: space-between;
+  height: 8px;
+}
+.pc-teardown-ruler i {
+  width: 1px;
+  height: 4px;
+  background: #3f5157;
+}
+.pc-teardown-ruler i:nth-child(5n + 1) {
+  height: 8px;
+  background: #5f747b;
+}
+.assembly-stage.with-teardown .assembly-stage-tip {
+  bottom: 152px;
+}
+@media (max-width: 680px) {
+  .pc-teardown {
+    bottom: 8px;
+    width: calc(100% - 16px);
+    padding: 8px 9px 7px;
+  }
+  .pc-teardown-head { gap: 8px; }
+  .pc-teardown-head button { padding: 0 9px; }
+  .pc-teardown-reset span { display: none; }
+  .pc-teardown-phases { justify-content: flex-start; }
+  .assembly-stage.with-teardown .assembly-stage-tip { display: none; }
+}

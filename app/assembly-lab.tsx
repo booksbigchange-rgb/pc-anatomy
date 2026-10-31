@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -8,7 +8,10 @@ import {
   MemoryStick,
   Microchip,
   PackageCheck,
+  Pause,
+  Play,
   Rotate3D,
+  RotateCcw,
   Wrench,
   Zap,
   Fan,
@@ -22,6 +25,8 @@ import {
 import FaultPractice from './fault-practice';
 import { ORIENTED_PARTS, RETAINERS, PART_JOBS, PC_FAULTS, type Retainer } from './hardware-practice.ts';
 import { readProgress, saveProgress } from './student-progress';
+import { useDisassemblyPlayback } from './use-disassembly-playback';
+import { BENCH, TEARDOWN, TEARDOWN_PHASES, coverOffset, partMove, partPose, stepProgress, stillFastened, teardownStage } from './pc-teardown.ts';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { frameInspectionBounds } from '../lib/inspection-camera.ts';
@@ -119,9 +124,11 @@ export default function AssemblyLab({
   onBack,
   previewOnly = false,
   componentNames,
+  backLabel = 'Parts picker',
 }: {
   onBack: () => void;
   previewOnly?: boolean;
+  backLabel?: string;
   componentNames?: Partial<Record<HardwareId, string>>;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null),
@@ -132,6 +139,22 @@ export default function AssemblyLab({
     [cageOpen, setCageOpen] = useState(true),
     [exploded, setExploded] = useState(false),
     [isolated, setIsolated] = useState(false);
+  // Teardown timeline (inspection only): 0 = assembled and closed, 100 = every part on the bench.
+  const [teardown, setTeardown] = useState(0),
+    [teardownActive, setTeardownActive] = useState(false);
+  // The timeline lays the PC on its side, like a technician's bench. Setting the same values again is free.
+  const updateTeardown = useCallback((value: number) => {
+    setTeardownActive(true);
+    setUpright(false); setClosed(false); setCageOpen(true); setExploded(false); setIsolated(false);
+    setTeardown(value);
+  }, []);
+  const { playing: teardownPlaying, setExplode: scrubTeardown, stop: stopTeardown, toggleAuto: toggleTeardown } = useDisassemblyPlayback(teardown, updateTeardown);
+  /** Other inspection tools work on the assembled PC, so they put the timeline back to the start. */
+  const leaveTeardown = () => {
+    stopTeardown();
+    setTeardownActive(false);
+    setTeardown(0);
+  };
   const [aligned, setAligned] = useState<HardwareId[]>([]);
   const [fastened, setFastened] = useState<Retainer[]>([]);
   const [fault, setFault] = useState(0);
@@ -204,6 +227,8 @@ export default function AssemblyLab({
     cageOpen: true,
     exploded: false,
     isolated: false,
+    teardown: 0,
+    teardownActive: false,
     selected: 'ssd' as HardwareId,
     boardTarget: null as BoardTargetId | null,
     caseTarget: null as CaseTargetId | null,
@@ -212,6 +237,8 @@ export default function AssemblyLab({
   });
   const actionRef = useRef<Action | null>('home'),
     resetRef = useRef(false);
+  // Frame the bench when the timeline starts, and the case again when it is left.
+  useEffect(() => { actionRef.current = 'home'; }, [teardownActive]);
   useEffect(() => {
     displayRef.current = {
       preview,
@@ -220,15 +247,18 @@ export default function AssemblyLab({
       cageOpen,
       exploded,
       isolated,
+      teardown,
+      teardownActive,
       selected,
       boardTarget,
       caseTarget, caseInstance, selectedCable,
     };
-  }, [preview, upright, closed, cageOpen, exploded, isolated, selected, boardTarget, caseTarget, caseInstance, selectedCable]);
+  }, [preview, upright, closed, cageOpen, exploded, isolated, teardown, teardownActive, selected, boardTarget, caseTarget, caseInstance, selectedCable]);
   const complete = installed.length === PARTS.length,
     active = PARTS.find((p) => p.id === selected)!;
   const name = (p: Part) => componentNames?.[p.id] ?? p.name;
   const practice = () => {
+    leaveTeardown();
     setAligned([]); setFastened([]);
     setPasteApplied(false);
     setScrews([]);
@@ -658,12 +688,15 @@ export default function AssemblyLab({
         dirty = true;
         const view = actionRef.current;
         framedFace = view === 'front' || view === 'rear' ? view : null;
-        const cx = d.preview || done ? 2.5 : 0.15;
+        // The bench layout (practice tray or teardown) sits left of the case; frame both.
+        const cx = d.preview ? (d.teardownActive ? -1.1 : 2.5) : done ? 2.5 : 0.15;
         controls.target.set(cx, d.preview && d.upright ? 3.4 : 1.1, 0);
         if (view === 'home') {
           camera.position.set(cx + 8.5, d.preview && d.upright ? 7.4 : 12, 11);
           // Tall, narrow stages (portrait tablets, phones) would crop the parts tray: step back to keep it in view.
           if (camera.aspect < PORTRAIT_ASPECT) camera.position.sub(controls.target).multiplyScalar(PORTRAIT_ASPECT / camera.aspect).add(controls.target);
+          // The laid-out bench is wider than the case alone: step back so the case and every part fit.
+          if (d.preview && d.teardownActive) camera.position.sub(controls.target).multiplyScalar(1.2).add(controls.target);
         }
         if (view === 'front') camera.position.set(14, 4.3, 0);
         if (view === 'rear') camera.position.set(-9, 4.3, 0);
@@ -674,7 +707,9 @@ export default function AssemblyLab({
         actionRef.current = null;
       }
       for (const id of ['ram', 'ssd', 'gpu'] as const) {
-        const target = d.preview || buildRef.current.fastened.includes(id) ? 1 : 0;
+        // In the teardown a retainer opens before its part moves; the card's bracket closes again once the card is on the bench.
+        const released = d.teardownActive && !stillFastened(d.teardown, id) && !(id === 'gpu' && partMove(d.teardown, 'gpu') >= 1);
+        const target = d.preview ? (released ? 0 : 1) : buildRef.current.fastened.includes(id) ? 1 : 0;
         const current = retainerProgress[id];
         if (current !== target) {
           retainerProgress[id] = target > current ? Math.min(target, current + dt * 2.2) : Math.max(target, current - dt * 4);
@@ -685,7 +720,7 @@ export default function AssemblyLab({
       for (const id of ['motherboard','gpu'] as HardwareId[]) setHardwareRetainers(groups.get(id)!, d.preview ? ['ram','ssd','gpu'] : buildRef.current.fastened, retainerProgress);
       // Each cooler corner screw drives down when its corner is fastened.
       for (const corner of [1, 2, 3, 4] as const) {
-        const target = d.preview || buildRef.current.screws.includes(corner) ? 1 : 0;
+        const target = d.preview ? (d.teardownActive && !stillFastened(d.teardown, 'cooler') ? 0 : 1) : buildRef.current.screws.includes(corner) ? 1 : 0;
         const current = screwProgress[corner];
         if (current !== target) {
           screwProgress[corner] = target > current ? Math.min(target, current + dt * 2) : Math.max(target, current - dt * 4);
@@ -716,13 +751,22 @@ export default function AssemblyLab({
       paste.visible = !d.preview && buildRef.current.pasteApplied && !installedRef.current.includes('cooler');
       const focus = !d.preview && !done ? focusPart() : null;
       chassis.visible = !(d.preview && d.isolated);
-      driveCage.rotation.z = !d.closed && (d.cageOpen || (!d.preview && !done)) ? -Math.PI / 2.4 : 0;
-      cover.visible = d.closed && (d.preview || done) && !d.isolated;
+      const tearing = d.preview && d.teardownActive;
+      if (tearing) {
+        const lid = coverOffset(d.teardown), cage = stepProgress(d.teardown, 'cage');
+        driveCage.rotation.z = -Math.PI / 2.4 * cage * cage * (3 - 2 * cage);
+        cover.visible = lid.visible;
+        cover.position.set(...lid.offset);
+      } else {
+        driveCage.rotation.z = !d.closed && (d.cageOpen || (!d.preview && !done)) ? -Math.PI / 2.4 : 0;
+        cover.visible = d.closed && (d.preview || done) && !d.isolated;
+        cover.position.set(0, 0, 0);
+      }
       for (const p of PARTS) {
         const g = groups.get(p.id)!;
         g.visible = !(d.preview && d.isolated && d.selected !== p.id);
         if (d.preview || installedRef.current.includes(p.id)) {
-          g.position.set(...MOUNTS[p.id]);
+          g.position.set(...(tearing ? partPose(MOUNTS[p.id], BENCH[p.id], partMove(d.teardown, p.id)) : MOUNTS[p.id]));
           const glide = seating.get(p.id);
           if (glide && !d.preview) {
             const t = Math.min(1, (now - glide.start) / glide.duration), eased = 1 - (1 - t) ** 3;
@@ -830,12 +874,13 @@ export default function AssemblyLab({
   }, [lightGraphics]);
   const stage = (
     <section
-      className={'assembly-stage' + (previewOnly ? ' assembly-preview' : '')}
+      className={'assembly-stage' + (previewOnly ? ' assembly-preview' : '') + (preview && !previewOnly ? ' with-teardown' : '')}
     >
       <div className="assembly-view-controls">
         {preview && (
           <button
             onClick={() => {
+              leaveTeardown();
               setUpright(!upright);
               actionRef.current = 'home';
             }}
@@ -862,6 +907,7 @@ export default function AssemblyLab({
           disabled={!preview && !complete}
           onClick={() => {
             if (powerOn) { setFeedback('Shut down the virtual PC before opening the case.'); return; }
+            leaveTeardown();
             setClosed(!closed);
             setExploded(false);
             setIsolated(false);
@@ -870,12 +916,13 @@ export default function AssemblyLab({
           {closed ? 'Remove side cover' : 'Fit side cover'}
         </button>
         {(preview || complete) && !closed && (
-          <button disabled={powerOn} aria-pressed={cageOpen} onClick={() => setCageOpen(!cageOpen)}>
+          <button disabled={powerOn} aria-pressed={cageOpen} onClick={() => { leaveTeardown(); setCageOpen(!cageOpen); }}>
             {cageOpen ? 'Close drive cage' : 'Open drive cage'}
           </button>
         )}
         <button aria-pressed={lightGraphics} onClick={() => { actionRef.current='home'; setLightGraphics(!lightGraphics); }}>{lightGraphics ? 'Full graphics' : 'Light graphics'}</button>
         {preview && <button onClick={() => {
+          leaveTeardown();
           setSelected('cooler'); setCaseTarget(null); setCaseInstance(null); setBoardTarget(null); setSelectedCable(null);
           setUpright(false); setClosed(false); setCageOpen(true); setIsolated(false); setExploded(true);
           actionRef.current = 'cooling';
@@ -898,13 +945,13 @@ export default function AssemblyLab({
             <button
               disabled={caseTarget !== null || selectedCable !== null || (selected === 'motherboard' && boardTarget !== null)}
               aria-pressed={exploded}
-              onClick={() => setExploded(!exploded)}
+              onClick={() => { leaveTeardown(); setExploded(!exploded); }}
             >
               {exploded ? 'Return selected' : 'Explode selected'}
             </button>
             <button
               aria-pressed={isolated}
-              onClick={() => setIsolated(!isolated)}
+              onClick={() => { leaveTeardown(); setIsolated(!isolated); }}
             >
               {isolated ? 'Show all' : boardTarget && selected === 'motherboard' ? 'Isolate motherboard' : 'Isolate selected'}
             </button>
@@ -964,6 +1011,53 @@ export default function AssemblyLab({
           </div>
         </section>
       )}
+      {preview && !previewOnly && (
+        <section className="pc-teardown" aria-label="PC teardown timeline">
+          <div className="pc-teardown-head">
+            <button
+              type="button"
+              className={'pc-teardown-play' + (teardownPlaying ? ' running' : '') + (!teardownPlaying && teardown < 1 ? ' idle' : '')}
+              onClick={toggleTeardown}
+              aria-label={teardownPlaying ? 'Pause automatic teardown' : 'Take the PC apart automatically'}
+            >
+              {teardownPlaying ? <Pause size={18} /> : <Play size={18} />}
+              <span>{teardownPlaying ? 'Pause' : 'Auto'}</span>
+            </button>
+            <div className="pc-teardown-label">
+              <strong>Take apart</strong>
+              <span>{teardownActive ? teardownStage(teardown) : 'Drag or play'}</span>
+            </div>
+            <output>{Math.round(teardown)}%</output>
+            <button
+              type="button"
+              className="pc-teardown-reset"
+              aria-label="Reassemble the PC and reset the camera"
+              onClick={() => { scrubTeardown(0); actionRef.current = 'home'; }}
+            >
+              <RotateCcw size={16} />
+              <span>Reset</span>
+            </button>
+          </div>
+          <div className="pc-teardown-phases">
+            {TEARDOWN_PHASES.map(([label, value]) => {
+              const step = TEARDOWN.find(item => item.to === value);
+              const current = teardownActive && (step ? teardown > step.from && teardown <= step.to : teardown === 0);
+              return <button key={label} type="button" className={current ? 'active' : ''} aria-pressed={current} onClick={() => scrubTeardown(value)}>{label}</button>;
+            })}
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            step="0.5"
+            value={teardown}
+            onChange={event => scrubTeardown(Number(event.target.value))}
+            aria-label="Take the PC apart"
+            aria-valuetext={`${Math.round(teardown)} percent. ${teardownStage(teardown)}`}
+          />
+          <div className="pc-teardown-ruler" aria-hidden="true">{Array.from({ length: 41 }, (_, i) => <i key={i} />)}</div>
+        </section>
+      )}
       <div className="assembly-stage-tip">
         <Rotate3D size={15} />
         {preview
@@ -977,7 +1071,7 @@ export default function AssemblyLab({
     <main className="assembly-lab">
       <header className="assembly-topbar">
         <button className="assembly-back" onClick={onBack}>
-          <ArrowLeft size={16} /> Parts picker
+          <ArrowLeft size={16} /> {backLabel}
         </button>
         <div className="assembly-brand">
           <span className="assembly-brand-icon">
@@ -1001,7 +1095,7 @@ export default function AssemblyLab({
         <h1>{powerOn ? 'PC ready' : !preview && complete ? 'Parts placed' : preview ? name(active) : `Step ${installed.length + 1} of ${PARTS.length}`}</h1>
         <p className="assembly-intro">
           {preview
-            ? 'Select any component, isolate it, or lift just that part out of the case.'
+            ? 'Select any component, isolate it, or lift just that part out. Use Take apart to remove every part in service order.'
             : complete
               ? 'Parts are seated. Secure them, connect the cables and run the power-on check.'
               : `Next: ${name(PARTS.find(p => p.id === nextPart(build))!)}. Tap any part to learn about it. Your progress is kept.`}
