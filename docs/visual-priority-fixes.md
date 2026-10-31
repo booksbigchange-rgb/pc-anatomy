@@ -5,7 +5,7 @@
 - Laptop: fit the automatic camera to visible service geometry at each stage/viewport change; respect manual orbit. Camera fit no longer stops at the old maximum distance.
 - Guided cables: labelled unplug controls update the same state and gates as cable clicks.
 - Desktop: auto-frame isolated modules; explain how to reveal the SSD behind the drive cage.
-- Older explorer: simplify the phone header to prevent byline/action collisions. Local startup reached 34 visible parts with no page errors. Software-rendered phone screenshot capture remained slow; real-device performance is not approved by this result.
+- Older explorer (retired in October 2026): simplify the phone header to prevent byline/action collisions. Local startup reached 34 visible parts with no page errors. Software-rendered phone screenshot capture remained slow; real-device performance is not approved by this result.
 - Motherboard: paired component banks, controller pins and illustrative silkscreen; slightly brighter environment and fill light.
 - Logos: current decoded screenshots show the selected shield correctly; no artwork change needed.
 
