@@ -51,6 +51,50 @@ try {
   await page.locator('.assembly-step-list').getByRole('button', { name: /Power Supply/ }).click();
   assert.match(await page.locator('.assembly-detail h2').innerText(), /Power Supply/);
 
+  // Put it back together (lesson): only offered once every part is out.
+  const lessonStart = page.getByRole('button', { name: /Put it back together/ });
+  assert.equal(await lessonStart.count(), 0, 'Lesson waits until the PC is fully apart');
+  await slider.fill('100');
+  await lessonStart.click();
+  const lesson = page.getByRole('region', { name: 'Put the PC back together' });
+  const feedback = () => lesson.locator('.pc-rebuild-feedback').innerText();
+  const choose = name => lesson.getByRole('button', { name, exact: true }).click();
+  assert.equal(await timeline.count(), 0, 'The lesson replaces the timeline');
+  assert.match(await feedback(), /Which one goes back/);
+  // Clicking a part on the bench chooses it, like the buttons.
+  const box = await page.locator('.assembly-stage canvas').boundingBox();
+  let clicked = false;
+  search: for (let fy = 0.3; fy <= 0.75; fy += 0.05)
+    for (let fx = 0.12; fx <= 0.5; fx += 0.04) {
+      await page.mouse.click(box.x + box.width * fx, box.y + box.height * fy);
+      if (!/Which one goes back/.test(await feedback())) { clicked = true; break search; }
+    }
+  assert.ok(clicked, 'A part on the bench can be clicked');
+  console.log('Bench click:', await feedback());
+  await lesson.getByRole('button', { name: 'Stop lesson' }).click();
+  await lessonStart.click();
+  // Wrong choices explain what must go in first; any working order is accepted.
+  await choose('CPU');
+  assert.match(await feedback(), /motherboard in first/);
+  await choose('Motherboard');
+  assert.match(await feedback(), /^Motherboard in/);
+  await choose('CPU cooler');
+  assert.match(await feedback(), /Put the CPU in first/);
+  for (const name of ['Memory (RAM)', 'CPU', 'CPU cooler', 'Expansion card', 'M.2 SSD']) await choose(name);
+  await choose('Fit side cover');
+  assert.match(await feedback(), /Close the drive cage first/);
+  await choose('Power supply');
+  await choose('Close drive cage');
+  await choose('Fit side cover');
+  assert.match(await feedback(), /back together/);
+  assert.match(await lesson.locator('.pc-teardown-label span').innerText(), /Finished · 3 wrong choices/);
+  assert.equal(await lesson.locator('.pc-teardown-head output').innerText(), '9/9');
+  await page.waitForTimeout(1500);
+  await shot('03-reassembled');
+  await lesson.getByRole('button', { name: 'Done' }).click();
+  assert.equal(await percent(), 0);
+  assert.equal(await stage(), 'Assembled');
+
   // Reset puts it back together; Auto plays forward and Pause stops it.
   await timeline.getByRole('button', { name: /Reassemble/ }).click();
   assert.equal(await percent(), 0);
@@ -76,7 +120,7 @@ try {
   await page.locator('header').getByRole('button', { name: 'Explore inside the PC', exact: true }).waitFor();
 
   assert.deepEqual(errors, [], 'No uncaught browser errors');
-  console.log('PASS pc teardown: route, service-order steps, phase buttons, reset, auto/pause, tool reset, practice, back.');
+  console.log('PASS pc teardown: route, service-order steps, phase buttons, put-it-back-together lesson (bench click, hints, any working order), reset, auto/pause, tool reset, practice, back.');
 } finally {
   await browser.close();
 }

@@ -678,3 +678,66 @@
   .pc-teardown-phases { justify-content: flex-start; }
   .assembly-stage.with-teardown .assembly-stage-tip { display: none; }
 }
+
+/* Put it back together lesson: replaces the timeline while it runs. */
+.pc-rebuild .pc-teardown-head {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+.pc-teardown .pc-rebuild-feedback {
+  display: block;
+  min-width: 0;
+  font-weight: 400;
+  font-family: inherit;
+  text-align: left;
+  margin: 9px 0 8px;
+  padding: 8px 10px;
+  border-left: 3px solid #6fcbd5;
+  border-radius: 6px;
+  background: #13242b;
+  color: #d8eef1;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.pc-teardown .pc-rebuild-feedback.wrong {
+  border-left-color: #e7b45c;
+  background: #2a2316;
+  color: #f4e2c0;
+}
+.pc-rebuild-choices {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pc-rebuild-choices button,
+.pc-rebuild-start {
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid #4b6670;
+  border-radius: 8px;
+  background: #142229;
+  color: #dce8eb;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.pc-rebuild-choices button:disabled {
+  border-color: #2f5a3c;
+  background: #12261a;
+  color: #8fd3a2;
+  opacity: 1;
+}
+.pc-rebuild-start {
+  width: 100%;
+  margin-top: 8px;
+  border-color: #6fcbd5;
+  background: #1b3a41;
+  font-weight: 700;
+}
+.assembly-stage.with-teardown:has(.pc-rebuild) .assembly-stage-tip,
+.assembly-stage.with-teardown:has(.pc-rebuild-start) .assembly-stage-tip {
+  display: none;
+}

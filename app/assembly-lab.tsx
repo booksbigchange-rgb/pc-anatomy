@@ -26,7 +26,8 @@ import FaultPractice from './fault-practice';
 import { ORIENTED_PARTS, RETAINERS, PART_JOBS, PC_FAULTS, type Retainer } from './hardware-practice.ts';
 import { readProgress, saveProgress } from './student-progress';
 import { useDisassemblyPlayback } from './use-disassembly-playback';
-import { BENCH, TEARDOWN, TEARDOWN_PHASES, coverOffset, partMove, partPose, stepProgress, stillFastened, teardownStage } from './pc-teardown.ts';
+import { BENCH, TEARDOWN, TEARDOWN_PHASES, coverPose, moveOf, partPose, stepProgress, teardownStage, type TeardownStepId } from './pc-teardown.ts';
+import { REASSEMBLY_LABEL, REASSEMBLY_STEPS, reassemblyComplete, tryReassemble } from './pc-reassembly.ts';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { frameInspectionBounds } from '../lib/inspection-camera.ts';
@@ -120,6 +121,12 @@ const PARTS: Part[] = [
 type Action = 'home' | 'front' | 'rear' | 'top' | 'cooling';
 /** Below this width/height ratio the overview camera steps back in proportion. */
 const PORTRAIT_ASPECT = 1.03;
+/** Lesson buttons in a fixed order that does not give the answer away: parts A–Z, then cage and cover. */
+const REBUILD_CHOICES: TeardownStepId[] = [
+  ...REASSEMBLY_STEPS.filter(id => id !== 'cage' && id !== 'cover').sort((a, b) => REASSEMBLY_LABEL[a].localeCompare(REASSEMBLY_LABEL[b])),
+  'cage',
+  'cover',
+];
 export default function AssemblyLab({
   onBack,
   previewOnly = false,
@@ -149,12 +156,37 @@ export default function AssemblyLab({
     setTeardown(value);
   }, []);
   const { playing: teardownPlaying, setExplode: scrubTeardown, stop: stopTeardown, toggleAuto: toggleTeardown } = useDisassemblyPlayback(teardown, updateTeardown);
+  // Put it back together (lesson): the steps done so far, or null when the lesson is not running.
+  const [rebuild, setRebuild] = useState<TeardownStepId[] | null>(null),
+    [rebuildMistakes, setRebuildMistakes] = useState(0),
+    [rebuildFeedback, setRebuildFeedback] = useState({ text: '', wrong: false });
   /** Other inspection tools work on the assembled PC, so they put the timeline back to the start. */
   const leaveTeardown = () => {
     stopTeardown();
     setTeardownActive(false);
     setTeardown(0);
+    setRebuild(null);
   };
+  const startRebuild = () => {
+    stopTeardown();
+    setRebuild([]); setRebuildMistakes(0);
+    setRebuildFeedback({ text: 'Every part is on the bench. Which one goes back into the case first?', wrong: false });
+  };
+  const rebuildPick = (id: TeardownStepId) => {
+    if (!rebuild) return;
+    if (id !== 'cage' && id !== 'cover') selectHardware(id);
+    const result = tryReassemble(rebuild, id);
+    if (!result.ok) {
+      if (!rebuild.includes(id)) setRebuildMistakes(count => count + 1);
+      setRebuildFeedback({ text: result.message, wrong: true });
+      return;
+    }
+    const done = [...rebuild, id];
+    setRebuild(done);
+    setRebuildFeedback({ text: reassemblyComplete(done) ? result.message : `${result.message} What goes in next?`, wrong: false });
+  };
+  /** Finished or stopped: back to the timeline, assembled (0) or laid out (100). */
+  const leaveRebuild = (at: 0 | 100) => { setRebuild(null); scrubTeardown(at); };
   const [aligned, setAligned] = useState<HardwareId[]>([]);
   const [fastened, setFastened] = useState<Retainer[]>([]);
   const [fault, setFault] = useState(0);
@@ -229,6 +261,7 @@ export default function AssemblyLab({
     isolated: false,
     teardown: 0,
     teardownActive: false,
+    rebuild: null as TeardownStepId[] | null,
     selected: 'ssd' as HardwareId,
     boardTarget: null as BoardTargetId | null,
     caseTarget: null as CaseTargetId | null,
@@ -249,11 +282,12 @@ export default function AssemblyLab({
       isolated,
       teardown,
       teardownActive,
+      rebuild,
       selected,
       boardTarget,
       caseTarget, caseInstance, selectedCable,
     };
-  }, [preview, upright, closed, cageOpen, exploded, isolated, teardown, teardownActive, selected, boardTarget, caseTarget, caseInstance, selectedCable]);
+  }, [preview, upright, closed, cageOpen, exploded, isolated, teardown, teardownActive, rebuild, selected, boardTarget, caseTarget, caseInstance, selectedCable]);
   const complete = installed.length === PARTS.length,
     active = PARTS.find((p) => p.id === selected)!;
   const name = (p: Part) => componentNames?.[p.id] ?? p.name;
@@ -321,8 +355,8 @@ export default function AssemblyLab({
     if (key === 'Enter' && !installed.includes(selected)) { seatPart(); return true; }
     return false;
   };
-  const handlersRef = useRef({ applyAttempt, selectHardware, setFeedback, keyAction });
-  useEffect(() => { Object.assign(handlersRef.current, { applyAttempt, selectHardware, keyAction }); });
+  const handlersRef = useRef({ applyAttempt, selectHardware, setFeedback, keyAction, rebuildPick });
+  useEffect(() => { Object.assign(handlersRef.current, { applyAttempt, selectHardware, keyAction, rebuildPick }); });
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -591,6 +625,8 @@ export default function AssemblyLab({
           if (target) setExploded(false);
           if (!groups.has(o.name as HardwareId)) { press = null; return; }
           setSelected(o.name as HardwareId);
+          // In the put-it-back-together lesson, clicking a part on the bench chooses it.
+          if (displayRef.current.rebuild) { handlersRef.current.rebuildPick(o.name as HardwareId); press = null; return; }
           handlersRef.current.setFeedback(
             displayRef.current.preview
               ? 'Selected component. Use Explode selected or Isolate selected to inspect it.'
@@ -652,6 +688,9 @@ export default function AssemblyLab({
     const powerLamp: T.MeshStandardMaterial[] = [];
     chassis.traverse(o => { if (o.userData.caseTarget === 'button') o.traverse(m => { if (m instanceof T.Mesh && m.material instanceof T.MeshStandardMaterial) { m.material = m.material.clone(); powerLamp.push(m.material); } }); });
     let fanSpeed = 0, lastTime = performance.now(), lastSpinFrame = 0;
+    // Step progress in the put-it-back-together lesson: 1 = on the bench, 0 = installed.
+    const rebuildProgress = Object.fromEntries(TEARDOWN.map(step => [step.id, 1])) as Record<TeardownStepId, number>;
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
     let frame = 0;
     const draw = () => {
       frame = requestAnimationFrame(draw);
@@ -659,6 +698,7 @@ export default function AssemblyLab({
       lastTime = now;
       let animating = false;
       const d = displayRef.current,
+        lesson = d.preview && d.teardownActive ? d.rebuild : null,
         done = installedRef.current.length === PARTS.length;
       const signature = JSON.stringify([
         d,
@@ -706,9 +746,20 @@ export default function AssemblyLab({
         if (view === 'top') camera.position.set(cx, 17, 0.01);
         actionRef.current = null;
       }
+      // Each teardown step's progress comes from the timeline, or from the lesson's own animation.
+      for (const step of TEARDOWN) {
+        const target = lesson && lesson.includes(step.id) ? 0 : 1, current = rebuildProgress[step.id];
+        if (!lesson || reducedMotion.matches) rebuildProgress[step.id] = target;
+        else if (current !== target) {
+          rebuildProgress[step.id] = Math.max(target, current - dt / 1.8);
+          animating = true;
+          if (rebuildProgress[step.id] === target) dirty = true;
+        }
+      }
+      const progressOf = (id: TeardownStepId) => (lesson ? rebuildProgress[id] : stepProgress(d.teardown, id));
       for (const id of ['ram', 'ssd', 'gpu'] as const) {
         // In the teardown a retainer opens before its part moves; the card's bracket closes again once the card is on the bench.
-        const released = d.teardownActive && !stillFastened(d.teardown, id) && !(id === 'gpu' && partMove(d.teardown, 'gpu') >= 1);
+        const released = d.teardownActive && progressOf(id) > 0 && !(id === 'gpu' && moveOf(progressOf('gpu')) >= 1);
         const target = d.preview ? (released ? 0 : 1) : buildRef.current.fastened.includes(id) ? 1 : 0;
         const current = retainerProgress[id];
         if (current !== target) {
@@ -720,7 +771,7 @@ export default function AssemblyLab({
       for (const id of ['motherboard','gpu'] as HardwareId[]) setHardwareRetainers(groups.get(id)!, d.preview ? ['ram','ssd','gpu'] : buildRef.current.fastened, retainerProgress);
       // Each cooler corner screw drives down when its corner is fastened.
       for (const corner of [1, 2, 3, 4] as const) {
-        const target = d.preview ? (d.teardownActive && !stillFastened(d.teardown, 'cooler') ? 0 : 1) : buildRef.current.screws.includes(corner) ? 1 : 0;
+        const target = d.preview ? (d.teardownActive && progressOf('cooler') > 0 ? 0 : 1) : buildRef.current.screws.includes(corner) ? 1 : 0;
         const current = screwProgress[corner];
         if (current !== target) {
           screwProgress[corner] = target > current ? Math.min(target, current + dt * 2) : Math.max(target, current - dt * 4);
@@ -753,7 +804,7 @@ export default function AssemblyLab({
       chassis.visible = !(d.preview && d.isolated);
       const tearing = d.preview && d.teardownActive;
       if (tearing) {
-        const lid = coverOffset(d.teardown), cage = stepProgress(d.teardown, 'cage');
+        const lid = coverPose(progressOf('cover')), cage = progressOf('cage');
         driveCage.rotation.z = -Math.PI / 2.4 * cage * cage * (3 - 2 * cage);
         cover.visible = lid.visible;
         cover.position.set(...lid.offset);
@@ -766,7 +817,7 @@ export default function AssemblyLab({
         const g = groups.get(p.id)!;
         g.visible = !(d.preview && d.isolated && d.selected !== p.id);
         if (d.preview || installedRef.current.includes(p.id)) {
-          g.position.set(...(tearing ? partPose(MOUNTS[p.id], BENCH[p.id], partMove(d.teardown, p.id)) : MOUNTS[p.id]));
+          g.position.set(...(tearing ? partPose(MOUNTS[p.id], BENCH[p.id], moveOf(progressOf(p.id))) : MOUNTS[p.id]));
           const glide = seating.get(p.id);
           if (glide && !d.preview) {
             const t = Math.min(1, (now - glide.start) / glide.duration), eased = 1 - (1 - t) ** 3;
@@ -1011,7 +1062,28 @@ export default function AssemblyLab({
           </div>
         </section>
       )}
-      {preview && !previewOnly && (
+      {preview && !previewOnly && rebuild && (
+        <section className="pc-teardown pc-rebuild" aria-label="Put the PC back together">
+          <div className="pc-teardown-head">
+            <div className="pc-teardown-label">
+              <strong>Put it back together</strong>
+              <span>{reassemblyComplete(rebuild) ? `Finished · ${rebuildMistakes === 0 ? 'no mistakes' : `${rebuildMistakes} wrong choice${rebuildMistakes === 1 ? '' : 's'}`}` : `Step ${rebuild.length + 1} of ${REASSEMBLY_STEPS.length} · choose a part or click it on the bench`}</span>
+            </div>
+            <output>{rebuild.length}/{REASSEMBLY_STEPS.length}</output>
+            {reassemblyComplete(rebuild)
+              ? <button type="button" className="pc-teardown-play" onClick={() => leaveRebuild(0)}>Done</button>
+              : <button type="button" className="pc-teardown-reset" onClick={() => leaveRebuild(100)}>Stop lesson</button>}
+          </div>
+          <output className={'pc-rebuild-feedback' + (rebuildFeedback.wrong ? ' wrong' : '')}>{rebuildFeedback.text}</output>
+          {reassemblyComplete(rebuild)
+            ? <div className="pc-rebuild-choices"><button type="button" onClick={() => { scrubTeardown(100); startRebuild(); }}>Practise again</button></div>
+            : <fieldset className="pc-rebuild-choices">
+                <legend className="sr-only">Choose the next step</legend>
+                {REBUILD_CHOICES.map(id => <button key={id} type="button" disabled={rebuild.includes(id)} onClick={() => rebuildPick(id)}>{rebuild.includes(id) ? '✓ ' : ''}{REASSEMBLY_LABEL[id]}</button>)}
+              </fieldset>}
+        </section>
+      )}
+      {preview && !previewOnly && !rebuild && (
         <section className="pc-teardown" aria-label="PC teardown timeline">
           <div className="pc-teardown-head">
             <button
@@ -1056,6 +1128,9 @@ export default function AssemblyLab({
             aria-valuetext={`${Math.round(teardown)} percent. ${teardownStage(teardown)}`}
           />
           <div className="pc-teardown-ruler" aria-hidden="true">{Array.from({ length: 41 }, (_, i) => <i key={i} />)}</div>
+          {teardownActive && teardown >= 100 && !teardownPlaying && (
+            <button type="button" className="pc-rebuild-start" onClick={startRebuild}>Put it back together — lesson</button>
+          )}
         </section>
       )}
       <div className="assembly-stage-tip">

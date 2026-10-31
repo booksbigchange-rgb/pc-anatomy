@@ -56,9 +56,14 @@ export function stepProgress(t: number, id: TeardownStepId) {
   return clamp01((t - step.from) / (step.to - step.from));
 }
 
+/** Movement of a part from its step progress: the retainer opens first, then the part moves. */
+export function moveOf(progress: number) {
+  return clamp01((progress - RELEASE) / (1 - RELEASE));
+}
+
 /** Movement of a part (after its retainer is released), 0 to 1. */
 export function partMove(t: number, id: HardwareId) {
-  return clamp01((stepProgress(t, id) - RELEASE) / (1 - RELEASE));
+  return moveOf(stepProgress(t, id));
 }
 
 /** True while the part's retainer or screws are still done up. */
@@ -80,7 +85,11 @@ export function partPose(mount: Vec3, bench: Vec3, move: number): Vec3 {
 
 /** Side cover offset: up, then aside. Hidden once the step is done. */
 export function coverOffset(t: number): { visible: boolean; offset: Vec3 } {
-  const p = stepProgress(t, 'cover');
+  return coverPose(stepProgress(t, 'cover'));
+}
+
+/** Side cover from its step progress (0 fitted, 1 set aside). */
+export function coverPose(p: number): { visible: boolean; offset: Vec3 } {
   return { visible: p < 1, offset: [0, 1.6 * ease(clamp01(p / 0.5)), 6.5 * ease(clamp01((p - 0.5) / 0.5))] };
 }
 
