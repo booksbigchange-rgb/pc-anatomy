@@ -76,4 +76,14 @@ Offline mode was built and briefly published, then paused at the project owner's
 A first visit to the main lab now downloads about 0.44 MB before the Computer Lab appears, down from about 2 MB.
 
 - The header logo uses a 25 KB crop of the shield (`public/bigchange-logo-shield.png`, 132 × 144) instead of the 1.5 MB artwork sheet. The sheet stays in the repository unchanged and is no longer saved for offline use. The school edition already used its own small logo.
-- The Laptop Lab, Build Your PC, Task Manager, the learning path and the comparison view load only when opened (Laptop Lab 55 KB, Build Your PC 18 KB compressed). They are part of the offline app, so they still open without internet once saved.
+- The Laptop Lab, Build Your PC, Task Manager and the learning path load only when opened (Laptop Lab 55 KB, Build Your PC 18 KB compressed).
+
+## Explore inside the PC — our own take-apart timeline (October 2026)
+
+"Explore inside the PC" now opens the OptiPlex 7040 reference model (the same model as Build a PC) instead of the original PC Anatomy explorer, which was retired so the lab is one product.
+
+- **Take apart.** A timeline under the model, in the style of the original explorer: **Auto** plays it, the named steps jump to a point, the slider scrubs, **Reset** puts the PC back together. The order follows a simplified service sequence: cover → drive cage → card → memory → SSD → cooler → CPU → power supply → motherboard. Retainers and cooler screws come undone before each part lifts out, then each part is laid on the bench in rows, clear of the case and of each other. The current step is named in plain words.
+- **Retired.** The explorer screens, its procedural RTX/Ryzen/PSU catalogue, comparison mode, their tests (63 unit tests) and their unused packages were removed. The hardware guide page and pc-anatomy.com metadata went with them. Git history and Yoseph's repository keep all of it; the MIT notice and a credit stay (README, `LICENSE`, `THIRD_PARTY_REVIEW.md`).
+- **Limits.** The order is a teaching sequence based on Dell's manual, not a repair guide. The socket lever, cables and screws other than the ones above are not animated. Playback speed was checked only in a software renderer in CI (3–5 frames a second), not on school computers.
+
+Evidence: `tests/pc-teardown.test.ts` (no gaps in the timeline, service order, release before move, lift then place, bench layout on the table without overlaps) and `tests/browser/pc-teardown.mjs` (route from the Computer Lab, step names while scrubbing, step buttons, part selection while apart, reset, Auto and Pause, tools reset the timeline, practice still starts, back to the Computer Lab).

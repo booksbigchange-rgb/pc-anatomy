@@ -1,19 +1,19 @@
 {
-  "name": "PC Anatomy — Interactive 3D PC Hardware Explorer",
-  "short_name": "PC Anatomy",
-  "description": "Explore a desktop PC in interactive 3D. Take apart the case, motherboard, GPU, CPU, cooling and storage, and learn how computer hardware works.",
-  "start_url": "/",
+  "name": "BigChange Academy Computer Lab",
+  "short_name": "Computer Lab",
+  "description": "A computer hardware lab for beginner students: set up a desktop, explore and take apart a PC, build one, open a laptop and practise Task Manager.",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#15191a",
   "theme_color": "#15191a",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }

@@ -1,6 +1,6 @@
 # Big Change Computer Lab — implementation plan
 
-This branch turns the PC Anatomy engine into a broader classroom computer lab while preserving the upstream MIT license and keeping the original 3-D hardware explorer intact.
+This branch turns the PC Anatomy engine into a broader classroom computer lab while preserving the upstream MIT license and credit. The original 3-D hardware explorer was retired in October 2026; "Explore inside the PC" now opens our OptiPlex reference model with its own take-apart timeline.
 
 ## Product path
 
@@ -14,7 +14,7 @@ This branch turns the PC Anatomy engine into a broader classroom computer lab wh
 
 ## Architecture rule
 
-PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab is a higher-level scene that students enter first. Selecting the system unit moves into the existing PC explorer rather than duplicating its internal hardware.
+The Computer Lab is the scene students enter first. Selecting the system unit opens the OptiPlex 7040 reference model (inspection and take-apart timeline). Until October 2026 it opened the original PC Anatomy explorer.
 
 ## Fast-path rules
 
@@ -34,7 +34,7 @@ PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab i
 - [x] Whole-computer scene foundation
 - [x] Procedural monitor, system unit, keyboard and mouse
 - [x] Click-to-select learning cards
-- [x] Enter the detailed PC explorer from the system unit
+- [x] Enter the inside of the PC from the system unit (OptiPlex reference model since October 2026)
 - [x] Add classroom-visible USB, HDMI, Ethernet and power targets to the desktop scene
 - [x] Add keyboard, mouse and monitor cable connection feedback
 - [x] Add guided “Meet the Computer” lesson

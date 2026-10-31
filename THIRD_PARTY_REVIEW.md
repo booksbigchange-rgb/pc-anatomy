@@ -7,9 +7,9 @@ The school edition treats public GitHub availability as **insufficient permissio
 ### Yoosseph/pc-anatomy
 
 - License: MIT.
-- Role: upstream foundation.
-- Usage: codebase and procedural Three.js hardware.
-- Requirement: retain MIT notice and upstream attribution.
+- Role: upstream foundation (this repository is a fork).
+- Usage: originally the codebase and procedural Three.js hardware. The explorer itself was retired in October 2026. Still in use: the 0–100 playback hook (`app/use-disassembly-playback.ts`), the page base styles (`app/base.css`), the build setup and the take-apart timeline idea.
+- Requirement: retain MIT notice and upstream attribution (kept in `LICENSE` and the README credits).
 
 ## Approved fonts
 
