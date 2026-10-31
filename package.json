@@ -2,20 +2,20 @@
   "name": "pc-anatomy",
   "version": "1.0.0",
   "private": false,
-  "description": "An interactive 3D explorer of a desktop computer, from an assembled ATX tower to a single streaming multiprocessor.",
+  "description": "BigChange Academy Computer Lab: a browser-based computer hardware lab for beginner students. Forked from PC Anatomy by Yoseph (MIT).",
   "license": "MIT",
   "author": "Yoseph",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Yoosseph/pc-anatomy.git"
+    "url": "git+https://github.com/booksbigchange-rgb/pc-anatomy.git"
   },
-  "homepage": "https://github.com/Yoosseph/pc-anatomy#readme",
+  "homepage": "https://booksbigchange-rgb.github.io/pc-anatomy/",
   "keywords": [
     "computer-hardware",
     "three.js",
     "3d",
     "education",
-    "gpu"
+    "classroom"
   ],
   "engines": {
     "node": ">=22.13.0"
@@ -30,16 +30,10 @@
     "test": "node --experimental-strip-types --test tests/*.test.ts"
   },
   "dependencies": {
-    "@base-ui/react": "1.7.0",
     "@fontsource/noto-sans-ethiopic": "5.3.0",
-    "@vercel/analytics": "2.0.1",
-    "class-variance-authority": "0.7.1",
-    "clsx": "2.1.1",
-    "cmdk": "1.1.1",
     "lucide-react": "1.31.0",
     "react": "19.2.6",
     "react-dom": "19.2.6",
-    "tailwind-merge": "3.6.0",
     "three": "^0.186.0"
   },
   "devDependencies": {

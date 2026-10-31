@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-@import './workbench.css';
+@import './base.css';
 @import './computer-lab.css';
 @import './computer-lab-connections.css';
 @import './laptop-lab.css';
