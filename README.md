@@ -12,7 +12,7 @@ A browser-based computer hardware lab for beginner students. Everything runs in 
 - **Build a PC.** Choose compatible parts, then assemble them: orient, seat and secure each part, apply thermal paste, fasten the cooler, connect cables, close the case and pass a simulated power-on self-test.
 - **Laptop Lab.** Dell Latitude 5410 reference laptop: teardown timeline, guided lesson, connections, troubleshooting and a knowledge check.
 - **Task Manager.** Practise reading CPU, memory, disk and network use.
-- **Learning path.** A seven-step course with the photo route, virtual OS practice, the coffee ceremony lesson and a final assessment. Results stay in the browser.
+- **Learning path.** Eight recorded results: the laptop check, Build a PC, putting the PC back together, Task Manager, the photo route, the coffee ceremony lesson, virtual OS practice and a final assessment. Results stay in the browser and can be downloaded.
 
 ## Accuracy
 
