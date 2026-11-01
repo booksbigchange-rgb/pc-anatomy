@@ -15,6 +15,7 @@ export const REASSEMBLY_LABEL: Record<TeardownStepId, string> = {
   ram: 'Memory (RAM)',
   ssd: 'M.2 SSD',
   gpu: 'Expansion card',
+  cables: 'Connect cables',
   cage: 'Close drive cage',
   cover: 'Fit side cover',
 };
@@ -28,7 +29,8 @@ export const REASSEMBLY_NEEDS: Record<TeardownStepId, readonly TeardownStepId[]>
   ram: ['motherboard'],
   ssd: ['motherboard'],
   gpu: ['motherboard'],
-  cage: ['motherboard', 'psu', 'cpu', 'cooler', 'ram', 'ssd', 'gpu'],
+  cables: ['motherboard', 'psu', 'cooler'],
+  cage: ['motherboard', 'psu', 'cpu', 'cooler', 'ram', 'ssd', 'gpu', 'cables'],
   cover: ['cage'],
 };
 
@@ -40,18 +42,20 @@ const WAIT_REASON: Partial<Record<TeardownStepId, string>> = {
   ram: 'Memory clips into slots on the motherboard. Put the motherboard in first.',
   ssd: 'The SSD plugs into the M.2 socket on the motherboard. Put the motherboard in first.',
   gpu: 'The card plugs into a slot on the motherboard. Put the motherboard in first.',
-  cage: 'The drive cage swings down over the parts. Install every part before closing it.',
+  cables: 'The cables join the power supply, the cooler fan and the case to the motherboard. Put the motherboard, power supply and cooler in first.',
+  cage: 'The drive cage swings down over the parts and cables. Install every part and connect the cables before closing it.',
   cover: 'The cover goes on last. Close the drive cage first.',
 };
 
 export const INSTALLED_MESSAGE: Record<TeardownStepId, string> = {
   motherboard: 'Motherboard in. It sits on the case standoffs and its screws hold it in place.',
   psu: 'Power supply in its bay at the back.',
-  cpu: 'CPU in. Line up the golden triangle with the socket mark, lay it in gently and close the lever. Never press on the pins.',
+  cpu: 'CPU in. Line up the golden triangle with the socket mark, lay it in gently and press the lever down. Never press on the pins.',
   cooler: 'Cooler on. In a real build you put fresh thermal paste on the CPU first, then tighten the screws corner to corner.',
   ram: 'Memory in. The notch lines up with the slot and both clips close.',
   ssd: 'SSD in. It slides into the socket at an angle and one small screw holds it down.',
   gpu: 'Card in. Press it into the slot until the bracket clicks.',
+  cables: 'Cables connected: board power and CPU power from the power supply, the cooler fan lead, and the front-panel switch. Each plug only fits one way.',
   cage: 'Drive cage closed over the parts.',
   cover: 'Side cover on. The PC is back together.',
 };

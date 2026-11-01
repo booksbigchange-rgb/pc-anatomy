@@ -85,6 +85,11 @@ export function setCoolerScrews(cooler: T.Group, progress: Partial<Record<1 | 2 
   }
 }
 
+/** CPU socket lever: 0 = down and clamped, 1 = swung up (about 100 degrees). */
+export function setCpuLever(board: T.Group, open: number) {
+  const lever = board.getObjectByName('cpu-lever');
+  if (lever) lever.rotation.x = Math.min(1, Math.max(0, open)) * 1.75;
+}
 export function setHardwareRetainers(board: T.Group, fastened: readonly string[], progress: Partial<Record<'ram' | 'ssd' | 'gpu', number>> = {}) {
   const amount = (id: 'ram' | 'ssd' | 'gpu') => progress[id] ?? (fastened.includes(id) ? 1 : 0);
   // Fully secured is exactly 0, not -0, so callers can compare poses.
@@ -294,6 +299,14 @@ export function createHardware(id: HardwareId) {
       steel,
       0.016,
     );
+    // Socket lever: a steel arm along one side, hinged at the front end. It swings up to release
+    // the load plate, and down to clamp the CPU. See setCpuLever.
+    const lever = new T.Group();
+    lever.name = 'cpu-lever';
+    lever.position.set(-1.07, 0.17, -0.56);
+    put(lever, box(0.035, 0.035, 0.84, steel, 0.01), 0, 0, -0.42);
+    put(lever, box(0.09, 0.04, 0.06, steel, 0.01), -0.03, 0, -0.86);
+    g.add(lever);
     markTarget(g, start, 'cpu-socket');
     start = g.children.length;
     for (const x of [0.61, 0.83, 1.05, 1.27]) {

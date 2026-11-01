@@ -26,7 +26,7 @@ import FaultPractice from './fault-practice';
 import { ORIENTED_PARTS, RETAINERS, PART_JOBS, PC_FAULTS, type Retainer } from './hardware-practice.ts';
 import { nextReassembly, readProgress, saveProgress } from './student-progress';
 import { useDisassemblyPlayback } from './use-disassembly-playback';
-import { BENCH, TEARDOWN, TEARDOWN_PHASES, coverPose, moveOf, partPose, stepProgress, teardownStage, type TeardownStepId } from './pc-teardown.ts';
+import { BENCH, INTERNAL_CABLES, TEARDOWN, TEARDOWN_PHASES, cablePose, coverPose, moveOf, partPose, stepProgress, teardownStage, type TeardownStepId } from './pc-teardown.ts';
 import { REASSEMBLY_LABEL, REASSEMBLY_STEPS, reassemblyComplete, tryReassemble } from './pc-reassembly.ts';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -39,6 +39,7 @@ import {
   CASE_TARGETS,
   setHardwareRetainers,
   setCoolerScrews,
+  setCpuLever,
   type CaseTargetId,
   type BoardTargetId,
   type HardwareId,
@@ -121,9 +122,10 @@ const PARTS: Part[] = [
 type Action = 'home' | 'front' | 'rear' | 'top' | 'cooling';
 /** Below this width/height ratio the overview camera steps back in proportion. */
 const PORTRAIT_ASPECT = 1.03;
-/** Lesson buttons in a fixed order that does not give the answer away: parts A–Z, then cage and cover. */
+/** Lesson buttons in a fixed order that does not give the answer away: parts A–Z, then cables, cage and cover. */
 const REBUILD_CHOICES: TeardownStepId[] = [
-  ...REASSEMBLY_STEPS.filter(id => id !== 'cage' && id !== 'cover').sort((a, b) => REASSEMBLY_LABEL[a].localeCompare(REASSEMBLY_LABEL[b])),
+  ...REASSEMBLY_STEPS.filter(id => id !== 'cables' && id !== 'cage' && id !== 'cover').sort((a, b) => REASSEMBLY_LABEL[a].localeCompare(REASSEMBLY_LABEL[b])),
+  'cables',
   'cage',
   'cover',
 ];
@@ -174,7 +176,7 @@ export default function AssemblyLab({
   };
   const rebuildPick = (id: TeardownStepId) => {
     if (!rebuild) return;
-    if (id !== 'cage' && id !== 'cover') selectHardware(id);
+    if (id !== 'cables' && id !== 'cage' && id !== 'cover') selectHardware(id);
     const result = tryReassemble(rebuild, id);
     if (!result.ok) {
       if (!rebuild.includes(id)) setRebuildMistakes(count => count + 1);
@@ -685,6 +687,7 @@ export default function AssemblyLab({
     let seen: HardwareId[] = [];
     const retainerProgress = { ram: 1, ssd: 1, gpu: 1 };
     const screwProgress: Record<1 | 2 | 3 | 4, number> = { 1: 1, 2: 1, 3: 1, 4: 1 };
+    let leverOpen = 0;
     const rotors: T.Object3D[] = [];
     for (const g of [...groups.values(), chassis]) g.traverse(o => { if (o.userData.spin) rotors.push(o); });
     const powerLamp: T.MeshStandardMaterial[] = [];
@@ -782,6 +785,14 @@ export default function AssemblyLab({
         }
       }
       setCoolerScrews(groups.get('cooler')!, screwProgress);
+      // The socket lever swings up before the CPU comes out and back down once it is seated again.
+      const leverTarget = d.preview && d.teardownActive && progressOf('cpu') > 0 ? 1 : 0;
+      if (leverOpen !== leverTarget) {
+        leverOpen = leverTarget > leverOpen ? Math.min(1, leverOpen + dt * 2.5) : Math.max(0, leverOpen - dt * 2.5);
+        animating = true;
+        if (leverOpen === leverTarget) dirty = true;
+      }
+      setCpuLever(groups.get('motherboard')!, leverOpen);
       // Newly installed parts start a glide from wherever they are now.
       if (installedRef.current.length < seen.length) seating.clear();
       for (const id of installedRef.current) if (!seen.includes(id) && !d.preview) {
@@ -810,7 +821,14 @@ export default function AssemblyLab({
         driveCage.rotation.z = -Math.PI / 2.4 * cage * cage * (3 - 2 * cage);
         cover.visible = lid.visible;
         cover.position.set(...lid.offset);
+        // The assembled PC shows its internal cables; they are unplugged in the cables step.
+        for (const id of INTERNAL_CABLES) {
+          const visual = cableVisuals.get(id)!, pose = cablePose(progressOf('cables'), id);
+          visual.visible = pose.visible;
+          visual.position.y = pose.lift;
+        }
       } else {
+        for (const visual of cableVisuals.values()) visual.position.y = 0;
         driveCage.rotation.z = !d.closed && (d.cageOpen || (!d.preview && !done)) ? -Math.PI / 2.4 : 0;
         cover.visible = d.closed && (d.preview || done) && !d.isolated;
         cover.position.set(0, 0, 0);

@@ -34,7 +34,7 @@ void test('the rules match the removal order', () => {
 
 void test('a different working order is also accepted', () => {
   const done: TeardownStepId[] = [];
-  for (const id of ['motherboard', 'ram', 'gpu', 'cpu', 'ssd', 'cooler', 'psu', 'cage', 'cover'] as TeardownStepId[]) {
+  for (const id of ['motherboard', 'ram', 'gpu', 'cpu', 'ssd', 'cooler', 'psu', 'cables', 'cage', 'cover'] as TeardownStepId[]) {
     assert.ok(tryReassemble(done, id).ok, id);
     done.push(id);
   }
@@ -44,6 +44,9 @@ void test('wrong choices explain what has to go in first and change nothing', ()
   assert.match(tryReassemble([], 'cpu').message, /motherboard in first/);
   assert.match(tryReassemble(['motherboard'], 'cooler').message, /CPU in first/);
   assert.match(tryReassemble(['motherboard', 'cpu'], 'cage').message, /every part/);
+  assert.match(tryReassemble(['motherboard', 'psu'], 'cables').message, /cooler in first/);
+  assert.ok(tryReassemble(['motherboard', 'psu', 'cpu', 'cooler'], 'cables').ok, 'Cables can go in before memory, SSD and card');
+  assert.match(tryReassemble(['motherboard', 'psu', 'cpu', 'cooler', 'ram', 'ssd', 'gpu'], 'cage').message, /connect the cables/);
   assert.match(tryReassemble(REASSEMBLY_STEPS.slice(0, 7), 'cover').message, /drive cage first/);
   assert.equal(tryReassemble(['motherboard'], 'motherboard').ok, false);
   assert.equal(reassemblyComplete(['motherboard']), false);

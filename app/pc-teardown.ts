@@ -21,18 +21,19 @@ export const BENCH: Record<HardwareId, Vec3> = {
   ssd: [-2.4, 0.54, 3.25],
 };
 
-export type TeardownStepId = 'cover' | 'cage' | HardwareId;
+export type TeardownStepId = 'cover' | 'cage' | 'cables' | HardwareId;
 export type TeardownStep = { id: TeardownStepId; label: string; from: number; to: number; action: string };
 
 export const TEARDOWN: readonly TeardownStep[] = [
   { id: 'cover', label: 'Cover', from: 0, to: 8, action: 'Side cover lifted off.' },
-  { id: 'cage', label: 'Drive cage', from: 8, to: 15, action: 'Drive cage swung up out of the way.' },
-  { id: 'gpu', label: 'Card', from: 15, to: 26, action: 'Card bracket opened, expansion card lifted out of its slot.' },
-  { id: 'ram', label: 'Memory', from: 26, to: 36, action: 'Memory clips opened, RAM lifted straight up.' },
-  { id: 'ssd', label: 'SSD', from: 36, to: 46, action: 'SSD screw removed, drive slid out of the M.2 socket.' },
-  { id: 'cooler', label: 'Cooler', from: 46, to: 58, action: 'Cooler screws loosened in order, cooler lifted off the CPU.' },
-  { id: 'cpu', label: 'CPU', from: 58, to: 68, action: 'Socket lever opened, CPU lifted out by its edges.' },
-  { id: 'psu', label: 'Power', from: 68, to: 80, action: 'Power supply released and lifted out of its bay.' },
+  { id: 'cage', label: 'Drive cage', from: 8, to: 14, action: 'Drive cage swung up out of the way.' },
+  { id: 'cables', label: 'Cables', from: 14, to: 20, action: 'Fan, CPU power, board power and front-panel cables unplugged.' },
+  { id: 'gpu', label: 'Card', from: 20, to: 30, action: 'Card bracket opened, expansion card lifted out of its slot.' },
+  { id: 'ram', label: 'Memory', from: 30, to: 39, action: 'Memory clips opened, RAM lifted straight up.' },
+  { id: 'ssd', label: 'SSD', from: 39, to: 48, action: 'SSD screw removed, drive slid out of the M.2 socket.' },
+  { id: 'cooler', label: 'Cooler', from: 48, to: 59, action: 'Cooler screws loosened in order, cooler lifted off the CPU.' },
+  { id: 'cpu', label: 'CPU', from: 59, to: 69, action: 'Socket lever swung up, CPU lifted out by its edges.' },
+  { id: 'psu', label: 'Power', from: 69, to: 80, action: 'Power supply released and lifted out of its bay.' },
   { id: 'motherboard', label: 'Board', from: 80, to: 100, action: 'Motherboard screws removed, board lifted out. Every part is laid out.' },
 ];
 
@@ -98,4 +99,15 @@ export function teardownStage(t: number) {
   if (t <= 0) return 'Assembled';
   const step = TEARDOWN.find(item => t < item.to) ?? TEARDOWN[TEARDOWN.length - 1];
   return t >= 100 ? 'All parts laid out' : `${step.label}: ${step.action}`;
+}
+
+/** Cables inside the case, unplugged one after another during the cables step (and plugged back in reverse). */
+export const INTERNAL_CABLES = ['fan', 'cpu-power', 'board-power', 'switch'] as const;
+export type InternalCable = (typeof INTERNAL_CABLES)[number];
+
+/** One cable from the cables step's progress: it lifts off its sockets, then is set aside (hidden). */
+export function cablePose(progress: number, cable: InternalCable): { visible: boolean; lift: number } {
+  const share = 1 / INTERNAL_CABLES.length, start = INTERNAL_CABLES.indexOf(cable) * share;
+  const p = clamp01((progress - start) / share);
+  return { visible: p < 1, lift: 0.9 * ease(p) };
 }
