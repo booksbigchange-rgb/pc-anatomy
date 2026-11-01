@@ -38,7 +38,9 @@ Until October 2026 this repository also contained the original PC Anatomy explor
 
 One value, 0–100, drives the inspection model. `TEARDOWN` in `app/pc-teardown.ts` gives each step a window:
 
-`cover 0–8 → drive cage 8–15 → card 15–26 → memory 26–36 → SSD 36–46 → cooler 46–58 → CPU 58–68 → power supply 68–80 → motherboard 80–100`.
+`cover 0–8 → drive cage 8–14 → cables 14–20 → card 20–30 → memory 30–39 → SSD 39–48 → cooler 48–59 → CPU 59–69 → power supply 69–80 → motherboard 80–100`.
+
+The four internal cables (`INTERNAL_CABLES`) are shown while the timeline is in use and lift away one after another in the cables step (`cablePose`). The CPU socket lever (`setCpuLever` in `lib/optiplex-7040.ts`) swings up while the CPU step is under way.
 
 In the first quarter of a part's window its retainer or screws come undone (RAM clips, card bracket, SSD screw, cooler screws) through the same `setHardwareRetainers` / `setCoolerScrews` poses used in assembly practice. Then the part lifts straight up to `LIFT_HEIGHT` and moves across to its `BENCH` spot on the table. A unit test checks that every bench spot rests on the table and that no two parts, or a part and the case, overlap.
 
