@@ -24,7 +24,7 @@ import {
 } from './build-session.ts';
 import FaultPractice from './fault-practice';
 import { ORIENTED_PARTS, RETAINERS, PART_JOBS, PC_FAULTS, type Retainer } from './hardware-practice.ts';
-import { readProgress, saveProgress } from './student-progress';
+import { nextReassembly, readProgress, saveProgress } from './student-progress';
 import { useDisassemblyPlayback } from './use-disassembly-playback';
 import { BENCH, TEARDOWN, TEARDOWN_PHASES, coverPose, moveOf, partPose, stepProgress, teardownStage, type TeardownStepId } from './pc-teardown.ts';
 import { REASSEMBLY_LABEL, REASSEMBLY_STEPS, reassemblyComplete, tryReassemble } from './pc-reassembly.ts';
@@ -183,6 +183,8 @@ export default function AssemblyLab({
     }
     const done = [...rebuild, id];
     setRebuild(done);
+    // A finished lesson is recorded on the learning path, with this attempt's wrong choices.
+    if (reassemblyComplete(done)) saveProgress({ reassembly: nextReassembly(readProgress().reassembly, rebuildMistakes) });
     setRebuildFeedback({ text: reassemblyComplete(done) ? result.message : `${result.message} What goes in next?`, wrong: false });
   };
   /** Finished or stopped: back to the timeline, assembled (0) or laid out (100). */
@@ -1067,7 +1069,7 @@ export default function AssemblyLab({
           <div className="pc-teardown-head">
             <div className="pc-teardown-label">
               <strong>Put it back together</strong>
-              <span>{reassemblyComplete(rebuild) ? `Finished · ${rebuildMistakes === 0 ? 'no mistakes' : `${rebuildMistakes} wrong choice${rebuildMistakes === 1 ? '' : 's'}`}` : `Step ${rebuild.length + 1} of ${REASSEMBLY_STEPS.length} · choose a part or click it on the bench`}</span>
+              <span>{reassemblyComplete(rebuild) ? `Finished · ${rebuildMistakes === 0 ? 'no mistakes' : `${rebuildMistakes} wrong choice${rebuildMistakes === 1 ? '' : 's'}`} · saved to your learning path` : `Step ${rebuild.length + 1} of ${REASSEMBLY_STEPS.length} · choose a part or click it on the bench`}</span>
             </div>
             <output>{rebuild.length}/{REASSEMBLY_STEPS.length}</output>
             {reassemblyComplete(rebuild)
