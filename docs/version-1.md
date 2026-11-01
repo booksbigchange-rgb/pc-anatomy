@@ -97,6 +97,14 @@ When every part is out on the bench, **Put it back together — lesson** appears
 - A wrong choice changes nothing and explains what has to go in first (for example: "The cooler sits on top of the CPU. Put the CPU in first."). A right one moves the part from the bench into its mount, closes its clips or screws, and gives a short real-world tip (CPU triangle and lever, fresh thermal paste, RAM notch, SSD angle and screw).
 - The end shows the number of wrong choices, with **Practise again** and **Done**. **Stop lesson** returns to the laid-out bench.
 - **Saved to the learning path** (November 2026). Finishing the lesson records the attempt in this browser: number of attempts, wrong choices in the latest attempt and the fewest so far. "My learning path" now has eight results, with a **Take apart and put back together** item whose button opens Explore inside the PC. The downloaded results include it. Stopping the lesson part-way records nothing.
-- Limits: cables, thermal paste and the CPU lever are described in words, not shown.
+- Limits: thermal paste is described in words, not shown.
 
 Evidence: `tests/pc-reassembly.test.ts` (reverse order accepted, another working order accepted, rules match the removal order, hints for wrong choices) and `tests/browser/pc-teardown.mjs` (lesson only offered when fully apart, bench click chooses a part, hints, a full working order with three wrong choices, finish and return to the assembled PC). The end positions were checked in screenshots with reduced motion; the animated version was only seen at the slow frame rate of the test renderer.
+
+## Cables and the CPU lever in Take apart (November 2026)
+
+- **Cables.** Once the timeline starts, the assembled PC shows its internal cables: board power and CPU power from the power supply, the cooler fan lead and the front-panel switch lead. A new **Cables** step (after the drive cage) unplugs them one after another. In the lesson this is **Connect cables**: it needs the motherboard, power supply and cooler in place, and the drive cage only closes after it. The timeline now has ten steps, so the percentages of the later steps moved (for example, Memory ends at 39%).
+- **CPU lever.** The socket now has a lever on its open side. It swings up at the start of the CPU step, before the CPU lifts out, and swings down once the CPU is seated again in the lesson.
+- **Limits.** Cable routes are teaching examples, as in Build a PC; the wall-power and monitor cables are outside the case and are not part of this step. The lever is small at the normal camera distance; zoom in to see it.
+
+Evidence: unit tests for the order (cage before cables, cables before every part), the cable unplug sequence and the lesson rules (cables need board, power supply and cooler; the cage needs the cables); the pc-teardown browser suite now includes the Cables step and Connect cables. The lever was checked in close-up screenshots at 58% (down), 61% (up) and 75% (CPU out).
