@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import { MOUNTS, type HardwareId } from '../lib/optiplex-7040.ts';
 import { INSTALL_ORDER } from '../app/build-session.ts';
 import {
-  LIFT_HEIGHT, TEARDOWN, TEARDOWN_PHASES, coverOffset, partMove, partPose, stepProgress, stillFastened, teardownStage,
+  INTERNAL_CABLES, LIFT_HEIGHT, TEARDOWN, cablePose, TEARDOWN_PHASES, coverOffset, partMove, partPose, stepProgress, stillFastened, teardownStage,
 } from '../app/pc-teardown.ts';
 
 void test('teardown covers 0–100 with no gaps or overlaps and removes every part once', () => {
   assert.equal(TEARDOWN[0].from, 0);
   assert.equal(TEARDOWN.at(-1)!.to, 100);
   for (let i = 1; i < TEARDOWN.length; i++) assert.equal(TEARDOWN[i].from, TEARDOWN[i - 1].to);
-  const parts = TEARDOWN.map(step => step.id).filter(id => id !== 'cover' && id !== 'cage');
+  const parts = TEARDOWN.map(step => step.id).filter(id => id !== 'cover' && id !== 'cage' && id !== 'cables');
   assert.deepEqual([...parts].sort(), [...INSTALL_ORDER].sort());
   assert.equal(TEARDOWN_PHASES[0][1], 0);
   assert.equal(TEARDOWN_PHASES.length, TEARDOWN.length + 1);
@@ -19,6 +19,8 @@ void test('teardown covers 0–100 with no gaps or overlaps and removes every pa
 void test('service order: cover first, cooler before CPU, everything above the board before the board', () => {
   const at = (id: string) => TEARDOWN.findIndex(step => step.id === id);
   assert.ok(at('cover') < at('cage'));
+  assert.ok(at('cage') < at('cables'), 'The cage swings up to reach the cables');
+  for (const id of ['gpu', 'ram', 'ssd', 'cooler', 'cpu', 'psu', 'motherboard']) assert.ok(at('cables') < at(id), `cables come out before ${id}`);
   assert.ok(at('cooler') < at('cpu'));
   for (const id of ['gpu', 'ram', 'ssd', 'cooler', 'cpu', 'psu']) assert.ok(at(id) < at('motherboard'), id);
 });
@@ -81,4 +83,12 @@ void test('laid-out parts rest on the table without touching each other or the c
   for (let i = 0; i < boxes.length; i++)
     for (let j = i + 1; j < boxes.length; j++)
       assert.ok(apart(boxes[i].box, boxes[j].box), `${boxes[i].id} and ${boxes[j].id} do not overlap`);
+});
+
+void test('cables lift off one after another and are all set aside by the end of their step', () => {
+  for (const cable of INTERNAL_CABLES) assert.deepEqual(cablePose(0, cable), { visible: true, lift: 0 });
+  const halfway = INTERNAL_CABLES.map(cable => cablePose(0.5, cable).visible);
+  assert.deepEqual(halfway, [false, false, true, true], 'Halfway through, the first two are unplugged');
+  for (const cable of INTERNAL_CABLES) assert.equal(cablePose(1, cable).visible, false);
+  assert.match(teardownStage(17), /^Cables:/);
 });

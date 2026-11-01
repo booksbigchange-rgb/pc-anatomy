@@ -32,11 +32,11 @@ try {
   assert.equal(await page.locator('.workbench').count(), 0, 'The retired explorer is gone');
   assert.equal(await stage(), 'Drag or play');
   const phases = await timeline.locator('.pc-teardown-phases button').allInnerTexts();
-  assert.deepEqual(phases.map(text => text.trim().toUpperCase()), ['ASSEMBLED', 'COVER', 'DRIVE CAGE', 'CARD', 'MEMORY', 'SSD', 'COOLER', 'CPU', 'POWER', 'BOARD']);
+  assert.deepEqual(phases.map(text => text.trim().toUpperCase()), ['ASSEMBLED', 'COVER', 'DRIVE CAGE', 'CABLES', 'CARD', 'MEMORY', 'SSD', 'COOLER', 'CPU', 'POWER', 'BOARD']);
   await shot('01-open');
 
   // Scrubbing names the step in service order.
-  for (const [value, expected] of [[4, /^Cover:/], [20, /^Card:/], [50, /^Cooler:/], [63, /^CPU:/], [100, /All parts laid out/]]) {
+  for (const [value, expected] of [[4, /^Cover:/], [17, /^Cables:/], [20, /^Card:/], [50, /^Cooler:/], [63, /^CPU:/], [100, /All parts laid out/]]) {
     await slider.fill(String(value));
     await page.waitForTimeout(600);
     assert.match(await stage(), expected, `Step at ${value}%`);
@@ -45,7 +45,7 @@ try {
   }
   // Phase buttons jump to the end of a step and mark it.
   await timeline.getByRole('button', { name: 'Memory', exact: true }).click();
-  assert.equal(await percent(), 36);
+  assert.equal(await percent(), 39);
   assert.equal(await timeline.getByRole('button', { name: 'Memory', exact: true }).getAttribute('aria-pressed'), 'true');
   // A part can still be selected and read about while the PC is apart.
   await page.locator('.assembly-step-list').getByRole('button', { name: /Power Supply/ }).click();
@@ -85,10 +85,14 @@ try {
   assert.match(await feedback(), /Close the drive cage first/);
   await choose('Power supply');
   await choose('Close drive cage');
+  assert.match(await feedback(), /connect the cables before closing/);
+  await choose('Connect cables');
+  assert.match(await feedback(), /^Cables connected/);
+  await choose('Close drive cage');
   await choose('Fit side cover');
   assert.match(await feedback(), /back together/);
-  assert.match(await lesson.locator('.pc-teardown-label span').innerText(), /Finished · 3 wrong choices/);
-  assert.equal(await lesson.locator('.pc-teardown-head output').innerText(), '9/9');
+  assert.match(await lesson.locator('.pc-teardown-label span').innerText(), /Finished · 4 wrong choices/);
+  assert.equal(await lesson.locator('.pc-teardown-head output').innerText(), '10/10');
   await page.waitForTimeout(1500);
   await shot('03-reassembled');
   await lesson.getByRole('button', { name: 'Done' }).click();
@@ -122,7 +126,7 @@ try {
   // The finished lesson is on the learning path, and its button opens Explore inside the PC.
   await page.locator('header').getByRole('button', { name: 'My learning path', exact: true }).click();
   const pathItem = page.locator('.course-path li').filter({ hasText: 'Take apart and put back together' });
-  assert.match(await pathItem.innerText(), /✓ Put back together · latest: 3 wrong choices · best: 3 wrong choices · 1 attempt/);
+  assert.match(await pathItem.innerText(), /✓ Put back together · latest: 4 wrong choices · best: 4 wrong choices · 1 attempt/);
   assert.match(await page.getByRole('region', { name: 'Learning path' }).innerText(), /\d \/ 8 results recorded/);
   await pathItem.getByRole('button', { name: 'Open Explore inside the PC' }).click();
   await timeline.waitFor({ timeout: 60000 });
