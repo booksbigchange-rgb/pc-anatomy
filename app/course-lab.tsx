@@ -13,7 +13,9 @@ const FLOW = [
   { title: 'Shut down', question: 'What happens to the working copy in RAM?', choices: ['It is cleared without power', 'It becomes a cable', 'It replaces the SSD'], answer: 'It is cleared without power', explanation: 'Saved changes remain on the SSD. Working RAM needs power.' },
 ];
 type Tab = 'path' | 'flow' | 'coffee' | 'os' | 'check';
-export default function CourseLab({ onBack, onActivity }: { onBack: () => void; onActivity: (activity: 'laptop' | 'assembly' | 'task-manager-pc') => void }) {
+const mistakesText = (count: number) => (count === 0 ? 'no wrong choices' : `${count} wrong choice${count === 1 ? '' : 's'}`);
+
+export default function CourseLab({ onBack, onActivity }: { onBack: () => void; onActivity: (activity: 'laptop' | 'assembly' | 'inside' | 'task-manager-pc') => void }) {
   const [tab, setTab] = useState<Tab>('path');
   const [progress, setProgress] = useState(readCourse);
   const hardware = readProgress();
@@ -45,15 +47,16 @@ export default function CourseLab({ onBack, onActivity }: { onBack: () => void; 
     const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' }));
     const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'bigchange-my-learning.json'; anchor.click(); URL.revokeObjectURL(url);
   };
-  const completed = [hardware.pcBuilt, hardware.taskManager.length === 4, progress.laptopScore !== null, progress.flow, progress.coffee, progress.os, result.complete].filter(Boolean).length;
+  const completed = [hardware.pcBuilt, hardware.reassembly !== null, hardware.taskManager.length === 4, progress.laptopScore !== null, progress.flow, progress.coffee, progress.os, result.complete].filter(Boolean).length;
   return <main className="course-lab">
     <header><button onClick={onBack}>← Computer Lab</button><AcademyLogo /><div><h1>My learning path</h1><p>BigChange Academy · Version 1 · Teacher Hermon Tesfay</p></div></header>
     <nav aria-label="Course sections">{([['path', 'Learning path'], ['flow', 'How parts work together'], ['coffee', 'Coffee ceremony'], ['os', 'OS and files'], ['check', 'Final knowledge check']] as const).map(([id, label]) => <button key={id} aria-current={tab === id ? 'page' : undefined} onClick={() => setTab(id)}>{label}</button>)}</nav>
     {saveFailed && <p role="alert">This browser could not save your latest result. Keep this page open and download your results before leaving.</p>}
-    {tab === 'path' && <section aria-label="Learning path"><h2>Explore → Build → Test → Explain</h2><p>{completed} / 7 results recorded. A recorded attempt is not always a passing score.</p><progress max={7} value={completed} />
+    {tab === 'path' && <section aria-label="Learning path"><h2>Explore → Build → Test → Explain</h2><p>{completed} / 8 results recorded. A recorded attempt is not always a passing score.</p><progress max={8} value={completed} />
       <ol className="course-path">
         <li><h3>Explore the laptop</h3><p>Find parts, follow the Guided lesson, practise connections and troubleshooting. Finish its Knowledge check.</p><p>{progress.laptopScore === null ? 'Knowledge check not recorded yet' : `Latest knowledge check: ${progress.laptopScore}%`}</p><button onClick={() => onActivity('laptop')}>Open Laptop Lab</button></li>
         <li><h3>Build your PC</h3><p>Orient, seat and secure parts. Connect cables and pass the power-on check.</p><p>{hardware.pcBuilt ? '✓ Simulated POST passed' : 'Build not completed yet'}</p><button onClick={() => onActivity('assembly')}>Open PC Build</button></li>
+        <li><h3>Take apart and put back together</h3><p>In Explore inside the PC, take the PC apart, then put every part back in a working order.</p><p>{hardware.reassembly ? `✓ Put back together · latest: ${mistakesText(hardware.reassembly.latestMistakes)} · best: ${mistakesText(hardware.reassembly.bestMistakes)} · ${hardware.reassembly.attempts} attempt${hardware.reassembly.attempts === 1 ? '' : 's'}` : 'Not completed yet'}</p><button onClick={() => onActivity('inside')}>Open Explore inside the PC</button></li>
         <li><h3>Use Task Manager</h3><p>Finish all four challenges. Explain what changed in the before/after readings.</p><p>{hardware.taskManager.length} / 4 challenges</p><button onClick={() => onActivity('task-manager-pc')}>Open Task Manager</button></li>
         <li><h3>Follow the data</h3><p>Open, edit and save a photo. Explain CPU, RAM and storage.</p><p>{progress.flow ? '✓ Practice completed' : 'Not completed'}</p><button onClick={() => setTab('flow')}>Follow a photo</button></li>
         <li><h3>Coffee ceremony computer</h3><p>Follow the coffee ceremony. Match each step to the computer part that does the same job.</p><p>{progress.coffee ? '✓ Practice completed' : 'Not completed'}</p><button onClick={() => setTab('coffee')}>Start the coffee lesson</button></li>

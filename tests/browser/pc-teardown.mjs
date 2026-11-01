@@ -119,8 +119,16 @@ try {
   await page.getByRole('button', { name: /Computer Lab/ }).click();
   await page.locator('header').getByRole('button', { name: 'Explore inside the PC', exact: true }).waitFor();
 
+  // The finished lesson is on the learning path, and its button opens Explore inside the PC.
+  await page.locator('header').getByRole('button', { name: 'My learning path', exact: true }).click();
+  const pathItem = page.locator('.course-path li').filter({ hasText: 'Take apart and put back together' });
+  assert.match(await pathItem.innerText(), /✓ Put back together · latest: 3 wrong choices · best: 3 wrong choices · 1 attempt/);
+  assert.match(await page.getByRole('region', { name: 'Learning path' }).innerText(), /\d \/ 8 results recorded/);
+  await pathItem.getByRole('button', { name: 'Open Explore inside the PC' }).click();
+  await timeline.waitFor({ timeout: 60000 });
+
   assert.deepEqual(errors, [], 'No uncaught browser errors');
-  console.log('PASS pc teardown: route, service-order steps, phase buttons, put-it-back-together lesson (bench click, hints, any working order), reset, auto/pause, tool reset, practice, back.');
+  console.log('PASS pc teardown: route, service-order steps, phase buttons, put-it-back-together lesson (bench click, hints, any working order, saved to the learning path), reset, auto/pause, tool reset, practice, back.');
 } finally {
   await browser.close();
 }
