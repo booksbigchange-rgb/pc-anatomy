@@ -1077,10 +1077,13 @@ export default function AssemblyLab({
           ))}
         </fieldset>
         {/* Phones fold the case tools behind one button so the model keeps its space. */}
-        <button type="button" className="assembly-more-toggle" aria-expanded={caseToolsOpen} onClick={() => setCaseToolsOpen(!caseToolsOpen)}>
-          Case tools
-        </button>
-        <fieldset className={'assembly-case-tools' + (caseToolsOpen ? ' open' : '')}>
+        {preview && (
+          <button type="button" className="assembly-more-toggle" aria-expanded={caseToolsOpen} onClick={() => setCaseToolsOpen(!caseToolsOpen)}>
+            Case tools
+          </button>
+        )}
+        {/* Practice needs the cover and cage buttons as steps, so only inspection folds them. */}
+        <fieldset className={'assembly-case-tools' + (preview ? ' foldable' : '') + (caseToolsOpen ? ' open' : '')}>
           <legend className="sr-only">Case tools</legend>
           {preview && (
             <button
