@@ -113,6 +113,7 @@ jobs:
           live 'build-pc' timeout 900s node tests/browser/build-pc.mjs
           live 'desk-setup' timeout 300s node tests/browser/desk-setup.mjs
           live 'pc-teardown' timeout 400s node tests/browser/pc-teardown.mjs
+          live 'os-install' timeout 240s node tests/browser/os-install.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

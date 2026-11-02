@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -23,8 +23,10 @@ import {
   completedSteps, diagnosis, dropPart, installPart, installProblem, nextPart, partStatus, postProblems, turnPart, type BuildState,
 } from './build-session.ts';
 import FaultPractice from './fault-practice';
+// The installer loads only when a student opens it after the power-on test.
+const OsInstaller = lazy(() => import('./os-installer'));
 import { ORIENTED_PARTS, RETAINERS, PART_JOBS, PC_FAULTS, type Retainer } from './hardware-practice.ts';
-import { nextReassembly, readProgress, saveProgress } from './student-progress';
+import { nextAttempt, readProgress, saveProgress } from './student-progress';
 import { useDisassemblyPlayback } from './use-disassembly-playback';
 import { BENCH, INTERNAL_CABLES, TEARDOWN, TEARDOWN_PHASES, cablePose, coverPose, moveOf, partPose, stepProgress, teardownStage, type TeardownStepId } from './pc-teardown.ts';
 import { REASSEMBLY_LABEL, REASSEMBLY_STEPS, reassemblyComplete, tryReassemble } from './pc-reassembly.ts';
@@ -186,7 +188,7 @@ export default function AssemblyLab({
     const done = [...rebuild, id];
     setRebuild(done);
     // A finished lesson is recorded on the learning path, with this attempt's wrong choices.
-    if (reassemblyComplete(done)) saveProgress({ reassembly: nextReassembly(readProgress().reassembly, rebuildMistakes) });
+    if (reassemblyComplete(done)) saveProgress({ reassembly: nextAttempt(readProgress().reassembly, rebuildMistakes) });
     setRebuildFeedback({ text: reassemblyComplete(done) ? result.message : `${result.message} What goes in next?`, wrong: false });
   };
   /** Finished or stopped: back to the timeline, assembled (0) or laid out (100). */
@@ -218,6 +220,7 @@ export default function AssemblyLab({
   const bootTimer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(bootTimer.current), []);
   const [buildEarned, setBuildEarned] = useState(() => readProgress().pcBuilt);
+  const [installingOs, setInstallingOs] = useState(false);
   const [powerProblems, setPowerProblems] = useState<string[]>([]);
   const build: BuildState = { installed, aligned, fastened, pasteApplied, screws, connections, coverClosed: closed, cageOpen, powerOn, mistakes };
   // The 3D event handlers live in one long-lived effect, so they read the build through a ref.
@@ -1077,7 +1080,8 @@ export default function AssemblyLab({
           <h3>You learned</h3>
           <ul>{LEARNED.map(item => <li key={item}>{item}</li>)}</ul>
           <div className="assembly-result-actions">
-            <button className="assembly-primary" onClick={practice}>Restart practice ↻</button>
+            <button className="assembly-primary" onClick={() => setInstallingOs(true)}>Next: install an operating system →</button>
+            <button onClick={practice}>Restart practice ↻</button>
             <button onClick={() => setShowResult(false)}>Keep exploring this PC</button>
           </div>
         </section>
@@ -1153,6 +1157,7 @@ export default function AssemblyLab({
           )}
         </section>
       )}
+      {installingOs && <Suspense fallback={<output className="lab-loading">Opening the installer…</output>}><OsInstaller overlay drive={componentNames?.ssd ?? 'M.2 2280 SSD'} backLabel="Back to the PC build" onExit={() => setInstallingOs(false)} /></Suspense>}
       <div className="assembly-stage-tip">
         <Rotate3D size={15} />
         {preview
