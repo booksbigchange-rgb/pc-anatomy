@@ -14,10 +14,11 @@ Until October 2026 this repository also contained the original PC Anatomy explor
 
 | Path | Responsibility |
 | --- | --- |
-| `app/page.tsx` | Chooses the lab: `lab`, `inside`, `assembly`, `laptop`, `task-manager-*`, `course`. |
+| `app/page.tsx` | Chooses the lab: `lab`, `inside`, `assembly`, `os-install`, `laptop`, `task-manager-*`, `course`. |
 | `app/computer-lab.tsx` | Desk scene: OptiPlex tower, monitor, keyboard, mouse, cables, port practice (3D click and buttons share one check), Habesha touches. On-demand rendering. |
 | `app/assembly-lab.tsx` | The OptiPlex 7040 reference model. Inspection mode (select, isolate, lift one part, board and case targets, **Take apart** timeline) and assembly practice (drag/seat, orient, retainers, paste, cooler screws, cables, simulated POST). Used by Explore inside the PC (`backLabel="Computer Lab"`) and by Build a PC. |
 | `app/pc-teardown.ts` | Pure rules of the take-apart timeline: step windows on 0–100, service order, bench positions, part path (lift, then across), retainer release. Unit-tested. |
+| `app/os-install.ts`, `app/os-installer.tsx` | Install-an-OS simulator: pure step rules and mistakes (`installReducer`), and its screens. Opened from Build a PC (overlay) and the learning path (`os-install` mode). |
 | `app/pc-reassembly.ts` | Put-it-back-together lesson rules: what each step needs first, hints, success tips. Unit-tested. |
 | `app/use-disassembly-playback.ts` | Shared Auto/Pause playback of a 0–100 value (11 %/s, reduced motion jumps to the end). Used by the PC and laptop timelines. Kept from the original explorer. |
 | `app/build-session.ts` | Pure build rules: install order, prerequisites, drops, orientation, POST problems, scoring. |

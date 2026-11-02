@@ -10,9 +10,10 @@ A browser-based computer hardware lab for beginner students. Everything runs in 
 - **Computer Lab (desk setup).** Connect a keyboard, mouse, monitor, network and power to an OptiPlex 7040 reference tower, by clicking the ports in 3D or with the port buttons.
 - **Explore inside the PC.** Inspect the OptiPlex 7040 reference model: select parts, isolate or lift one out, explore the motherboard sockets and case ports, and use **Take apart** — press **Auto** or drag the timeline to remove every part in service order (cover, drive cage, cables, card, memory, SSD, cooler, CPU with its socket lever, power supply, motherboard) and lay it out on the bench. **Reset** puts it back together. Once it is fully apart, the **Put it back together** lesson asks students to choose each part in a working order, with a hint for each wrong choice.
 - **Build a PC.** Choose compatible parts, then assemble them: orient, seat and secure each part, apply thermal paste, fasten the cooler, connect cables, close the case and pass a simulated power-on self-test.
+- **Install an operating system.** A simulated installer for Lab OS (a made-up teaching OS): installer USB, boot menu, language and keyboard, erasing the disk, account and password rules, time zone, first start-up. Opens after the power-on test in Build a PC or from the learning path.
 - **Laptop Lab.** Dell Latitude 5410 reference laptop: teardown timeline, guided lesson, connections, troubleshooting and a knowledge check.
 - **Task Manager.** Practise reading CPU, memory, disk and network use.
-- **Learning path.** Eight recorded results: the laptop check, Build a PC, putting the PC back together, Task Manager, the photo route, the coffee ceremony lesson, virtual OS practice and a final assessment. Results stay in the browser and can be downloaded.
+- **Learning path.** Nine recorded results: the laptop check, Build a PC, putting the PC back together, installing an OS, Task Manager, the photo route, the coffee ceremony lesson, virtual OS practice and a final assessment. Results stay in the browser and can be downloaded.
 
 ## Accuracy
 
