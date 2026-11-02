@@ -1,6 +1,6 @@
 # BigChange Academy — hardware lab classroom check
 
-Teacher Hermon Tesfay · 15–20 minutes · 3–5 learners
+Teacher Hermon Tesfay · 20–25 minutes · 3–5 learners
 
 Use one older computer, one tablet and one phone. Open the public preview. Use Light graphics if the model feels slow. Students can drag parts or use Seat in its guide. Do not record student names.
 
@@ -12,6 +12,9 @@ Use one older computer, one tablet and one phone. Open the public preview. Use L
 4. Match the cables. Close the cage and cover. Test power. Fix any reported problem.
 5. Open Task Manager. Run Copy files, then end it. Compare Disk before and after. Where do saved files stay?
 6. In Troubleshooting, choose a test, read the evidence, apply the matching fix and run the check again.
+7. From the Computer Lab, open Explore inside the PC. Press Take apart → Auto and watch it come apart. Say why the cables come out before the parts, and why the cooler comes off before the CPU.
+8. When every part is on the bench, start Put it back together. Choose each part in a working order (buttons or clicking the part). After a wrong choice, read the hint and explain it in your own words.
+9. Open My learning path. Find the Take apart and put back together result and read the number of wrong choices.
 
 ## Observe and record
 
@@ -29,12 +32,18 @@ Use one older computer, one tablet and one phone. Open the public preview. Use L
 | The whole parts tray is visible without zooming | | | | |
 | Keyboard only: 1–7, T and Enter in the 3D view seat a part | | | | |
 | The PC Builder result is readable and Restart works | | | | |
+| Take apart → Auto plays smoothly (no long freezes); Pause and Reset work | | | | |
+| The step name under the timeline matches what the learner sees moving | | | | |
+| Put it back together: hints after wrong choices make sense to the learner | | | | |
+| Clicking a part on the bench chooses it (tablet/phone tap too) | | | | |
+| Parts move from the bench into place without jumping | | | | |
+| The learning path shows the put-it-back-together result after finishing | | | | |
 
 Record device/browser, time to load, noticeable freezes, confusing words and unsuccessful taps. Mark each row Pass, Needs help or Failed. Browser automation is not a substitute for these observations. Automated checks emulate touch and keyboard input in Chromium; they do not prove behaviour on a real tablet, in other browsers, or with students.
 
 ## Visual review
 
-Check the assembled and exploded laptop and desktop. Verify that CPU/cooling alignment, RAM contacts, SSD socket, speakers and cable routes look believable. Interior measurements are estimated, not measured CAD. Decorative small board parts are not all individually selectable.
+Check the assembled and exploded laptop and desktop. Verify that CPU/cooling alignment, RAM contacts, SSD socket, speakers and cable routes look believable. In Take apart, also check that the laid-out bench is easy to read, the four cables unplug one by one, and the CPU socket lever (zoom in near the socket) swings up before the CPU lifts out. Interior measurements are estimated, not measured CAD. Decorative small board parts are not all individually selectable.
 
 ## Decision
 
