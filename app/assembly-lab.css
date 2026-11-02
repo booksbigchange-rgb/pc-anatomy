@@ -856,7 +856,7 @@
 @media (max-width: 680px) {
   .assembly-more-toggle { display: inline-flex; align-items: center; }
   .assembly-more-toggle[aria-expanded='true'] { border-color: #a9dee4; }
-  .assembly-case-tools:not(.open) { display: none !important; }
+  .assembly-case-tools.foldable:not(.open) { display: none !important; }
   .assembly-topbar-end { gap: 6px; }
   .assembly-topbar-end .assembly-graphics { padding: 4px 8px; font-size: 11px; }
 }
