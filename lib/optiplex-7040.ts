@@ -117,11 +117,19 @@ function material(color: number) {
     roughness: color === steel ? 0.3 : color === psuSteel || color === psuEdge ? 0.48 : color === black ? 0.72 : 0.62,
   });
 }
+/**
+ * Rounded boxes are the slowest geometry to build and many share a size, so each size is built once.
+ * Safe to share: batching in shadows() copies a geometry before moving it, and nothing edits these in place.
+ */
+const roundedBoxes = new Map<string, RoundedBoxGeometry>();
+function roundedBox(w: number, h: number, d: number, r: number) {
+  const key = `${w}/${h}/${d}/${r}`;
+  let geometry = roundedBoxes.get(key);
+  if (!geometry) roundedBoxes.set(key, (geometry = new RoundedBoxGeometry(w, h, d, 2, r)));
+  return geometry;
+}
 function box(w: number, h: number, d: number, color: number, r = 0.012) {
-  return new T.Mesh(
-    new RoundedBoxGeometry(w, h, d, 2, Math.min(r, w / 4, h / 4, d / 4)),
-    material(color),
-  );
+  return new T.Mesh(roundedBox(w, h, d, Math.min(r, w / 4, h / 4, d / 4)), material(color));
 }
 function put(g: T.Group, o: T.Object3D, x = 0, y = 0, z = 0) {
   o.position.set(x, y, z);
