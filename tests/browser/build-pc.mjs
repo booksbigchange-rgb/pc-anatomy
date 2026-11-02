@@ -198,6 +198,16 @@ try {
   assert.match(await result.innerText(), /XP/);
   assert.match(await result.innerText(), /You learned/);
   await shot('05-pc-builder-result');
+  // The next step opens the OS installer over the build, with the chosen SSD; Back returns to the result.
+  await result.getByRole('button', { name: /install an operating system/ }).click();
+  const installer = page.locator('.os-lab');
+  await installer.waitFor({ timeout: 60000 });
+  assert.match(await installer.innerText(), /Plug in the installer USB stick/);
+  const installerBox = await installer.boundingBox(), viewport = page.viewportSize();
+  assert.ok(installerBox.width >= viewport.width - 2 && installerBox.height >= viewport.height - 2, 'The installer covers the whole window');
+  await installer.getByRole('button', { name: /Back to the PC build/ }).click();
+  assert.equal(await installer.count(), 0);
+  await result.waitFor();
   // While powered on, the rear exhaust fan spins: two rear views a moment apart differ.
   await result.getByRole('button', { name: 'Keep exploring this PC' }).click();
   await page.getByRole('button', { name: 'Rear', exact: true }).click();

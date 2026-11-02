@@ -1,0 +1,146 @@
+/* Install an operating system: a simulated screen on the left, the coach on the right. */
+.os-lab {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px;
+  overflow: auto;
+  background: #0d161b;
+  color: #e3edf0;
+}
+.os-lab-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+.os-topbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.os-topbar h1 { margin: 0; font-size: 20px; }
+.os-topbar p { margin: 2px 0 0; color: #93a8b0; font-size: 12px; }
+.os-lab button, .os-lab select, .os-lab input {
+  font: inherit;
+  color: inherit;
+}
+.os-lab button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 14px;
+  border: 1px solid #47636d;
+  border-radius: 9px;
+  background: #15252c;
+  cursor: pointer;
+}
+.os-lab button[aria-pressed='true'] { border-color: #6fcbd5; background: #1b3a41; }
+.os-lab .os-primary { border-color: #6fcbd5; background: #1f4a52; font-weight: 700; }
+.os-screen {
+  min-height: 460px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  border: 10px solid #1d2326;
+  border-radius: 14px;
+  background: #050708;
+  box-shadow: inset 0 0 0 1px #2c3438, 0 14px 40px rgba(0, 0, 0, 0.45);
+}
+.os-desk, .os-installer, .os-login, .os-firmware {
+  width: min(560px, 100%);
+  display: grid;
+  gap: 14px;
+}
+.os-desk h2, .os-installer h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 22px; }
+.os-choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.os-firmware {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  color: #c9d3d6;
+}
+.os-firmware pre { margin: 0; white-space: pre-wrap; font: inherit; color: #9fb0b5; }
+.os-brand { margin: 0; color: #fff; font-weight: 700; letter-spacing: 1px; }
+.os-prompt { margin: 0; color: #f2d16b; }
+.os-error { margin: 0; color: #ff9b8a; font-weight: 700; }
+.os-list { display: grid; gap: 6px; }
+.os-list button { justify-content: flex-start; border-radius: 4px; background: #0d1418; }
+.os-installer {
+  padding: 22px;
+  border-radius: 12px;
+  background: #e9f1f3;
+  color: #13303a;
+}
+.os-installer button { color: #13303a; background: #fff; border-color: #87a7b1; }
+.os-installer .os-primary { background: #1d6b78; border-color: #1d6b78; color: #fff; }
+.os-installer label { display: grid; gap: 5px; font-weight: 600; font-size: 14px; }
+.os-installer select, .os-installer input:not([type='checkbox']) {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid #87a7b1;
+  border-radius: 8px;
+  background: #fff;
+  color: #13303a;
+  font-weight: 400;
+}
+.os-installer .os-check { display: flex; align-items: flex-start; gap: 8px; font-weight: 400; }
+.os-installer .os-check input { margin-top: 4px; width: 18px; height: 18px; }
+.os-note { margin: 0; font-size: 13px; color: #557079; }
+.os-warn { margin: 0; padding: 10px; border-radius: 8px; background: #fff1d1; color: #6b4a00; }
+.os-disk { display: flex; align-items: center; gap: 12px; padding: 12px; border: 2px solid #1d6b78; border-radius: 10px; background: #fff; }
+.os-disk span { display: block; font-size: 13px; color: #557079; }
+.os-rules { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; font-size: 13px; color: #557079; }
+.os-rules li { display: flex; align-items: center; gap: 6px; }
+.os-rules li.met { color: #18734f; font-weight: 600; }
+.os-installer progress { width: 100%; height: 16px; accent-color: #1d6b78; }
+.os-stage { margin: 0; font-weight: 600; }
+.os-login { justify-items: center; text-align: center; }
+.os-login h2 { margin: 0; }
+.os-login p { margin: 0; color: #93a8b0; }
+.os-login label { display: grid; gap: 5px; width: min(280px, 100%); text-align: left; }
+.os-login input { min-height: 40px; padding: 0 10px; border: 1px solid #47636d; border-radius: 8px; background: #0f1b20; }
+.os-avatar { width: 72px; height: 72px; display: grid; place-items: center; border-radius: 50%; background: #1d6b78; font-size: 32px; font-weight: 700; }
+.os-desktop {
+  position: relative;
+  width: 100%;
+  min-height: 420px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #1b4f5b, #2d3f6b 60%, #563c63);
+}
+.os-window { width: min(520px, calc(100% - 24px)); padding: 20px; border-radius: 12px; background: #f4f8f9; color: #13303a; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35); }
+.os-window h2 { margin: 0 0 6px; }
+.os-window h3 { margin: 12px 0 4px; font-size: 15px; }
+.os-window p { margin: 6px 0; font-size: 14px; }
+.os-window ul { margin: 0; padding-left: 20px; list-style: disc; font-size: 14px; line-height: 1.5; }
+.os-window button { color: #13303a; background: #fff; border-color: #87a7b1; }
+.os-window .os-primary { background: #1d6b78; color: #fff; border-color: #1d6b78; }
+.os-taskbar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 18px; padding: 8px 14px; background: rgba(5, 10, 14, 0.75); font-size: 13px; }
+.os-coach {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #2c4048;
+  border-radius: 12px;
+  background: #111e24;
+}
+.os-eyebrow { margin: 0; font: 700 11px/1 monospace; letter-spacing: 1.4px; color: #8fb6bf; }
+.os-coach output { display: block; padding: 10px 12px; border-left: 3px solid #6fcbd5; border-radius: 6px; background: #15282f; line-height: 1.45; font-size: 14px; }
+.os-coach output.wrong { border-left-color: #e7b45c; background: #2a2316; color: #f4e2c0; }
+.os-steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13px; color: #7f959c; }
+.os-steps li { display: flex; align-items: center; gap: 8px; }
+.os-steps li span { width: 18px; text-align: center; font-size: 11px; }
+.os-steps li.done { color: #8fd3a2; }
+.os-steps li.current { color: #fff; font-weight: 700; }
+.os-mistakes { margin: 0; font-size: 13px; color: #b9c8cc; }
+.os-coach .os-note { color: #8aa0a7; }
+@media (max-width: 860px) {
+  .os-lab { grid-template-columns: 1fr; padding: 10px; }
+  .os-screen { min-height: 0; padding: 14px; border-width: 6px; }
+  .os-installer { padding: 16px; }
+}

@@ -1,10 +1,11 @@
 import type { Resource } from './task-manager-model.ts';
 const KEY = 'bigchange-hardware-progress-v1';
-/** Put-it-back-together lesson: finished attempts and wrong choices (latest and fewest). */
-export type ReassemblyResult = { attempts: number; latestMistakes: number; bestMistakes: number };
-export type StudentProgress = { taskManager: Resource[]; pcBuilt: boolean; reassembly: ReassemblyResult | null };
+/** A practice activity's record: finished attempts and mistakes (latest and fewest). */
+export type AttemptResult = { attempts: number; latestMistakes: number; bestMistakes: number };
+/** reassembly: put the PC back together. osInstall: install Lab OS. No names or passwords are stored. */
+export type StudentProgress = { taskManager: Resource[]; pcBuilt: boolean; reassembly: AttemptResult | null; osInstall: AttemptResult | null };
 const count = (value: unknown) => (Number.isInteger(value) && (value as number) >= 0 ? (value as number) : null);
-function readReassembly(value: unknown): ReassemblyResult | null {
+function readAttempt(value: unknown): AttemptResult | null {
   if (!value || typeof value !== 'object') return null;
   const data = value as Record<string, unknown>;
   const attempts = count(data.attempts), latest = count(data.latestMistakes), best = count(data.bestMistakes);
@@ -17,15 +18,16 @@ export function readProgress(): StudentProgress {
     return {
       taskManager: Array.isArray(data.taskManager) ? [...new Set<Resource>(data.taskManager.filter((id: unknown) => ['cpu', 'memory', 'disk', 'network'].includes(String(id))))] : [],
       pcBuilt: data.pcBuilt === true,
-      reassembly: readReassembly(data.reassembly),
+      reassembly: readAttempt(data.reassembly),
+      osInstall: readAttempt(data.osInstall),
     };
-  } catch { return { taskManager: [], pcBuilt: false, reassembly: null }; }
+  } catch { return { taskManager: [], pcBuilt: false, reassembly: null, osInstall: null }; }
 }
 export function saveProgress(update: Partial<StudentProgress>) {
   try { localStorage.setItem(KEY, JSON.stringify({ ...readProgress(), ...update })); } catch { }
 }
 /** The record after one more finished attempt. */
-export function nextReassembly(previous: ReassemblyResult | null, mistakes: number): ReassemblyResult {
+export function nextAttempt(previous: AttemptResult | null, mistakes: number): AttemptResult {
   return previous
     ? { attempts: previous.attempts + 1, latestMistakes: mistakes, bestMistakes: Math.min(previous.bestMistakes, mistakes) }
     : { attempts: 1, latestMistakes: mistakes, bestMistakes: mistakes };
