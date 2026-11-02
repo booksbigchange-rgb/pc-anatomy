@@ -178,6 +178,22 @@ try {
   await page.getByRole('button', { name: 'Corner 3', exact: true }).click();
   assert.match(await coach().innerText(), /Choose corner 1/);
   for (const corner of [1, 3, 2, 4]) await page.getByRole('button', { name: `Corner ${corner}`, exact: true }).click();
+  // Hand wiring in 3D (still the top view): drag the fan lead's loose plug. A wrong socket sends it back.
+  const plugRest = [1.69, 2.05, -1.79], cableHeight = 1.3;
+  const onTop = ([x, y, z]) => { const q = new T.Vector3(x, y, z).project(top); return { x: rect.x + ((q.x + 1) * rect.width) / 2, y: rect.y + ((1 - q.y) * rect.height) / 2 }; };
+  async function dragPlug(to, capture) {
+    const a = onTop(plugRest), b = onTop([to[0], cableHeight, to[1]]);
+    await page.mouse.move(a.x, a.y); await page.mouse.down();
+    for (let i = 1; i <= 8; i++) await page.mouse.move(a.x + ((b.x - a.x) * i) / 8, a.y + ((b.y - a.y) * i) / 8);
+    if (capture) { await page.waitForTimeout(1200); await shot(capture); }
+    await page.mouse.up(); await page.waitForTimeout(300);
+  }
+  await dragPlug([0.55, -1.9], '04a-cable-mid-drag');
+  assert.match(await coach().innerText(), /Wrong socket/, 'Fan lead dropped on the CPU power socket');
+  await dragPlug([2.25, -2.05]);
+  assert.match(await coach().innerText(), /Cable connected/, 'Fan lead dragged onto the fan header');
+  assert.match(await page.locator('.assembly-wiring').innerText(), /1 \/ 6 cables connected/);
+  await shot('04b-cable-dragged');
   await page.getByRole('combobox', { name: 'Choose PC cable' }).selectOption('fan');
   await page.getByRole('button', { name: 'PSU AC inlet', exact: true }).click();
   assert.match(await coach().innerText(), /Wrong socket/);

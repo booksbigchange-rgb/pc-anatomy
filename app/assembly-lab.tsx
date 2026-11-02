@@ -17,7 +17,7 @@ import {
   Fan,
 } from 'lucide-react';
 import * as T from 'three';
-import { PC_CONNECTIONS, COOLER_ORDER, canConnect, type PcConnection } from './pc-power-challenge';
+import { PC_CONNECTIONS, COOLER_ORDER, CABLE_ROUTES, cableEnds, canConnect, dropCable, type PcConnection } from './pc-power-challenge';
 import {
   DIRECTION_REASON, FIXED_NOTE, LEARNED, REMOVABLE_NOTE, SAFETY, SHORT_NAME, TOTAL_STEPS, XP_PER_STEP,
   completedSteps, diagnosis, dropPart, installPart, installProblem, nextPart, partStatus, postProblems, turnPart, type BuildState,
@@ -226,12 +226,20 @@ export default function AssemblyLab({
   // The 3D event handlers live in one long-lived effect, so they read the build through a ref.
   const buildRef = useRef(build);
   useEffect(() => { buildRef.current = { ...build, installed: installedRef.current }; });
-  const connect = (target: string) => {
-    const problem = canConnect(cable, target, installed, connections);
-    if (problem) { setMistakes(count => count + 1); setFeedback(problem); return; }
-    setConnections(previous => [...new Set([...previous, cable])]);
+  /** The result of a connection attempt, from the socket buttons or a plug dragged in 3D. */
+  const applyConnection = (id: PcConnection, problem: string | null) => {
+    if (problem) { setMistakes(count => count + 1); setFeedback(problem); return false; }
+    setConnections(previous => [...new Set([...previous, id])]);
     setPowerProblems([]);
-    setFeedback(cable === 'mains' ? 'Wall power connected. Unplug it before you change anything inside.' : 'Cable connected. The M.2 SSD and this card get power through their slots, so they need no extra cable.');
+    setFeedback(id === 'mains' ? 'Wall power connected. Unplug it before you change anything inside.' : 'Cable connected. The M.2 SSD and this card get power through their slots, so they need no extra cable.');
+    return true;
+  };
+  const connect = (target: string) => { applyConnection(cable, canConnect(cable, target, installed, connections)); };
+  /** A plug dropped at (x, z) in the 3D view. */
+  const plugCable = (id: PcConnection, x: number, z: number) => {
+    setCable(id);
+    const build = buildRef.current;
+    return applyConnection(id, dropCable(id, x, z, build.installed, build.connections));
   };
   const testPower = () => {
     const problems = postProblems(build);
@@ -362,8 +370,8 @@ export default function AssemblyLab({
     if (key === 'Enter' && !installed.includes(selected)) { seatPart(); return true; }
     return false;
   };
-  const handlersRef = useRef({ applyAttempt, selectHardware, setFeedback, keyAction, rebuildPick });
-  useEffect(() => { Object.assign(handlersRef.current, { applyAttempt, selectHardware, keyAction, rebuildPick }); });
+  const handlersRef = useRef({ applyAttempt, selectHardware, setFeedback, keyAction, rebuildPick, plugCable });
+  useEffect(() => { Object.assign(handlersRef.current, { applyAttempt, selectHardware, keyAction, rebuildPick, plugCable }); });
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -443,16 +451,8 @@ export default function AssemblyLab({
     scene.add(assembly);
     assembly.add(chassis);
     const cableVisuals = new Map<PcConnection, T.Mesh>();
-    const routes: Record<PcConnection, number[][]> = {
-      'board-power': [[1.33, 1.6, 2.05], [3.6, 1.05, 1.8], [3.4, 1, -0.9]],
-      'cpu-power': [[1.33, 1.6, 2.05], [0.5, 1.05, 1], [0.55, 1, -1.9]],
-      fan: [[1.48, 1.8, -1.68], [1.9, 1.1, -1.9], [2.25, 1, -2.05]],
-      switch: [[4.3, 0.95, 1.5], [3.6, 0.98, 0.9], [2.9, 0.98, 0.7]],
-      display: [[0.3, 1.65, 0.1], [-0.4, 1.3, 0.1], [-0.9, 0.65, -0.7]],
-      mains: [[0.4, 1.35, 2.1], [-0.5, 1, 2.1], [-1.3, 0.7, 2.8]],
-    };
     for (const connection of PC_CONNECTIONS) {
-      const path = new T.CatmullRomCurve3(routes[connection.id].map(point => new T.Vector3(...point)));
+      const path = new T.CatmullRomCurve3(CABLE_ROUTES[connection.id].map(point => new T.Vector3(...point)));
       // Cable colours a student can tell apart: yellow fan lead, grey front-panel lead, black power and display cables.
       const colour = connection.id === 'fan' ? 0xc9aa52 : connection.id === 'switch' ? 0x8b9399 : connection.id === 'display' ? 0x1f2a44 : 0x22282c;
       const radius = connection.id === 'mains' ? 0.045 : connection.id === 'board-power' ? 0.04 : 0.024;
@@ -472,6 +472,48 @@ export default function AssemblyLab({
       assembly.add(visual);
       cableVisuals.set(connection.id, visual);
     }
+    // Loose plugs for hand wiring: after every part is placed, each unconnected cable waits with its
+    // plug free. Dragging the plug stretches the cable from its fixed end; sockets glow while dragging.
+    const loosePlugs = new Map<PcConnection, { plug: T.Group; tube: T.Mesh; radius: number }>();
+    const looseCurve = (id: PcConnection, at: T.Vector3) => {
+      const anchor = new T.Vector3(...cableEnds(id).anchor);
+      const middle = anchor.clone().lerp(at, 0.5);
+      middle.y = Math.max(anchor.y, at.y) + 0.35;
+      return new T.CatmullRomCurve3([anchor, middle, at]);
+    };
+    const shapeLoose = (id: PcConnection, at: T.Vector3) => {
+      const item = loosePlugs.get(id)!;
+      item.plug.position.copy(at);
+      item.tube.geometry.dispose();
+      item.tube.geometry = new T.TubeGeometry(looseCurve(id, at), 20, item.radius, 6, false);
+    };
+    for (const connection of PC_CONNECTIONS) {
+      const visual = cableVisuals.get(connection.id)!;
+      const radius = (visual.geometry as T.TubeGeometry).parameters.radius;
+      const tube = new T.Mesh(new T.BufferGeometry(), visual.material);
+      tube.castShadow = true;
+      const plug = new T.Group();
+      plug.name = `${connection.id}-loose-plug`;
+      const body = new T.Mesh(new T.BoxGeometry(Math.max(0.09, radius * 4), Math.max(0.07, radius * 3), Math.max(0.11, radius * 5)), new T.MeshStandardMaterial({ color: 0x101315, roughness: 0.8, emissive: 0x0c3a40, emissiveIntensity: 0.6 }));
+      body.castShadow = true;
+      // A larger see-through grip so a finger or mouse can catch the small plug.
+      const grip = new T.Mesh(new T.SphereGeometry(0.2, 10, 8), new T.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+      plug.add(body, grip);
+      plug.userData.connectionId = connection.id;
+      plug.visible = tube.visible = false;
+      assembly.add(plug, tube);
+      loosePlugs.set(connection.id, { plug, tube, radius });
+      shapeLoose(connection.id, new T.Vector3(...cableEnds(connection.id).rest));
+    }
+    const socketMarkers = PC_CONNECTIONS.map(connection => {
+      const ring = new T.Mesh(new T.TorusGeometry(0.13, 0.025, 8, 24), new T.MeshBasicMaterial({ color: 0x70dce5, transparent: true, opacity: 0.9, depthWrite: false }));
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(...cableEnds(connection.id).socket);
+      ring.position.y += 0.05;
+      ring.visible = false;
+      assembly.add(ring);
+      return ring;
+    });
     const groups = new Map<HardwareId, T.Group>();
     for (const p of PARTS) {
       const g = createHardware(p.id);
@@ -518,8 +560,12 @@ export default function AssemblyLab({
       point = new T.Vector3(),
       offset = new T.Vector3();
     let dragging: HardwareId | null = null,
+      draggingCable: PcConnection | null = null,
       press: { x: number; y: number } | null = null;
     const assembling = () => !displayRef.current.preview && installedRef.current.length < PARTS.length;
+    /** Hand wiring: every part placed, PC not running. */
+    const wiring = () => !displayRef.current.preview && installedRef.current.length === PARTS.length && !buildRef.current.powerOn;
+    const CABLE_HEIGHT = 1.3;
     /** The part the cyan guide and glow point at: the one in hand, else the selected loose part, else the next step. */
     const focusPart = () => {
       if (dragging) return dragging;
@@ -536,6 +582,21 @@ export default function AssemblyLab({
     };
     const down = (e: PointerEvent) => {
       press = { x: e.clientX, y: e.clientY };
+      if (wiring()) {
+        pointerAt(e);
+        const hit = ray.intersectObjects([...loosePlugs.values()].filter(item => item.plug.visible).map(item => item.plug), true)[0];
+        if (!hit) return;
+        let node: T.Object3D | null = hit.object;
+        while (node && !node.userData.connectionId) node = node.parent;
+        draggingCable = (node?.userData.connectionId as PcConnection) ?? null;
+        if (!draggingCable) return;
+        dirty = true;
+        controls.enabled = false;
+        canvas.setPointerCapture(e.pointerId);
+        handlersRef.current.setFeedback(`${PC_CONNECTIONS.find(item => item.id === draggingCable)!.label}: drag the plug onto its socket. Sockets glow while you drag.`);
+        e.stopPropagation();
+        return;
+      }
       if (!assembling()) return;
       pointerAt(e);
       const loose = PARTS.filter(p => !installedRef.current.includes(p.id));
@@ -564,6 +625,12 @@ export default function AssemblyLab({
       e.stopPropagation();
     };
     const move = (e: PointerEvent) => {
+      if (draggingCable) {
+        pointerAt(e);
+        plane.constant = -CABLE_HEIGHT;
+        if (ray.ray.intersectPlane(plane, point)) { shapeLoose(draggingCable, point.clone()); dirty = true; }
+        return;
+      }
       if (!dragging) return;
       dirty = true;
       pointerAt(e);
@@ -576,6 +643,16 @@ export default function AssemblyLab({
     };
     const finish = (e: PointerEvent, cancelled = false) => {
       dirty = true;
+      if (draggingCable) {
+        const id = draggingCable, at = loosePlugs.get(id)!.plug.position.clone();
+        draggingCable = null;
+        controls.enabled = true;
+        press = null;
+        if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+        // A wrong drop, or a cancelled drag, puts the plug back where it was waiting.
+        if (cancelled || !handlersRef.current.plugCable(id, at.x, at.z)) shapeLoose(id, new T.Vector3(...cableEnds(id).rest));
+        return;
+      }
       if (dragging) {
         const id = dragging;
         dragging = null;
@@ -719,6 +796,9 @@ export default function AssemblyLab({
         previousDisplay = signature;
       }
       for (const [id, visual] of cableVisuals) visual.visible = !d.preview && buildRef.current.connections.includes(id);
+      const handWiring = wiring();
+      for (const [id, item] of loosePlugs) item.plug.visible = item.tube.visible = handWiring && !buildRef.current.connections.includes(id);
+      for (const ring of socketMarkers) ring.visible = draggingCable !== null;
       assembly.rotation.x = d.preview && d.upright ? Math.PI / 2 : 0;
       assembly.position.set(
         0,
@@ -1162,7 +1242,9 @@ export default function AssemblyLab({
         <Rotate3D size={15} />
         {preview
           ? 'Drag empty space: rotate · Wheel: zoom · Click hardware: select · Keys: arrows, + −'
-          : 'Drag any loose part into its cyan guide · Empty space: rotate · Keys: arrows, + −'}
+          : complete && !powerOn
+            ? 'Drag each loose cable plug onto its socket · Empty space: rotate · Keys: arrows, + −'
+            : 'Drag any loose part into its cyan guide · Empty space: rotate · Keys: arrows, + −'}
       </div>
     </section>
   );
@@ -1297,7 +1379,7 @@ export default function AssemblyLab({
         {!preview && (
           <section className="assembly-wiring" aria-label="Connections and power-on challenge">
             <h3>Connect → Close → Test</h3>
-            <p>Choose a cable. Then choose its socket. Connect wall power last. Cable routes are teaching examples.</p>
+            <p>Drag each loose plug in the 3D view onto its socket, or choose a cable here and then its socket. Connect wall power last. Cable routes are teaching examples.</p>
             <label>Cable<select aria-label="Choose PC cable" value={cable} disabled={powerOn} onChange={event => setCable(event.target.value as PcConnection)}>{PC_CONNECTIONS.map(connection => <option key={connection.id} value={connection.id}>{connections.includes(connection.id) ? '✓ ' : ''}{connection.label}</option>)}</select></label>
             <div className="assembly-sockets">{PC_CONNECTIONS.map(connection => <button key={connection.id} disabled={powerOn} onClick={() => connect(connection.target)}>{connection.target}</button>)}</div>
             <p>{connections.length} / {PC_CONNECTIONS.length} cables connected</p>
