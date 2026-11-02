@@ -34,7 +34,7 @@ const RESOURCES = {
     label: 'CPU',
     name: 'The worker',
     icon: Cpu,
-    color: '#18885d',
+    color: '#18794c',
     description:
       'The CPU follows instructions. A busy app needs more CPU time.',
   },
@@ -50,7 +50,7 @@ const RESOURCES = {
     label: 'Disk',
     name: 'The file store',
     icon: HardDrive,
-    color: '#ca7218',
+    color: '#a65c12',
     description:
       'This graph shows how busy the SSD is reading and writing. It does not show how full it is.',
   },
@@ -274,14 +274,13 @@ export default function TaskManagerLab({
     <main className="tm-lab">
       <header className="tm-header">
         <button className="tm-back" onClick={onBack}>
-          <ArrowLeft size={17} /> Back to{' '}
-          {device === 'laptop' ? 'Laptop Lab' : 'Computer Lab'}
+          <ArrowLeft size={17} /> {device === 'laptop' ? 'Laptop Lab' : 'Computer Lab'}
         </button>
         <div className="tm-brand">
           <AcademyLogo />
           <div>
-            <strong>BigChange Academy</strong>
-            <small>COMPUTER LAB · TASK MANAGER</small>
+            <strong>BigChange Computer Lab</strong>
+            <small>TASK MANAGER</small>
           </div>
         </div>
         <span className="tm-simulation">Classroom simulation</span>
@@ -289,7 +288,6 @@ export default function TaskManagerLab({
       <div className="tm-layout">
         <aside className={'tm-sidebar' + (compactSidebar ? ' compact' : '')}>
           <button className="tm-mobile-challenges" aria-expanded={!compactSidebar} onClick={() => setCompactSidebar(!compactSidebar)}>{compactSidebar ? 'Show challenges & XP' : 'Hide challenges & XP'}</button>
-          <p className="tm-eyebrow">NEW CHAPTER</p>
           <h1>
             What is your{' '}
             <br />
@@ -321,7 +319,6 @@ export default function TaskManagerLab({
               : 'Turn on virtual computer'}
           </button>
           <div className="tm-missions">
-            <p className="tm-eyebrow">TRY A CHALLENGE</p>
             {MISSIONS.map((item, index) => (
               <button
                 key={item.id}
@@ -369,8 +366,8 @@ export default function TaskManagerLab({
         <section className="tm-main" aria-label="Task Manager simulation">
           <div className="tm-heading">
             <div>
-              <p className="tm-eyebrow">{profile.name.toUpperCase()}</p>
               <h2>Task Manager</h2>
+              <p className="tm-meta">{profile.name}</p>
             </div>
             <div className="tm-monitor-controls">
               <span className={'tm-live' + (state.powered ? ' on' : '')}>
@@ -467,8 +464,8 @@ export default function TaskManagerLab({
                 {(state.mission ?? 0) + 1}
               </span>
               <div>
-                <p className="tm-eyebrow">CHALLENGE · 25 XP · 8 GB LAPTOP</p>
                 <h3>{mission.title}</h3>
+                <p className="tm-meta">Challenge · 25 XP · 8 GB laptop</p>
                 <p>
                   {mission.symptom} {mission.task}
                 </p>
@@ -588,7 +585,7 @@ export default function TaskManagerLab({
                       </th>
                       <td style={{ background: `rgba(24,136,93,${Math.min(.38, row.cpu / 100 * .38)})` }}>{row.cpu.toFixed(1)}%</td>
                       <td style={{ background: `rgba(132,80,197,${Math.min(.38, row.memory / profile.memory * .65)})` }}>{row.memory.toLocaleString()} MB</td>
-                      <td style={{ background: `rgba(202,114,24,${Math.min(.38, row.disk / 100 * .38)})` }}>{row.disk.toFixed(1)}%</td>
+                      <td style={{ background: `rgba(166,92,18,${Math.min(.38, row.disk / 100 * .38)})` }}>{row.disk.toFixed(1)}%</td>
                       <td style={{ background: `rgba(34,120,195,${Math.min(.38, row.network / profile.network * .38)})` }}>{row.network.toFixed(1)} Mbps</td>
                       <td>
                         <button

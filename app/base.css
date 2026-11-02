@@ -15,6 +15,20 @@
   --accent-bright: #a1d9e2;
   --accent-violet: #b497cf;
   --accent-muted: #9dc5cc;
+  /* Tibeb palette: the woven border of a habesha kemis, shared by every lab. */
+  --cloth: #f3ead8;
+  --tibeb-blue: #2b4c8c;
+  --tibeb-red: #b8322e;
+  --tibeb-green: #2f7d4f;
+  --tibeb-gold: #d9a441;
+  /* One focus ring per surface: warm gold on dark screens, tibeb blue on light ones. */
+  --focus-on-dark: #f3d48a;
+  --focus-on-light: #2b4c8c;
+  /* Callouts: guidance in cyan, problems and safety in amber. */
+  --callout-line: #3d6f78;
+  --callout-bg: rgba(121, 198, 208, 0.07);
+  --warn-line: #b9873f;
+  --warn-bg: rgba(224, 166, 89, 0.1);
   --muted: #232427;
   --muted-foreground: #b3b5ba;
   /* The notch, the rounded corners and the home indicator, as four lengths.
@@ -28,15 +42,24 @@
 * {
   box-sizing: border-box;
 }
-/* Each lab is a fixed stage, not a document: there is nothing below the
-   fold to reach. Letting the page itself scroll on a phone only produces the
-   iOS rubber-band and a pull-to-refresh that fires mid-orbit. */
+/* The page itself never scrolls: on a phone that only produces the iOS
+   rubber-band and a pull-to-refresh that fires mid-orbit. The app root scrolls
+   instead, so a screen taller than the window (the learning path, every lab on a
+   phone) can still be read to the end. Screens that fit the window, like the
+   desktop 3D labs, never show a scrollbar. 3D canvases keep touch-action: none,
+   so dragging on the model still orbits rather than scrolls. */
 html,
 body {
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none;
   -webkit-text-size-adjust: 100%;
+}
+#root {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: none;
 }
 body {
   margin: 0;
@@ -74,7 +97,7 @@ button:disabled {
   [role='switch'],
   [tabindex]:not([tabindex='-1'])
 ):focus-visible {
-  outline: 2px solid var(--accent-bright);
+  outline: 2px solid var(--focus-on-dark);
   outline-offset: 4px;
 }
 button:hover {
@@ -112,5 +135,20 @@ a {
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Touch screens: every control is at least a fingertip (44 px), whatever its desktop size.
+   !important on purpose: many lab controls set a compact height for mouse use, and on a
+   touch screen the fingertip minimum must win over all of them. */
+@media (pointer: coarse) {
+  :where(button, select, summary, [role='button']) {
+    min-height: 44px !important;
+  }
+  :where(button) {
+    min-width: 44px;
+  }
+  :where(input[type='range']) {
+    min-height: 44px !important;
   }
 }

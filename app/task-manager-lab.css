@@ -23,7 +23,7 @@
 .tm-lab button:focus-visible,
 .tm-lab select:focus-visible,
 .tm-lab summary:focus-visible {
-  outline: 3px solid #387dcb;
+  outline: 3px solid var(--focus-on-light);
   outline-offset: 3px;
 }
 .tm-header {
@@ -52,7 +52,7 @@
   display: grid;
   place-items: center;
   background: #e0f3e8;
-  color: #168657;
+  color: #13754c;
   width: 42px;
   height: 42px;
   border-radius: 13px;
@@ -68,7 +68,7 @@
   font-size: 9px;
   letter-spacing: 1.5px;
   margin-top: 4px;
-  color: #658477;
+  color: #536d62;
 }
 .tm-simulation {
   margin-left: auto;
@@ -94,7 +94,7 @@
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.7px;
-  color: #588372;
+  color: #4a6f60;
 }
 .tm-sidebar h1 {
   font-size: 27px;
@@ -106,7 +106,7 @@
 .tm-sidebar > p:not(.tm-eyebrow) {
   font-size: 13px;
   line-height: 1.65;
-  color: #557367;
+  color: #516e62;
 }
 .tm-device {
   display: grid;
@@ -183,7 +183,7 @@
   align-items: center;
   gap: 12px;
   margin-top: 30px;
-  color: #94701c;
+  color: #836318;
   padding-top: 22px;
   border-top: 1px solid #cedfd3;
 }
@@ -195,7 +195,7 @@
   font-size: 24px;
 }
 .tm-score span {
-  color: #687d70;
+  color: #5a6c61;
   font-size: 11px;
   margin-top: 3px;
 }
@@ -239,7 +239,7 @@
 .tm-pause { display: flex; align-items: center; gap: 6px; border: 1px solid #bdd5c7; border-radius: 8px; background: white; color: #22533e; padding: 9px 12px; font-size: 12px !important; }
 .tm-process-search { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 16px; font-size: 12px; color: #46675d; }
 .tm-process-search input { min-width: 0; max-width: 100%; border: 1px solid #bdd5c7; border-radius: 8px; padding: 9px 12px; font: inherit; background: #fafcf9; color: #193b31; }
-.tm-process-search input:focus-visible { outline: 3px solid #387dcb; outline-offset: 3px; }
+.tm-process-search input:focus-visible { outline: 3px solid var(--focus-on-light); outline-offset: 3px; }
 .tm-heading {
   display: flex;
   justify-content: space-between;
@@ -257,12 +257,12 @@
   margin-bottom: 4px;
 }
 .tm-live {
-  color: #6f7e77;
+  color: #5e6b65;
   font-size: 11px;
   white-space: nowrap;
 }
 .tm-live.on {
-  color: #237b52;
+  color: #21764e;
 }
 .tm-resource-grid {
   display: grid;
@@ -302,7 +302,7 @@
 .tm-resource strong small {
   font-size: 16px;
   margin-left: 3px;
-  color: #739284;
+  color: #566d62;
 }
 .tm-resource > small {
   font-size: 10px;
@@ -340,13 +340,13 @@
   font-weight: 700;
 }
 .tm-card-title h3 span {
-  color: #617d6c;
+  color: #556d5f;
   font-weight: 500;
 }
 .tm-card-title p {
   font-size: 12px;
   line-height: 1.5;
-  color: #6c8175;
+  color: #5a6c62;
   margin: 7px 0 0;
 }
 .tm-card-title > strong {
@@ -355,7 +355,7 @@
 }
 .tm-card-title > span {
   font-size: 10px;
-  color: #6c8175;
+  color: #5a6c62;
   text-align: right;
 }
 .tm-chart {
@@ -368,7 +368,7 @@
   display: flex;
   justify-content: space-between;
   font-size: 10px;
-  color: #769084;
+  color: #586b62;
   margin-top: 14px;
 }
 .tm-graph-labels:last-child {
@@ -393,7 +393,7 @@
   background: #fff;
   border-radius: 11px;
   font-weight: 700;
-  color: #32835b;
+  color: #2c7450;
 }
 .tm-challenge h3 {
   font-weight: 700;
@@ -412,7 +412,7 @@
 .tm-challenge details {
   font-size: 11px;
   margin-top: 7px;
-  color: #557b62;
+  color: #4d6f59;
 }
 .tm-challenge summary {
   cursor: pointer;
@@ -468,7 +468,7 @@
 .tm-app-grid small {
   font-size: 10px;
   line-height: 1.5;
-  color: #6b8376;
+  color: #586c61;
   margin: 6px 0 12px;
 }
 .tm-open {
@@ -476,7 +476,7 @@
   align-items: center;
   gap: 5px;
   font-size: 10px;
-  color: #237b52;
+  color: #21764e;
   margin-top: auto;
 }
 .tm-table-wrap {
@@ -493,7 +493,7 @@
 .tm-processes caption {
   text-align: left;
   font-size: 10px;
-  color: #738b7d;
+  color: #596c61;
   margin-bottom: 12px;
   white-space: normal;
 }
@@ -508,7 +508,7 @@
 }
 .tm-processes thead {
   background: #f1f6f1;
-  color: #627d6b;
+  color: #566d5e;
   font-size: 10px;
 }
 .tm-processes thead button {
@@ -534,7 +534,7 @@
 .tm-table-note {
   margin: 15px 0 0;
   font-size: 11px;
-  color: #6c8175;
+  color: #5a6c62;
   line-height: 1.6;
 }
 .tm-off,
@@ -542,7 +542,7 @@
   padding: 15px;
   border-radius: 10px;
   background: #fff4da;
-  color: #896123;
+  color: #876022;
   font-size: 12px;
   line-height: 1.5;
 }
@@ -553,7 +553,7 @@
   gap: 12px;
   padding: 20px 30px;
   font-size: 10px;
-  color: #66816f;
+  color: #566d5e;
   border-top: 1px solid #dce6df;
 }
 @media (max-width: 1200px) {

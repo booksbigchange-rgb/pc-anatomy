@@ -205,3 +205,12 @@ export const LEARNED = [
   'Plug in wall power last, and unplug it before you change anything.',
   'POST is the first self-test. It finds missing or loose parts.',
 ];
+
+/**
+ * Whether a coach message reports a problem (amber) rather than guidance (cyan). Decided by how the
+ * message starts, not by words inside it: "Wrong drops go back to the tray" is an instruction.
+ */
+export function isProblemMessage(text: string) {
+  return /^(Wrong |Install the |Unplug wall power before|Take off the side cover|Apply thermal paste|Put on thermal paste|Choose corner|Shut down the virtual PC|Power-on check stopped|You can move the cooler|The .+ is already installed)/.test(text)
+    || text.endsWith(' It went back to the tray.');
+}

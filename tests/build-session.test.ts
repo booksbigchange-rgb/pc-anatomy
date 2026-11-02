@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import type { HardwareId } from '../lib/optiplex-7040.ts';
 import {
   INSTALL_ORDER, NEW_BUILD, PREREQUISITES, SNAP_FORGIVENESS, completedSteps, diagnosis, dropPart, installPart,
-  installProblem, isOriented, nextPart, partStatus, postProblems, turnPart, TOTAL_STEPS, type BuildState,
+  installProblem, isOriented, isProblemMessage, nextPart, partStatus, postProblems, turnPart, TOTAL_STEPS, type BuildState,
 } from '../app/build-session.ts';
 import { COOLER_ORDER, PC_CONNECTIONS } from '../app/pc-power-challenge.ts';
 import { RETAINERS, type Retainer } from '../app/hardware-practice.ts';
@@ -121,4 +121,14 @@ void test('progress counts every step and restarting starts from nothing', () =>
   assert.equal(completedSteps(NEW_BUILD), 0);
   assert.deepEqual(NEW_BUILD.installed, []);
   assert.equal(NEW_BUILD.cageOpen, true);
+});
+
+void test('coach messages: problems are amber, guidance is not', () => {
+  for (const text of ['Wrong direction. Turn the part.', 'Wrong socket. Match the cable to its named socket.', 'Install the parts for this cable first.',
+    'Unplug wall power before you install parts.', 'Apply thermal paste to the CPU first. Then the cooler can go on.', 'Choose corner 3 next. Work across opposite corners.',
+    'Shut down the virtual PC before opening the case.', 'Power-on check stopped. The board has no power.', 'Too far from the guide. It went back to the tray.'])
+    assert.equal(isProblemMessage(text), true, text);
+  for (const text of ['Start with the glowing motherboard. Drag any part into its cyan guide. Wrong drops go back to the tray.', 'Cable connected. The M.2 SSD and this card get power through their slots.',
+    'Paste applied. Seat the cooler over the CPU.', 'Drag cancelled. The part went back to the tray.', 'Installed: CPU. Next: CPU cooler.'])
+    assert.equal(isProblemMessage(text), false, text);
 });

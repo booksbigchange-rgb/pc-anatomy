@@ -23,7 +23,7 @@ try {
   await page.setViewportSize({width:390,height:844});
   await comparison.scrollIntoViewIfNeeded(); await shot('02-task-manager-phone');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
-  await page.getByRole('button',{name:/Back to Computer Lab/}).click();
+  await page.getByRole('button',{name:'Computer Lab',exact:true}).click();
   await page.setViewportSize({width:1600,height:1000});
   await page.getByRole('button',{name:/Build.*PC/i}).click();
   for (const choice of [/Intel Core i5-6500/,/Dell Q170 System Board/,/8 GB DDR4/,/M.2 2280 SSD/,/Slot-powered PCIe Card/,/Dell 240 W Power Supply/]) await page.getByRole('button',{name:choice}).last().click();

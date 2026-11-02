@@ -1325,7 +1325,7 @@ export default function ComputerLab({
         <div className="lab-brand">
           <AcademyLogo />
           <span>
-            <strong>Big Change Computer Lab</strong>
+            <strong>BigChange Computer Lab</strong>
             <small>LEARN THE WHOLE COMPUTER</small>
           </span>
         </div>
@@ -1377,13 +1377,6 @@ export default function ComputerLab({
 
       <aside className="lab-parts" aria-label="Computer setup learning panel">
         {!guided && labMode === 'explore' && <TigrinyaWelcome className="lab-welcome" />}
-        <p className="lab-eyebrow">
-          {guided
-            ? `GUIDED LESSON · ${guideIndex + 1} / ${GUIDE_ORDER.length}`
-            : labMode === 'explore'
-              ? '01 / COMPUTER SETUP'
-              : '02 / CONNECTIONS'}
-        </p>
         <h1>
           {guided
             ? guidePart.name
@@ -1391,6 +1384,7 @@ export default function ComputerLab({
               ? 'Meet the whole computer.'
               : 'Connect the devices.'}
         </h1>
+        {guided && <p className="lab-meta">Guided lesson · step {guideIndex + 1} of {GUIDE_ORDER.length}</p>}
         <p className="lab-intro">
           {guided
             ? guidePart.description
@@ -1490,11 +1484,6 @@ export default function ComputerLab({
       <aside className="lab-detail" aria-live="polite">
         {labMode === 'explore' ? (
           <>
-            <p className="lab-eyebrow">
-              {guided
-                ? `LESSON STEP ${guideIndex + 1} / ${GUIDE_ORDER.length}`
-                : 'SELECTED COMPONENT'}
-            </p>
             <h2>{selectedPart.name}</h2>
             <p>{selectedPart.description}</p>
             <p><strong>Example:</strong> {selectedPart.example}</p>
@@ -1537,7 +1526,6 @@ export default function ComputerLab({
           </>
         ) : (
           <>
-            <p className="lab-eyebrow">CONNECTION CHALLENGE</p>
             <h2>{allConnected ? 'Setup connected!' : currentTask.name}</h2>
             <p>
               {allConnected

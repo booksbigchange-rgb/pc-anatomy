@@ -192,9 +192,9 @@ export default function BuildPcLab({ onBack }: { onBack: () => void }) {
           <ArrowLeft size={16} /> Computer Lab
         </button>
         <div style={{ textAlign: 'center' }}>
-          <b style={{ fontSize: 20 }}>Build Your PC — 3D Lab</b>
-          <div style={{ fontSize: 11, color: '#79a0a7' }}>
-            DELL OPTIPLEX 7040 MINI TOWER · TRAINING CONFIGURATION
+          <b style={{ fontSize: 20 }}>BigChange Computer Lab</b>
+          <div style={{ fontSize: 13, color: '#a9c3c9' }}>
+            Build a PC · Dell OptiPlex 7040 training configuration
           </div>
         </div>
         <button

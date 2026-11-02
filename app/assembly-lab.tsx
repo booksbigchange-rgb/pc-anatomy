@@ -20,7 +20,7 @@ import * as T from 'three';
 import { PC_CONNECTIONS, COOLER_ORDER, CABLE_ROUTES, cableEnds, canConnect, dropCable, type PcConnection } from './pc-power-challenge';
 import {
   DIRECTION_REASON, FIXED_NOTE, LEARNED, REMOVABLE_NOTE, SAFETY, SHORT_NAME, TOTAL_STEPS, XP_PER_STEP,
-  completedSteps, diagnosis, dropPart, installPart, installProblem, nextPart, partStatus, postProblems, turnPart, type BuildState,
+  completedSteps, diagnosis, dropPart, isProblemMessage, installPart, installProblem, nextPart, partStatus, postProblems, turnPart, type BuildState,
 } from './build-session.ts';
 import FaultPractice from './fault-practice';
 // The installer loads only when a student opens it after the power-on test.
@@ -221,6 +221,7 @@ export default function AssemblyLab({
   useEffect(() => () => window.clearTimeout(bootTimer.current), []);
   const [buildEarned, setBuildEarned] = useState(() => readProgress().pcBuilt);
   const [installingOs, setInstallingOs] = useState(false);
+  const [caseToolsOpen, setCaseToolsOpen] = useState(false);
   const [powerProblems, setPowerProblems] = useState<string[]>([]);
   const build: BuildState = { installed, aligned, fastened, pasteApplied, screws, connections, coverClosed: closed, cageOpen, powerOn, mistakes };
   // The 3D event handlers live in one long-lived effect, so they read the build through a ref.
@@ -1026,24 +1027,34 @@ export default function AssemblyLab({
       renderer.dispose();
     };
   }, [lightGraphics]);
+  const graphicsToggle = <button type="button" className="assembly-graphics" aria-pressed={lightGraphics} onClick={() => { actionRef.current='home'; setLightGraphics(!lightGraphics); }}>{lightGraphics ? 'Full graphics' : 'Light graphics'}</button>;
+  /** Tools for the selected part: in the notes panel next to its description, or on the stage in the picker preview. */
+  const partTools = preview && !closed ? (
+    <fieldset className="assembly-part-tools">
+          <legend className="sr-only">Selected part</legend>
+      <select aria-label="Select component" value={selected} onChange={(e) => selectHardware(e.target.value as HardwareId)}>
+        {PARTS.map((p) => <option key={p.id} value={p.id}>{name(p)}</option>)}
+      </select>
+      <button
+        disabled={caseTarget !== null || selectedCable !== null || (selected === 'motherboard' && boardTarget !== null)}
+        aria-pressed={exploded}
+        onClick={() => { leaveTeardown(); setExploded(!exploded); }}
+      >
+        {exploded ? 'Return selected' : 'Explode selected'}
+      </button>
+      <button aria-pressed={isolated} onClick={() => { leaveTeardown(); setIsolated(!isolated); }}>
+        {isolated ? 'Show all' : boardTarget && selected === 'motherboard' ? 'Isolate motherboard' : 'Isolate selected'}
+      </button>
+    </fieldset>
+  ) : null;
   const stage = (
     <section
       className={'assembly-stage' + (previewOnly ? ' assembly-preview' : '') + (preview && !previewOnly ? ' with-teardown' : '')}
     >
       <div className="assembly-view-controls">
-        {preview && (
-          <button
-            onClick={() => {
-              leaveTeardown();
-              setUpright(!upright);
-              actionRef.current = 'home';
-            }}
-          >
-            {upright ? 'Service view' : 'Tower view'}
-          </button>
-        )}
         {!previewOnly && (
           <button
+            className="assembly-tool-primary"
             onClick={() => {
               if (preview) practice();
               else {
@@ -1057,71 +1068,58 @@ export default function AssemblyLab({
             {preview ? 'Start assembly practice' : 'Inspect assembled model'}
           </button>
         )}
-        <button
-          disabled={!preview && !complete}
-          onClick={() => {
-            if (powerOn) { setFeedback('Shut down the virtual PC before opening the case.'); return; }
-            leaveTeardown();
-            setClosed(!closed);
-            setExploded(false);
-            setIsolated(false);
-          }}
-        >
-          {closed ? 'Remove side cover' : 'Fit side cover'}
+        <fieldset className="assembly-segment">
+          <legend className="sr-only">Camera view</legend>
+          {(['home', 'front', 'rear', 'top'] as Action[]).map((view) => (
+            <button key={view} type="button" onClick={() => { actionRef.current = view; }}>
+              {view === 'home' ? 'Overview' : view[0].toUpperCase() + view.slice(1)}
+            </button>
+          ))}
+        </fieldset>
+        {/* Phones fold the case tools behind one button so the model keeps its space. */}
+        <button type="button" className="assembly-more-toggle" aria-expanded={caseToolsOpen} onClick={() => setCaseToolsOpen(!caseToolsOpen)}>
+          Case tools
         </button>
-        {(preview || complete) && !closed && (
-          <button disabled={powerOn} aria-pressed={cageOpen} onClick={() => { leaveTeardown(); setCageOpen(!cageOpen); }}>
-            {cageOpen ? 'Close drive cage' : 'Open drive cage'}
-          </button>
-        )}
-        <button aria-pressed={lightGraphics} onClick={() => { actionRef.current='home'; setLightGraphics(!lightGraphics); }}>{lightGraphics ? 'Full graphics' : 'Light graphics'}</button>
-        {preview && <button onClick={() => {
-          leaveTeardown();
-          setSelected('cooler'); setCaseTarget(null); setCaseInstance(null); setBoardTarget(null); setSelectedCable(null);
-          setUpright(false); setClosed(false); setCageOpen(true); setIsolated(false); setExploded(true);
-          actionRef.current = 'cooling';
-          setFeedback('Cooler lifted straight above the CPU. Click the exposed processor to learn about it.');
-        }}>Reveal CPU</button>}
-        {(['home', 'front', 'rear', 'top'] as Action[]).map((view) => (
+        <fieldset className={'assembly-case-tools' + (caseToolsOpen ? ' open' : '')}>
+          <legend className="sr-only">Case tools</legend>
+          {preview && (
+            <button
+              onClick={() => {
+                leaveTeardown();
+                setUpright(!upright);
+                actionRef.current = 'home';
+              }}
+            >
+              {upright ? 'Service view' : 'Tower view'}
+            </button>
+          )}
           <button
-            key={view}
+            disabled={!preview && !complete}
             onClick={() => {
-              actionRef.current = view;
+              if (powerOn) { setFeedback('Shut down the virtual PC before opening the case.'); return; }
+              leaveTeardown();
+              setClosed(!closed);
+              setExploded(false);
+              setIsolated(false);
             }}
           >
-            {view === 'home'
-              ? 'Overview'
-              : view[0].toUpperCase() + view.slice(1)}
+            {closed ? 'Remove side cover' : 'Fit side cover'}
           </button>
-        ))}
-        {preview && !closed && (
-          <>
-            <button
-              disabled={caseTarget !== null || selectedCable !== null || (selected === 'motherboard' && boardTarget !== null)}
-              aria-pressed={exploded}
-              onClick={() => { leaveTeardown(); setExploded(!exploded); }}
-            >
-              {exploded ? 'Return selected' : 'Explode selected'}
+          {(preview || complete) && !closed && (
+            <button disabled={powerOn} onClick={() => { leaveTeardown(); setCageOpen(!cageOpen); }}>
+              {cageOpen ? 'Close drive cage' : 'Open drive cage'}
             </button>
-            <button
-              aria-pressed={isolated}
-              onClick={() => { leaveTeardown(); setIsolated(!isolated); }}
-            >
-              {isolated ? 'Show all' : boardTarget && selected === 'motherboard' ? 'Isolate motherboard' : 'Isolate selected'}
-            </button>
-            <select
-              aria-label="Select component"
-              value={selected}
-              onChange={(e) => selectHardware(e.target.value as HardwareId)}
-            >
-              {PARTS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {name(p)}
-                </option>
-              ))}
-            </select>
-          </>
-        )}
+          )}
+          {preview && <button onClick={() => {
+            leaveTeardown();
+            setSelected('cooler'); setCaseTarget(null); setCaseInstance(null); setBoardTarget(null); setSelectedCable(null);
+            setUpright(false); setClosed(false); setCageOpen(true); setIsolated(false); setExploded(true);
+            actionRef.current = 'cooling';
+            setFeedback('Cooler lifted straight above the CPU. Click the exposed processor to learn about it.');
+          }}>Reveal CPU</button>}
+        </fieldset>
+        {previewOnly && graphicsToggle}
+        {previewOnly && partTools}
       </div>
       <canvas
         ref={canvasRef}
@@ -1140,13 +1138,12 @@ export default function AssemblyLab({
         </output>
       )}
       {!preview && !previewOnly && !showResult && !boot && (
-        <div className={'assembly-stage-coach' + (/Wrong|missed|first|not |Unplug|stopped|That is the/.test(feedback) ? ' warn' : '')} aria-hidden="true">
+        <div className={'assembly-stage-coach' + (isProblemMessage(feedback) ? ' warn' : '')} aria-hidden="true">
           {feedback}
         </div>
       )}
       {!preview && showResult && (
         <section className="assembly-result" aria-labelledby="assembly-result-title">
-          <p className="assembly-eyebrow">ACHIEVEMENT UNLOCKED</p>
           <h2 id="assembly-result-title">🏅 PC Builder</h2>
           <p className="assembly-result-xp"><strong>{completedSteps(build) * XP_PER_STEP} XP</strong> · {completedSteps(build)} of {TOTAL_STEPS} steps · {mistakes === 0 ? 'no mistakes' : `${mistakes} mistake${mistakes === 1 ? '' : 's'} found and fixed`}</p>
           <h3>You completed</h3>
@@ -1260,20 +1257,20 @@ export default function AssemblyLab({
             <Wrench size={20} />
           </span>
           <span>
-            <strong>Big Change PC Build Lab</strong>
-            <small>OPTIPLEX 7040 MT · SERVICE REFERENCE MODEL</small>
+            <strong>BigChange Computer Lab</strong>
+            <small>{backLabel === 'Computer Lab' ? 'INSIDE THE PC' : 'BUILD A PC'} · OPTIPLEX 7040 REFERENCE MODEL</small>
           </span>
         </div>
-        <div className="assembly-progress-label">
-          {preview
-            ? 'Inspection mode'
-            : powerOn ? 'POST passed · PC ready' : `${installed.length} / ${PARTS.length} placed`}
+        <div className="assembly-topbar-end">
+          {graphicsToggle}
+          <div className="assembly-progress-label">
+            {preview
+              ? 'Inspection mode'
+              : powerOn ? 'POST passed · PC ready' : `${installed.length} / ${PARTS.length} placed`}
+          </div>
         </div>
       </header>
       <aside className="assembly-steps">
-        <p className="assembly-eyebrow">
-          {preview ? 'EXPLORE THE HARDWARE' : 'ASSEMBLY PRACTICE'}
-        </p>
         <h1>{powerOn ? 'PC ready' : !preview && complete ? 'Parts placed' : preview ? name(active) : `Step ${installed.length + 1} of ${PARTS.length}`}</h1>
         <p className="assembly-intro">
           {preview
@@ -1321,7 +1318,7 @@ export default function AssemblyLab({
       </aside>
       {stage}
       <aside className="assembly-detail" aria-live="polite">
-        <p className="assembly-eyebrow">COMPONENT NOTES</p>
+        {partTools}
         {preview && selected === 'ssd' && !cageOpen && !isolated && <p>The SSD sits behind the drive cage. Choose Open drive cage, then Service view to see it, or Isolate selected for a close look.</p>}
         {buildEarned && <p className="assembly-boot">✓ PC Builder earned · saved on this browser</p>}
         <h2>{caseTarget ? CASE_TARGETS[caseTarget].name : selectedCable ? PC_CONNECTIONS.find(item => item.id === selectedCable)!.label : preview && selected === 'motherboard' && boardTarget ? BOARD_TARGETS[boardTarget].name : name(active)}</h2>
@@ -1408,6 +1405,18 @@ export default function AssemblyLab({
           </button>
         )}
       </aside>
+      {/* Phones: the current step's message and actions stay just below the model instead of two screens down. */}
+      {!preview && !showResult && !boot && (
+        <div className={'assembly-mobile-bar' + (isProblemMessage(feedback) ? ' warn' : '')}>
+          <p>{feedback}</p>
+          {!powerOn && !installed.includes(active.id) && (
+            <div>
+              {ORIENTED_PARTS.includes(active.id) && !aligned.includes(active.id) && <button type="button" onClick={turnSelected}>Turn 180°</button>}
+              <button type="button" className="assembly-primary" onClick={seatPart}>Seat {SHORT_NAME[active.id]}</button>
+            </div>
+          )}
+        </div>
+      )}
     </main>
   );
 }

@@ -198,7 +198,6 @@
 .laptop-why {
   margin-top: 24px;
   padding: 14px;
-  border-left: 3px solid #79c6d0;
   background: #1a2429;
 }
 .laptop-why strong {
@@ -1088,3 +1087,8 @@
 /* Example, connection and removable/fixed lines under "Why it matters". */
 .laptop-part-facts { margin: 10px 0 0; font-size: 13px; line-height: 1.45; color: #b8c9ce; }
 .laptop-part-facts strong { color: #e6f2f4; }
+
+/* Light graphics has no icon, so its words stay visible when other header buttons shrink to icons. */
+@media (max-width: 680px) {
+  .laptop-topbar .laptop-graphics-button { width: auto; padding: 0 10px; font-size: 12px; }
+}
