@@ -147,6 +147,7 @@ jobs:
           live 'desk-setup' timeout 300s node tests/browser/desk-setup.mjs
           live 'pc-teardown' timeout 400s node tests/browser/pc-teardown.mjs
           live 'os-install' timeout 240s node tests/browser/os-install.mjs
+          live 'scroll-reach' timeout 400s node tests/browser/scroll-reach.mjs
           live 'build-pc' timeout 900s node tests/browser/build-pc.mjs
           ATLAS_TEST_URL=https://booksbigchange-rgb.github.io/pc-anatomy/school/ live 'build-pc (school)' timeout 900s node branding/tests/browser/build-pc.mjs
       - uses: actions/upload-artifact@v4

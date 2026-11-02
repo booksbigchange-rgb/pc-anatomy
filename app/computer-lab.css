@@ -173,7 +173,6 @@
 .lab-lesson {
   margin-top: 24px;
   padding: 14px;
-  border-left: 3px solid #79bfcc;
   background: #1a2024;
 }
 .lab-lesson strong {
@@ -280,4 +279,12 @@
   .lab-part-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
   .lab-stage { grid-row: 3; }
   .lab-detail { grid-row: 4; }
+}
+
+/* Mid-size screens: the five destination buttons keep their words on one line; the small icons give way. */
+@media (min-width: 681px) and (max-width: 1500px) {
+  .computer-lab { grid-template-rows: auto minmax(0, 1fr); }
+  .lab-topbar { flex-wrap: wrap; row-gap: 10px; padding-block: 12px; }
+  .lab-topbar .lab-machine-actions { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 8px; }
+  .lab-topbar .lab-open-pc { white-space: nowrap; padding-inline: 14px; }
 }

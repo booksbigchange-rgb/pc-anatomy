@@ -2450,16 +2450,16 @@ function LaptopScene({
       <header className="laptop-topbar">
         <button type="button" className="laptop-back" onClick={onBack}>
           <ArrowLeft size={16} />
-          Desktop setup
+          Computer Lab
         </button>
         <div className="laptop-brand">
           <AcademyLogo />
           <span>
-            <strong>Big Change Laptop Lab</strong>
+            <strong>BigChange Computer Lab</strong>
             <small>
               {model === 'latitude'
-                ? 'DELL LATITUDE 5410 · UNDERSIDE SERVICE'
-                : 'FRAMEWORK LAPTOP 13 · LEGACY MODEL'}
+                ? 'LAPTOP LAB · DELL LATITUDE 5410 REFERENCE MODEL'
+                : 'LAPTOP LAB · FRAMEWORK LAPTOP 13 (LEGACY MODEL)'}
             </small>
           </span>
         </div>
@@ -2532,7 +2532,7 @@ function LaptopScene({
             <ClipboardCheck size={15} />
             Knowledge check
           </button>
-          <button type="button" className="laptop-guide-button" aria-pressed={lightGraphics} onClick={() => { stopTeardown(); resetLocalPart(); setLightGraphics(!lightGraphics); }}>{lightGraphics ? 'Full graphics' : 'Light graphics'}</button>
+          <button type="button" className="laptop-guide-button laptop-graphics-button" aria-pressed={lightGraphics} onClick={() => { stopTeardown(); resetLocalPart(); setLightGraphics(!lightGraphics); }}>{lightGraphics ? 'Full graphics' : 'Light graphics'}</button>
           <button
             type="button"
             className={
@@ -2574,24 +2574,6 @@ function LaptopScene({
       </header>
 
       <aside className="laptop-parts">
-        <p className="laptop-eyebrow">
-          {mode === 'connections'
-            ? `03 / CONNECTIONS · ${Math.min(
-                connected.length + 1,
-                CONNECTIONS.length,
-              )} / ${CONNECTIONS.length}`
-            : mode === 'assessment'
-              ? assessmentComplete
-                ? 'KNOWLEDGE CHECK · COMPLETE'
-                : `KNOWLEDGE CHECK · ${assessmentIndex + 1} / ${LAPTOP_ASSESSMENT_QUESTIONS.length}`
-              : mode === 'troubleshooting'
-                ? `TROUBLESHOOT · ${troubleshootingScenario + 1} / ${LAPTOP_TROUBLESHOOTING_SCENARIOS.length}`
-                : guided
-                  ? `GUIDED LESSON · ${lessonIndex + 1} / ${LESSON_STEPS.length}`
-                  : view === 'outside'
-                    ? '01 / LAPTOP EXTERIOR'
-                    : '02 / LAPTOP INTERNALS'}
-        </p>
         <h1>
           {mode === 'connections'
             ? allConnectionsComplete
@@ -2617,6 +2599,19 @@ function LaptopScene({
                       ? 'Inspect the underside service layout.'
                       : 'Now look under the keyboard.'}
         </h1>
+        {(mode !== 'explore' || guided) && (
+          <p className="laptop-meta">
+            {mode === 'connections'
+              ? `Connections · ${Math.min(connected.length + 1, CONNECTIONS.length)} of ${CONNECTIONS.length}`
+              : mode === 'assessment'
+                ? assessmentComplete
+                  ? 'Knowledge check complete'
+                  : `Knowledge check · question ${assessmentIndex + 1} of ${LAPTOP_ASSESSMENT_QUESTIONS.length}`
+                : mode === 'troubleshooting'
+                  ? `Troubleshooting · case ${troubleshootingScenario + 1} of ${LAPTOP_TROUBLESHOOTING_SCENARIOS.length}`
+                  : `Guided lesson · step ${lessonIndex + 1} of ${LESSON_STEPS.length}`}
+          </p>
+        )}
         <p className="laptop-intro">
           {mode === 'connections'
             ? allConnectionsComplete
@@ -2982,7 +2977,6 @@ function LaptopScene({
       <aside className="laptop-detail" aria-live="polite">
         {mode === 'connections' ? (
           <>
-            <p className="laptop-eyebrow">CONNECTION PRACTICE</p>
             <h2>
               {allConnectionsComplete
                 ? 'All connected!'
@@ -3024,17 +3018,6 @@ function LaptopScene({
           </>
         ) : (
           <>
-            <p className="laptop-eyebrow">
-              {mode === 'assessment'
-                ? assessmentComplete
-                  ? 'KNOWLEDGE CHECK COMPLETE'
-                  : `QUESTION ${assessmentIndex + 1} / ${LAPTOP_ASSESSMENT_QUESTIONS.length}`
-                : mode === 'troubleshooting'
-                  ? `TROUBLESHOOT ${troubleshootingScenario + 1} / ${LAPTOP_TROUBLESHOOTING_SCENARIOS.length}`
-                  : guided
-                    ? `LESSON STEP ${lessonIndex + 1} / ${LESSON_STEPS.length}`
-                    : 'SELECTED COMPONENT'}
-            </p>
             <h2>{selectedPart.name}</h2>
             <p>{selectedPart.description}</p>
             <div className="laptop-why">

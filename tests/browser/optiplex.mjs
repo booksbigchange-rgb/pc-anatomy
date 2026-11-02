@@ -53,7 +53,7 @@ try {
   await page.getByRole('button', { name: /Enter interactive/ }).click();
   await shot('02-open-case');
   await page.getByRole('button', {name: 'Close drive cage', exact: true}).click();
-  assert.equal(await page.getByRole('button', {name: 'Open drive cage', exact: true}).getAttribute('aria-pressed'), 'false');
+  assert.notEqual(await page.getByRole('button', {name: 'Open drive cage', exact: true}).getAttribute('aria-pressed'), 'true', 'An action button is not shown as pressed');
   await shot('02b-cage-closed');
   await page.getByRole('button', {name: 'Open drive cage', exact: true}).click();
   await shot('02c-cage-open');

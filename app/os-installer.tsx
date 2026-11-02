@@ -179,7 +179,6 @@ export default function OsInstaller({ onExit, backLabel = 'Back', drive = 'M.2 2
         </div>}
       </section>
       <aside className="os-coach" aria-live="polite">
-        <p className="os-eyebrow">INSTALL COACH</p>
         <output className={state.wrong ? 'wrong' : ''}>{state.feedback}</output>
         <ol className="os-steps">{INSTALL_ORDER.map((step, index) => <li key={step} className={index < current ? 'done' : index === current ? 'current' : ''}>{index < current ? <Check size={14} /> : <span>{index + 1}</span>} {STEP_LABEL[step]}</li>)}</ol>
         <p className="os-mistakes">Mistakes so far: {state.mistakes}</p>

@@ -48,3 +48,6 @@ next-env.d.ts
 
 # Browser test screenshots and results
 /verification/
+
+# Impeccable design-review snapshots (local working archive)
+/.impeccable/
