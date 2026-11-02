@@ -127,7 +127,7 @@ try {
   await page.locator('header').getByRole('button', { name: 'My learning path', exact: true }).click();
   const pathItem = page.locator('.course-path li').filter({ hasText: 'Take apart and put back together' });
   assert.match(await pathItem.innerText(), /✓ Put back together · latest: 4 mistakes · best: 4 mistakes · 1 attempt/);
-  assert.match(await page.getByRole('region', { name: 'Learning path' }).innerText(), /\d \/ 8 results recorded/);
+  assert.match(await page.getByRole('region', { name: 'Learning path' }).innerText(), /\d \/ 9 results recorded/);
   await pathItem.getByRole('button', { name: 'Open Explore inside the PC' }).click();
   await timeline.waitFor({ timeout: 60000 });
 
