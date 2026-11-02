@@ -108,3 +108,15 @@ Evidence: `tests/pc-reassembly.test.ts` (reverse order accepted, another working
 - **Limits.** Cable routes are teaching examples, as in Build a PC; the wall-power and monitor cables are outside the case and are not part of this step. The lever is small at the normal camera distance; zoom in to see it.
 
 Evidence: unit tests for the order (cage before cables, cables before every part), the cable unplug sequence and the lesson rules (cables need board, power supply and cooler; the cage needs the cables); the pc-teardown browser suite now includes the Cables step and Connect cables. The lever was checked in close-up screenshots at 58% (down), 61% (up) and 75% (CPU out).
+
+## Install an operating system (November 2026)
+
+A simulated installer for **Lab OS**, a made-up teaching OS in our own design (not a copy of any real product). Students open it from **Next: install an operating system** after the power-on test in Build a PC, or from **My learning path** (now nine results).
+
+Steps: plug the installer USB stick into a USB port → power on → press **F12** (key or button) for the boot menu → start from the USB stick → choose language and keyboard (Tigrinya and Amharic Ge'ez layouts are listed) → erase the empty SSD after ticking a backup check → create an account (username, computer name, password rules: 8+ characters, not your name or username, typed twice) → time zone (Asmara by default) → progress bar that names each stage (copying files, drivers, boot loader, settings) → remove the USB stick and restart → sign in → desktop with a summary.
+
+- Mistakes explained and counted: HDMI or Ethernet port for the USB stick, waiting instead of opening the boot menu (no OS found), starting from the empty SSD or network, a guessable password, restarting with the USB stick still in (the installer opens again), a wrong sign-in password. Unticked backup check and pressing power without the stick are reminders, not mistakes.
+- The result (attempts, latest and fewest mistakes) is saved with the other results. Nothing typed in the installer — name, username, password — is stored; the password lives only in memory for the sign-in check.
+- Limits: one generic flow; real installers differ (dual boot, partitions, drivers, updates and activation are not covered). The installer text stays in English whichever language is chosen.
+
+Evidence: `tests/os-install.test.ts` (perfect run, every mistake, account rules, stage names, reset) and `tests/browser/os-install.mjs` (full flow from the learning path including the F12 key, the saved result, that local storage holds no name or password, phone width). `tests/browser/build-pc.mjs` checks that the installer opens over the build after the power-on test and that Back returns to the result.
