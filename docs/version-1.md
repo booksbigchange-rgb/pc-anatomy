@@ -120,3 +120,11 @@ Steps: plug the installer USB stick into a USB port → power on → press **F12
 - Limits: one generic flow; real installers differ (dual boot, partitions, drivers, updates and activation are not covered). The installer text stays in English whichever language is chosen.
 
 Evidence: `tests/os-install.test.ts` (perfect run, every mistake, account rules, stage names, reset) and `tests/browser/os-install.mjs` (full flow from the learning path including the F12 key, the saved result, that local storage holds no name or password, phone width). `tests/browser/build-pc.mjs` checks that the installer opens over the build after the power-on test and that Back returns to the result.
+
+## Plug cables by hand in Build a PC (November 2026)
+
+Once all seven parts are placed, each unconnected cable waits with a loose plug: the power-supply leads beside the power supply, the fan lead above the cooler, the front-panel lead at the front, and the monitor and wall-power cables outside the case. Students drag a plug onto a socket; the cable stretches from its fixed end while they drag, and every socket shows a cyan ring. The drop uses the same rules as the socket buttons: a wrong socket, missing parts, or wall power still connected are refused with the same messages, and the plug goes back. The cable list and socket buttons stay for keyboard users.
+
+Limits: cable routes are teaching examples; plugs snap to the nearest socket within reach across the table, so height is not checked; plugs do not turn to line up with the socket.
+
+Evidence: unit tests (`tests/pc-power.test.ts`: each socket is found at its position and a little off, sockets are apart, plugs do not start in their own socket, drops follow the same rules); `tests/browser/build-pc.mjs` drags the fan lead onto the CPU power socket (refused, plug returns) and then onto the fan header (connected), with a mid-drag screenshot.
