@@ -49,7 +49,7 @@ Chosen with the project owner: Tigrinya for Ge'ez text, tibeb patterns, coffee-c
 
 - **Welcome:** "እንቋዕ ብደሓን መጻእኩም · Welcome" opens the Computer Lab panel and is written on the classroom whiteboard, beside a teacher's sketch of keyboard → CPU → screen. Text is marked `lang="ti"`. The open-licence Noto Sans Ethiopic font is bundled; the board repaints once it loads so it never shows empty boxes.
 - **Tibeb:** a woven-border band (cream cloth, indigo edges, red and green diamonds, gold crosses) under the top bar of every lab, and a tibeb runner along the back of the desk.
-- **Coffee ceremony:** a clay jebena on a woven ring and six sini cups on a wooden rekebot tray beside the keyboard; a banded woven mesob stands in front of the desk. These are decoration only and cannot be selected.
+- **Coffee ceremony:** a clay jebena on a woven ring and six sini cups on a wooden rekebot tray beside the keyboard; a woven mesob in natural straw with indigo, purple, black and sky-blue bands stands in front of the desk. These are decoration only and cannot be selected.
 - **Other fix found on the way:** the system unit now stands on the desk top instead of sinking into it.
 
 Review needed: a Tigrinya-speaking teacher should confirm the welcome wording and spelling before classroom use. No flags or national symbols are used, so the room fits both Eritrean and Ethiopian learners.

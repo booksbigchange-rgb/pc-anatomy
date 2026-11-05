@@ -709,14 +709,15 @@ function buildCoffeeSet() {
   return set;
 }
 
-/** A small woven mesob with its lid, in banded straw colours. Decoration only. */
+/** A small woven mesob with its lid: natural straw with indigo, purple, black and sky-blue bands
+ *  (no green, yellow or red, at the owner's request). Decoration only. */
 function buildMesob() {
   const weave = document.createElement('canvas');
   weave.width = 256;
   weave.height = 512;
   const context = weave.getContext('2d');
   if (context) {
-    const bands = ['#d8b26a', '#b8322e', '#d8b26a', '#2f7d4f', '#e3c27a', '#5a2d6b', '#d8b26a', '#d9a441', '#b8322e', '#d8b26a'];
+    const bands = ['#d9c9a8', '#2b3f8c', '#d9c9a8', '#5a2d6b', '#e6dccb', '#24201d', '#d9c9a8', '#5b8fc4', '#5a2d6b', '#d9c9a8'];
     bands.forEach((colour, index) => { context.fillStyle = colour; context.fillRect(0, index * 51.2, 256, 51.2); });
     // Fine coil lines and a zig-zag, like hand-woven grass.
     context.strokeStyle = 'rgba(60,35,15,.35)';
