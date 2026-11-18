@@ -81,7 +81,13 @@ export function buildCooler(tools: ModelTools, _root: T.Group) {
 
   // ── Fin stack ───────────────────────────────────────────────────────────
   const fins = new T.Group();
-  const stack = buildFinStack(material, 48, [FIN_W, mm(0.4), FIN_D], mm(2.2), '#c6cdd1');
+  const stack = buildFinStack(
+    material,
+    48,
+    [FIN_W, mm(0.4), FIN_D],
+    mm(2.2),
+    '#c6cdd1',
+  );
   place(fins, stack, [0, mm(110), 0]);
   // Collars where each pipe passes through, which is what holds the fins.
   for (const sx of PIPE_X) {
@@ -95,7 +101,11 @@ export function buildCooler(tools: ModelTools, _root: T.Group) {
   add('coolerfins', fins, [0, 0, 0], [0, 3.0, 0]);
 
   const cap = new T.Group();
-  place(cap, box([FIN_W + mm(4), mm(4), FIN_D + mm(4)], '#3a4147', 0.8), [0, 0, 0]);
+  place(
+    cap,
+    box([FIN_W + mm(4), mm(4), FIN_D + mm(4)], '#3a4147', 0.8),
+    [0, 0, 0],
+  );
   const lit = new T.Mesh(
     new T.PlaneGeometry(FIN_W - mm(14), FIN_D - mm(14)),
     glowMaterial('#7a3cff', 1.3, 0.9),
@@ -151,7 +161,11 @@ export function buildCooler(tools: ModelTools, _root: T.Group) {
         material('#9aa2a7', 0.92, 0.26),
       );
       place(mount, post, [sx * mm(38), -mm(10), sz * mm(38)]);
-      place(mount, buildScrew(material, mm(4)), [sx * mm(38), mm(6), sz * mm(38)]);
+      place(mount, buildScrew(material, mm(4)), [
+        sx * mm(38),
+        mm(6),
+        sz * mm(38),
+      ]);
     }
   // The crossbar that pulls the plate down, with its two sprung screws.
   place(mount, box([mm(96), mm(4), mm(12)], '#8d959a', 0.9), [0, mm(12), 0]);
@@ -162,7 +176,13 @@ export function buildCooler(tools: ModelTools, _root: T.Group) {
     );
     place(mount, spring, [sx * mm(40), mm(18), 0]);
   }
-  label(mount, 'BACKPLATE · SPRING-LOADED', [0, -mm(26), mm(48)], mm(80), '#7d858a');
+  label(
+    mount,
+    'BACKPLATE · SPRING-LOADED',
+    [0, -mm(26), mm(48)],
+    mm(80),
+    '#7d858a',
+  );
   add('coolermount', mount, [0, mm(6), 0], [0, -3.0, 0]);
 
   // ── Airflow ─────────────────────────────────────────────────────────────

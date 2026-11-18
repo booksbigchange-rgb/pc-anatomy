@@ -196,7 +196,6 @@ Surface maps, package markings and all meshes are locally authored. Brushed-meta
 
 [Human Atlas](https://github.com/ashemag/human-atlas) and the supplied screenshots inform orbit, system visibility, search, inspection and the assembled-to-inventory transition. No Human Atlas code, meshes, artwork or diagrams are copied.
 
-
 ## Whole machine · September 12, 2026
 
 The project grew from a single graphics card to the machine around it. The card

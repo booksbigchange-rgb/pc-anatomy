@@ -64,12 +64,23 @@ export function buildFanUnit(tools: ModelTools, _root: T.Group) {
   const ringGlow = new T.PointLight('#2f6bff', 6, 9, 2);
   ringGlow.position.set(0, DEPTH * 0.9, 0);
   frame.add(ringGlow);
-  label(frame, '120 × 120 × 25 MM', [0, DEPTH / 2 + mm(1), SIZE * 0.42], SIZE * 0.5, '#8b939a');
+  label(
+    frame,
+    '120 × 120 × 25 MM',
+    [0, DEPTH / 2 + mm(1), SIZE * 0.42],
+    SIZE * 0.5,
+    '#8b939a',
+  );
   add('fanframe', frame, [0, 0, 0], [0, -1.6, 0]);
 
   for (const sx of [-1, 1])
     for (const sz of [-1, 1]) {
-      const pad = box([SIZE * 0.15, DEPTH * 1.04, SIZE * 0.15], '#15181a', 0.02, 0.01);
+      const pad = box(
+        [SIZE * 0.15, DEPTH * 1.04, SIZE * 0.15],
+        '#15181a',
+        0.02,
+        0.01,
+      );
       add(
         'fanpads',
         pad,
@@ -83,7 +94,14 @@ export function buildFanUnit(tools: ModelTools, _root: T.Group) {
   const hubRadius = SIZE * 0.163;
   // Hub shell: open underneath, which is what lets it sit over the stator.
   const shell = new T.Mesh(
-    new T.CylinderGeometry(hubRadius, hubRadius * 0.97, DEPTH * 0.8, 30, 1, true),
+    new T.CylinderGeometry(
+      hubRadius,
+      hubRadius * 0.97,
+      DEPTH * 0.8,
+      30,
+      1,
+      true,
+    ),
     material('#2f363d', 0.42, 0.42),
   );
   place(impeller, shell, [0, 0, 0]);
@@ -100,7 +118,14 @@ export function buildFanUnit(tools: ModelTools, _root: T.Group) {
 
   const magnet = new T.Group();
   const ring = new T.Mesh(
-    new T.CylinderGeometry(hubRadius * 0.93, hubRadius * 0.93, DEPTH * 0.5, 28, 1, true),
+    new T.CylinderGeometry(
+      hubRadius * 0.93,
+      hubRadius * 0.93,
+      DEPTH * 0.5,
+      28,
+      1,
+      true,
+    ),
     material('#3c3a42', 0.55, 0.5),
   );
   place(magnet, ring, [0, 0, 0]);
@@ -179,8 +204,16 @@ export function buildFanUnit(tools: ModelTools, _root: T.Group) {
   );
   ringBoard.rotation.x = -Math.PI / 2;
   place(driver, ringBoard, [0, 0, 0]);
-  place(driver, box([mm(6), mm(1.6), mm(5)], '#17191b', 0.12), [mm(9), mm(1), 0]);
-  place(driver, box([mm(3.4), mm(1.4), mm(3)], '#17191b', 0.12), [0, mm(1), mm(10)]);
+  place(driver, box([mm(6), mm(1.6), mm(5)], '#17191b', 0.12), [
+    mm(9),
+    mm(1),
+    0,
+  ]);
+  place(driver, box([mm(3.4), mm(1.4), mm(3)], '#17191b', 0.12), [
+    0,
+    mm(1),
+    mm(10),
+  ]);
   for (let i = 0; i < 4; i++)
     place(driver, box([mm(1.6), mm(1), mm(1.6)], '#c2a457', 0.9), [
       mm(-5 + i * 3.4),
@@ -205,7 +238,11 @@ export function buildFanUnit(tools: ModelTools, _root: T.Group) {
     ),
     [0, 0, 0],
   );
-  place(lead, box([mm(9), mm(5), mm(4)], '#1d2124', 0.1), [SIZE * 0.76, -mm(6), SIZE * 0.47]);
+  place(lead, box([mm(9), mm(5), mm(4)], '#1d2124', 0.1), [
+    SIZE * 0.76,
+    -mm(6),
+    SIZE * 0.47,
+  ]);
   for (let i = 0; i < 4; i++)
     place(lead, box([mm(1.1), mm(3), mm(1.1)], '#c2a457', 0.92), [
       SIZE * 0.76,

@@ -40,11 +40,11 @@ export function diagramKit(
   const backdrop = (root: T.Group, size: [number, number], caption: string) => {
     const frame = new T.Group();
     frame.userData.contextFrame = true;
-    put(frame, box([size[0], 0.09, size[1]], palette.panel, 0.55), [
-      0,
-      -0.08,
-      0,
-    ]);
+    put(
+      frame,
+      box([size[0], 0.09, size[1]], palette.panel, 0.55),
+      [0, -0.08, 0],
+    );
     for (const side of [-1, 1])
       put(frame, box([size[0] * 0.98, 0.045, 0.025], palette.rail, 0.7), [
         0,

@@ -63,7 +63,13 @@ export function buildRyzen(
   for (const side of [-1, 1]) {
     const ccd = new T.Group();
     put(ccd, box([CCD_W, 0.16, CCD_D], '#2b3f52', 0.55), [0, 0, 0]);
-    label(ccd, side < 0 ? 'CCD 0' : 'CCD 1', [0, 0.11, -CCD_D / 2 + 0.3], 1.5, '#b9d3e6');
+    label(
+      ccd,
+      side < 0 ? 'CCD 0' : 'CCD 1',
+      [0, 0.11, -CCD_D / 2 + 0.3],
+      1.5,
+      '#b9d3e6',
+    );
     add('zenccd', ccd, [side * CCD_X, 0.1, CCD_Z], [side * 1.2, 1.0, 0]);
   }
 

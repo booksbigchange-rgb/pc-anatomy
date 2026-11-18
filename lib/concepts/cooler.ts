@@ -143,6 +143,13 @@ export const coolerConcepts: Concept[] = [
     specifications: { Load: 'Spring-limited', Fit: 'Socket-specific bracket' },
     representationType: 'physical',
     sources: ['aircooler', 'mainboardmanual'],
-    searchTerms: ['backplate', 'bracket', 'screw', 'standoff', 'mount', 'clamp'],
+    searchTerms: [
+      'backplate',
+      'bracket',
+      'screw',
+      'standoff',
+      'mount',
+      'clamp',
+    ],
   }),
 ];
