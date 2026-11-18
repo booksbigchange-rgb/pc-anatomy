@@ -170,7 +170,11 @@ export function spatialInventory(
         z += rowDepth;
         rowDepth = 0;
       }
-      placed.push({ cell, x: x + cell.width / 2 - width / 2, z: z + cell.depth / 2 });
+      placed.push({
+        cell,
+        x: x + cell.width / 2 - width / 2,
+        z: z + cell.depth / 2,
+      });
       x += cell.width;
       rowDepth = Math.max(rowDepth, cell.depth);
     }

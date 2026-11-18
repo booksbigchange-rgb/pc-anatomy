@@ -74,8 +74,4 @@ function InputGroupText({ className, ...props }: React.ComponentProps<'span'>) {
   );
 }
 
-export {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupText,
-};
+export { InputGroup, InputGroupAddon, InputGroupText };

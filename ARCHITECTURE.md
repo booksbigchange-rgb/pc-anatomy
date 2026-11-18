@@ -32,7 +32,7 @@ npm run dev       # vite dev server, http://127.0.0.1:5173/
 
 npm run check     # tsc --noEmit, strict
 npm run lint      # oxlint
-npm run format    # oxfmt
+npm run format    # oxfmt (CI runs npm run format:check)
 npm test          # node --experimental-strip-types --test tests/*.test.ts
 npm run build     # tsc --noEmit && vite build
 npm start         # preview the production build
@@ -92,36 +92,36 @@ state.
 size relationships in the inventory; `logical` scales are block diagrams and are
 lit flat.
 
-| Scale | Parent | Menu | Kind | Concepts |
-| --- | --- | --- | --- | ---: |
-| `pc` | — | root | physical | 18 |
-| `motherboard` | `pc` | Motherboard | physical | 24 |
-| `ryzen` | `motherboard` | Motherboard | logical | 6 |
-| `ryzenio` | `ryzen` | Motherboard | logical | 5 |
-| `corei9` | `motherboard` | Motherboard | logical | 9 |
-| `coreio` | `corei9` | Motherboard | logical | 4 |
-| `psu` | `pc` | Power supply | physical | 17 |
-| `psubronze` | `pc` | Power supply | physical | 17 |
-| `fan` | `pc` | Cooling | physical | 8 |
-| `cooler` | `pc` | Cooling | physical | 8 |
-| `liquid` | `pc` | Cooling | physical | 9 |
-| `ssd` | `pc` | Storage | physical | 8 |
-| `nvme` | `motherboard` | Storage | physical | 6 |
-| `card` | `pc` | GPU · RTX 5090 | physical | 40 |
-| `die` | `card` | GPU · RTX 5090 | logical | 9 |
-| `gpc` | `die` | GPU · RTX 5090 | logical | 3 |
-| `tpc` | `gpc` | GPU · RTX 5090 | logical | 2 |
-| `sm` | `tpc` | GPU · RTX 5090 | logical | 9 |
-| `rx9070` | `pc` | GPU · RX 9070 XT | physical | 40 |
-| `navi48` | `rx9070` | GPU · RX 9070 XT | logical | 11 |
-| `rxse` | `navi48` | GPU · RX 9070 XT | logical | 5 |
-| `rxwgp` | `rxse` | GPU · RX 9070 XT | logical | 3 |
-| `rxcu` | `rxwgp` | GPU · RX 9070 XT | logical | 12 |
-| `arcb580` | `pc` | GPU · Arc B580 | physical | 36 |
-| `bmg` | `arcb580` | GPU · Arc B580 | logical | 7 |
-| `xeslice` | `bmg` | GPU · Arc B580 | logical | 3 |
-| `xecore` | `xeslice` | GPU · Arc B580 | logical | 4 |
-| `xve` | `xecore` | GPU · Arc B580 | logical | 6 |
+| Scale         | Parent        | Menu             | Kind     | Concepts |
+| ------------- | ------------- | ---------------- | -------- | -------: |
+| `pc`          | —             | root             | physical |       18 |
+| `motherboard` | `pc`          | Motherboard      | physical |       24 |
+| `ryzen`       | `motherboard` | Motherboard      | logical  |        6 |
+| `ryzenio`     | `ryzen`       | Motherboard      | logical  |        5 |
+| `corei9`      | `motherboard` | Motherboard      | logical  |        9 |
+| `coreio`      | `corei9`      | Motherboard      | logical  |        4 |
+| `psu`         | `pc`          | Power supply     | physical |       17 |
+| `psubronze`   | `pc`          | Power supply     | physical |       17 |
+| `fan`         | `pc`          | Cooling          | physical |        8 |
+| `cooler`      | `pc`          | Cooling          | physical |        8 |
+| `liquid`      | `pc`          | Cooling          | physical |        9 |
+| `ssd`         | `pc`          | Storage          | physical |        8 |
+| `nvme`        | `motherboard` | Storage          | physical |        6 |
+| `card`        | `pc`          | GPU · RTX 5090   | physical |       40 |
+| `die`         | `card`        | GPU · RTX 5090   | logical  |        9 |
+| `gpc`         | `die`         | GPU · RTX 5090   | logical  |        3 |
+| `tpc`         | `gpc`         | GPU · RTX 5090   | logical  |        2 |
+| `sm`          | `tpc`         | GPU · RTX 5090   | logical  |        9 |
+| `rx9070`      | `pc`          | GPU · RX 9070 XT | physical |       40 |
+| `navi48`      | `rx9070`      | GPU · RX 9070 XT | logical  |       11 |
+| `rxse`        | `navi48`      | GPU · RX 9070 XT | logical  |        5 |
+| `rxwgp`       | `rxse`        | GPU · RX 9070 XT | logical  |        3 |
+| `rxcu`        | `rxwgp`       | GPU · RX 9070 XT | logical  |       12 |
+| `arcb580`     | `pc`          | GPU · Arc B580   | physical |       36 |
+| `bmg`         | `arcb580`     | GPU · Arc B580   | logical  |        7 |
+| `xeslice`     | `bmg`         | GPU · Arc B580   | logical  |        3 |
+| `xecore`      | `xeslice`     | GPU · Arc B580   | logical  |        4 |
+| `xve`         | `xecore`      | GPU · Arc B580   | logical  |        6 |
 
 Menus are grouped by `branchLabel`, not by branch root, which is why the case
 fan, the tower cooler and the AIO share one Cooling heading instead of nesting.
@@ -144,61 +144,61 @@ subsystems stop touching.
 
 ## Where the code lives
 
-| Path | Responsibility |
-| --- | --- |
-| `lib/levels.ts` | The scale tree: parents, kind, phases, spread, menu grouping. Also `levelPath`, `branchRoot`, `submenuRoot`, `branches`, `menuRoot`. |
-| `lib/concept.ts` | The `Concept` shape, the eight categories and their colours, the three accuracy strings, and the `concept()` factory. |
-| `lib/concepts/*.ts` | The written catalogue, one file per subsystem. Ids are global. |
-| `lib/sources.ts` | Every citable reference, keyed by id. 56 of them. |
-| `lib/manifest.ts` | Composes the catalogue, wires parents to children, and answers questions about it: `byId`, `searchConcepts`, `openLevel`, `levelConcept`. Nothing about the current view. |
-| `lib/explorer-state.ts` | `ExplorerState` — what the viewer is looking at — plus `initialState` and `selectSearch`. |
-| `lib/models.ts` | The `builders` registry, the `Piece` type, the shared `material()` cache, and `buildModel(level)`. |
-| `lib/hardware.ts` | `ModelTools`, the interface every builder is handed, and the RTX 5090 card assembly. |
-| `lib/machine.ts` | The tower itself: ATX constants, what goes where inside the case, cable routing, the rear I/O shield, RGB palette. |
-| `lib/chassis.ts` | The case: corner columns and rails, the cut rear panel, tray, floor and roof, the glass side, the mesh front, the dust filters, the front I/O, and `plateWithHoles`, which cuts openings in a sheet. It is handed its openings as measurements from `machine.ts`. |
-| `lib/mainboard.ts`, `power-supply.ts`, `fan-unit.ts`, `cooler.ts`, `liquid.ts`, `ssd.ts`, `nvme.ts`, `processor.ts`, `io-die.ts` | Builders for physical or logical scales. `power-supply.ts` builds both TUF exteriors from one illustrative conversion chain. |
-| `lib/graphics-card.ts`, `card-kit.ts`, `radeon-card.ts`, `arc-card.ts` | The three graphics cards. `card-kit.ts` holds the millimetre-scale parts all three share. |
-| `lib/gpu-architecture.ts`, `radeon-architecture.ts`, `arc-architecture.ts` | The chip block diagrams. |
-| `lib/diagram-kit.ts` | The shared visual language of those diagrams — `put`, `backdrop`, `block` — with a palette per chip. Navi 48 and BMG-G21 draw from it; the GB202 scales predate it and build their own scenery. |
-| `lib/airflow.ts` | Where the air goes: the chevron, the sampling and marching of a path, `cardAirflow` for the three cards, and `airflowStrength`, the curve that takes it off screen as the machine opens. |
-| `lib/airflow-mode.ts` | `airflowLevels`, `hasAirflow` and `airflowShown`, which decide whether a scale draws air at all. Kept free of three.js so `app/` can import it without pulling the engine into the first-paint bundle; `airflow.ts` re-exports it. |
-| `lib/parts.ts` | Shared realistic parts: fans, grilles, fin stacks, capacitors, chokes, slots, ports, screws, `glowMaterial`, `buildLightStrip`. |
-| `lib/materials.ts` | The ten surface finishes and `temperedGlass`. |
-| `lib/surfaces.ts`, `pcb.ts`, `silicon-texture.ts` | Generated material maps. No downloaded textures. |
-| `lib/board-details.ts` | Representative support circuitry and mechanical subassemblies. |
-| `lib/stage-runtime.ts` | Shared Three.js stage foundation: renderer, environment, lighting, camera, controls, demand-driven frame scheduling, animation ticking, camera fitting, context-loss reporting, and base disposal. |
-| `lib/scene.ts` | Ordinary explorer visibility, picking, camera targets, and dive ramp composed over the shared stage runtime. Returns `{ update, dispose }`. |
-| `lib/model-stage.ts` | Reusable model-stage primitives shared by both renderers: scratch-backed piece posing and bounds, inventory preparation, common bounds, and resource disposal. |
-| `lib/comparison-state.ts` | Category-specific comparison schemas, metadata-driven model discovery, pure comparison transitions, catalogue-backed spec projection, validation, and pane coordinate math. |
-| `lib/comparison-scene.ts` | One-renderer comparison engine composed over the shared stage runtime. It renders isolated scissored panes on wide screens and one active pane below 700 CSS pixels. |
-| `lib/picking.ts` | `resolvePick` / `resolvePickNear` — the see-through picking policy. Deliberately outside the scene so tests can import it. |
-| `lib/layout.ts` | `inventoryLayout`, `hardwareInventory`, `spatialInventory`, `smoothstep`, `Vec3`. |
-| `app/page.tsx` | Chooses the explorer or comparison workbench and otherwise keeps application-level composition state. |
-| `app/comparison-workbench.tsx`, `comparison-viewer.tsx`, `comparison-specs.tsx` | Comparison composition and controls, the React-to-Three bridge, and the responsive specification sheet. |
-| `app/use-explorer.ts` | All explorer state and every named move: navigate, dive, arrive, choose, isolate, hide, and the rest. |
-| `app/use-disassembly-playback.ts` | Shared request-animation-frame playback for explorer and comparison disassembly controls. |
-| `app/topbar.tsx`, `scale-nav.tsx`, `systems-list.tsx`, `stage-heading.tsx`, `stage-tools.tsx`, `disassembly.tsx`, `search-dialog.tsx`, `detail-panel.tsx`, `about-dialog.tsx` | One panel each. |
-| `app/viewer.tsx` | The React ↔ three.js bridge: lazy scene load, hover label, error state. |
-| `app/links.ts` | Destinations used by more than one panel. |
-| `app/globals.css`, `app/workbench.css` | The visual direction, desktop through phone. |
-| `tests/*.test.ts` | 64 tests: catalogue integrity, layout, picking, geometry presence, airflow, the case, and comparison state/data/pane/bounds behaviour. |
-| `scripts/generate-icons.mjs` | Rasterises `public/favicon.svg` into PNG and ICO variants. Uses Playwright and Edge. |
-| `scripts/generate-reference-index.mjs` | Regenerates `docs/component-references.md` from the catalogue. Run it after changing citations. |
+| Path                                                                                                                                                                          | Responsibility                                                                                                                                                                                                                                                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lib/levels.ts`                                                                                                                                                               | The scale tree: parents, kind, phases, spread, menu grouping. Also `levelPath`, `branchRoot`, `submenuRoot`, `branches`, `menuRoot`.                                                                                                                              |
+| `lib/concept.ts`                                                                                                                                                              | The `Concept` shape, the eight categories and their colours, the three accuracy strings, and the `concept()` factory.                                                                                                                                             |
+| `lib/concepts/*.ts`                                                                                                                                                           | The written catalogue, one file per subsystem. Ids are global.                                                                                                                                                                                                    |
+| `lib/sources.ts`                                                                                                                                                              | Every citable reference, keyed by id. 56 of them.                                                                                                                                                                                                                 |
+| `lib/manifest.ts`                                                                                                                                                             | Composes the catalogue, wires parents to children, and answers questions about it: `byId`, `searchConcepts`, `openLevel`, `levelConcept`. Nothing about the current view.                                                                                         |
+| `lib/explorer-state.ts`                                                                                                                                                       | `ExplorerState` — what the viewer is looking at — plus `initialState` and `selectSearch`.                                                                                                                                                                         |
+| `lib/models.ts`                                                                                                                                                               | The `builders` registry, the `Piece` type, the shared `material()` cache, and `buildModel(level)`.                                                                                                                                                                |
+| `lib/hardware.ts`                                                                                                                                                             | `ModelTools`, the interface every builder is handed, and the RTX 5090 card assembly.                                                                                                                                                                              |
+| `lib/machine.ts`                                                                                                                                                              | The tower itself: ATX constants, what goes where inside the case, cable routing, the rear I/O shield, RGB palette.                                                                                                                                                |
+| `lib/chassis.ts`                                                                                                                                                              | The case: corner columns and rails, the cut rear panel, tray, floor and roof, the glass side, the mesh front, the dust filters, the front I/O, and `plateWithHoles`, which cuts openings in a sheet. It is handed its openings as measurements from `machine.ts`. |
+| `lib/mainboard.ts`, `power-supply.ts`, `fan-unit.ts`, `cooler.ts`, `liquid.ts`, `ssd.ts`, `nvme.ts`, `processor.ts`, `io-die.ts`                                              | Builders for physical or logical scales. `power-supply.ts` builds both TUF exteriors from one illustrative conversion chain.                                                                                                                                      |
+| `lib/graphics-card.ts`, `card-kit.ts`, `radeon-card.ts`, `arc-card.ts`                                                                                                        | The three graphics cards. `card-kit.ts` holds the millimetre-scale parts all three share.                                                                                                                                                                         |
+| `lib/gpu-architecture.ts`, `radeon-architecture.ts`, `arc-architecture.ts`                                                                                                    | The chip block diagrams.                                                                                                                                                                                                                                          |
+| `lib/diagram-kit.ts`                                                                                                                                                          | The shared visual language of those diagrams — `put`, `backdrop`, `block` — with a palette per chip. Navi 48 and BMG-G21 draw from it; the GB202 scales predate it and build their own scenery.                                                                   |
+| `lib/airflow.ts`                                                                                                                                                              | Where the air goes: the chevron, the sampling and marching of a path, `cardAirflow` for the three cards, and `airflowStrength`, the curve that takes it off screen as the machine opens.                                                                          |
+| `lib/airflow-mode.ts`                                                                                                                                                         | `airflowLevels`, `hasAirflow` and `airflowShown`, which decide whether a scale draws air at all. Kept free of three.js so `app/` can import it without pulling the engine into the first-paint bundle; `airflow.ts` re-exports it.                                |
+| `lib/parts.ts`                                                                                                                                                                | Shared realistic parts: fans, grilles, fin stacks, capacitors, chokes, slots, ports, screws, `glowMaterial`, `buildLightStrip`.                                                                                                                                   |
+| `lib/materials.ts`                                                                                                                                                            | The ten surface finishes and `temperedGlass`.                                                                                                                                                                                                                     |
+| `lib/surfaces.ts`, `pcb.ts`, `silicon-texture.ts`                                                                                                                             | Generated material maps. No downloaded textures.                                                                                                                                                                                                                  |
+| `lib/board-details.ts`                                                                                                                                                        | Representative support circuitry and mechanical subassemblies.                                                                                                                                                                                                    |
+| `lib/stage-runtime.ts`                                                                                                                                                        | Shared Three.js stage foundation: renderer, environment, lighting, camera, controls, demand-driven frame scheduling, animation ticking, camera fitting, context-loss reporting, and base disposal.                                                                |
+| `lib/scene.ts`                                                                                                                                                                | Ordinary explorer visibility, picking, camera targets, and dive ramp composed over the shared stage runtime. Returns `{ update, dispose }`.                                                                                                                       |
+| `lib/model-stage.ts`                                                                                                                                                          | Reusable model-stage primitives shared by both renderers: scratch-backed piece posing and bounds, inventory preparation, common bounds, and resource disposal.                                                                                                    |
+| `lib/comparison-state.ts`                                                                                                                                                     | Category-specific comparison schemas, metadata-driven model discovery, pure comparison transitions, catalogue-backed spec projection, validation, and pane coordinate math.                                                                                       |
+| `lib/comparison-scene.ts`                                                                                                                                                     | One-renderer comparison engine composed over the shared stage runtime. It renders isolated scissored panes on wide screens and one active pane below 700 CSS pixels.                                                                                              |
+| `lib/picking.ts`                                                                                                                                                              | `resolvePick` / `resolvePickNear` — the see-through picking policy. Deliberately outside the scene so tests can import it.                                                                                                                                        |
+| `lib/layout.ts`                                                                                                                                                               | `inventoryLayout`, `hardwareInventory`, `spatialInventory`, `smoothstep`, `Vec3`.                                                                                                                                                                                 |
+| `app/page.tsx`                                                                                                                                                                | Chooses the explorer or comparison workbench and otherwise keeps application-level composition state.                                                                                                                                                             |
+| `app/comparison-workbench.tsx`, `comparison-viewer.tsx`, `comparison-specs.tsx`                                                                                               | Comparison composition and controls, the React-to-Three bridge, and the responsive specification sheet.                                                                                                                                                           |
+| `app/use-explorer.ts`                                                                                                                                                         | All explorer state and every named move: navigate, dive, arrive, choose, isolate, hide, and the rest.                                                                                                                                                             |
+| `app/use-disassembly-playback.ts`                                                                                                                                             | Shared request-animation-frame playback for explorer and comparison disassembly controls.                                                                                                                                                                         |
+| `app/topbar.tsx`, `scale-nav.tsx`, `systems-list.tsx`, `stage-heading.tsx`, `stage-tools.tsx`, `disassembly.tsx`, `search-dialog.tsx`, `detail-panel.tsx`, `about-dialog.tsx` | One panel each.                                                                                                                                                                                                                                                   |
+| `app/viewer.tsx`                                                                                                                                                              | The React ↔ three.js bridge: lazy scene load, hover label, error state.                                                                                                                                                                                           |
+| `app/links.ts`                                                                                                                                                                | Destinations used by more than one panel.                                                                                                                                                                                                                         |
+| `app/globals.css`, `app/workbench.css`                                                                                                                                        | The visual direction, desktop through phone.                                                                                                                                                                                                                      |
+| `tests/*.test.ts`                                                                                                                                                             | 64 tests: catalogue integrity, layout, picking, geometry presence, airflow, the case, and comparison state/data/pane/bounds behaviour.                                                                                                                            |
+| `scripts/generate-icons.mjs`                                                                                                                                                  | Rasterises `public/favicon.svg` into PNG and ICO variants. Uses Playwright and Edge.                                                                                                                                                                              |
+| `scripts/generate-reference-index.mjs`                                                                                                                                        | Regenerates `docs/component-references.md` from the catalogue. Run it after changing citations.                                                                                                                                                                   |
 
 ## The interfaces you will touch
 
 **`ModelTools`** (`lib/hardware.ts`) is what every builder receives:
 
-| Member | What it does |
-| --- | --- |
-| `add(concept, object, pos, delta?, reveal?)` | Registers an object as one selectable piece of a named concept. |
-| `instances(concept, positions, size, reveal?, color?, geometry?)` | The same, for many identical pieces drawn as one instanced mesh. |
-| `box(size, color, metal?, r?)` | A rounded box in the shared material cache. |
-| `pcb(size, variant?)` | A circuit board: routed faces, bare laminate on the cut edges. |
-| `material(color, metal?, rough?)` | The cached standard material. |
-| `label(parent, text, pos, width, color?)` | 3-D text, sized to a width rather than a font size. |
-| `assembly(level)` | Reuses a detailed scale as one installed, selectable assembly — how the motherboard and the card appear inside the tower. |
-| `airflow(streams)` | Chevrons marching along the paths this build moves air along. Scenery, not parts: see the convention below. |
+| Member                                                            | What it does                                                                                                              |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `add(concept, object, pos, delta?, reveal?)`                      | Registers an object as one selectable piece of a named concept.                                                           |
+| `instances(concept, positions, size, reveal?, color?, geometry?)` | The same, for many identical pieces drawn as one instanced mesh.                                                          |
+| `box(size, color, metal?, r?)`                                    | A rounded box in the shared material cache.                                                                               |
+| `pcb(size, variant?)`                                             | A circuit board: routed faces, bare laminate on the cut edges.                                                            |
+| `material(color, metal?, rough?)`                                 | The cached standard material.                                                                                             |
+| `label(parent, text, pos, width, color?)`                         | 3-D text, sized to a width rather than a font size.                                                                       |
+| `assembly(level)`                                                 | Reuses a detailed scale as one installed, selectable assembly — how the motherboard and the card appear inside the tower. |
+| `airflow(streams)`                                                | Chevrons marching along the paths this build moves air along. Scenery, not parts: see the convention below.               |
 
 `delta` is the direction a piece travels as the machine comes apart. `reveal` is
 the disassembly fraction below which a piece is hidden, and it defaults to 0.
@@ -265,7 +265,7 @@ on metals, restrained key light. Raising overall exposure washes everything to
 chalk; that was tried and reverted.
 
 **Emissive materials do not light anything.** RGB needs `glowMaterial` for the
-surface *and* a `PointLight` beside it.
+surface _and_ a `PointLight` beside it.
 
 **Nothing is downloaded at runtime.** Material maps are generated in
 `surfaces.ts`, `pcb.ts` and `silicon-texture.ts`. If you find yourself reaching

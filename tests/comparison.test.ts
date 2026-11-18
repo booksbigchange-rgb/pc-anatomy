@@ -125,12 +125,7 @@ await test('every comparison group resolves complete catalogue-backed specs', ()
     ['gpu', 'card', 'interface', 'PCI Express 5.0'],
     ['psu', 'psu', 'output', '850 W'],
     ['cpu', 'ryzen', 'architecture', 'Zen 5 · chiplet'],
-    [
-      'cpu',
-      'corei9',
-      'architecture',
-      'Arrow Lake · Lion Cove + Skymont',
-    ],
+    ['cpu', 'corei9', 'architecture', 'Arrow Lake · Lion Cove + Skymont'],
     ['cpu', 'corei9', 'socket', 'LGA 1851'],
     ['gpu', 'arcb580', 'exterior', 'Intel Arc B580 Limited Edition'],
     ['storage', 'ssd', 'interface', 'SATA 6 Gb/s'],

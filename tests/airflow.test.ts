@@ -251,7 +251,10 @@ await test('air stays with the hardware it is describing', () => {
         allowed.containsPoint(position),
         level +
           ': a chevron at ' +
-          position.toArray().map((n) => n.toFixed(2)).join(', ') +
+          position
+            .toArray()
+            .map((n) => n.toFixed(2))
+            .join(', ') +
           ' is nowhere near the hardware',
       );
   }
