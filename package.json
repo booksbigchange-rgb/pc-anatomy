@@ -26,6 +26,7 @@
     "start": "vite preview --host 127.0.0.1",
     "lint": "oxlint",
     "format": "oxfmt",
+    "format:check": "oxfmt --check",
     "check": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/*.test.ts"
   },
