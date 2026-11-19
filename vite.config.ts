@@ -7,5 +7,17 @@ export default defineConfig({
   css: { postcss: { plugins: [tailwindcss()] } },
   resolve: { alias: { '@': fileURLToPath(new URL('.', import.meta.url)) } },
   server: { host: '127.0.0.1', port: 5173 },
-  build: { chunkSizeWarningLimit: 650 },
+  build: {
+    chunkSizeWarningLimit: 650,
+    rolldownOptions: {
+      output: {
+        // three.js alone is ~600 kB minified. Give it a chunk of its own so
+        // the stage-runtime chunk holds only our geometry code and neither
+        // crosses the size warning. Both still load lazily from viewer.tsx.
+        codeSplitting: {
+          groups: [{ name: 'three', test: /node_modules[\\/]three[\\/]/ }],
+        },
+      },
+    },
+  },
 });
