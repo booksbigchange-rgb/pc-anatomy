@@ -1,5 +1,5 @@
 'use client';
-import { Code2, Cpu, Info, Layers3, Search } from 'lucide-react';
+import { Code2, Cpu, GraduationCap, Info, Layers3, Search } from 'lucide-react';
 import { GUIDE, REPOSITORY } from './links';
 
 type Props = {
@@ -8,6 +8,7 @@ type Props = {
   onToggleLayers: () => void;
   onSearch: () => void;
   onAbout: () => void;
+  onLessons: () => void;
 };
 
 export default function Topbar({
@@ -16,6 +17,7 @@ export default function Topbar({
   onToggleLayers,
   onSearch,
   onAbout,
+  onLessons,
 }: Props) {
   return (
     <header className="topbar">
@@ -38,6 +40,14 @@ export default function Topbar({
         </span>
       </a>
       <div className="header-actions">
+        <button
+          className="lessons-button"
+          onClick={onLessons}
+          aria-label="Lessons"
+        >
+          <GraduationCap size={17} />
+          <span>Lessons</span>
+        </button>
         <a
           className="guide-link"
           href={GUIDE}

@@ -52,6 +52,52 @@ export const initialState: ExplorerState = {
   diveRevision: 0,
 };
 
+/**
+ * A view described from outside the explorer: by a lesson step or by a shared
+ * link. It names only what someone would choose on purpose — the scale, how
+ * far apart it is, which part is picked out — and leaves the revision counters
+ * to `showScene`.
+ */
+export type Scene = {
+  level: LevelId;
+  /** Disassembly, 0–100. Defaults to assembled. */
+  explode?: number;
+  /** A concept at this scale to select. Anything else is ignored. */
+  part?: string;
+  /** Frame the camera on the selected part rather than the whole scale. */
+  focus?: boolean;
+  /** Show only the selected part. */
+  isolate?: boolean;
+  view?: ExplorerState['view'];
+  /** Defaults to `auto`, so one scene's arrows do not leak into the next. */
+  airflow?: AirflowMode;
+};
+
+/** Whether a part can be selected at a scale: it exists and lives there. */
+export function partAt(level: LevelId, part: string | undefined) {
+  return !!part && byId[part]?.level === level;
+}
+
+/** Arrive at a described view with a clean slate, the way navigation does. */
+export function showScene(state: ExplorerState, scene: Scene): ExplorerState {
+  const part = partAt(scene.level, scene.part) ? scene.part! : null;
+  return {
+    ...state,
+    level: scene.level,
+    explode: Math.min(100, Math.max(0, scene.explode ?? 0)),
+    visible: [...categories],
+    hidden: [],
+    selection: part ? { concept: part } : null,
+    isolated: !!part && !!scene.isolate,
+    view: scene.view ?? 'perspective',
+    airflow: scene.airflow ?? 'auto',
+    diveInto: null,
+    focusRevision:
+      part && (scene.focus || scene.isolate) ? state.focusRevision + 1 : 0,
+    cameraRevision: state.cameraRevision + 1,
+  };
+}
+
 export function selectSearch(state: ExplorerState, id: string): ExplorerState {
   const c = byId[id];
   // Scales themselves are navigated to, not selected: there is no single piece

@@ -13,7 +13,9 @@ sounds arbitrary, it is usually the scar of a bug.
 A static single-page app. Every polygon is generated in TypeScript at runtime
 with three.js — no imported meshes, no image textures, no runtime asset files of
 any kind. The 329 catalogue entries are authored in source, and each one
-is joined to its geometry by a single string id.
+is joined to its geometry by a single string id. On top of the explorer sits a
+small school: courses of step-by-step lessons that drive the same stage, written
+for high school students and kept in source the same way.
 
 React 19, strict TypeScript, Vite 8, Tailwind 4, and three.js used directly:
 no react-three-fiber. UI primitives under `components/ui/` are generated
@@ -83,8 +85,9 @@ theoretical one.
 
 Exploration is data, not code. Adding a scale means adding an entry to
 `lib/levels.ts`, a concept file, a geometry builder, and one line in the
-`builders` registry. There is no route table and no URL routing — navigation is
-state.
+`builders` registry. There is no route table — navigation is state. The address
+bar is a serialisation of that state (`lib/url-state.ts`), not a router: see
+[Lessons and links](#lessons-and-links).
 
 ## The scale tree
 
@@ -151,7 +154,11 @@ subsystems stop touching.
 | `lib/concepts/*.ts`                                                                                                                                                           | The written catalogue, one file per subsystem. Ids are global.                                                                                                                                                                                                    |
 | `lib/sources.ts`                                                                                                                                                              | Every citable reference, keyed by id. 56 of them.                                                                                                                                                                                                                 |
 | `lib/manifest.ts`                                                                                                                                                             | Composes the catalogue, wires parents to children, and answers questions about it: `byId`, `searchConcepts`, `openLevel`, `levelConcept`. Nothing about the current view.                                                                                         |
-| `lib/explorer-state.ts`                                                                                                                                                       | `ExplorerState` — what the viewer is looking at — plus `initialState` and `selectSearch`.                                                                                                                                                                         |
+| `lib/explorer-state.ts`                                                                                                                                                       | `ExplorerState` — what the viewer is looking at — plus `initialState`, `selectSearch`, and `Scene` / `showScene`, a view described from outside (a lesson step or a link).                                                                                        |
+| `lib/lessons/`                                                                                                                                                                | The school: `types.ts` (course, lesson, step, check), one file per course, and `index.ts` (`courses`, `lessonById`, `courseOf`, `nextLesson`).                                                                                                                    |
+| `lib/lesson-run.ts`                                                                                                                                                           | One reader's way through a lesson, as pure transitions: `beginStep`, `answerChoice`, `answerPick`, `reveal`, `advance`.                                                                                                                                           |
+| `lib/progress.ts`                                                                                                                                                             | Finished lessons and where a reader left off, read from and written to `localStorage` defensively.                                                                                                                                                                |
+| `lib/url-state.ts`                                                                                                                                                            | `readAddress`, `writeAddress`, `addressOf`: the query string on `/` to and from a lesson step or a view.                                                                                                                                                          |
 | `lib/models.ts`                                                                                                                                                               | The `builders` registry, the `Piece` type, the shared `material()` cache, and `buildModel(level)`.                                                                                                                                                                |
 | `lib/hardware.ts`                                                                                                                                                             | `ModelTools`, the interface every builder is handed, and the RTX 5090 card assembly.                                                                                                                                                                              |
 | `lib/machine.ts`                                                                                                                                                              | The tower itself: ATX constants, what goes where inside the case, cable routing, the rear I/O shield, RGB palette.                                                                                                                                                |
@@ -177,11 +184,13 @@ subsystems stop touching.
 | `app/comparison-workbench.tsx`, `comparison-viewer.tsx`, `comparison-specs.tsx`                                                                                               | Comparison composition and controls, the React-to-Three bridge, and the responsive specification sheet.                                                                                                                                                           |
 | `app/use-explorer.ts`                                                                                                                                                         | All explorer state and every named move: navigate, dive, arrive, choose, isolate, hide, and the rest.                                                                                                                                                             |
 | `app/use-disassembly-playback.ts`                                                                                                                                             | Shared request-animation-frame playback for explorer and comparison disassembly controls.                                                                                                                                                                         |
+| `app/use-lesson.ts`, `app/use-address.ts`, `app/use-narrow.ts`                                                                                                                | The lesson being taken, as named moves; keeping the address bar and Back/Forward in step with the view; whether the phone/tablet layout is in force.                                                                                                              |
+| `app/lesson-panel.tsx`, `app/courses-dialog.tsx`, `app/lessons.css`                                                                                                           | The lesson player (in the rail's place on a wide screen, a folding card on a phone), the course list, and their styles.                                                                                                                                           |
 | `app/topbar.tsx`, `scale-nav.tsx`, `systems-list.tsx`, `stage-heading.tsx`, `stage-tools.tsx`, `disassembly.tsx`, `search-dialog.tsx`, `detail-panel.tsx`, `about-dialog.tsx` | One panel each.                                                                                                                                                                                                                                                   |
 | `app/viewer.tsx`                                                                                                                                                              | The React ↔ three.js bridge: lazy scene load, hover label, error state.                                                                                                                                                                                           |
 | `app/links.ts`                                                                                                                                                                | Destinations used by more than one panel.                                                                                                                                                                                                                         |
 | `app/globals.css`, `app/workbench.css`                                                                                                                                        | The visual direction, desktop through phone.                                                                                                                                                                                                                      |
-| `tests/*.test.ts`                                                                                                                                                             | 64 tests: catalogue integrity, layout, picking, geometry presence, airflow, the case, and comparison state/data/pane/bounds behaviour.                                                                                                                            |
+| `tests/*.test.ts`                                                                                                                                                             | 73 tests: catalogue integrity, layout, picking, geometry presence, airflow, the case, comparison state/data/pane/bounds behaviour, and lessons, links and progress.                                                                                               |
 | `scripts/generate-icons.mjs`                                                                                                                                                  | Rasterises `public/favicon.svg` into PNG and ICO variants. Uses Playwright and Edge.                                                                                                                                                                              |
 | `scripts/generate-reference-index.mjs`                                                                                                                                        | Regenerates `docs/component-references.md` from the catalogue. Run it after changing citations.                                                                                                                                                                   |
 
@@ -278,9 +287,11 @@ zero, heaped at the origin.
 ## The interface layer
 
 `app/page.tsx` is composition and nothing else: it renders the panels in order
-and wires them to `useExplorer`. It holds only the state no panel owns — whether
-the app is in explorer or comparison mode, whether the search palette and
-about dialog are open, and the part count the viewer reports.
+and wires them to `useExplorer` and `useLesson`. It holds only the state no
+panel owns — whether the app is in explorer or comparison mode, whether the
+search palette, course list and about dialog are open, and the part count the
+viewer reports. It also reads the address once on arrival, so a link opens on
+its own scale rather than building the tower first.
 
 `app/use-explorer.ts` owns everything else about the current view and exposes it
 as named moves rather than state patches. A panel calls `navigate`, `dive`,
@@ -314,6 +325,75 @@ Three interaction decisions are settled, and re-opening them has been tried:
   until Reset, so returning to the tower having asked for air does not switch
   it off again. The switch is absent where there are no fans, and airflow
   follows the Cooling category — hide the fans and the arrows go with them.
+
+## Lessons and links
+
+The school is a layer over the explorer, not a second app. A course is a list
+of lessons, a lesson is a list of steps, and a step is some reading, a `Scene`
+and optionally a check (`lib/lessons/types.ts`). A scene names a scale, a
+disassembly amount, a part to select and whether to frame it; `showScene`
+turns it into explorer state with the same clean slate navigation gives. A
+lesson therefore cannot show anything the explorer does not already draw, and
+`useLesson` moves the stage only through the explorer's `showScene` move.
+
+Checks come in two kinds. **Find** asks the reader to click a part on the
+stage; **choice** is multiple choice. Next stays shut until a check is
+answered, and after two wrong answers the panel offers "Show me the answer",
+which unlocks it, so nobody is stuck. The rules are pure functions in
+`lib/lesson-run.ts`.
+
+Settled decisions:
+
+- **A find check's click is an answer, never a dive.** While one is open,
+  `page.tsx` routes stage clicks to `choose(…, 'inspect')` and then to
+  `lesson.pick`. The wrong part is still selected and described, so a wrong
+  answer teaches what was clicked.
+- **On a phone the detail panel waits to be asked.** It and the lesson card
+  would share the bottom of the screen, and nearly every step selects a part.
+  During a lesson below the 900 px breakpoint the panel opens only from the
+  card's ⓘ button. The part stays selected and outlined on the stage.
+- **Tower-level steps stay assembled.** Opening the tower even a quarter of the
+  way shrinks it to fit, and a highlighted part becomes a speck. The glass is
+  see-through, so the selection outline reads better on the closed machine.
+
+**Writing lessons.** The first course, `how-a-computer-works.ts`, sets the house
+style: short sentences, one idea per paragraph, every technical word explained
+the first time it is used, and an everyday comparison where one helps (RAM as a
+desk, storage as a filing cabinet). Numbers come from the catalogue entry of the
+part on screen, or from a source listed in the step's `sources`; the sourcing
+rules below apply to lesson text as much as to concepts. Every lesson ends with
+a check.
+
+`tests/lessons.test.ts` enforces the structure: unique, URL-safe ids; every
+scene's scale exists; every selected part and every find answer lives at that
+scale **and is drawn at that disassembly**, by building the model and applying
+the scene's reveal rule; no find check pre-selects its own answer; every choice
+has a valid answer; cited sources resolve. It does not check that the writing is
+right. Read it aloud before you commit it.
+
+**Progress** lives in `localStorage` under `pc-anatomy:progress:v1`. There are
+no accounts. Every read and write tolerates a throwing or corrupt store, and
+losing progress costs a reader nothing worse than seeing lessons as new.
+
+**Links.** The address is a query string on `/`, so a static host needs no
+single-page-app fallback for it:
+
+```text
+/?lesson=the-motherboard&step=3
+/?scale=card&part=vapor&explode=60&focus=1&view=top&airflow=on
+```
+
+`useAddress` writes it after the stage settles (never mid-dive or during Auto,
+because browsers throttle history calls). A new scale or lesson step pushes a
+history entry; anything finer — the slider, a selection, a camera view —
+replaces the current one, so Back goes to the previous scale or step rather
+than through every frame of a disassembly. `popstate` re-applies the address.
+Reading is forgiving: an unknown scale, a part from another scale or a value
+out of range is dropped, not refused, so an old link still opens something.
+
+**Adding a lesson:** append it to a course file (or a new course file listed in
+`courses` in `lib/lessons/index.ts`), run `npm test`, then take it in the
+browser once, at desktop and phone widths.
 
 ## Same-category comparison mode
 
@@ -393,7 +473,7 @@ the model has. 231 concepts are physical, 98 are logical diagrams.
 
 ## Tests
 
-64 tests, all through Node's built-in runner.
+73 tests, all through Node's built-in runner.
 
 `.github/workflows/ci.yml` runs `npm ci`, type checking, linting, tests, and a
 production build on every push and pull request with Node.js 22.
@@ -423,6 +503,11 @@ production build on every push and pull request with Node.js 22.
   its filter anywhere in the first half of the disassembly, that every rear
   connector can be seen from behind the machine through the I/O shield, and
   that the front I/O sits on the outside of the roof.
+- `tests/lessons.test.ts` (9) — course and lesson structure, answerable checks,
+  real scales, parts and sources, every part a step shows or asks for being
+  drawn at that step's disassembly, the Next/reveal rules, scenes arriving
+  clean, addresses round-tripping and forgiving bad input, and progress
+  surviving broken storage.
 - `tests/comparison.test.ts` (6) — metadata-driven discovery, valid distinct
   state and group transitions, complete catalogue-backed spec rows, pane-local
   pointer coordinates at desktop and mobile widths, and common bounds that
@@ -444,6 +529,10 @@ Keep this section honest; it is the part a newcomer will trust.
 - **Real touch and pinch input is not verified**, nor is the full tablet and
   small-phone matrix, nor a clean console audit across every scale. Do not
   report those as passing.
+- The lesson player was driven end to end in headless Chromium at 1440 × 900
+  and at a 390 × 844 emulated phone: links, Next and Back, both kinds of check,
+  the reveal, completion, saved progress and browser Back/Forward. Landscape
+  phones and tablets were not.
 
 If you automate a browser against this app:
 
@@ -454,8 +543,11 @@ If you automate a browser against this app:
   `data-explode`, `data-draw-calls` and `data-triangles` for assertions. Under
   software rendering they lag several seconds behind a level change — wait for
   them, do not poll tightly.
-- There is no URL routing. Drive navigation by clicking `button.branch-head`,
-  then the entry in `.branch-scales`.
+- The fastest way to a scale, a part or a lesson step is its address:
+  `page.goto('/?scale=card&part=vapor&explode=60')` or
+  `page.goto('/?lesson=meet-the-machine&step=9')`. Clicking `button.branch-head`
+  then the entry in `.branch-scales` still works when the click path is what
+  you are testing.
 
 For UI work that is meant to change nothing visible, the strongest check is to
 render the old and new trees and diff the markup: transpile with TypeScript's

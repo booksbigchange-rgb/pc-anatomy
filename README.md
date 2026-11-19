@@ -61,13 +61,28 @@ Descending into a part rebuilds it at its own scale with its own timeline, so th
 
 ## The interface
 
-The rail on the left carries the scale tree and per-system visibility. The GPU menu holds three cards, the RTX 5090, Radeon RX 9070 XT and Arc B580, each with its own dropdown of scales. The Power supply menu lists two TUF Gaming units directly: an 850W Gold with modular sockets and a 750W Bronze with fixed cables. The bar along the bottom is the disassembly timeline, with the **Auto** key at its left-hand end, the named phases above the slider, and a reset on the right. Left-click an explorable component to open it; right-click to inspect it and use the detail, hide, isolate and focus controls. Hidden components remain available from the stage tracker until they are restored, the scale changes, or the explorer is reset. The **Airflow** switch beside the camera views draws the path the air takes, cool where it enters and warm where it leaves, and it fades as soon as the disassembly slider moves. It starts on wherever there are fans except on the complete machine, where the case is closed and the switch is there to turn it on. The corner expand control toggles browser fullscreen.
+The rail on the left carries the scale tree and per-system visibility. The GPU menu holds three cards, the RTX 5090, Radeon RX 9070 XT and Arc B580, each with its own dropdown of scales. The Power supply menu lists two TUF Gaming units directly: an 850W Gold with modular sockets and a 750W Bronze with fixed cables. The bar along the bottom is the disassembly timeline, with the **Auto** key at its left-hand end, the named phases above the slider, and a reset on the right. Left-click an explorable component to open it; right-click to inspect it and use the detail, hide, isolate and focus controls. Hidden components remain available from the stage tracker until they are restored, the scale changes, or the explorer is reset. The **Airflow** switch beside the camera views draws the path the air takes, cool where it enters and warm where it leaves, and it fades as soon as the disassembly slider moves. It starts on wherever there are fans except on the complete machine, where the case is closed and the switch is there to turn it on. The corner expand control toggles browser fullscreen. While a lesson is open, it takes the rail's place on the left; on a phone it is a card above the timeline that folds away to give the model the screen.
 
 | Workbench                                                                                                              | On a phone                                                                                                                                               |
 | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | ![The full desktop workbench: scale rail, 3D stage and disassembly timeline](docs/screenshots/workbench-assembled.png) | ![The same explorer on a phone, with the rail collapsed behind a button and the timeline stacked below the stage](docs/screenshots/workbench-mobile.png) |
 
 ![Every part of the machine laid out flat as a component inventory, seen on the desktop workbench](docs/screenshots/workbench-inventory.png)
+
+## Lessons
+
+PC Anatomy is also a small school. **Lessons**, in the top bar, opens the first course, _How a computer works_: six short lessons written for high school students with no experience needed.
+
+1. **Meet the machine** — the big parts of a desktop PC and what each one is for
+2. **The motherboard** — where everything plugs in, and how power and start-up work
+3. **Inside the processor** — cores, clock speed, cache and chiplets
+4. **Memory and storage** — why a computer needs both RAM and a drive
+5. **The graphics card** — why a GPU has thousands of small cores
+6. **Power and cooling** — from wall socket to chip, and how heat gets out
+
+Each step moves the 3D model to what it is talking about: it opens the right part, takes it apart to the right point and highlights a component. Every lesson ends with checks: click a part on the model, or answer a multiple-choice question. Progress is kept in your own browser. There are no accounts and no logins.
+
+Every lesson step and every view of the explorer has its own link, so a teacher can send a class straight to a step (`/?lesson=the-motherboard&step=3`) or a part (`/?scale=card&part=vapor&explode=60`). Back and Forward step through scales and lesson steps.
 
 ## Quick start
 

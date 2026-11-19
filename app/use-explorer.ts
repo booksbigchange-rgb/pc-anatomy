@@ -5,7 +5,9 @@ import { airflowShown } from '@/lib/airflow-mode';
 import {
   initialState,
   selectSearch,
+  showScene as sceneState,
   type ExplorerState,
+  type Scene,
   type Selection,
 } from '@/lib/explorer-state';
 import {
@@ -28,8 +30,8 @@ const gpuRoots = new Set<LevelId>(['card', 'rx9070', 'arcb580']);
  * A panel asks for a named move — navigate, isolate, hide — rather than
  * writing its own patch of explorer state at the button that triggers it.
  */
-export function useExplorer() {
-  const [state, setState] = useState<ExplorerState>(initialState);
+export function useExplorer(start: ExplorerState = initialState) {
+  const [state, setState] = useState<ExplorerState>(start);
   const [layers, setLayers] = useState(false);
   const [hiddenMenuOpen, setHiddenMenuOpen] = useState(false);
   // The subsystem whose menu is open. Follows wherever you are unless you
@@ -175,6 +177,19 @@ export function useExplorer() {
     [dive],
   );
 
+  /** Arrive at a view described by a lesson step or a shared link. */
+  const showScene = useCallback(
+    (scene: Scene) => {
+      stopDisassembly();
+      setHiddenMenuOpen(false);
+      setOpenMenu(menuRoot(scene.level));
+      setOpenSubmenu(null);
+      setState((s) => sceneState(s, scene));
+      setLayers(false);
+    },
+    [stopDisassembly],
+  );
+
   /** Jump to a component found by search, or named in another panel. */
   const selectConcept = useCallback((id: string) => {
     setOpenMenu(menuRoot(byId[id].level));
@@ -316,6 +331,7 @@ export function useExplorer() {
     arrive,
     choose,
     selectConcept,
+    showScene,
     setExplode,
     toggleAuto,
     toggleCategory,

@@ -1,0 +1,716 @@
+/* Lessons: the course list, the rail CTA and the lesson player.
+
+   Violet is the colour of learning here, as cyan is the colour of exploring,
+   so a reader can tell at a glance which of the two the screen is doing. */
+
+:root {
+  /* Height of the disassembly bar the lesson card sits on, per breakpoint. */
+  --dock: 112px;
+  --lesson-card: 36dvh;
+  --lesson-card-tall: 54dvh;
+  --learn: #b497cf;
+  --learn-soft: #d9c8ea;
+  --learn-line: #5d4b70;
+  --learn-panel: #221e27;
+  --right: #7fd39c;
+}
+
+/* Header and rail entry points */
+
+.lessons-button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 12px;
+  color: var(--learn-soft);
+  font-size: 13px;
+  font-weight: 600;
+  background: #241f2a;
+  border: 1px solid var(--learn-line);
+  border-radius: 6px;
+}
+.lessons-button:hover {
+  background: #2d2635;
+  border-color: #806a97;
+}
+.lessons-button svg {
+  color: var(--learn);
+}
+.learn-button {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  text-align: left;
+  color: #efe6f7;
+  background: linear-gradient(135deg, #2b2333, #232a30);
+  border: 1px solid var(--learn-line);
+  border-radius: 6px;
+}
+.learn-button:hover {
+  border-color: #8b74a5;
+  background: linear-gradient(135deg, #322839, #263036);
+}
+.learn-button > svg:first-child {
+  color: var(--learn);
+}
+.learn-button > svg:last-child {
+  margin-left: auto;
+  color: #9a88ad;
+}
+.learn-button > span {
+  min-width: 0;
+}
+.learn-button strong,
+.learn-button small {
+  display: block;
+}
+.learn-button strong {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.learn-button small {
+  margin-top: 4px;
+  color: #ab9dbb;
+  font-size: 10px;
+}
+
+/* The lesson player. On a wide screen it takes the rail's exact place. */
+
+.lesson-panel {
+  position: absolute;
+  inset: 76px auto 0 0;
+  width: var(--rail);
+  z-index: 13;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 23px 0;
+  background: #1b1d1e;
+  border-right: 1px solid #3a3d42;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.in-lesson .explorer:not(.mobile-open) {
+  visibility: hidden;
+}
+.lesson-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.lesson-course {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: auto;
+  padding: 6px 0;
+  color: var(--learn);
+  font: 600 10px monospace;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+.lesson-course:hover {
+  color: var(--learn-soft);
+}
+.lesson-fold,
+.lesson-exit {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  color: #b3b5ba;
+  border-radius: 6px;
+}
+.lesson-fold:hover,
+.lesson-exit:hover {
+  background: #2a2c30;
+}
+.lesson-fold {
+  display: none;
+}
+.lesson-fold svg {
+  transition: transform 0.15s ease;
+}
+.folded .lesson-fold svg {
+  transform: rotate(180deg);
+}
+.lesson-title {
+  margin: 6px 0 14px;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+.lesson-steps {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lesson-steps li {
+  flex: 1;
+}
+.lesson-steps button {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 14px;
+}
+.lesson-steps button::before {
+  content: '';
+  position: absolute;
+  inset: 5px 0;
+  background: #3a3d42;
+  border-radius: 2px;
+}
+.lesson-steps button.passed::before {
+  background: #77678a;
+}
+.lesson-steps button.here::before {
+  background: var(--learn);
+}
+.lesson-steps button:not(:disabled):hover::before {
+  background: var(--learn-soft);
+}
+.lesson-steps button:disabled {
+  opacity: 1;
+}
+.lesson-body,
+.lesson-complete {
+  flex: 1;
+  min-height: 0;
+  margin: 0 -23px;
+  padding: 16px 23px 20px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #4c4f55 transparent;
+}
+.lesson-count {
+  margin: 0 0 8px;
+  color: #8d9097;
+  font: 10px monospace;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.lesson-body h3,
+.lesson-complete h3 {
+  margin: 0 0 10px;
+  color: #f4f5f6;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+  outline: none;
+}
+.lesson-body p,
+.lesson-complete p {
+  margin: 0 0 11px;
+  color: #c9cbcf;
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+.lesson-check {
+  margin-top: 16px;
+  padding: 14px;
+  background: var(--learn-panel);
+  border: 1px solid #463b52;
+  border-radius: 8px;
+}
+.lesson-body .lesson-prompt {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: #f1eaf8;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.lesson-prompt svg {
+  margin-top: 3px;
+  color: var(--learn);
+}
+.lesson-options {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.lesson-options button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.35;
+  background: #1a1b1d;
+  border: 1px solid #45474c;
+  border-radius: 6px;
+}
+.lesson-options button > span {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  color: #b3b5ba;
+  font: 11px monospace;
+  background: #2a2c30;
+  border-radius: 4px;
+}
+.lesson-options button:not(:disabled):hover {
+  background: #26212c;
+  border-color: #8a74a3;
+}
+.lesson-options button:disabled {
+  opacity: 1;
+}
+.lesson-options button.right {
+  color: #d9f2e1;
+  background: #18291f;
+  border-color: #4f9a6b;
+}
+.lesson-options button.right > span {
+  color: #0f1a13;
+  background: var(--right);
+}
+.lesson-options button.right > svg {
+  margin-left: auto;
+  color: var(--right);
+}
+.lesson-options button.wrong {
+  color: #a39a9a;
+  text-decoration: line-through;
+  border-color: #5a3434;
+  opacity: 0.7;
+}
+.lesson-body .lesson-feedback {
+  margin: 10px 0 0;
+  padding: 9px 11px;
+  font-size: 13px;
+  line-height: 1.5;
+  border-radius: 6px;
+}
+.lesson-body .lesson-feedback.correct {
+  color: #c9eed5;
+  background: #17271d;
+}
+.lesson-body .lesson-feedback.wrong {
+  color: #f2cccc;
+  background: #2e1d1d;
+}
+.lesson-body .lesson-feedback.revealed {
+  color: #cbdfeb;
+  background: #1c2730;
+}
+.lesson-reveal {
+  margin-top: 10px;
+  color: var(--accent-bright);
+  font-size: 12.5px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.lesson-part {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: var(--accent-bright);
+  border: 1px solid #3f6a73;
+  border-radius: 6px;
+}
+.lesson-part:hover {
+  background: #1b3339;
+}
+.lesson-nav {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* The same height as the disassembly bar beside it, so the two read as
+     one strip along the bottom of the screen. */
+  height: 112px;
+  border-top: 1px solid #303236;
+}
+.lesson-back,
+.lesson-replay,
+.lesson-complete-actions button {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #d5d7da;
+  font-size: 13px;
+  border: 1px solid #45474c;
+  border-radius: 6px;
+}
+.lesson-back {
+  padding: 0 12px;
+}
+.lesson-replay {
+  width: 40px;
+}
+.lesson-back:not(:disabled):hover,
+.lesson-replay:hover,
+.lesson-complete-actions button:hover {
+  background: #26282b;
+}
+.lesson-next {
+  margin-left: auto;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  color: #17181a;
+  font-size: 13.5px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent-bright), var(--learn));
+  border-radius: 6px;
+}
+.lesson-next:hover {
+  color: #000;
+  filter: brightness(1.08);
+}
+.lesson-next:disabled {
+  opacity: 1;
+  color: #74777d;
+  background: #2a2c30;
+  filter: none;
+}
+.lesson-complete > svg {
+  margin-bottom: 10px;
+  color: var(--right);
+}
+.lesson-complete .lesson-next {
+  width: 100%;
+  height: auto;
+  justify-content: space-between;
+  margin: 8px 0 0;
+  padding: 12px 14px;
+  text-align: left;
+}
+.lesson-complete .lesson-next small {
+  display: block;
+  margin-bottom: 3px;
+  font: 600 9.5px monospace;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+.lesson-complete .lesson-finale {
+  color: #d9c8ea;
+}
+.lesson-complete-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.lesson-complete-actions button {
+  flex: 1;
+  font-size: 12.5px;
+}
+
+/* The course list */
+
+.courses-dialog[data-slot='dialog-content'] {
+  width: 640px;
+  max-width: calc(100vw - 32px);
+  max-height: 86dvh;
+  overflow: auto;
+  gap: 14px;
+  padding: 28px;
+  background: #191a1c;
+  border: 1px solid #51545a;
+  border-radius: 8px;
+}
+.courses-dialog [data-slot='dialog-title'] {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+}
+.courses-dialog [data-slot='dialog-description'] {
+  color: #b2b4b9;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.course {
+  overflow: hidden;
+  border: 1px solid #3b3e43;
+  border-radius: 8px;
+}
+.course header {
+  padding: 18px 18px 16px;
+  background: linear-gradient(135deg, #25202b, #1b2327);
+}
+.course h3 {
+  margin: 0 0 6px;
+  color: #fff;
+  font-size: 17px;
+}
+.course header p {
+  margin: 0 0 12px;
+  color: #c4c6ca;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.course-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  color: #ab9dbb;
+  font: 10.5px monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.course-progress {
+  display: block;
+  width: 100%;
+  height: 4px;
+  overflow: hidden;
+  background: #33363b;
+  border: 0;
+  border-radius: 2px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.course-progress::-webkit-progress-bar {
+  background: #33363b;
+}
+.course-progress::-webkit-progress-value {
+  background: linear-gradient(90deg, var(--accent-bright), var(--learn));
+}
+.course-progress::-moz-progress-bar {
+  background: linear-gradient(90deg, var(--accent-bright), var(--learn));
+}
+.course ol {
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+}
+.course li button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 11px 10px;
+  text-align: left;
+  border-radius: 6px;
+}
+.course li button:hover {
+  background: #232528;
+}
+.course-number {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  color: #c4c6ca;
+  font: 12px monospace;
+  border: 1px solid #4b4e54;
+  border-radius: 50%;
+}
+.course .done .course-number {
+  color: #9be0b2;
+  background: #1f3a29;
+  border-color: #4f9a6b;
+}
+.course :is(.started, .current) .course-number {
+  color: var(--learn);
+  border-color: var(--learn);
+}
+.course-lesson {
+  flex: 1;
+  min-width: 0;
+}
+.course-lesson strong {
+  display: block;
+  color: #eef0f1;
+  font-size: 14px;
+  font-weight: 600;
+}
+.course-lesson small {
+  display: block;
+  margin-top: 3px;
+  color: #9a9da3;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.course-action {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #9a9da3;
+  font-size: 11.5px;
+}
+.course :is(.started, .current) .course-action {
+  color: var(--learn);
+}
+
+@media (min-width: 1600px) {
+  .lesson-panel {
+    padding: 24px 28px 0;
+  }
+  .lesson-body,
+  .lesson-complete {
+    margin: 0 -28px;
+    padding: 18px 28px 22px;
+  }
+  .lesson-body p {
+    font-size: 14px;
+  }
+}
+
+/* Phones and tablets: a card on the timeline that folds to its controls. */
+
+@media (max-width: 900px), (max-height: 500px) {
+  .lesson-panel {
+    inset: auto 10px calc(var(--dock) + 8px + var(--safe-b)) 10px;
+    width: auto;
+    height: var(--lesson-card);
+    z-index: 9;
+    padding: 8px 14px 0;
+    background: #1b1d1e;
+    border: 1px solid #4b4e54;
+    border-radius: 10px;
+    box-shadow: 0 14px 40px #000a;
+  }
+  .lesson-panel.folded {
+    height: auto;
+  }
+  /* A multiple-choice question and the end of a lesson need the reader, not
+     the model, so the card takes more of the screen for them. */
+  .lesson-panel.tall:not(.folded) {
+    height: var(--lesson-card-tall);
+  }
+  .folded :is(.lesson-steps, .lesson-body) {
+    display: none;
+  }
+  .lesson-fold {
+    display: grid;
+  }
+  .lesson-title {
+    margin: 0 0 6px;
+    font-size: 16px;
+  }
+  .lesson-body,
+  .lesson-complete {
+    margin: 0 -14px;
+    padding: 10px 14px 14px;
+  }
+  .lesson-body p {
+    font-size: 13.5px;
+    line-height: 1.55;
+  }
+  .lesson-nav {
+    height: auto;
+    padding: 9px 0 10px;
+  }
+  .lesson-back,
+  .lesson-replay,
+  .lesson-part,
+  .lesson-next {
+    height: 38px;
+  }
+  /* The card carries the lesson's title, so the stage gives up its own
+     heading and tools for room, and the model is framed above the card. */
+  .in-lesson :is(.stage-heading, .stage-tools) {
+    display: none;
+  }
+  .in-lesson .viewport {
+    top: 70px;
+    bottom: calc(var(--dock) + var(--lesson-card) + 14px);
+  }
+  .in-lesson:has(.lesson-panel.tall:not(.folded)) .viewport {
+    bottom: calc(var(--dock) + var(--lesson-card-tall) + 14px);
+  }
+  .in-lesson:has(.lesson-panel.folded) .viewport {
+    bottom: calc(var(--dock) + 132px);
+  }
+  .lessons-button span {
+    display: none;
+  }
+  .lessons-button {
+    width: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+}
+@media (max-width: 600px) {
+  :root {
+    --dock: 142px;
+    --lesson-card: 38dvh;
+  }
+  /* One more icon in the header: the side columns stop being equal so the
+     credit keeps the middle without the icons running over it. */
+  .topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: 10px;
+  }
+  .byline {
+    justify-self: center;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  /* Only the narrowest phones should ever need to shorten the credit. */
+  .byline span {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .header-actions {
+    gap: 4px;
+  }
+  .header-actions > :is(button, a) {
+    min-width: 32px;
+  }
+  .lessons-button {
+    width: 30px;
+    height: 35px;
+    background: none;
+    border: 0;
+  }
+  .lessons-button svg {
+    width: 19px;
+    height: 19px;
+  }
+  .courses-dialog[data-slot='dialog-content'] {
+    padding: 22px 16px;
+  }
+  .course header {
+    padding: 15px 14px 14px;
+  }
+  .course li button {
+    gap: 11px;
+    padding: 10px 6px;
+  }
+  .course-meta {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .course-action {
+    display: none;
+  }
+}
+@media (max-height: 650px) and (max-width: 600px) {
+  :root {
+    --dock: 121px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lesson-fold svg {
+    transition: none;
+  }
+}

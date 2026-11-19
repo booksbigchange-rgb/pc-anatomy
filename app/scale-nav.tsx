@@ -8,6 +8,7 @@ import {
   Droplets,
   Fan,
   GitCompareArrows,
+  GraduationCap,
   HardDrive,
   Layers3,
   Microscope,
@@ -23,6 +24,7 @@ import {
   submenuRoot,
   type LevelId,
 } from '@/lib/levels';
+import { courses } from '@/lib/lessons';
 
 /** One icon per scale, so the branch you are on is recognisable at a glance. */
 const levelIcon: Record<LevelId, typeof Box> = {
@@ -64,6 +66,7 @@ type Props = {
   onOpenSubmenu: (submenu: LevelId | 'none' | null) => void;
   onNavigate: (level: LevelId) => void;
   onCompare: () => void;
+  onLearn: () => void;
   onClose: () => void;
 };
 
@@ -75,6 +78,7 @@ export default function ScaleNav({
   onOpenSubmenu,
   onNavigate,
   onCompare,
+  onLearn,
   onClose,
 }: Props) {
   return (
@@ -85,6 +89,14 @@ export default function ScaleNav({
         onClick={onClose}
       >
         <X size={17} />
+      </button>
+      <button className="learn-button" onClick={onLearn}>
+        <GraduationCap size={18} />
+        <span>
+          <strong>{courses[0].title}</strong>
+          <small>{courses[0].lessons.length} short lessons · start here</small>
+        </span>
+        <ChevronRight size={15} />
       </button>
       <button className="compare-button" onClick={onCompare}>
         <GitCompareArrows size={17} />
