@@ -48,11 +48,12 @@ so those two are always available; the rest need a matching install.
 
 **`npm test` uses Node's native type stripping, not a bundler.** There is no
 path-alias resolution and no extensionless import resolution. Every module a
-test reaches must import with explicit `.ts` extensions all the way down.
-`lib/scene.ts` imports `./models` without one, so it cannot be imported from a
-test at all — which is why `lib/picking.ts` exists as a module of its own rather
-than living inside the scene. If you want new logic under test, keep it out of
-`scene.ts`.
+test reaches must import with explicit `.ts` extensions all the way down. One
+extensionless import makes its module, and everything that imports it,
+unloadable from a test. `tests/imports.test.ts` loads every module under `lib/`
+so a missing extension fails the suite straight away. `lib/scene.ts` loads, but
+`createViewer` needs a WebGL context, so pure logic is still easier to test
+from its own module, as `lib/picking.ts` does.
 
 ## How it fits together
 
@@ -171,7 +172,7 @@ subsystems stop touching.
 | `lib/model-stage.ts`                                                                                                                                                          | Reusable model-stage primitives shared by both renderers: scratch-backed piece posing and bounds, inventory preparation, common bounds, and resource disposal.                                                                                                    |
 | `lib/comparison-state.ts`                                                                                                                                                     | Category-specific comparison schemas, metadata-driven model discovery, pure comparison transitions, catalogue-backed spec projection, validation, and pane coordinate math.                                                                                       |
 | `lib/comparison-scene.ts`                                                                                                                                                     | One-renderer comparison engine composed over the shared stage runtime. It renders isolated scissored panes on wide screens and one active pane below 700 CSS pixels.                                                                                              |
-| `lib/picking.ts`                                                                                                                                                              | `resolvePick` / `resolvePickNear` — the see-through picking policy. Deliberately outside the scene so tests can import it.                                                                                                                                        |
+| `lib/picking.ts`                                                                                                                                                              | `resolvePick` / `resolvePickNear` — the see-through picking policy. Kept outside the scene so tests can call it without a WebGL context.                                                                                                                          |
 | `lib/layout.ts`                                                                                                                                                               | `inventoryLayout`, `hardwareInventory`, `spatialInventory`, `smoothstep`, `Vec3`.                                                                                                                                                                                 |
 | `app/page.tsx`                                                                                                                                                                | Chooses the explorer or comparison workbench and otherwise keeps application-level composition state.                                                                                                                                                             |
 | `app/comparison-workbench.tsx`, `comparison-viewer.tsx`, `comparison-specs.tsx`                                                                                               | Comparison composition and controls, the React-to-Three bridge, and the responsive specification sheet.                                                                                                                                                           |
@@ -181,7 +182,7 @@ subsystems stop touching.
 | `app/viewer.tsx`                                                                                                                                                              | The React ↔ three.js bridge: lazy scene load, hover label, error state.                                                                                                                                                                                           |
 | `app/links.ts`                                                                                                                                                                | Destinations used by more than one panel.                                                                                                                                                                                                                         |
 | `app/globals.css`, `app/workbench.css`                                                                                                                                        | The visual direction, desktop through phone.                                                                                                                                                                                                                      |
-| `tests/*.test.ts`                                                                                                                                                             | 64 tests: catalogue integrity, layout, picking, geometry presence, airflow, the case, and comparison state/data/pane/bounds behaviour.                                                                                                                            |
+| `tests/*.test.ts`                                                                                                                                                             | 66 tests: module loading, catalogue integrity, layout, picking, geometry presence, airflow, the case, and comparison state/data/pane/bounds behaviour.                                                                                                            |
 | `scripts/generate-icons.mjs`                                                                                                                                                  | Rasterises `public/favicon.svg` into PNG and ICO variants. Uses Playwright and Edge.                                                                                                                                                                              |
 | `scripts/generate-reference-index.mjs`                                                                                                                                        | Regenerates `docs/component-references.md` from the catalogue. Run it after changing citations.                                                                                                                                                                   |
 
@@ -393,11 +394,14 @@ the model has. 231 concepts are physical, 98 are logical diagrams.
 
 ## Tests
 
-64 tests, all through Node's built-in runner.
+66 tests, all through Node's built-in runner.
 
-`.github/workflows/ci.yml` runs `npm ci`, type checking, linting, tests, and a
+`.github/workflows/ci.yml` runs `npm ci`, type checking, a format check, linting, tests, and a
 production build on every push and pull request with Node.js 22.
 
+- `tests/imports.test.ts` (2) — every module under `lib/` loads under Node's
+  type stripping, so a missing `.ts` extension fails here, and `lib/scene.ts`
+  exports `createViewer`.
 - `tests/manifest.test.ts` (16) — unique ids, reciprocal parents, no cycles,
   source resolution, SKU counts against full-chip capacity, search behaviour,
   reachability of every scale, the three-stage dissection language, inventory
