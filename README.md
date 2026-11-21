@@ -1,14 +1,12 @@
-# PC Anatomy
+# BigChange PC Hardware Atlas
 
-PC Anatomy is an open-source 3D explorer that takes a desktop computer apart from the assembled ATX tower down to a single GPU streaming multiprocessor.
+BigChange PC Hardware Atlas is a free 3D school for technology, written for high school students of BigChange Academy. Students take real hardware apart in 3D, from a whole desk setup down to a single transistor, either on their own or through step-by-step courses with checks. There are no accounts and no logins.
 
-## [**Explore the live demo →**](https://pc-anatomy.com/)
-
-Ideas worth building are collected on the [**roadmap and Kanban board →**](https://github.com/users/Yoosseph/projects/1). If you would like to contribute but have nothing particular in mind, start there: the Backlog column holds the suggestions and feedback waiting to be picked up.
+It is built on [**PC Anatomy**](https://github.com/Yoosseph/pc-anatomy) by Yoseph, the open-source 3D explorer that takes a desktop computer apart from the assembled ATX tower down to a single GPU streaming multiprocessor. The [original PC Anatomy demo](https://pc-anatomy.com/) and its [roadmap](https://github.com/users/Yoosseph/projects/1) belong to that project.
 
 Before changing any code, read [**ARCHITECTURE.md →**](ARCHITECTURE.md). It is the full technical picture of the project — the scale tree, where every module lives, the conventions behind the geometry, and the traps that are not obvious from reading the source. It is written to be read start to finish by whoever is doing the work, person or language model.
 
-Every polygon is generated in TypeScript with three.js. There are no imported models, image textures, or other runtime asset files. The roughly 300 selectable components each carry a name, a description, an explanation of their purpose, specifications, and citations instead of stopping at a label.
+The PC explorer's polygons are generated in TypeScript with three.js, with no imported models or image textures. The Computer Lab and Laptop Lab add a small set of reviewed CAD models, converted to local files at build time and recorded in [MODEL_ASSET_MANIFEST.md](MODEL_ASSET_MANIFEST.md). The roughly 370 selectable components each carry a name, a description, an explanation of their purpose, specifications, and citations instead of stopping at a label.
 
 ![An assembled ATX tower in PC Anatomy: a dual-glass aluminium case with the motherboard, graphics card, cooler and power supply visible through the window](docs/screenshots/pc-assembled.png)
 
@@ -20,7 +18,12 @@ Press **Auto** at the left end of the bottom bar to watch the machine take itsel
 Desktop PC
 ├── Motherboard
 │   ├── Ryzen 9 9950X
-│   │   └── Ryzen I/O die
+│   │   ├── Ryzen I/O die
+│   │   └── Zen 5 core
+│   │       └── ALU
+│   │           └── Adder
+│   │               └── AND gate
+│   │                   └── Transistor
 │   └── Core Ultra 9 285K
 │       └── Core Ultra I/O tile
 ├── Power supply
@@ -69,9 +72,11 @@ The rail on the left carries the scale tree and per-system visibility. The GPU m
 
 ![Every part of the machine laid out flat as a component inventory, seen on the desktop workbench](docs/screenshots/workbench-inventory.png)
 
-## Lessons
+## The school
 
-PC Anatomy is also a small school. **Lessons**, in the top bar, opens the first course, _How a computer works_: six short lessons written for high school students with no experience needed.
+The site opens on the **School home**, which lists each subject with its course and the exhibits students can open on their own. Every course step moves the 3D model to what it is talking about: it opens the right part, takes it apart to the right point and highlights a component. Every lesson ends with checks: click a part on the model, or answer a multiple-choice question. Progress is kept in the student's own browser.
+
+**Computers.** Exhibits: Computer Lab, Inside the PC, Laptop Lab, Build a PC, Task Manager and My learning path. Course, _How a computer works_:
 
 1. **Meet the machine** — the big parts of a desktop PC and what each one is for
 2. **The motherboard** — where everything plugs in, and how power and start-up work
@@ -80,16 +85,24 @@ PC Anatomy is also a small school. **Lessons**, in the top bar, opens the first 
 5. **The graphics card** — why a GPU has thousands of small cores
 6. **Power and cooling** — from wall socket to chip, and how heat gets out
 
-Each step moves the 3D model to what it is talking about: it opens the right part, takes it apart to the right point and highlights a component. Every lesson ends with checks: click a part on the model, or answer a multiple-choice question. Progress is kept in your own browser. There are no accounts and no logins.
+**Inside the chip.** Exhibits: a processor core, an ALU, an adder, a logic gate and a transistor, continuing the explorer's dive below one Zen 5 core. Course, _Inside the chip_:
 
-Every lesson step and every view of the explorer has its own link, so a teacher can send a class straight to a step (`/?lesson=the-motherboard&step=3`) or a part (`/?scale=card&part=vapor&explode=60`). Back and Forward step through scales and lesson steps.
+1. **Inside a core** — fetch, decode and out-of-order execution
+2. **The ALU** — adding, logic, shifting and flags
+3. **Adding in binary** — how a few logic gates add numbers column by column
+4. **Gates from switches** — six transistors make an AND gate
+5. **The transistor** — one switch, cut open
+
+The core follows AMD's published Zen 5 figures. The ALU, adder, gate and transistor are teaching models, and each says so; see [SOURCES.md](SOURCES.md) for what every cited document supports.
+
+Every screen has its own link, so a teacher can send a class straight to a lab (`/?lab=laptop`), a lesson step (`/?lesson=the-motherboard&step=3`) or a part (`/?scale=card&part=vapor&explode=60`). Back and Forward step between them.
 
 ## Quick start
 
-PC Anatomy requires Node.js 22.13 or newer.
+The Atlas requires Node.js 22.13 or newer.
 
 ```bash
-git clone https://github.com/Yoosseph/pc-anatomy.git
+git clone https://github.com/booksbigchange-rgb/pc-anatomy.git
 cd pc-anatomy
 npm install
 npm run dev
@@ -145,4 +158,4 @@ GitHub Actions runs these checks on every push and pull request using Node.js 22
 
 AI-assisted tools were used selectively during development for coding support, debugging, iteration, and documentation. The project’s architecture, technical direction, design, integration, and validation were developed and maintained by the project maintainer.
 
-PC Anatomy is available under the [MIT License](LICENSE).
+The Atlas, like PC Anatomy, is available under the [MIT License](LICENSE).

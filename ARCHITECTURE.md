@@ -12,7 +12,7 @@ sounds arbitrary, it is usually the scar of a bug.
 
 A static single-page app. The original PC Anatomy explorer remains procedural:
 its hardware polygons are generated in TypeScript at runtime with three.js, and
-its 329 catalogue entries are joined to geometry by a single string id.
+its 367 catalogue entries are joined to geometry by a single string id.
 
 The BigChange school layer adds two things on top of it. **Lessons** are
 step-by-step courses, written for high school students, that drive the same
@@ -73,7 +73,7 @@ Four layers, joined by the concept id.
 lib/levels.ts        the scale tree: what scales exist, what opens into what
       │
 lib/concepts/*.ts    the written catalogue, composed by lib/manifest.ts
-      │              329 entries, each with a globally unique id
+      │              367 entries, each with a globally unique id
       │
 lib/models.ts        one geometry builder per scale, handed `ModelTools`.
       │              Builders attach geometry to concept ids via add()
@@ -133,7 +133,7 @@ unplug/reconnect state.
 
 ## The scale tree
 
-28 scales, 329 concepts. `physical` scales are lit like hardware and keep real
+33 scales, 367 concepts. `physical` scales are lit like hardware and keep real
 size relationships in the inventory; `logical` scales are block diagrams and are
 lit flat.
 
@@ -143,6 +143,11 @@ lit flat.
 | `motherboard` | `pc`          | Motherboard      | physical |       24 |
 | `ryzen`       | `motherboard` | Motherboard      | logical  |        6 |
 | `ryzenio`     | `ryzen`       | Motherboard      | logical  |        5 |
+| `zen5core`    | `ryzen`       | Motherboard      | logical  |        9 |
+| `alu`         | `zen5core`    | Motherboard      | logical  |        8 |
+| `adder`       | `alu`         | Motherboard      | logical  |        7 |
+| `gate`        | `adder`       | Motherboard      | logical  |        7 |
+| `transistor`  | `gate`        | Motherboard      | logical  |        7 |
 | `corei9`      | `motherboard` | Motherboard      | logical  |        9 |
 | `coreio`      | `corei9`      | Motherboard      | logical  |        4 |
 | `psu`         | `pc`          | Power supply     | physical |       17 |
@@ -194,12 +199,14 @@ subsystems stop touching.
 | `lib/levels.ts`                                                                                                                                                               | The scale tree: parents, kind, phases, spread, menu grouping. Also `levelPath`, `branchRoot`, `submenuRoot`, `branches`, `menuRoot`.                                                                                                                              |
 | `lib/concept.ts`                                                                                                                                                              | The `Concept` shape, the eight categories and their colours, the three accuracy strings, and the `concept()` factory.                                                                                                                                             |
 | `lib/concepts/*.ts`                                                                                                                                                           | The written catalogue, one file per subsystem. Ids are global.                                                                                                                                                                                                    |
-| `lib/sources.ts`                                                                                                                                                              | Every citable reference, keyed by id. 56 of them.                                                                                                                                                                                                                 |
+| `lib/sources.ts`                                                                                                                                                              | Every citable reference, keyed by id. 60 of them.                                                                                                                                                                                                                 |
 | `lib/manifest.ts`                                                                                                                                                             | Composes the catalogue, wires parents to children, and answers questions about it: `byId`, `searchConcepts`, `openLevel`, `levelConcept`. Nothing about the current view.                                                                                         |
 | `lib/explorer-state.ts`                                                                                                                                                       | `ExplorerState` — what the viewer is looking at — plus `initialState`, `selectSearch`, and `Scene` / `showScene`, a view described from outside (a lesson step or a link).                                                                                        |
 | `lib/lessons/`                                                                                                                                                                | The school: `types.ts` (course, lesson, step, check), one file per course, and `index.ts` (`courses`, `lessonById`, `courseOf`, `nextLesson`).                                                                                                                    |
 | `lib/lesson-run.ts`                                                                                                                                                           | One reader's way through a lesson, as pure transitions: `beginStep`, `answerChoice`, `answerPick`, `reveal`, `advance`.                                                                                                                                           |
 | `lib/progress.ts`                                                                                                                                                             | Finished lessons and where a reader left off, read from and written to `localStorage` defensively.                                                                                                                                                                |
+| `lib/catalogue.ts`                                                                                                                                                            | The school's map: subjects, each with its exhibits (a scale or a lab) and its course ids, plus the lab ids that addresses use.                                                                                                                                    |
+| `lib/chip-architecture.ts`, `lib/concepts/chip.ts`                                                                                                                            | The five Inside-the-chip scales below one Zen 5 core, drawn in the diagram kit's language with labels sized to be read.                                                                                                                                           |
 | `lib/url-state.ts`                                                                                                                                                            | `readAddress`, `writeAddress`, `addressOf`: the query string on `/` to and from a lesson step or a view.                                                                                                                                                          |
 | `lib/models.ts`                                                                                                                                                               | The `builders` registry, the `Piece` type, the shared `material()` cache, and `buildModel(level)`.                                                                                                                                                                |
 | `lib/hardware.ts`                                                                                                                                                             | `ModelTools`, the interface every builder is handed, and the RTX 5090 card assembly.                                                                                                                                                                              |
@@ -227,12 +234,13 @@ subsystems stop touching.
 | `app/use-explorer.ts`                                                                                                                                                         | All explorer state and every named move: navigate, dive, arrive, choose, isolate, hide, and the rest.                                                                                                                                                             |
 | `app/use-disassembly-playback.ts`                                                                                                                                             | Shared request-animation-frame playback for explorer and comparison disassembly controls.                                                                                                                                                                         |
 | `app/use-lesson.ts`, `app/use-address.ts`, `app/use-narrow.ts`                                                                                                                | The lesson being taken, as named moves; keeping the address bar and Back/Forward in step with the view; whether the phone/tablet layout is in force.                                                                                                              |
+| `app/school-home.tsx`, `app/course-card.tsx`, `app/school.css`                                                                                                                | The School home (no 3D, so it draws at once), the course card it shares with the Lessons dialog, and the home and header styles.                                                                                                                                  |
 | `app/lesson-panel.tsx`, `app/courses-dialog.tsx`, `app/lessons.css`                                                                                                           | The lesson player (in the rail's place on a wide screen, a folding card on a phone), the course list, and their styles.                                                                                                                                           |
 | `app/topbar.tsx`, `scale-nav.tsx`, `systems-list.tsx`, `stage-heading.tsx`, `stage-tools.tsx`, `disassembly.tsx`, `search-dialog.tsx`, `detail-panel.tsx`, `about-dialog.tsx` | One panel each.                                                                                                                                                                                                                                                   |
 | `app/viewer.tsx`                                                                                                                                                              | The React ↔ three.js bridge: lazy scene load, hover label, error state.                                                                                                                                                                                           |
 | `app/links.ts`                                                                                                                                                                | Destinations used by more than one panel.                                                                                                                                                                                                                         |
 | `app/globals.css`, `app/workbench.css`                                                                                                                                        | The visual direction, desktop through phone.                                                                                                                                                                                                                      |
-| `tests/*.test.ts`                                                                                                                                                             | 75 tests: module loading, catalogue integrity, layout, picking, geometry presence, airflow, the case, comparison state/data/pane/bounds behaviour, and lessons, links and progress.                                                                               |
+| `tests/*.test.ts`                                                                                                                                                             | 135 tests: module loading, catalogue integrity, layout, picking, geometry presence, airflow, the case, comparison state/data/pane/bounds behaviour, and lessons, links and progress.                                                                              |
 | `scripts/generate-icons.mjs`                                                                                                                                                  | Rasterises `public/favicon.svg` into PNG and ICO variants. Uses Playwright and Edge.                                                                                                                                                                              |
 | `scripts/generate-reference-index.mjs`                                                                                                                                        | Regenerates `docs/component-references.md` from the catalogue. Run it after changing citations.                                                                                                                                                                   |
 
@@ -368,6 +376,34 @@ Three interaction decisions are settled, and re-opening them has been tried:
   it off again. The switch is absent where there are no fans, and airflow
   follows the Cooling category — hide the fans and the arrows go with them.
 
+## The School home and the catalogue
+
+A bare `/` opens the School home: every subject in `lib/catalogue.ts`, with
+its course and its exhibits. An exhibit is a doorway, not content. It names a
+scale of the explorer or one of the labs, so the catalogue never duplicates
+what they hold, and `tests/catalogue.test.ts` checks it against both. Two
+subjects exist: **Computers** (the Computer Lab, the PC explorer, the Laptop
+Lab, Build a PC, Task Manager and the learning path, with the _How a computer
+works_ course) and **Inside the chip** (the five scales below a Zen 5 core,
+with the course of the same name).
+
+The home page draws no 3D, so a classroom of Chromebooks has something on
+screen at once. The labs are loaded with `React.lazy` when opened, which keeps
+them out of the first-paint bundle, and three.js add-ons (loaders, controls)
+ride in the labs' chunks rather than in the shared `three` chunk.
+
+Settled decisions:
+
+- **The logo is home.** The brand in the explorer header and in the Computer
+  Lab returns to the School home; Reset in the timeline still resets the stage.
+- **A lab's Back returns to the hub it came from.** `page.tsx` keeps `hub`
+  (`school` or `lab`), so a lab opened from the Computer Lab goes back there.
+- **Inside the chip continues the explorer's dive** rather than starting a
+  separate tree: the Zen 5 core concept opens `zen5core`, and each scale below
+  opens the next. The core keeps AMD's counts; the ALU, adder, gate and
+  transistor are teaching models whose accuracy notes say so. See SOURCES.md
+  for what each cited document supports.
+
 ## Lessons and links
 
 The school is a layer over the explorer, not a second app. A course is a list
@@ -421,9 +457,14 @@ losing progress costs a reader nothing worse than seeing lessons as new.
 single-page-app fallback for it:
 
 ```text
+/                                   the School home
+/?lab=laptop                        a lab: computer, laptop, build, task-manager, path
 /?lesson=the-motherboard&step=3
 /?scale=card&part=vapor&explode=60&focus=1&view=top&airflow=on
 ```
+
+Because `/` is the School home, the untouched tower has an address of its own,
+`/?scale=pc`.
 
 `useAddress` writes it after the stage settles (never mid-dive or during Auto,
 because browsers throttle history calls). A new scale or lesson step pushes a
@@ -494,7 +535,7 @@ timeline. Do not add a second hand-written route table.
 ## Sourcing rules
 
 Every technical claim points at an entry in `lib/sources.ts`. Standards bodies
-and vendor documentation first. All 329 concepts currently cite at least one
+and vendor documentation first. All 367 concepts currently cite at least one
 source, and `docs/component-references.md` is the generated index of which.
 
 `concept()` fills in a default when an entry names no sources — `specs` for a
@@ -511,11 +552,13 @@ cites the same source twice. It does not check that a citation is appropriate.
 Nothing here claims a specific product's bill of materials. Every physical
 concept carries a `physicalAccuracy` string saying so, and they are not
 decorative — read one before adding a component that implies more precision than
-the model has. 231 concepts are physical, 98 are logical diagrams.
+the model has. 231 concepts are physical, 136 are logical diagrams.
 
 ## Tests
 
-75 tests, all through Node's built-in runner.
+135 tests in 21 files, all through Node's built-in runner. The files below are
+the explorer's and the school's; the labs' own tests (`laptop`, `optiplex`,
+`task-manager` and the rest) are described in their planning documents.
 
 `.github/workflows/ci.yml` runs `npm ci`, type checking, a format check, linting, tests, and a
 production build on every push and pull request with Node.js 22.
@@ -548,6 +591,9 @@ production build on every push and pull request with Node.js 22.
   its filter anywhere in the first half of the disassembly, that every rear
   connector can be seen from behind the machine through the I/O shield, and
   that the front I/O sits on the outside of the roof.
+- `tests/catalogue.test.ts` (3) — subject and exhibit ids, every exhibit
+  opening a real scale or lab, every lab reachable from the School home, and
+  every course listed under exactly one subject.
 - `tests/lessons.test.ts` (9) — course and lesson structure, answerable checks,
   real scales, parts and sources, every part a step shows or asks for being
   drawn at that step's disassembly, the Next/reveal rules, scenes arriving
@@ -578,6 +624,11 @@ Keep this section honest; it is the part a newcomer will trust.
   and at a 390 × 844 emulated phone: links, Next and Back, both kinds of check,
   the reveal, completion, saved progress and browser Back/Forward. Landscape
   phones and tablets were not.
+- The School home, lab addresses, Back/Forward between home, labs and
+  scales, the five Inside-the-chip scales and their lessons were checked the
+  same way at 1280 × 800 and the emulated phone. The labs themselves were
+  only opened, not exercised; their own classroom protocols are in
+  `docs/planning/`.
 
 If you automate a browser against this app:
 
