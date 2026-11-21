@@ -1014,7 +1014,7 @@ export default function AssemblyLab({
             <Wrench size={20} />
           </span>
           <span>
-            <strong>Big Change PC Build Lab</strong>
+            <strong>BigChange PC Build Lab</strong>
             <small>OPTIPLEX 7040 MT · SERVICE REFERENCE MODEL</small>
           </span>
         </div>

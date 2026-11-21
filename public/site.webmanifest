@@ -1,6 +1,6 @@
 {
-  "name": "PC Anatomy — Interactive 3D PC Hardware Explorer",
-  "short_name": "PC Anatomy",
+  "name": "BigChange PC Hardware Atlas",
+  "short_name": "Hardware Atlas",
   "description": "Explore a desktop PC in interactive 3D. Take apart the case, motherboard, GPU, CPU, cooling and storage, and learn how computer hardware works.",
   "start_url": "/",
   "display": "standalone",

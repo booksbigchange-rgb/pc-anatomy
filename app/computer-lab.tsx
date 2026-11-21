@@ -1320,7 +1320,7 @@ export default function ComputerLab({
 
         <div className="lab-next">
           <strong>Graphic upgrade</strong>
-          <span>CC0 low-poly tower · original Big Change peripherals</span>
+          <span>CC0 low-poly tower · original BigChange peripherals</span>
         </div>
       </aside>
 

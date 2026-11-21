@@ -1,14 +1,15 @@
 'use client';
 import {
+  BookOpen,
   Code2,
-  Cpu,
   GraduationCap,
   Info,
   Layers3,
   Monitor,
   Search,
 } from 'lucide-react';
-import { GUIDE, UPSTREAM_REPOSITORY } from './links';
+import { GUIDE, SCHOOL_NAME, UPSTREAM_REPOSITORY } from './links';
+import AcademyLogo from './academy-logo';
 
 type Props = {
   layers: boolean;
@@ -39,12 +40,11 @@ export default function Topbar({
         type="button"
         className="brand"
         onClick={onHome}
-        aria-label="Reset Big Change PC Atlas"
+        aria-label={`${SCHOOL_NAME}: School home`}
+        title="Back to the School home"
       >
-        <span className="brand-icon">
-          <Cpu size={21} />
-        </span>
-        <span>Big Change PC Atlas</span>
+        <AcademyLogo />
+        <span>{SCHOOL_NAME}</span>
       </button>
       <a
         className="byline"
@@ -60,6 +60,7 @@ export default function Topbar({
       </a>
       <div className="header-actions">
         <button
+          type="button"
           className="lessons-button"
           onClick={onLessons}
           aria-label="Lessons"
@@ -69,21 +70,23 @@ export default function Topbar({
         </button>
         <button
           type="button"
-          className="student-mode-button"
+          className="header-button lab-button"
           onClick={onOpenLab}
           title="Return to the whole computer setup"
+          aria-label="Computer Lab"
         >
           <Monitor size={16} />
           <span>Computer Lab</span>
         </button>
         <button
           type="button"
-          className="student-mode-button"
+          className="header-button student-mode-button"
           aria-pressed={studentMode}
           onClick={onToggleStudentMode}
           title="Switch between student and technical explanations"
+          aria-label={studentMode ? 'Student mode' : 'Technical mode'}
         >
-          <GraduationCap size={16} />
+          <BookOpen size={16} />
           <span>{studentMode ? 'Student mode' : 'Technical mode'}</span>
         </button>
         <a

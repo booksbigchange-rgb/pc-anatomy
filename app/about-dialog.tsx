@@ -12,6 +12,7 @@ import {
   GUIDE_ACCELERATION,
   REPOSITORY,
   UPSTREAM_REPOSITORY,
+  SCHOOL_NAME,
 } from './links';
 
 type Props = { open: boolean; onOpenChange: (open: boolean) => void };
@@ -20,10 +21,12 @@ export default function AboutDialog({ open, onOpenChange }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal>
       <DialogContent className="about-dialog">
-        <DialogTitle>Big Change PC Atlas</DialogTitle>
+        <DialogTitle>{SCHOOL_NAME}</DialogTitle>
         <DialogDescription>
-          An interactive 3D computer-hardware learning experience adapted for
-          Big Change students from the MIT-licensed PC Anatomy project.
+          A free 3D school for technology, built for BigChange Academy students
+          on the MIT-licensed PC Anatomy project. Courses walk through the
+          models step by step; the labs and explorer let students take things
+          apart on their own.
         </DialogDescription>
         <p>
           Start with an assembled ATX tower, take it apart, and keep going: into
@@ -108,16 +111,16 @@ export default function AboutDialog({ open, onOpenChange }: Props) {
           target="_blank"
           rel="noreferrer"
         >
-          Big Change fork source code
+          BigChange PC Hardware Atlas source code
           <ArrowUpRight size={15} />
         </a>
         <p className="about-foot">
-          Big Change learning edition. Upstream PC Anatomy remains credited
-          under its MIT License. Framework Laptop 13 CAD is converted and
-          optimized under CC BY 4.0; its inclusion does not imply endorsement by
-          Framework Computer. Selected laptop connector geometry comes from the
-          KiCad 3D component library under CC BY-SA 4.0 with the KiCad library
-          exception. No affiliation with NVIDIA, AMD or Intel.
+          BigChange learning edition. Upstream PC Anatomy remains credited under
+          its MIT License. Framework Laptop 13 CAD is converted and optimized
+          under CC BY 4.0; its inclusion does not imply endorsement by Framework
+          Computer. Selected laptop connector geometry comes from the KiCad 3D
+          component library under CC BY-SA 4.0 with the KiCad library exception.
+          No affiliation with NVIDIA, AMD or Intel.
         </p>
       </DialogContent>
     </Dialog>

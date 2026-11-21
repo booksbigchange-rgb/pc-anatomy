@@ -508,7 +508,7 @@ function makeScreenTexture() {
   context.fillRect(0, 0, 1200, 52);
   context.fillStyle = 'rgba(235,249,250,.72)';
   context.font = '500 18px Segoe UI, Arial, sans-serif';
-  context.fillText('Big Change Lab', 28, 33);
+  context.fillText('BigChange Lab', 28, 33);
   context.textAlign = 'right';
   context.fillText('10:24', 1165, 33);
   context.textAlign = 'left';
@@ -2574,7 +2574,7 @@ function LaptopScene({
         <div className="laptop-brand">
           <AcademyLogo />
           <span>
-            <strong>Big Change Laptop Lab</strong>
+            <strong>BigChange Laptop Lab</strong>
             <small>
               {model === 'latitude'
                 ? 'DELL LATITUDE 5410 · UNDERSIDE SERVICE'
