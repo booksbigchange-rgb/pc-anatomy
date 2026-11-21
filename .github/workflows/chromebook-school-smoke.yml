@@ -1,0 +1,49 @@
+name: Chromebook classroom smoke
+
+on:
+  push:
+    branches:
+      - school-readiness-beta
+  pull_request:
+    branches:
+      - bigchange-school
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Build site
+        run: npm run build
+      - name: Start preview server
+        run: |
+          npm run start -- --port 4173 > /tmp/pc-atlas-preview.log 2>&1 &
+          echo $! > /tmp/pc-atlas-preview.pid
+      - name: Wait for preview
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/pc-atlas-preview.log
+          exit 1
+      - name: Run Chromebook-like classroom smoke
+        run: node scripts/chromebook-school-smoke.mjs
+      - name: Upload smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chromebook-school-smoke
+          path: |
+            artifacts/chromebook-school-smoke.png
+            /tmp/pc-atlas-preview.log
+          if-no-files-found: warn

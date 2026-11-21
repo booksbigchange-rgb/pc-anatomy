@@ -21,6 +21,11 @@ import SearchDialog from './search-dialog';
 import DetailPanel from './detail-panel';
 import AboutDialog from './about-dialog';
 import ComparisonWorkbench from './comparison-workbench';
+import ComputerLab from './computer-lab';
+import LaptopLab from './laptop-lab';
+import BuildPcLab from './build-pc-lab';
+import TaskManagerLab from './task-manager-lab';
+import CourseLab from './course-lab';
 import LessonPanel from './lesson-panel';
 import CoursesDialog from './courses-dialog';
 
@@ -56,7 +61,19 @@ export default function Home() {
   const [search, setSearch] = useState(false),
     [query, setQuery] = useState(''),
     [about, setAbout] = useState(false),
-    [mode, setMode] = useState<'explorer' | 'comparison'>('explorer'),
+    [studentMode, setStudentMode] = useState(true),
+    // A link to a scale or a lesson opens the explorer; otherwise the school
+    // starts in the Computer Lab.
+    [mode, setMode] = useState<
+      | 'lab'
+      | 'laptop'
+      | 'assembly'
+      | 'explorer'
+      | 'comparison'
+      | 'task-manager-pc'
+      | 'task-manager-laptop'
+      | 'course'
+    >(boot.kind === 'home' ? 'lab' : 'explorer'),
     // `null` until the viewer has reported for the first time. Zero means the
     // viewer is running and nothing is switched on, which is a different thing
     // to say to the reader, and saying the wrong one was what put "No
@@ -124,7 +141,7 @@ export default function Home() {
         el.closest('input,textarea,[contenteditable=true]')
       )
         return;
-      if (search || about || courseList) return;
+      if (search || about || courseList || mode !== 'explorer') return;
       if (event.key === '/') {
         event.preventDefault();
         setSearch(true);
@@ -140,8 +157,37 @@ export default function Home() {
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
-  }, [about, choose, courseList, navigate, search, state.level]);
+  }, [about, choose, courseList, mode, navigate, search, state.level]);
 
+  if (mode === 'course')
+    return <CourseLab onBack={() => setMode('lab')} onActivity={setMode} />;
+  if (mode === 'lab')
+    return (
+      <ComputerLab
+        onOpenCourse={() => setMode('course')}
+        onOpenPC={() => setMode('explorer')}
+        onOpenLaptop={() => setMode('laptop')}
+        onOpenAssembly={() => setMode('assembly')}
+        onOpenTaskManager={() => setMode('task-manager-pc')}
+      />
+    );
+  if (mode === 'laptop')
+    return (
+      <LaptopLab
+        onBack={() => setMode('lab')}
+        onOpenTaskManager={() => setMode('task-manager-laptop')}
+      />
+    );
+  if (mode === 'task-manager-pc' || mode === 'task-manager-laptop')
+    return (
+      <TaskManagerLab
+        device={mode === 'task-manager-laptop' ? 'laptop' : 'pc'}
+        onBack={() =>
+          setMode(mode === 'task-manager-laptop' ? 'laptop' : 'lab')
+        }
+      />
+    );
+  if (mode === 'assembly') return <BuildPcLab onBack={() => setMode('lab')} />;
   if (mode === 'comparison')
     return (
       <ComparisonWorkbench
@@ -167,6 +213,12 @@ export default function Home() {
     >
       <Topbar
         layers={layers}
+        studentMode={studentMode}
+        onOpenLab={() => {
+          lesson.exit();
+          setMode('lab');
+        }}
+        onToggleStudentMode={() => setStudentMode((value) => !value)}
         onReset={() => {
           lesson.exit();
           explorer.reset();
@@ -280,6 +332,7 @@ export default function Home() {
         selection={state.selection}
         level={state.level}
         isolated={state.isolated}
+        studentMode={studentMode}
         onClose={() => choose(null)}
         onSelectConcept={selectResult}
         onDive={explorer.dive}

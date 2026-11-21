@@ -1,0 +1,3500 @@
+'use client';
+import { saveCourse } from './course-model';
+import AcademyLogo from './academy-logo';
+import { buildLatitude5410, latitudeTeardownStage } from './latitude-5410';
+import { visiblePartHit } from './laptop-picking';
+import { applyServiceSurface } from './laptop-service-surfaces';
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Activity,
+  ArrowLeft,
+  BatteryCharging,
+  BookOpen,
+  Cable,
+  CircuitBoard,
+  Cpu,
+  Fan,
+  HardDrive,
+  Keyboard,
+  Laptop,
+  MemoryStick,
+  Monitor,
+  MousePointer2,
+  PanelTopOpen,
+  Pause,
+  Play,
+  Scan,
+  Rotate3D,
+  RotateCcw,
+  Volume2,
+  Wifi,
+  Wrench,
+  Crosshair,
+  EyeOff,
+  Eye,
+  ClipboardCheck,
+  Trophy,
+} from 'lucide-react';
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import {
+  applyLaptopTeardown,
+  isLaptopLocalPart,
+  type LaptopLocalPart,
+  type LaptopInspectionRotation,
+  buildRealisticLaptopInternals,
+  type LaptopInternalCableId,
+} from './laptop-internals';
+import { useDisassemblyPlayback } from './use-disassembly-playback';
+import {
+  LAPTOP_DISPLAY_SERVICE,
+  LAPTOP_INPUT_COVER_SERVICE,
+  laptopTeardownStage,
+} from './laptop-layout.ts';
+import {
+  LAPTOP_LESSON_STEPS,
+  type LaptopLessonPartId,
+} from './laptop-lesson.ts';
+import FaultPractice from './fault-practice';
+import { LAPTOP_FAULT_FOLLOWUPS } from './hardware-practice.ts';
+import { LAPTOP_TROUBLESHOOTING_SCENARIOS } from './laptop-troubleshooting.ts';
+import { LAPTOP_ASSESSMENT_QUESTIONS } from './laptop-assessment.ts';
+
+type LaptopView = 'outside' | 'inside';
+type LaptopMode = 'explore' | 'connections' | 'troubleshooting' | 'assessment';
+type LaptopPortType = 'usb' | 'hdmi' | 'power' | 'audio';
+type LaptopPortId =
+  | 'usb-rear-right'
+  | 'usb-front-right'
+  | 'hdmi-left'
+  | 'power-left'
+  | 'audio-right';
+type LaptopConnectionId =
+  | 'charger-power'
+  | 'usb-device'
+  | 'external-display'
+  | 'headphones-audio';
+type LaptopPartId = LaptopLessonPartId;
+
+type LaptopConnectionTask = {
+  id: LaptopConnectionId;
+  name: string;
+  portType: LaptopPortType;
+  targetPort: LaptopPortId;
+  instruction: string;
+  source: [number, number, number];
+};
+
+type LaptopPart = {
+  id: LaptopPartId;
+  name: string;
+  icon: typeof Laptop;
+  view: LaptopView;
+  description: string;
+  why: string;
+};
+
+const PARTS: LaptopPart[] = [
+  {
+    id: 'display',
+    name: 'Display',
+    icon: Monitor,
+    view: 'outside',
+    description:
+      'The display turns the computer’s video signal into the pictures, text and motion you see.',
+    why: 'Without a working display path, the laptop can still run but you may see a black screen.',
+  },
+  {
+    id: 'keyboard',
+    name: 'Keyboard',
+    icon: Keyboard,
+    view: 'outside',
+    description:
+      'The built-in keyboard is an input device connected directly to the laptop’s main board.',
+    why: 'It lets you type, use shortcuts and control software without an external keyboard.',
+  },
+  {
+    id: 'trackpad',
+    name: 'Trackpad',
+    icon: MousePointer2,
+    view: 'outside',
+    description:
+      'The trackpad senses finger movement and gestures and turns them into pointer input.',
+    why: 'It replaces the mouse when the laptop is used away from a desk.',
+  },
+  {
+    id: 'battery',
+    name: 'Battery',
+    icon: BatteryCharging,
+    view: 'inside',
+    description:
+      'The battery stores electrical energy so the laptop can run without being plugged in.',
+    why: 'Battery capacity, age and power use determine how long the laptop can run unplugged.',
+  },
+  {
+    id: 'motherboard',
+    name: 'Motherboard',
+    icon: CircuitBoard,
+    view: 'inside',
+    description:
+      'The motherboard connects the laptop’s processor, memory, storage, ports and power system.',
+    why: 'Most laptop components are smaller and more tightly integrated than in a desktop PC.',
+  },
+  {
+    id: 'cpu',
+    name: 'Processor (CPU)',
+    icon: Cpu,
+    view: 'inside',
+    description:
+      'The processor is a compact package mounted on the motherboard under the cooling system.',
+    why: 'It executes program instructions and produces much of the heat carried away by the heat pipes and fan.',
+  },
+  {
+    id: 'ram',
+    name: 'RAM / SODIMM',
+    icon: MemoryStick,
+    view: 'inside',
+    description:
+      'Laptop memory uses compact SODIMM modules installed in dedicated memory sockets.',
+    why: 'RAM holds working data for running programs and can often be upgraded separately from storage.',
+  },
+  {
+    id: 'ssd',
+    name: 'M.2 SSD',
+    icon: HardDrive,
+    view: 'inside',
+    description:
+      'The solid-state drive stores the operating system, apps and student files.',
+    why: 'Storage keeps data even when the laptop is switched off.',
+  },
+  {
+    id: 'fan',
+    name: 'Cooling fan',
+    icon: Fan,
+    view: 'inside',
+    description:
+      'The fan moves air through the laptop to carry heat away from the processor.',
+    why: 'Good cooling helps the processor stay fast and prevents overheating.',
+  },
+  {
+    id: 'wifi',
+    name: 'Wi-Fi card',
+    icon: Wifi,
+    view: 'inside',
+    description:
+      'The Wi-Fi module connects the laptop to wireless networks and often also provides Bluetooth.',
+    why: 'It lets a portable computer reach the internet without an Ethernet cable.',
+  },
+  {
+    id: 'speakers',
+    name: 'Speakers',
+    icon: Volume2,
+    view: 'inside',
+    description: 'Small speakers turn electrical audio signals into sound.',
+    why: 'They let students hear lessons, videos and alerts without external speakers.',
+  },
+];
+
+const CONNECTION_TASKS: LaptopConnectionTask[] = [
+  {
+    id: 'charger-power',
+    name: 'Charger → Power',
+    portType: 'power',
+    targetPort: 'power-left',
+    instruction:
+      'Connect the charger first. Find the USB-C power card in the rear-left expansion bay.',
+    source: [-4.85, 0.82, -2.5],
+  },
+  {
+    id: 'usb-device',
+    name: 'USB device → USB',
+    portType: 'usb',
+    targetPort: 'usb-rear-right',
+    instruction:
+      'Connect a USB device. Find a rectangular USB-A port on the right side.',
+    source: [4.85, 0.82, -2.15],
+  },
+  {
+    id: 'external-display',
+    name: 'Display → HDMI',
+    portType: 'hdmi',
+    targetPort: 'hdmi-left',
+    instruction:
+      'Connect an external display. Find the HDMI card in the front-left expansion bay.',
+    source: [-4.85, 0.82, 2.15],
+  },
+  {
+    id: 'headphones-audio',
+    name: 'Headphones → Audio',
+    portType: 'audio',
+    targetPort: 'audio-right',
+    instruction:
+      'Connect headphones. Find the small round audio jack on the right side.',
+    source: [4.85, 0.82, 1.5],
+  },
+];
+
+const INTERNAL_CABLES: Array<{
+  id: LaptopInternalCableId;
+  label: string;
+  availableAt: number;
+}> = [
+  { id: 'battery', label: 'Battery cable', availableAt: 24 },
+  { id: 'speaker', label: 'Speaker cable', availableAt: 50 },
+  { id: 'display', label: 'Display cable', availableAt: 90 },
+];
+
+// Teaching geometry follows the approved Framework Laptop 13 CAD proportions
+// so the clickable model and the realistic exterior read as the same machine.
+const LAPTOP_DIMENSIONS = {
+  baseWidth: 7.6,
+  baseDepth: 5.88,
+  // Split the approved CAD's ~18.45 mm closed thickness between the formed
+  // lower chassis and display lid at the same 25.5-units-per-metre scale.
+  baseThickness: 0.31,
+  lidWidth: 7.44,
+  lidHeight: 5.84,
+  lidThickness: 0.16,
+  // 13.5-inch 3:2 panel proportions at the same chassis scale.
+  screenWidth: 7.22,
+  screenHeight: 4.813, // 3:2
+  hingeZ: -2.72,
+} as const;
+
+const PORT_TYPES: Record<LaptopPortId, LaptopPortType> = {
+  'usb-rear-right': 'usb',
+  'usb-front-right': 'usb',
+  'hdmi-left': 'hdmi',
+  'power-left': 'power',
+  'audio-right': 'audio',
+};
+
+const COLORS = {
+  background: 0x10171d,
+  floor: 0x151c21,
+  shell: 0xaeb7bd,
+  shellDark: 0x69757c,
+  keys: 0x252c31,
+  keyText: 0x8c989e,
+  screen: 0x153443,
+  accent: 0x79cdd6,
+  battery: 0x353e44,
+  board: 0x2e6658,
+  boardDark: 0x24483f,
+  copper: 0xb87949,
+  ssd: 0x3f4c55,
+  speaker: 0x2a3035,
+};
+
+function mesh(
+  geometry: THREE.BufferGeometry,
+  color: number,
+  roughness = 0.55,
+  metalness = 0.16,
+) {
+  return new THREE.Mesh(
+    geometry,
+    new THREE.MeshStandardMaterial({ color, roughness, metalness }),
+  );
+}
+
+function rounded(
+  width: number,
+  height: number,
+  depth: number,
+  radius: number,
+  color: number,
+  roughness = 0.55,
+  metalness = 0.16,
+) {
+  return mesh(
+    new RoundedBoxGeometry(width, height, depth, 4, radius),
+    color,
+    roughness,
+    metalness,
+  );
+}
+
+function physicalRounded(
+  width: number,
+  height: number,
+  depth: number,
+  radius: number,
+  color: number,
+  roughness = 0.3,
+  metalness = 0.72,
+  clearcoat = 0.12,
+) {
+  return new THREE.Mesh(
+    new RoundedBoxGeometry(width, height, depth, 6, radius),
+    new THREE.MeshPhysicalMaterial({
+      color,
+      roughness,
+      metalness,
+      clearcoat,
+      clearcoatRoughness: 0.24,
+      envMapIntensity: 0.28,
+      anisotropy: metalness > 0.5 ? 0.34 : 0,
+      anisotropyRotation: Math.PI / 2,
+    }),
+  );
+}
+
+function makeKeyboardLegendTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1400;
+  canvas.height = 520;
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillStyle = 'rgba(232,238,240,.78)';
+  context.font = '500 27px Segoe UI, Arial, sans-serif';
+
+  const rows = [
+    ['esc', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '⌫'],
+    ['tab', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\\'],
+    ['caps', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'", 'enter'],
+    ['shift', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 'shift'],
+    ['ctrl', 'fn', '◆', 'alt', '', 'alt', 'ctrl', '←', '↑', '↓', '→'],
+  ];
+
+  rows.forEach((row, rowIndex) => {
+    const y = 58 + rowIndex * 102;
+    const step = 1240 / Math.max(row.length - 1, 1);
+    row.forEach((label, column) => {
+      if (!label) return;
+      const x = 80 + column * step;
+      context.fillText(label, x, y);
+    });
+  });
+
+  context.font = '500 22px Segoe UI, Arial, sans-serif';
+  context.fillStyle = 'rgba(214,222,225,.58)';
+  context.fillText('space', 700, 466);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  return texture;
+}
+
+function tag(group: THREE.Group, id: LaptopPartId) {
+  group.userData.laptopPart = id;
+  group.traverse((object) => {
+    if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
+    const item = object as THREE.Mesh;
+    item.castShadow = true;
+    item.receiveShadow = true;
+    const materials = Array.isArray(item.material)
+      ? item.material
+      : [item.material];
+    for (const material of materials) {
+      if (material instanceof THREE.MeshStandardMaterial) {
+        material.emissive = new THREE.Color(0x000000);
+        material.emissiveIntensity = 0;
+      }
+    }
+  });
+  return group;
+}
+
+function laptopPort(
+  id: LaptopPortId,
+  size: [number, number, number],
+  position: [number, number, number],
+  color: number,
+) {
+  const item = rounded(
+    size[0],
+    size[1],
+    size[2],
+    Math.min(...size) * 0.22,
+    0x111518,
+    0.3,
+    0.28,
+  );
+  item.position.set(...position);
+  item.userData.laptopPort = id;
+  item.userData.portType = PORT_TYPES[id];
+  item.userData.highlightColor = color;
+  return item;
+}
+
+function laptopRoundPort(
+  id: LaptopPortId,
+  radius: number,
+  position: [number, number, number],
+  highlightColor: number,
+) {
+  const item = mesh(
+    new THREE.CylinderGeometry(radius, radius, 0.07, 24),
+    0x0c1012,
+    0.3,
+    0.26,
+  );
+  item.rotation.z = Math.PI / 2;
+  item.position.set(...position);
+  item.userData.laptopPort = id;
+  item.userData.portType = PORT_TYPES[id];
+  item.userData.highlightColor = highlightColor;
+  return item;
+}
+
+function connectionCable(start: THREE.Vector3, end: THREE.Vector3) {
+  const middle = start.clone().lerp(end, 0.5);
+  middle.y = Math.max(0.65, Math.min(start.y, end.y) - 0.28);
+  const curve = new THREE.CatmullRomCurve3([start, middle, end]);
+  const geometry = new THREE.TubeGeometry(curve, 26, 0.035, 8, false);
+  const material = new THREE.MeshStandardMaterial({
+    color: 0x7fcbd5,
+    roughness: 0.5,
+    metalness: 0.05,
+    emissive: 0x0e3036,
+    emissiveIntensity: 0.34,
+  });
+  const cable = new THREE.Mesh(geometry, material);
+  cable.castShadow = true;
+  return cable;
+}
+
+function makeContactShadowTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 256;
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+
+  const gradient = context.createRadialGradient(256, 128, 12, 256, 128, 238);
+  gradient.addColorStop(0, 'rgba(0,0,0,.42)');
+  gradient.addColorStop(0.42, 'rgba(0,0,0,.22)');
+  gradient.addColorStop(0.78, 'rgba(0,0,0,.07)');
+  gradient.addColorStop(1, 'rgba(0,0,0,0)');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  return new THREE.CanvasTexture(canvas);
+}
+
+function makeScreenTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1200;
+  canvas.height = 800;
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+
+  const gradient = context.createLinearGradient(0, 0, 1200, 800);
+  gradient.addColorStop(0, '#071b25');
+  gradient.addColorStop(0.48, '#123847');
+  gradient.addColorStop(1, '#1f5862');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 1200, 800);
+
+  const glow = context.createRadialGradient(875, 170, 20, 875, 170, 520);
+  glow.addColorStop(0, 'rgba(129,231,226,.5)');
+  glow.addColorStop(1, 'rgba(129,231,226,0)');
+  context.fillStyle = glow;
+  context.fillRect(0, 0, 1200, 800);
+
+  // Desktop-like surface so the display reads as a real powered panel rather
+  // than a flat poster. It remains generic and school-safe.
+  context.fillStyle = 'rgba(5,14,20,.62)';
+  context.fillRect(0, 0, 1200, 52);
+  context.fillStyle = 'rgba(235,249,250,.72)';
+  context.font = '500 18px Segoe UI, Arial, sans-serif';
+  context.fillText('Big Change Lab', 28, 33);
+  context.textAlign = 'right';
+  context.fillText('10:24', 1165, 33);
+  context.textAlign = 'left';
+
+  context.fillStyle = 'rgba(8,22,29,.54)';
+  context.beginPath();
+  context.roundRect(78, 112, 520, 410, 22);
+  context.fill();
+  context.strokeStyle = 'rgba(188,231,234,.12)';
+  context.stroke();
+
+  context.fillStyle = '#e7fbfc';
+  context.font = '700 58px Segoe UI, Arial, sans-serif';
+  context.fillText('BIG CHANGE', 118, 248);
+  context.fillStyle = '#91dbe2';
+  context.font = '600 28px Segoe UI, Arial, sans-serif';
+  context.fillText('LAPTOP LAB', 120, 296);
+  context.fillStyle = 'rgba(239,250,251,.72)';
+  context.font = '400 20px Segoe UI, Arial, sans-serif';
+  context.fillText('Outside → Inside → Understand', 120, 348);
+
+  const cards = [
+    ['Explore', 'Outside & ports'],
+    ['Anatomy', 'Battery · board · cooling'],
+    ['Practice', 'Connect & troubleshoot'],
+  ];
+  cards.forEach(([title, subtitle], index) => {
+    const x = 120 + index * 150;
+    const y = 406;
+    context.fillStyle = 'rgba(116,201,211,.13)';
+    context.beginPath();
+    context.roundRect(x, y, 134, 78, 12);
+    context.fill();
+    context.fillStyle = '#d5eef1';
+    context.font = '600 17px Segoe UI, Arial, sans-serif';
+    context.fillText(title, x + 14, y + 29);
+    context.fillStyle = 'rgba(222,240,242,.58)';
+    context.font = '400 12px Segoe UI, Arial, sans-serif';
+    context.fillText(subtitle, x + 14, y + 54);
+  });
+
+  context.fillStyle = 'rgba(5,14,20,.52)';
+  context.beginPath();
+  context.roundRect(452, 728, 296, 44, 22);
+  context.fill();
+  for (let index = 0; index < 6; index++) {
+    context.fillStyle =
+      index === 2 ? 'rgba(137,219,226,.95)' : 'rgba(235,246,247,.7)';
+    context.beginPath();
+    context.arc(486 + index * 46, 750, 10, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  // Gentle diagonal reflection makes the glass read as glass at a glance.
+  const reflection = context.createLinearGradient(580, 0, 900, 800);
+  reflection.addColorStop(0, 'rgba(255,255,255,0)');
+  reflection.addColorStop(0.42, 'rgba(255,255,255,.025)');
+  reflection.addColorStop(0.5, 'rgba(255,255,255,.11)');
+  reflection.addColorStop(0.58, 'rgba(255,255,255,.02)');
+  reflection.addColorStop(1, 'rgba(255,255,255,0)');
+  context.fillStyle = reflection;
+  context.fillRect(0, 0, 1200, 800);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
+
+function buildLaptop() {
+  const root = new THREE.Group();
+  const outside = new THREE.Group();
+  const inside = new THREE.Group();
+
+  const base = physicalRounded(
+    LAPTOP_DIMENSIONS.baseWidth,
+    LAPTOP_DIMENSIONS.baseThickness,
+    LAPTOP_DIMENSIONS.baseDepth,
+    0.16,
+    0xaeb6bb,
+    0.26,
+    0.76,
+    0.1,
+  );
+  base.position.y = 0.86;
+  outside.add(base);
+
+  // Dark separation line between the formed lower shell and input cover.
+  const chassisSeam = rounded(7.42, 0.045, 5.66, 0.13, 0x4b555b, 0.48, 0.3);
+  chassisSeam.position.y = 1.025;
+  outside.add(chassisSeam);
+
+  const deck = physicalRounded(
+    7.3,
+    0.075,
+    5.54,
+    0.14,
+    0xb7bec2,
+    0.3,
+    0.72,
+    0.08,
+  );
+  deck.position.y = 1.07;
+  outside.add(deck);
+
+  // Official CAD-derived input-cover geometry loads into this mount and
+  // replaces only the silver fallback deck. The keyboard, trackpad and
+  // interaction hit targets stay independent.
+  const inputCoverCadMount = new THREE.Group();
+  outside.add(inputCoverCadMount);
+
+  // Rear exhaust slots make the silhouette read as a real cooled notebook.
+  for (let index = 0; index < 24; index++) {
+    const vent = rounded(0.17, 0.028, 0.055, 0.008, 0x1a2024, 0.7, 0.06);
+    vent.position.set(-2.55 + index * 0.222, 1.116, -2.6);
+    outside.add(vent);
+  }
+
+  const keyboard = new THREE.Group();
+  const keyboardWell = rounded(6.62, 0.035, 2.52, 0.09, 0x151a1e, 0.62, 0.1);
+  keyboardWell.position.set(0, 1.106, -0.86);
+  keyboard.add(keyboardWell);
+
+  const keyUnit = 0.405;
+  const keyGap = 0.055;
+  const keyDepth = 0.36;
+  const keyHeight = 0.055;
+  const rowSpecs = [
+    { z: -1.78, widths: Array(14).fill(1) as number[] },
+    { z: -1.34, widths: [1.35, ...Array(12).fill(1), 1.35] as number[] },
+    { z: -0.9, widths: [1.55, ...Array(11).fill(1), 1.85] as number[] },
+    { z: -0.46, widths: [1.9, ...Array(10).fill(1), 2.25] as number[] },
+    {
+      z: -0.02,
+      widths: [1.35, 1.15, 1.15, 1.15, 5.15, 1.15, 1.15, 1.15] as number[],
+    },
+  ];
+
+  for (const [rowIndex, row] of rowSpecs.entries()) {
+    const widths = row.widths.map((units) => units * keyUnit);
+    const total =
+      widths.reduce((sum, width) => sum + width, 0) +
+      keyGap * Math.max(widths.length - 1, 0);
+    let cursor = -total / 2;
+
+    for (const [column, width] of widths.entries()) {
+      const key = physicalRounded(
+        width,
+        keyHeight,
+        keyDepth,
+        0.045,
+        rowIndex === 0 && column === 0 ? 0x314a50 : COLORS.keys,
+        0.46,
+        0.08,
+        0.18,
+      );
+      key.position.set(cursor + width / 2, 1.155, row.z);
+      cursor += width + keyGap;
+      keyboard.add(key);
+    }
+  }
+
+  const legends = makeKeyboardLegendTexture();
+  if (legends) {
+    const legendPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(6.28, 2.18),
+      new THREE.MeshBasicMaterial({
+        map: legends,
+        transparent: true,
+        opacity: 0.86,
+        depthWrite: false,
+      }),
+    );
+    legendPlane.rotation.x = -Math.PI / 2;
+    legendPlane.position.set(0, 1.188, -0.9);
+    keyboard.add(legendPlane);
+  }
+
+  // Separate fingerprint/power key at the top-right corner.
+  const powerKey = physicalRounded(
+    0.44,
+    0.065,
+    0.44,
+    0.08,
+    0x20272b,
+    0.36,
+    0.18,
+  );
+  powerKey.position.set(3.02, 1.16, -1.83);
+  keyboard.add(powerKey);
+  const powerRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.08, 0.012, 8, 24),
+    new THREE.MeshStandardMaterial({
+      color: 0x87949a,
+      roughness: 0.36,
+      metalness: 0.48,
+    }),
+  );
+  powerRing.rotation.x = Math.PI / 2;
+  powerRing.position.set(3.02, 1.196, -1.83);
+  keyboard.add(powerRing);
+  outside.add(tag(keyboard, 'keyboard'));
+
+  const trackpad = new THREE.Group();
+  const trackpadRim = rounded(3.08, 0.025, 2.01, 0.13, 0x68747a, 0.38, 0.46);
+  trackpadRim.position.set(0, 1.111, 1.72);
+  trackpad.add(trackpadRim);
+  const trackpadSurface = physicalRounded(
+    3.0,
+    0.024,
+    1.93,
+    0.12,
+    0xabb3b7,
+    0.34,
+    0.58,
+    0.06,
+  );
+  trackpadSurface.position.set(0, 1.127, 1.72);
+  trackpad.add(trackpadSurface);
+  outside.add(tag(trackpad, 'trackpad'));
+
+  // Four dark rubber feet are visible when students orbit below the chassis.
+  for (const [x, z] of [
+    [-3.0, -2.35],
+    [3.0, -2.35],
+    [-3.0, 2.35],
+    [3.0, 2.35],
+  ] as const) {
+    const foot = rounded(0.62, 0.055, 0.16, 0.05, 0x252b2e, 0.72, 0.04);
+    foot.position.set(x, 0.66, z);
+    outside.add(foot);
+  }
+
+  const hinge = physicalRounded(
+    6.4,
+    0.2,
+    0.22,
+    0.09,
+    0x6e787d,
+    0.27,
+    0.78,
+    0.08,
+  );
+  hinge.position.set(0, 1.015, LAPTOP_DIMENSIONS.hingeZ);
+  outside.add(hinge);
+
+  const displayPivot = new THREE.Group();
+  displayPivot.position.set(0, 1.04, LAPTOP_DIMENSIONS.hingeZ);
+  displayPivot.rotation.x = -0.14;
+
+  const displayGroup = new THREE.Group();
+  const displayTopCoverCadMount = new THREE.Group();
+  const displayBezelCadMount = new THREE.Group();
+  displayGroup.add(displayTopCoverCadMount, displayBezelCadMount);
+
+  const lidFrame = physicalRounded(
+    LAPTOP_DIMENSIONS.lidWidth,
+    LAPTOP_DIMENSIONS.lidHeight,
+    LAPTOP_DIMENSIONS.lidThickness,
+    0.15,
+    0xaeb6bb,
+    0.24,
+    0.8,
+    0.12,
+  );
+  lidFrame.position.set(0, LAPTOP_DIMENSIONS.lidHeight / 2, 0);
+  displayGroup.add(lidFrame);
+
+  const bezel = rounded(7.34, 5.02, 0.035, 0.11, 0x111619, 0.5, 0.12);
+  bezel.position.set(
+    0,
+    LAPTOP_DIMENSIONS.lidHeight / 2,
+    LAPTOP_DIMENSIONS.lidThickness / 2 + 0.012,
+  );
+  displayGroup.add(bezel);
+
+  const screen = new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      LAPTOP_DIMENSIONS.screenWidth,
+      LAPTOP_DIMENSIONS.screenHeight,
+    ),
+    new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      map: makeScreenTexture() ?? undefined,
+      toneMapped: false,
+    }),
+  );
+  screen.position.set(
+    0,
+    LAPTOP_DIMENSIONS.lidHeight / 2 - 0.015,
+    LAPTOP_DIMENSIONS.lidThickness / 2 + 0.033,
+  );
+  displayGroup.add(screen);
+
+  const glass = new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      LAPTOP_DIMENSIONS.screenWidth,
+      LAPTOP_DIMENSIONS.screenHeight,
+    ),
+    new THREE.MeshPhysicalMaterial({
+      color: 0xd8f4f7,
+      roughness: 0.24,
+      metalness: 0,
+      transparent: true,
+      opacity: 0.05,
+      clearcoat: 0.45,
+      clearcoatRoughness: 0.18,
+      depthWrite: false,
+      envMapIntensity: 0.9,
+    }),
+  );
+  glass.position.set(
+    0,
+    LAPTOP_DIMENSIONS.lidHeight / 2 - 0.015,
+    LAPTOP_DIMENSIONS.lidThickness / 2 + 0.038,
+  );
+  displayGroup.add(glass);
+
+  const webcam = mesh(
+    new THREE.SphereGeometry(0.047, 18, 12),
+    0x07090a,
+    0.18,
+    0.28,
+  );
+  webcam.position.set(
+    0,
+    LAPTOP_DIMENSIONS.lidHeight - 0.24,
+    LAPTOP_DIMENSIONS.lidThickness / 2 + 0.045,
+  );
+  displayGroup.add(webcam);
+
+  for (const x of [-0.18, 0.18]) {
+    const microphone = mesh(
+      new THREE.SphereGeometry(0.018, 12, 8),
+      0x050708,
+      0.34,
+      0.1,
+    );
+    microphone.position.set(
+      x,
+      LAPTOP_DIMENSIONS.lidHeight - 0.24,
+      LAPTOP_DIMENSIONS.lidThickness / 2 + 0.044,
+    );
+    displayGroup.add(microphone);
+  }
+
+  const privacyTrack = rounded(0.34, 0.035, 0.07, 0.025, 0x31383c, 0.42, 0.18);
+  privacyTrack.position.set(
+    0.44,
+    LAPTOP_DIMENSIONS.lidHeight - 0.24,
+    LAPTOP_DIMENSIONS.lidThickness / 2 + 0.045,
+  );
+  displayGroup.add(privacyTrack);
+  const privacyDot = rounded(0.09, 0.045, 0.08, 0.025, 0xd77958, 0.4, 0.1);
+  privacyDot.position.set(
+    0.52,
+    LAPTOP_DIMENSIONS.lidHeight - 0.24,
+    LAPTOP_DIMENSIONS.lidThickness / 2 + 0.048,
+  );
+  displayGroup.add(privacyDot);
+
+  displayPivot.add(tag(displayGroup, 'display'));
+  outside.add(displayPivot);
+
+  // Real port cavities stay neutral in Explore mode; the lesson highlights
+  // only the target port instead of permanently color-coding the hardware.
+  // Four modular expansion-card bays: two on each side, plus the dedicated
+  // 3.5 mm headset jack. This matches the real Framework-style layout much
+  // better than the earlier five unrelated side openings.
+  const ports: THREE.Mesh[] = [
+    laptopPort(
+      'power-left',
+      [0.07, 0.13, 0.34],
+      [-3.835, 0.95, -1.32],
+      0xc48761,
+    ),
+    laptopPort('hdmi-left', [0.07, 0.18, 0.61], [-3.835, 0.95, 1.26], 0x927cad),
+    laptopPort(
+      'usb-rear-right',
+      [0.07, 0.18, 0.5],
+      [3.835, 0.95, -1.32],
+      0x4e9db0,
+    ),
+    laptopPort(
+      'usb-front-right',
+      [0.07, 0.18, 0.5],
+      [3.835, 0.95, 1.26],
+      0x4e9db0,
+    ),
+    laptopRoundPort('audio-right', 0.09, [3.84, 0.96, 2.28], 0x78a184),
+  ];
+  outside.add(...ports);
+
+  for (const [side, z] of [
+    [-1, -1.32],
+    [-1, 1.26],
+    [1, -1.32],
+    [1, 1.26],
+  ] as const) {
+    const bay = rounded(0.052, 0.255, 1.03, 0.035, 0x68747a, 0.28, 0.68);
+    bay.position.set(side * 3.79, 0.95, z);
+    outside.add(bay);
+
+    const seamFront = rounded(0.058, 0.21, 0.018, 0.006, 0x30383c, 0.44, 0.32);
+    seamFront.position.set(side * 3.82, 0.95, z + 0.48);
+    outside.add(seamFront);
+    const seamBack = seamFront.clone();
+    seamBack.position.z = z - 0.48;
+    outside.add(seamBack);
+  }
+
+  // Side-firing speaker vents, status LED and the visible audio-jack surround.
+  for (const side of [-1, 1] as const) {
+    for (let index = 0; index < 9; index++) {
+      const slot = rounded(0.045, 0.055, 0.105, 0.012, 0x20272b, 0.72, 0.04);
+      slot.position.set(side * 3.835, 0.84, 1.66 + index * 0.085);
+      outside.add(slot);
+    }
+  }
+  const audioRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.105, 0.015, 8, 24),
+    new THREE.MeshStandardMaterial({
+      color: 0x626d72,
+      roughness: 0.32,
+      metalness: 0.62,
+    }),
+  );
+  audioRing.rotation.y = Math.PI / 2;
+  audioRing.position.set(3.842, 0.96, 2.28);
+  outside.add(audioRing);
+
+  const statusLed = mesh(
+    new THREE.SphereGeometry(0.024, 12, 8),
+    0x8ad7b2,
+    0.24,
+    0.08,
+  );
+  statusLed.position.set(-3.84, 0.91, -2.1);
+  outside.add(statusLed);
+
+  const realisticInternals = buildRealisticLaptopInternals();
+  inside.add(realisticInternals.inside);
+
+  // Framework service access starts by lifting and flipping the Input Cover,
+  // not by removing the Bottom Cover. Reuse the same input-cover geometry,
+  // keyboard and trackpad in the Anatomy scene so the first teardown motion
+  // matches the official repair flow.
+  const serviceInputCoverAssembly = new THREE.Group();
+  serviceInputCoverAssembly.position.set(...LAPTOP_INPUT_COVER_SERVICE.home);
+
+  const serviceInputCoverCadMount = new THREE.Group();
+  const serviceInputCoverFallback = deck.clone(true);
+  serviceInputCoverFallback.position.y -= 1.07;
+
+  const serviceKeyboard = keyboard.clone(true);
+  serviceKeyboard.position.y -= 1.07;
+  const serviceTrackpad = trackpad.clone(true);
+  serviceTrackpad.position.y -= 1.07;
+
+  // The CAD Input Cover is a thin shell with keyboard/trackpad openings.
+  // When the cover is flipped for service, the student should see its
+  // underside rather than the cloned keys through those openings.
+  const serviceInputCoverUnderside = physicalRounded(
+    7.08,
+    0.055,
+    5.3,
+    0.13,
+    0x68747a,
+    0.42,
+    0.48,
+    0.04,
+  );
+  serviceInputCoverUnderside.position.set(0, -0.075, 0);
+  serviceInputCoverUnderside.visible = false;
+
+  // A few underside details keep the flipped cover from reading as one flat
+  // slab without pretending to reproduce electronics that are not modeled.
+  for (const [x, z, w, d] of [
+    [-2.55, -1.9, 0.54, 0.18],
+    [2.55, -1.9, 0.54, 0.18],
+    [-2.45, 1.8, 0.64, 0.2],
+    [2.45, 1.8, 0.64, 0.2],
+  ] as const) {
+    const pad = rounded(w, 0.035, d, 0.03, 0x20272b, 0.72, 0.04);
+    pad.position.set(x, -0.115, z);
+    serviceInputCoverUnderside.add(pad);
+  }
+
+  serviceInputCoverAssembly.add(
+    serviceInputCoverCadMount,
+    serviceInputCoverFallback,
+    serviceKeyboard,
+    serviceTrackpad,
+    serviceInputCoverUnderside,
+  );
+  inside.add(serviceInputCoverAssembly);
+
+  realisticInternals.teardownParts.unshift({
+    object: serviceInputCoverAssembly,
+    start: LAPTOP_INPUT_COVER_SERVICE.start,
+    end: LAPTOP_INPUT_COVER_SERVICE.end,
+    homePosition: serviceInputCoverAssembly.position.clone(),
+    homeRotation: serviceInputCoverAssembly.rotation.clone(),
+    // Framework instructs users to flip the cover keyboard-side down and
+    // rest it about halfway on the Bottom Cover. The earlier Y offset put the
+    // cover below the battery/board plane, making internals draw through it.
+    // Move the centre by roughly half a chassis depth so the cover overlaps
+    // about half of the Bottom Cover, matching the intended service-rest pose.
+    offset: new THREE.Vector3(...LAPTOP_INPUT_COVER_SERVICE.offset),
+    rotationOffset: new THREE.Vector3(...LAPTOP_INPUT_COVER_SERVICE.rotation),
+  });
+
+  // Separate service display assembly for Laptop Anatomy. The real Framework
+  // display/hinges/webcam are loaded into these mounts at runtime; keeping the
+  // display as one parent lets the teardown move it as a mechanically related
+  // assembly instead of scattering the parts radially.
+  const serviceDisplayAssembly = new THREE.Group();
+  serviceDisplayAssembly.position.set(0, 1.04, LAPTOP_DIMENSIONS.hingeZ);
+  serviceDisplayAssembly.rotation.x = -0.14;
+
+  const serviceDisplayMount = new THREE.Group();
+  const serviceHingeLeft = new THREE.Group();
+  const serviceHingeRight = new THREE.Group();
+  const serviceWebcam = new THREE.Group();
+
+  // The official Framework STEP is primarily useful from the service/back
+  // side. Add a lightweight display face so the assembled anatomy view still
+  // reads as a real laptop screen from the front while the CAD remains visible
+  // when students orbit around it.
+  const serviceFront = new THREE.Group();
+  const serviceBezel = rounded(
+    LAPTOP_DIMENSIONS.lidWidth,
+    LAPTOP_DIMENSIONS.lidHeight,
+    0.07,
+    0.12,
+    0x242c30,
+    0.38,
+    0.28,
+  );
+  serviceBezel.position.set(0, LAPTOP_DIMENSIONS.lidHeight / 2, 0.12);
+  serviceFront.add(serviceBezel);
+
+  const serviceScreen = new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      LAPTOP_DIMENSIONS.screenWidth,
+      LAPTOP_DIMENSIONS.screenHeight,
+    ),
+    new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      map: makeScreenTexture() ?? undefined,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    }),
+  );
+  serviceScreen.position.set(0, LAPTOP_DIMENSIONS.lidHeight / 2, 0.162);
+  serviceFront.add(serviceScreen);
+  const serviceGlass = glass.clone();
+  serviceGlass.material = glass.material.clone();
+  serviceGlass.position.copy(serviceScreen.position);
+  serviceGlass.position.z += 0.006;
+  serviceFront.add(serviceGlass);
+
+  serviceDisplayAssembly.add(
+    serviceDisplayMount,
+    serviceFront,
+    serviceHingeLeft,
+    serviceHingeRight,
+    serviceWebcam,
+  );
+  inside.add(tag(serviceDisplayAssembly, 'display'));
+
+  realisticInternals.teardownParts.push({
+    object: serviceDisplayAssembly,
+    start: LAPTOP_DISPLAY_SERVICE.start,
+    end: LAPTOP_DISPLAY_SERVICE.end,
+    homePosition: serviceDisplayAssembly.position.clone(),
+    homeRotation: serviceDisplayAssembly.rotation.clone(),
+    // Keep the display close to its hinge line at the end of the teaching
+    // teardown. A small separation shows the hinge relationship without
+    // sending the whole display assembly floating above the laptop.
+    offset: new THREE.Vector3(...LAPTOP_DISPLAY_SERVICE.offset),
+    rotationOffset: new THREE.Vector3(...LAPTOP_DISPLAY_SERVICE.rotation),
+  });
+
+  inside.visible = false;
+  root.add(outside, inside);
+  root.position.set(0, -0.05, 0.2);
+
+  return {
+    root,
+    outside,
+    inside,
+    ports,
+    batteryMount: realisticInternals.batteryMount,
+    motherboardMount: realisticInternals.motherboardMount,
+    motherboardShell: realisticInternals.motherboardShell,
+    serviceDisplayMount,
+    serviceHingeLeft,
+    serviceHingeRight,
+    serviceWebcam,
+    serviceInputCoverAssembly,
+    serviceInputCoverCadMount,
+    serviceInputCoverFallback,
+    serviceInputCoverKeyboard: serviceKeyboard,
+    serviceInputCoverTrackpad: serviceTrackpad,
+    serviceInputCoverUnderside,
+    serviceInterior: realisticInternals.serviceInterior,
+    parts: realisticInternals.parts,
+    inputCoverCadMount,
+    displayTopCoverCadMount,
+    displayBezelCadMount,
+    deckFallback: deck,
+    lidFrameFallback: lidFrame,
+    bezelFallback: bezel,
+    teardownParts: realisticInternals.teardownParts,
+    disconnectCables: realisticInternals.disconnectCables,
+  };
+}
+
+function addEnvironment(scene: THREE.Scene) {
+  const table = physicalRounded(
+    12.5,
+    0.5,
+    7.3,
+    0.18,
+    0x554d46,
+    0.58,
+    0.04,
+    0.04,
+  );
+  table.position.set(0, 0.3, 0.2);
+  table.receiveShadow = true;
+  scene.add(table);
+
+  const contactTexture = makeContactShadowTexture();
+  if (contactTexture) {
+    const contactShadow = new THREE.Mesh(
+      new THREE.PlaneGeometry(9.6, 5.4),
+      new THREE.MeshBasicMaterial({
+        map: contactTexture,
+        transparent: true,
+        opacity: 0.82,
+        depthWrite: false,
+        toneMapped: false,
+      }),
+    );
+    contactShadow.rotation.x = -Math.PI / 2;
+    contactShadow.position.set(0, 0.565, 0.35);
+    scene.add(contactShadow);
+  }
+
+  const mat = rounded(9.1, 0.035, 5.6, 0.12, 0x20282d, 0.84, 0.02);
+  mat.position.set(0, 0.58, 0.1);
+  mat.receiveShadow = true;
+  scene.add(mat);
+
+  const floor = mesh(new THREE.PlaneGeometry(38, 38), COLORS.floor, 0.92, 0.01);
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = -2.0;
+  floor.receiveShadow = true;
+  scene.add(floor);
+
+  const grid = new THREE.GridHelper(32, 32, 0x34454d, 0x26343a);
+  grid.position.y = -1.985;
+  const materials = Array.isArray(grid.material)
+    ? grid.material
+    : [grid.material];
+  for (const material of materials) {
+    material.transparent = true;
+    material.opacity = 0.045;
+  }
+  scene.add(grid);
+}
+
+function LaptopScene({
+  onBack,
+  onOpenTaskManager,
+  model,
+  onModelChange,
+}: {
+  onBack: () => void;
+  onOpenTaskManager: () => void;
+  model: 'latitude' | 'framework';
+  onModelChange: (model: 'latitude' | 'framework') => void;
+}) {
+  const LESSON_STEPS =
+    model === 'latitude'
+      ? LAPTOP_LESSON_STEPS.map((step, index) =>
+          index === 1
+            ? {
+                ...step,
+                title: 'Remove the underside base cover',
+                action:
+                  'Turn the powered-off laptop over. Remove its base cover to expose the service layout; the keyboard stays attached.',
+                notice:
+                  'The Latitude 5410 uses eight captive base-cover screws.',
+              }
+            : index === 8
+              ? {
+                  ...step,
+                  action:
+                    'Follow the blower fan and heat pipes to the processor cold plate.',
+                }
+              : index === 9
+                ? {
+                    ...step,
+                    action:
+                      'Inspect the soldered processor package. It stays attached to the system board.',
+                    notice:
+                      'This laptop CPU is soldered to the board; it is not a removable desktop processor.',
+                  }
+                : step,
+        )
+      : LAPTOP_LESSON_STEPS;
+  const CONNECTIONS = useMemo(
+    () =>
+      model === 'latitude'
+        ? CONNECTION_TASKS.map((task, i) => ({
+            ...task,
+            instruction:
+              i === 0
+                ? 'Connect the charger to the round DC-in jack at the rear of the left edge.'
+                : i === 2
+                  ? 'Connect the display to the HDMI socket on the right edge.'
+                  : task.instruction,
+          }))
+        : CONNECTION_TASKS,
+    [model],
+  );
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const explodedLabelsRef = useRef<HTMLDivElement>(null);
+  const cameraViewRef = useRef<'left' | 'right' | 'top' | 'reset' | null>(null);
+  const selectedRef = useRef<LaptopPartId>('display');
+  const viewRef = useRef<LaptopView>('outside');
+  const modeRef = useRef<LaptopMode>('explore');
+  const guidedRef = useRef(false);
+  const realisticRef = useRef(false);
+  const connectionTaskRef = useRef(0);
+  const connectedRef = useRef<LaptopConnectionId[]>([]);
+  const disconnectedInternalCablesRef = useRef<LaptopInternalCableId[]>([]);
+  const isolateRef = useRef(false);
+  const focusTargetRef = useRef<LaptopPartId | null>(null);
+  const troubleshootingScenarioRef = useRef(0);
+  const troubleshootingSolvedRef = useRef(false);
+  const assessmentIndexRef = useRef(0);
+  const explodeRef = useRef(18);
+
+  const [view, setView] = useState<LaptopView>('outside');
+  const [selected, setSelected] = useState<LaptopPartId>('display');
+  const [guided, setGuided] = useState(false);
+  const [realisticExterior, setRealisticExterior] = useState(false);
+  const [realisticLoaded, setRealisticLoaded] = useState(false);
+  const [lessonIndex, setLessonIndex] = useState(0);
+  const [mode, setMode] = useState<LaptopMode>('explore');
+  const [connectionTask, setConnectionTask] = useState(0);
+  const [connected, setConnected] = useState<LaptopConnectionId[]>([]);
+  const [connectionFeedback, setConnectionFeedback] = useState(
+    'Choose Connections to practise the ports on a laptop.',
+  );
+  const [internalCableFeedback, setInternalCableFeedback] = useState(
+    'Click a visible internal cable, or use the cable buttons, to unplug it before removing its part.',
+  );
+  const [disconnectedInternalCables, setDisconnectedInternalCables] = useState<
+    LaptopInternalCableId[]
+  >([]);
+  const [isolated, setIsolated] = useState(false);
+  const [troubleshootingVerified, setTroubleshootingVerified] = useState(false);
+  const [lightGraphics, setLightGraphics] = useState(false);
+  const [troubleshootingScenario, setTroubleshootingScenario] = useState(0);
+  const [troubleshootingSolved, setTroubleshootingSolved] = useState(false);
+  const [troubleshootingFeedback, setTroubleshootingFeedback] = useState(
+    'Choose Troubleshoot, read the symptom, then click the component you would inspect first.',
+  );
+  const [assessmentIndex, setAssessmentIndex] = useState(0);
+  const [assessmentAnswers, setAssessmentAnswers] = useState<
+    Record<string, string>
+  >({});
+  const [assessmentComplete, setAssessmentComplete] = useState(false);
+  const [assessmentSaveFailed, setAssessmentSaveFailed] = useState(false);
+  const [inspectionState, setInspectionState] = useState<{ angles: [number, number, number]; context: string } | null>(null);
+  const inspectionRef = useRef<LaptopInspectionRotation | null>(null);
+  const [inspectionEnds, setInspectionEnds] = useState<Record<string, number>>({});
+  const localPartRef = useRef<LaptopLocalPart | null>(null);
+  const localProgressRef = useRef(0);
+  const localStartedRef = useRef(0);
+  const localContext = `${model}:${selected}:${view}:${mode}:${guided}:${lessonIndex}`;
+  const inspectionAngles: [number, number, number] = inspectionState?.context === localContext ? inspectionState.angles : [0, 0, 0];
+  if (inspectionState && inspectionState.context !== localContext) setInspectionState(null);
+  const [localSelection, setLocalSelection] = useState<{
+    id: LaptopLocalPart;
+    context: string;
+  } | null>(null);
+  const localPart =
+    localSelection?.context === localContext ? localSelection.id : null;
+  // Discard a previous selection so returning to it cannot revive an old lift.
+  if (localSelection && localSelection.context !== localContext)
+    setLocalSelection(null);
+  const resetLocalPart = useCallback(() => {
+    inspectionRef.current = null;
+    setInspectionState(null);
+    localPartRef.current = null;
+    localProgressRef.current = 0;
+    setLocalSelection(null);
+  }, []);
+  useEffect(() => {
+    localPartRef.current = null;
+    localProgressRef.current = 0;
+    inspectionRef.current = null;
+  }, [localContext]);
+  const [explode, setExplodeValue] = useState(18);
+
+  const updateExplode = useCallback(
+    (value: number) => {
+      resetLocalPart();
+      explodeRef.current = value;
+      setExplodeValue(value);
+    },
+    [resetLocalPart],
+  );
+
+  const {
+    playing: teardownPlaying,
+    setExplode,
+    stop: stopTeardown,
+    toggleAuto: toggleTeardown,
+  } = useDisassemblyPlayback(explode, updateExplode);
+
+  const visibleParts = PARTS.filter((part) => part.view === view);
+  const selectedPart =
+    PARTS.find((part) => part.id === selected) ?? visibleParts[0];
+  const lessonStep = LESSON_STEPS[lessonIndex] ?? LESSON_STEPS[0];
+  const lessonStepComplete =
+    !lessonStep.requiredCable ||
+    disconnectedInternalCables.includes(lessonStep.requiredCable);
+  const currentConnection = CONNECTIONS[connectionTask];
+  const allConnectionsComplete = connected.length === CONNECTIONS.length;
+  const currentTroubleshooting =
+    LAPTOP_TROUBLESHOOTING_SCENARIOS[troubleshootingScenario] ??
+    LAPTOP_TROUBLESHOOTING_SCENARIOS[0];
+  const currentAssessment =
+    LAPTOP_ASSESSMENT_QUESTIONS[assessmentIndex] ??
+    LAPTOP_ASSESSMENT_QUESTIONS[0];
+  const currentAssessmentAnswer = assessmentAnswers[currentAssessment.id];
+  const currentAssessmentCorrect =
+    currentAssessmentAnswer === currentAssessment.answer;
+  const assessmentScore = LAPTOP_ASSESSMENT_QUESTIONS.reduce(
+    (score, question) =>
+      score + (assessmentAnswers[question.id] === question.answer ? 1 : 0),
+    0,
+  );
+  const assessmentPercent = Math.round(
+    (assessmentScore / LAPTOP_ASSESSMENT_QUESTIONS.length) * 100,
+  );
+  const assessmentReview = LAPTOP_ASSESSMENT_QUESTIONS.filter(
+    (question) =>
+      assessmentAnswers[question.id] &&
+      assessmentAnswers[question.id] !== question.answer,
+  );
+  const teardownStage =
+    model === 'latitude'
+      ? latitudeTeardownStage(explode)
+      : laptopTeardownStage(explode);
+
+  useEffect(() => {
+    selectedRef.current = selected;
+  }, [selected]);
+
+  useEffect(() => {
+    viewRef.current = view;
+  }, [view]);
+
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+
+  useEffect(() => {
+    guidedRef.current = guided;
+  }, [guided]);
+
+  useEffect(() => {
+    isolateRef.current = isolated;
+  }, [isolated]);
+
+  useEffect(() => {
+    troubleshootingScenarioRef.current = troubleshootingScenario;
+  }, [troubleshootingScenario]);
+
+  useEffect(() => {
+    troubleshootingSolvedRef.current = troubleshootingSolved;
+  }, [troubleshootingSolved]);
+
+  useEffect(() => {
+    assessmentIndexRef.current = assessmentIndex;
+  }, [assessmentIndex]);
+
+  useEffect(() => {
+    realisticRef.current = realisticExterior;
+  }, [realisticExterior]);
+
+  useEffect(() => {
+    connectionTaskRef.current = connectionTask;
+  }, [connectionTask]);
+
+  useEffect(() => {
+    connectedRef.current = connected;
+  }, [connected]);
+
+  const completeConnectionTask = useCallback((task: LaptopConnectionTask) => {
+    const nextConnected = connectedRef.current.includes(task.id)
+      ? connectedRef.current
+      : [...connectedRef.current, task.id];
+    connectedRef.current = nextConnected;
+    setConnected(nextConnected);
+    setConnectionFeedback('Correct — ' + task.name + ' is connected.');
+
+    const nextIndex = CONNECTIONS.findIndex(
+      (candidate, index) =>
+        index > connectionTaskRef.current &&
+        !nextConnected.includes(candidate.id),
+    );
+    if (nextIndex >= 0) {
+      connectionTaskRef.current = nextIndex;
+      setConnectionTask(nextIndex);
+    }
+  }, [CONNECTIONS]);
+
+  const toggleInternalCable = useCallback((cableId: LaptopInternalCableId) => {
+    const next = disconnectedInternalCablesRef.current.includes(cableId)
+      ? disconnectedInternalCablesRef.current.filter((id) => id !== cableId)
+      : [...disconnectedInternalCablesRef.current, cableId];
+    disconnectedInternalCablesRef.current = next;
+    setDisconnectedInternalCables(next);
+    setInternalCableFeedback(
+      next.includes(cableId)
+        ? cableId[0].toUpperCase() +
+            cableId.slice(1) +
+            ' cable unplugged. You can now continue the teardown.'
+        : cableId[0].toUpperCase() + cableId.slice(1) + ' cable reconnected.',
+    );
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(COLORS.background);
+    // Keep the model crisp at the default camera distance. Fog is reserved
+    // for the far room only rather than washing out laptop surface detail.
+    scene.fog = new THREE.Fog(COLORS.background, 24, 46);
+
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+    camera.position.set(9.2, 8.4, 11.8);
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      powerPreference: 'high-performance',
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, lightGraphics ? 1 : 2));
+    renderer.shadowMap.enabled = !lightGraphics;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.03;
+
+    // A local studio environment gives the aluminum chassis realistic
+    // reflections without any runtime network dependency.
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    const roomEnvironment = new RoomEnvironment();
+    const environmentTarget = pmremGenerator.fromScene(roomEnvironment, 0.04);
+    scene.environment = environmentTarget.texture;
+    scene.environmentIntensity = lightGraphics ? 0.3 : 0.62;
+    roomEnvironment.dispose();
+    pmremGenerator.dispose();
+
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    let cameraManuallyMoved = false;
+    let lastAutoFit = "";
+    const markCameraManual = () => {
+      cameraManuallyMoved = true;
+    };
+    controls.addEventListener('start', markCameraManual);
+    controls.dampingFactor = 0.065;
+    controls.enablePan = false;
+    controls.minDistance = 8;
+    controls.maxDistance = 22;
+    controls.minPolarAngle = 0.3;
+    controls.maxPolarAngle = Math.PI / 2.02;
+    controls.target.set(0, 1.15, 0.15);
+
+    scene.add(new THREE.HemisphereLight(0xd8efff, 0x262b30, 0.48));
+    const key = new THREE.DirectionalLight(0xfff5ea, 2.05);
+    key.position.set(-3.5, 9.5, 4.5);
+    key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.bias = -0.00008;
+    key.shadow.normalBias = 0.002;
+    key.shadow.radius = lightGraphics ? 1 : 3;
+    key.shadow.camera.left = -8;
+    key.shadow.camera.right = 8;
+    key.shadow.camera.top = 8;
+    key.shadow.camera.bottom = -8;
+    key.shadow.camera.near = 0.5;
+    key.shadow.camera.far = 35;
+    scene.add(key);
+
+    const fill = new THREE.DirectionalLight(0xa8c7ff, 0.28);
+    fill.position.set(-8, 5, 5);
+    scene.add(fill);
+
+    const rim = new THREE.DirectionalLight(0x82e0db, 0.52);
+    rim.position.set(5, 7, -8);
+    scene.add(rim);
+
+    // Large soft-box lights create long, readable highlights on the aluminum
+    // surfaces and screen glass, closer to a product render than a game prop.
+    const softbox = new THREE.RectAreaLight(0xfff3e8, 2.4, 7.5, 4.5);
+    softbox.position.set(-4.8, 7.8, 6.6);
+    softbox.lookAt(0, 1.2, 0);
+    scene.add(softbox);
+
+    const edgeSoftbox = new THREE.RectAreaLight(0xd9e5ee, 1.65, 5.0, 3.0);
+    edgeSoftbox.position.set(5.8, 5.4, -5.2);
+    edgeSoftbox.lookAt(0, 1.4, -0.8);
+    scene.add(edgeSoftbox);
+
+    addEnvironment(scene);
+
+    const laptop = model === 'latitude' ? buildLatitude5410() : buildLaptop();
+    const removalEnds = Object.fromEntries(laptop.teardownParts.filter(part => part.object.userData.laptopPart).map(part => [part.object.userData.laptopPart, part.end]));
+    let inspectionThresholdsPublished = false;
+    for (const cable of laptop.disconnectCables)
+      cable.object.userData.laptopCable = cable.id;
+    scene.add(laptop.root);
+
+    const realisticLaptop = new THREE.Group();
+    realisticLaptop.visible = false;
+    scene.add(realisticLaptop);
+
+    let disposed = false;
+    let lastRenderSignature = '';
+    if (model === 'latitude') {
+      if ('closed' in laptop) realisticLaptop.add(laptop.closed);
+      queueMicrotask(() => {
+        if (!disposed) setRealisticLoaded(true);
+      });
+    } else {
+      const gltfLoader = new GLTFLoader();
+      // Replace only removable visuals. Their existing parent groups retain all
+      // home transforms, teardown ownership, picking, focus and reset behavior.
+      for (const id of ['ssd', 'ram', 'wifi', 'cooling'] as const) {
+        gltfLoader.load(
+          `${import.meta.env.BASE_URL}models/service-realistic/${id}.glb`,
+          (gltf) => {
+            if (disposed) return;
+            lastRenderSignature = '';
+            const mount = laptop.parts[id];
+            gltf.scene.traverse((object) => {
+              if (!(object instanceof THREE.Mesh)) return;
+              object.castShadow = true;
+              object.receiveShadow = true;
+            });
+            for (const child of mount.children) child.visible = false;
+            mount.add(gltf.scene);
+          },
+          undefined,
+          () => {
+            /* Keep the existing service model if an asset cannot load. */
+          },
+        );
+      }
+      gltfLoader.load(
+        `${import.meta.env.BASE_URL}models/framework-laptop-13.glb`,
+        (gltf) => {
+          if (disposed) return;
+          lastRenderSignature = '';
+          const model = gltf.scene;
+          model.traverse((object) => {
+            if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
+            const item = object as THREE.Mesh;
+            item.castShadow = true;
+            item.receiveShadow = true;
+            item.material = new THREE.MeshPhysicalMaterial({
+              color: 0xaeb7bc,
+              roughness: 0.27,
+              metalness: 0.78,
+              clearcoat: 0.1,
+              clearcoatRoughness: 0.24,
+              envMapIntensity: 1.22,
+              anisotropy: 0.38,
+              anisotropyRotation: Math.PI / 2,
+            });
+          });
+          model.scale.setScalar(25.5);
+          model.position.set(0, 0.74, 0.05);
+          realisticLaptop.add(model);
+          setRealisticLoaded(true);
+        },
+        undefined,
+        () => {
+          if (!disposed) {
+            realisticRef.current = false;
+            setRealisticExterior(false);
+            setRealisticLoaded(false);
+          }
+        },
+      );
+
+      const loadOpenExteriorPart = (
+        file: string,
+        mount: THREE.Group,
+        fallback: THREE.Object3D,
+        position: [number, number, number],
+        rotation: [number, number, number],
+        color: number,
+        roughness: number,
+        metalness: number,
+      ) => {
+        gltfLoader.load(
+          `${import.meta.env.BASE_URL}models/${file}.glb`,
+          (gltf) => {
+            if (disposed) return;
+            lastRenderSignature = '';
+            const model = gltf.scene;
+            model.scale.setScalar(25.5);
+            model.position.set(...position);
+            model.rotation.set(...rotation);
+            model.traverse((object) => {
+              if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh)
+                return;
+              const item = object as THREE.Mesh;
+              item.castShadow = true;
+              item.receiveShadow = true;
+              item.material = new THREE.MeshPhysicalMaterial({
+                color,
+                roughness,
+                metalness,
+                clearcoat: metalness > 0.5 ? 0.1 : 0.02,
+                clearcoatRoughness: 0.25,
+                envMapIntensity: 0.28,
+                anisotropy: metalness > 0.5 ? 0.34 : 0,
+                anisotropyRotation: Math.PI / 2,
+              });
+            });
+            fallback.visible = false;
+            mount.add(model);
+          },
+          undefined,
+          () => {
+            // The procedural shell remains visible if the extracted CAD piece
+            // has not been generated yet or fails to load.
+          },
+        );
+      };
+
+      // These shells were extracted from the same pinned official Framework
+      // assembly used by the closed CAD reference. They give the interactive
+      // open laptop real input-cover and display-frame geometry.
+      loadOpenExteriorPart(
+        'framework-laptop-13-input-cover-refined',
+        laptop.inputCoverCadMount,
+        laptop.deckFallback,
+        // Extracted CAD keeps its original 0..228.98 mm depth axis. Centre it
+        // on the chassis and place its top surface at the interactive deck.
+        [0, 1.067, -2.92],
+        [0, 0, 0],
+        0x87929b,
+        0.46,
+        0.62,
+      );
+      loadOpenExteriorPart(
+        'framework-laptop-13-input-cover-refined',
+        laptop.serviceInputCoverCadMount,
+        laptop.serviceInputCoverFallback,
+        [0, -0.003, -2.92],
+        [0, 0, 0],
+        0x87929b,
+        0.46,
+        0.62,
+      );
+      loadOpenExteriorPart(
+        'framework-laptop-13-top-cover-refined',
+        laptop.displayTopCoverCadMount,
+        laptop.lidFrameFallback,
+        // Source Z becomes local display Y after the -90° X rotation, so the
+        // official 228.98 mm shell already rises from hinge to lid top.
+        [0, 0, 0],
+        [-Math.PI / 2, 0, 0],
+        0xaeb7bc,
+        0.25,
+        0.8,
+      );
+      loadOpenExteriorPart(
+        'framework-laptop-13-display-bezel-refined',
+        laptop.displayBezelCadMount,
+        laptop.bezelFallback,
+        // The bezel starts ~12.5 mm above the hinge in the source CAD and
+        // reaches the real lid top. A small Z offset puts it just in front of
+        // the rear shell while leaving room for the screen plane.
+        [0, 0, 0.12],
+        [-Math.PI / 2, 0, 0],
+        0x171c1f,
+        0.44,
+        0.12,
+      );
+
+      const loadFrameworkServicePart = (
+        file: string,
+        mount: THREE.Group,
+        position: [number, number, number],
+        rotation: [number, number, number],
+        color: number,
+        roughness: number,
+        metalness: number,
+      ) => {
+        gltfLoader.load(
+          `${import.meta.env.BASE_URL}models/framework-service/${file}.glb`,
+          (gltf) => {
+            if (disposed) return;
+            lastRenderSignature = '';
+            const model = gltf.scene;
+            model.scale.setScalar(25.5);
+            model.position.set(...position);
+            model.rotation.set(...rotation);
+            model.traverse((object) => {
+              if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh)
+                return;
+              const item = object as THREE.Mesh;
+              item.castShadow = true;
+              item.receiveShadow = true;
+              item.material = new THREE.MeshStandardMaterial({
+                color,
+                roughness,
+                metalness,
+              });
+            });
+            mount.add(model);
+          },
+          undefined,
+          () => {
+            // Keep the rest of Laptop Anatomy functional if a candidate asset
+            // fails to load; service assets are visual accuracy upgrades.
+          },
+        );
+      };
+
+      loadFrameworkServicePart(
+        'display-assembly',
+        laptop.serviceDisplayMount,
+        // The CAD includes the lower cable/bracket region, so centre it lower
+        // than the visible lid. This aligns the top edge with the front bezel
+        // and lets the extra service geometry extend naturally into the hinge.
+        [0, 2.32, 0],
+        [-Math.PI / 2, 0, 0],
+        0xaeb7bd,
+        0.34,
+        0.5,
+      );
+      loadFrameworkServicePart(
+        'hinge-left',
+        laptop.serviceHingeLeft,
+        [-2.82, 0.08, 0.02],
+        [-Math.PI / 2, 0, 0],
+        0x717b81,
+        0.3,
+        0.62,
+      );
+      loadFrameworkServicePart(
+        'hinge-right',
+        laptop.serviceHingeRight,
+        [2.82, 0.08, 0.02],
+        [-Math.PI / 2, Math.PI, 0],
+        0x717b81,
+        0.3,
+        0.62,
+      );
+      loadFrameworkServicePart(
+        'webcam',
+        laptop.serviceWebcam,
+        [0, 4.94, 0.16],
+        [-Math.PI / 2, 0, 0],
+        0x252c30,
+        0.42,
+        0.18,
+      );
+
+      gltfLoader.load(
+        `${import.meta.env.BASE_URL}models/framework-laptop-13-battery.glb`,
+        (gltf) => {
+          if (disposed) return;
+          lastRenderSignature = '';
+
+          // Replace the simplified fallback battery with Framework's official
+          // CC BY 4.0 battery CAD, converted to a local web GLB.
+          for (const child of laptop.batteryMount.children)
+            child.visible = false;
+
+          const batteryModel = gltf.scene;
+          batteryModel.scale.setScalar(25.5);
+          batteryModel.position.set(0, -0.1, 0);
+          batteryModel.traverse((object) => {
+            if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
+            const item = object as THREE.Mesh;
+            item.castShadow = true;
+            item.receiveShadow = true;
+            applyServiceSurface(item, 'battery');
+          });
+          laptop.batteryMount.add(batteryModel);
+        },
+      );
+
+      gltfLoader.load(
+        `${import.meta.env.BASE_URL}models/framework-laptop-13-mainboard.glb`,
+        (gltf) => {
+          if (disposed) return;
+          lastRenderSignature = '';
+
+          // Replace only the fallback PCB silhouette. The educational component
+          // population stays on top, so students keep recognizable chips,
+          // sockets and connectors while the board perimeter comes from
+          // Framework's official 2D mechanical CAD.
+          for (const child of laptop.motherboardShell.children)
+            child.visible = false;
+
+          const boardModel = gltf.scene;
+          boardModel.scale.setScalar(25.5);
+          boardModel.position.set(0, 0, 0);
+          boardModel.traverse((object) => {
+            if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
+            const item = object as THREE.Mesh;
+            item.castShadow = true;
+            item.receiveShadow = true;
+            applyServiceSurface(item, 'board');
+          });
+          laptop.motherboardShell.add(boardModel);
+        },
+        undefined,
+        () => {
+          // Keep the detailed procedural fallback if the CAD-derived candidate
+          // is unavailable or fails validation.
+        },
+      );
+
+      const replaceBoardConnector = (
+        role: string,
+        file: string,
+        color: number,
+        rotationY = 0,
+      ) => {
+        let mount: THREE.Object3D | null = null;
+        laptop.motherboardMount.traverse((object) => {
+          if (!mount && object.userData.connectorRole === role) mount = object;
+        });
+        if (!mount) return;
+
+        gltfLoader.load(
+          `${import.meta.env.BASE_URL}models/kicad/${file}.glb`,
+          (gltf) => {
+            if (disposed || !mount) return;
+
+            // Keep the procedural teaching connector as a fallback, but hide it
+            // once the pinned KiCad geometry has loaded successfully.
+            for (const child of mount.children) child.visible = false;
+
+            const model = gltf.scene;
+            model.scale.setScalar(25.5);
+            model.rotation.y = rotationY;
+            model.traverse((object) => {
+              if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh)
+                return;
+              const item = object as THREE.Mesh;
+              item.castShadow = true;
+              item.receiveShadow = true;
+              item.material = new THREE.MeshStandardMaterial({
+                color,
+                roughness: 0.36,
+                metalness: 0.28,
+              });
+            });
+            mount.add(model);
+          },
+          undefined,
+          () => {
+            // Local converted asset missing: retain the procedural fallback.
+          },
+        );
+      };
+
+      replaceBoardConnector('battery', 'battery-10pin', 0xd6d8d2);
+      replaceBoardConnector('fan', 'fan-speaker-4pin', 0xd6d8d2);
+      replaceBoardConnector('speaker', 'fan-speaker-4pin', 0xd6d8d2, Math.PI);
+      replaceBoardConnector('display', 'display-41pin', 0xdedfd9);
+      replaceBoardConnector('input-cover', 'input-51pin', 0xdedfd9);
+      replaceBoardConnector('audio', 'audio-15pin', 0xe5e2da);
+    }
+    scene.updateMatrixWorld(true);
+
+    const portPosition = (id: LaptopPortId) => {
+      const item = laptop.ports.find(
+        (candidate) => candidate.userData.laptopPort === id,
+      );
+      return item?.getWorldPosition(new THREE.Vector3()) ?? new THREE.Vector3();
+    };
+
+    const connectionCables = new Map<LaptopConnectionId, THREE.Mesh>();
+    const connectionMarkers: THREE.Mesh[] = [];
+    for (const task of CONNECTIONS) {
+      const cable = connectionCable(
+        new THREE.Vector3(...task.source),
+        portPosition(task.targetPort),
+      );
+      cable.visible = false;
+      connectionCables.set(task.id, cable);
+      scene.add(cable);
+
+      const sourceMarker = rounded(
+        0.42,
+        0.16,
+        0.62,
+        0.06,
+        0x34434a,
+        0.48,
+        0.16,
+      );
+      sourceMarker.position.set(...task.source);
+      sourceMarker.position.y -= 0.04;
+      sourceMarker.visible = false;
+      connectionMarkers.push(sourceMarker);
+      scene.add(sourceMarker);
+    }
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+
+    const pick = (event: PointerEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+
+      if (modeRef.current === 'connections') {
+        const surfaceHit = raycaster.intersectObject(laptop.outside, true)[0];
+        const portHit = surfaceHit?.object.userData.laptopPort
+          ? surfaceHit
+          : undefined;
+        if (!portHit) {
+          setConnectionFeedback(
+            'That is not a port. Rotate the laptop and click the glowing connection.',
+          );
+          return;
+        }
+
+        const portId = portHit.object.userData.laptopPort as LaptopPortId;
+        const clickedType = PORT_TYPES[portId];
+        const task = CONNECTIONS[connectionTaskRef.current];
+
+        if (clickedType !== task.portType) {
+          setConnectionFeedback(
+            'Not quite. ' +
+              task.name +
+              ' needs a ' +
+              task.portType.toUpperCase() +
+              ' port.',
+          );
+          return;
+        }
+
+        if (portId !== task.targetPort) {
+          setConnectionFeedback(
+            'That port can work for a similar device, but this lesson uses the glowing target.',
+          );
+          return;
+        }
+
+        completeConnectionTask(task);
+        return;
+      }
+
+      const realisticNow =
+        realisticRef.current &&
+        !guidedRef.current &&
+        modeRef.current === 'explore' &&
+        viewRef.current === 'outside';
+      if (realisticNow) return;
+
+      if (
+        viewRef.current === 'inside' &&
+        explodeRef.current >= LAPTOP_INPUT_COVER_SERVICE.internalsVisibleAt &&
+        modeRef.current === 'explore'
+      ) {
+        const cableObjects = laptop.disconnectCables
+          .filter((cable) => explodeRef.current < cable.at)
+          .map((cable) => cable.object);
+        const cableHit = raycaster.intersectObjects(cableObjects, false)[0];
+        const cableId = cableHit?.object.userData.laptopCable as
+          | LaptopInternalCableId
+          | undefined;
+        if (cableId) {
+          toggleInternalCable(cableId);
+          return;
+        }
+      }
+
+      const target =
+        viewRef.current === 'outside' ? laptop.outside : laptop.inside;
+      const picked = visiblePartHit(raycaster.intersectObject(target, true));
+      if (!picked) return;
+      const id = picked.id as LaptopPartId;
+      selectedRef.current = id;
+      setSelected(id);
+
+      if (modeRef.current === 'troubleshooting') {
+        const scenario =
+          LAPTOP_TROUBLESHOOTING_SCENARIOS[
+            troubleshootingScenarioRef.current
+          ] ?? LAPTOP_TROUBLESHOOTING_SCENARIOS[0];
+        const correct = id === scenario.answer;
+        troubleshootingSolvedRef.current = correct;
+        setTroubleshootingSolved(correct);
+        if (!correct) setTroubleshootingVerified(false);
+        setTroubleshootingFeedback(
+          correct
+            ? 'Correct — ' + scenario.explanation
+            : 'Not quite. ' + scenario.clue,
+        );
+        if (correct) focusTargetRef.current = id;
+      }
+    };
+
+    canvas.addEventListener('pointerup', pick);
+
+    const resize = () => {
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      if (!width || !height) return;
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    };
+    const observer = new ResizeObserver(resize);
+    observer.observe(canvas);
+    resize();
+
+    let frame = 0;
+    const draw = () => {
+      if (!inspectionThresholdsPublished) {
+        inspectionThresholdsPublished = true;
+        setInspectionEnds(removalEnds);
+      }
+      frame = requestAnimationFrame(draw);
+      if (cameraViewRef.current) {
+        const preset = cameraViewRef.current;
+        cameraViewRef.current = null;
+        controls.target.set(0, 1.15, 0.15);
+        camera.position.set(
+          ...((preset === 'left'
+            ? [-13, 3.4, 0.15]
+            : preset === 'right'
+              ? [13, 3.4, 0.15]
+              : preset === 'top'
+                ? [0, 15, 0.16]
+                : [9.2, 8.4, 11.8]) as [number, number, number]),
+        );
+        camera.lookAt(controls.target);
+        cameraManuallyMoved = preset !== 'reset';
+        lastAutoFit = '';
+      }
+      const connectionMode = modeRef.current === 'connections';
+      const insideNow = !connectionMode && viewRef.current === 'inside';
+      const realisticNow =
+        realisticRef.current &&
+        realisticLaptop.children.length > 0 &&
+        !guidedRef.current &&
+        !connectionMode &&
+        viewRef.current === 'outside';
+      realisticLaptop.visible = realisticNow;
+      laptop.outside.visible = !insideNow && !realisticNow;
+      laptop.inside.visible = insideNow;
+
+      const activeTask = CONNECTIONS[connectionTaskRef.current];
+      for (const item of laptop.ports) {
+        const material = item.material;
+        if (!(material instanceof THREE.MeshStandardMaterial)) continue;
+        const target =
+          connectionMode && item.userData.laptopPort === activeTask.targetPort;
+        const highlightColor =
+          (item.userData.highlightColor as number | undefined) ?? 0x1d5d66;
+        material.emissive.setHex(target ? highlightColor : 0x000000);
+        material.emissiveIntensity = target ? 0.92 : 0;
+        item.scale.setScalar(target ? 1.025 : 1);
+      }
+
+      for (const [id, cable] of connectionCables)
+        cable.visible = connectionMode && connectedRef.current.includes(id);
+      for (const marker of connectionMarkers) marker.visible = connectionMode;
+
+      const selectedInternalKey =
+        selectedRef.current === 'fan' ? 'cooling' : selectedRef.current;
+      for (const [key, object] of Object.entries(laptop.parts)) {
+        object.visible =
+          !insideNow ||
+          !isolateRef.current ||
+          key === selectedInternalKey ||
+          (key === 'motherboard' &&
+            (isLaptopLocalPart(selectedInternalKey) ||
+              (model === 'latitude' && selectedInternalKey === 'cpu')));
+      }
+
+      if (insideNow) {
+        const labels = explodedLabelsRef.current;
+        if (labels) {
+          for (const label of labels.querySelectorAll<HTMLElement>('[data-part]')) {
+            const key = label.dataset.part as keyof typeof laptop.parts;
+            const object = laptop.parts[key];
+            const point = new THREE.Box3().setFromObject(object).getCenter(new THREE.Vector3()).project(camera);
+            const teardown = laptop.teardownParts.find(part => part.object === object);
+            const smallScreen = canvas.clientWidth < 500;
+            const selectedKey = selectedRef.current === 'fan' ? 'cooling' : selectedRef.current;
+            const shown = !!teardown && explodeRef.current >= teardown.end && object.visible && (!smallScreen || key === selectedKey) && point.z > -1 && point.z < 1 && Math.abs(point.x) < .94 && Math.abs(point.y) < .88;
+            label.hidden = !shown;
+            label.style.left = `${(point.x + 1) * 50}%`;
+            label.style.top = `${(1 - point.y) * 50}%`;
+          }
+        }
+        const local =
+          localPartRef.current === selectedRef.current
+            ? localPartRef.current
+            : null;
+        localProgressRef.current = local
+          ? Math.max(
+              localProgressRef.current,
+              Math.min(1, (performance.now() - localStartedRef.current) / 400),
+            )
+          : 0;
+        applyLaptopTeardown(
+          laptop.teardownParts,
+          explodeRef.current,
+          local,
+          localProgressRef.current,
+          modeRef.current === 'explore' && !guidedRef.current ? inspectionRef.current : null,
+        );
+
+        // During the first half of the flip students still see the normal
+        // keyboard/trackpad side. Once the cover turns over, hide those cloned
+        // controls and reveal the underside plate so they cannot show through
+        // the real CAD openings.
+        const inputCoverFlipped =
+          explodeRef.current >= LAPTOP_INPUT_COVER_SERVICE.flippedAt;
+        laptop.serviceInputCoverAssembly.visible =
+          explodeRef.current < LAPTOP_INPUT_COVER_SERVICE.visibleUntil;
+        laptop.serviceInputCoverKeyboard.visible = !inputCoverFlipped;
+        laptop.serviceInputCoverTrackpad.visible = !inputCoverFlipped;
+        laptop.serviceInputCoverUnderside.visible = inputCoverFlipped;
+
+        // At 0% the Input Cover is still installed, so the motherboard and
+        // service parts must not render through the keyboard. Reveal them only
+        // after the cover has completed its service flip.
+        laptop.serviceInterior.visible =
+          explodeRef.current >= LAPTOP_INPUT_COVER_SERVICE.internalsVisibleAt;
+
+        for (const cable of laptop.disconnectCables) {
+          const disconnected = disconnectedInternalCablesRef.current.includes(
+            cable.id,
+          );
+          cable.object.visible = explodeRef.current < cable.at;
+          cable.object.position.copy(
+            disconnected ? cable.unplugOffset : new THREE.Vector3(),
+          );
+          const cableMaterial = cable.object.material;
+          if (cableMaterial instanceof THREE.MeshStandardMaterial) {
+            cableMaterial.emissive.setHex(disconnected ? 0x6a3414 : 0x000000);
+            cableMaterial.emissiveIntensity = disconnected ? 0.46 : 0;
+          }
+        }
+      }
+
+      if (insideNow && focusTargetRef.current) {
+        const focusKey =
+          focusTargetRef.current === 'fan' ? 'cooling' : focusTargetRef.current;
+        const focusObject = laptop.parts[focusKey as keyof typeof laptop.parts];
+        if (focusObject) {
+          laptop.inside.updateMatrixWorld(true);
+          const box = new THREE.Box3().setFromObject(focusObject);
+          const center = box.getCenter(new THREE.Vector3());
+          const size = box.getSize(new THREE.Vector3());
+          const distance = Math.max(2.8, size.length() * 2.2);
+          controls.target.copy(center);
+          camera.position
+            .copy(center)
+            .add(new THREE.Vector3(distance * 0.72, distance * 0.62, distance));
+          cameraManuallyMoved = true;
+        }
+        focusTargetRef.current = null;
+      }
+
+      if (!insideNow) lastAutoFit = '';
+      const autoFitSignature = `${explodeRef.current}:${canvas.clientWidth}:${canvas.clientHeight}:${isolateRef.current}:${selectedRef.current}:${localPartRef.current}:${localProgressRef.current.toFixed(2)}`;
+      if (insideNow && !cameraManuallyMoved && autoFitSignature !== lastAutoFit) {
+        lastAutoFit = autoFitSignature;
+        const rawService = (explodeRef.current - 72) / 28;
+        const serviceT = Math.min(1, Math.max(0, rawService));
+        const easedService = serviceT * serviceT * (3 - 2 * serviceT);
+
+        camera.position.lerpVectors(
+          new THREE.Vector3(9.2, 8.4, 11.8),
+          model === 'latitude' ? new THREE.Vector3(11.5, 14.5, 19.5) : new THREE.Vector3(7.6, 10.8, 12.6),
+          easedService,
+        );
+        controls.target.lerpVectors(
+          new THREE.Vector3(0, 1.15, 0.15),
+          model === 'latitude' ? new THREE.Vector3(0.6, 1.15, 2) : new THREE.Vector3(0, 1.15, 0.8),
+          easedService,
+        );
+        // Fit the complete service assembly while keeping manual orbit untouched.
+        laptop.inside.updateMatrixWorld(true);
+        const bounds = new THREE.Box3();
+        laptop.inside.traverseVisible(object => {
+          if (!(object instanceof THREE.Mesh)) return;
+          if (!object.geometry.boundingBox) object.geometry.computeBoundingBox();
+          if (object.geometry.boundingBox)
+            bounds.union(object.geometry.boundingBox.clone().applyMatrix4(object.matrixWorld));
+        });
+        const sphere = bounds.getBoundingSphere(new THREE.Sphere());
+        const verticalHalfFov = THREE.MathUtils.degToRad(camera.fov / 2);
+        const horizontalHalfFov = Math.atan(Math.tan(verticalHalfFov) * camera.aspect);
+        const fitDistance = sphere.radius / Math.sin(Math.min(verticalHalfFov, horizontalHalfFov)) * 1.12;
+        controls.maxDistance = Math.max(22, fitDistance * 1.5);
+        const direction = camera.position.clone().sub(controls.target).normalize();
+        controls.target.copy(sphere.center);
+        camera.position.copy(sphere.center).addScaledVector(direction, fitDistance);
+      }
+
+      const activeRoot = insideNow ? laptop.inside : laptop.outside;
+      activeRoot.traverse((object) => {
+        if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
+        const item = object as THREE.Mesh;
+        const materials = Array.isArray(item.material)
+          ? item.material
+          : [item.material];
+        let owner: THREE.Object3D | null = object;
+        while (owner && !owner.userData.laptopPart) owner = owner.parent;
+        const selectedNow =
+          !connectionMode && owner?.userData.laptopPart === selectedRef.current;
+        for (const material of materials) {
+          if (!(material instanceof THREE.MeshStandardMaterial)) continue;
+          material.emissive.setHex(selectedNow ? 0x0b2428 : 0x000000);
+          material.emissiveIntensity = selectedNow
+            ? guidedRef.current
+              ? 0.18
+              : 0.1
+            : 0;
+        }
+      });
+
+      controls.update();
+      const signature = [
+        viewRef.current,
+        modeRef.current,
+        realisticRef.current,
+        selectedRef.current,
+        guidedRef.current,
+        isolateRef.current,
+        explodeRef.current,
+        localPartRef.current,
+        localProgressRef.current,
+        inspectionRef.current?.id,
+        inspectionRef.current?.angles.join(','),
+        connectionTaskRef.current,
+        connectedRef.current.join(','),
+        disconnectedInternalCablesRef.current.join(','),
+        ...camera.position.toArray(),
+        ...camera.quaternion.toArray(),
+        camera.aspect,
+        canvas.width,
+        canvas.height,
+      ].join('|');
+      if (signature !== lastRenderSignature) {
+        renderer.render(scene, camera);
+        lastRenderSignature = signature;
+      }
+    };
+    frame = requestAnimationFrame(draw);
+
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      canvas.removeEventListener('pointerup', pick);
+      controls.removeEventListener('start', markCameraManual);
+      controls.dispose();
+      environmentTarget.dispose();
+      renderer.dispose();
+      scene.traverse((object) => {
+        if (!('isMesh' in object) || !(object as THREE.Mesh).isMesh) return;
+        const item = object as THREE.Mesh;
+        item.geometry.dispose();
+        const materials = Array.isArray(item.material)
+          ? item.material
+          : [item.material];
+        for (const material of materials) {
+          if ('map' in material && material.map instanceof THREE.Texture)
+            material.map.dispose();
+          material.dispose();
+        }
+      });
+    };
+  }, [model, CONNECTIONS, lightGraphics, completeConnectionTask, toggleInternalCable]);
+
+  const changeView = (next: LaptopView) => {
+    setGuided(false);
+    stopTeardown();
+    modeRef.current = 'explore';
+    setMode('explore');
+    viewRef.current = next;
+    setView(next);
+    setExplode(next === 'inside' ? 18 : 0);
+    if (next === 'outside') {
+      disconnectedInternalCablesRef.current = [];
+      setDisconnectedInternalCables([]);
+      setInternalCableFeedback(
+        'Click a visible internal cable, or use the cable buttons, to unplug it before removing its part.',
+      );
+    }
+    const first = PARTS.find((part) => part.view === next)!;
+    selectedRef.current = first.id;
+    setSelected(first.id);
+  };
+
+  const applyLessonStep = (index: number) => {
+    const step = LESSON_STEPS[index];
+    if (!step) return;
+
+    stopTeardown();
+    modeRef.current = 'explore';
+    setMode('explore');
+    viewRef.current = step.view;
+    setView(step.view);
+    realisticRef.current = false;
+    setRealisticExterior(false);
+    setExplode(step.explode);
+    selectedRef.current = step.part;
+    setSelected(step.part);
+    setLessonIndex(index);
+
+    if (step.requiredCable) {
+      const done = disconnectedInternalCablesRef.current.includes(
+        step.requiredCable,
+      );
+      setInternalCableFeedback(
+        done
+          ? step.requiredCable[0].toUpperCase() +
+              step.requiredCable.slice(1) +
+              ' cable is unplugged. Continue when ready.'
+          : step.action,
+      );
+    }
+  };
+
+  const startGuide = () => {
+    disconnectedInternalCablesRef.current = [];
+    setDisconnectedInternalCables([]);
+    setGuided(true);
+    guidedRef.current = true;
+    applyLessonStep(0);
+  };
+
+  const moveGuide = (direction: -1 | 1) => {
+    if (direction === 1 && !lessonStepComplete) return;
+    const next = Math.min(
+      LESSON_STEPS.length - 1,
+      Math.max(0, lessonIndex + direction),
+    );
+    applyLessonStep(next);
+  };
+
+  const startTroubleshooting = () => {
+    stopTeardown();
+    setGuided(false);
+    guidedRef.current = false;
+    setIsolated(false);
+    isolateRef.current = false;
+    troubleshootingScenarioRef.current = 0;
+    troubleshootingSolvedRef.current = false;
+    setTroubleshootingScenario(0);
+    setTroubleshootingSolved(false);
+    setTroubleshootingVerified(false);
+    setTroubleshootingFeedback(
+      'Read the symptom and click or choose the component you would inspect first.',
+    );
+    modeRef.current = 'troubleshooting';
+    setMode('troubleshooting');
+    viewRef.current = 'inside';
+    setView('inside');
+    setExplode(LAPTOP_TROUBLESHOOTING_SCENARIOS[0].explode);
+    selectedRef.current = 'motherboard';
+    setSelected('motherboard');
+  };
+
+  const moveTroubleshooting = (direction: -1 | 1) => {
+    if (direction === 1 && (!troubleshootingSolved || !troubleshootingVerified)) return;
+    const next = Math.min(
+      LAPTOP_TROUBLESHOOTING_SCENARIOS.length - 1,
+      Math.max(0, troubleshootingScenario + direction),
+    );
+    const scenario = LAPTOP_TROUBLESHOOTING_SCENARIOS[next];
+    troubleshootingScenarioRef.current = next;
+    troubleshootingSolvedRef.current = false;
+    setTroubleshootingScenario(next);
+    setTroubleshootingSolved(false);
+    setTroubleshootingVerified(false);
+    setTroubleshootingFeedback(
+      'Read the symptom and click or choose the component you would inspect first.',
+    );
+    setExplode(scenario.explode);
+    selectedRef.current = 'motherboard';
+    setSelected('motherboard');
+    setIsolated(false);
+    isolateRef.current = false;
+  };
+
+  const applyAssessmentQuestion = (index: number) => {
+    const question = LAPTOP_ASSESSMENT_QUESTIONS[index];
+    if (!question) return;
+    assessmentIndexRef.current = index;
+    setAssessmentIndex(index);
+    setExplode(question.explode);
+    viewRef.current = 'inside';
+    setView('inside');
+    selectedRef.current = question.part;
+    setSelected(question.part);
+    focusTargetRef.current = question.part;
+    setIsolated(false);
+    isolateRef.current = false;
+  };
+
+  const startAssessment = () => {
+    stopTeardown();
+    setGuided(false);
+    guidedRef.current = false;
+    setAssessmentAnswers({});
+    setAssessmentComplete(false);
+    modeRef.current = 'assessment';
+    setMode('assessment');
+    applyAssessmentQuestion(0);
+  };
+
+  const answerAssessment = (optionId: string) => {
+    if (assessmentComplete || currentAssessmentAnswer) return;
+    setAssessmentAnswers((answers) => ({
+      ...answers,
+      [currentAssessment.id]: optionId,
+    }));
+  };
+
+  const nextAssessment = () => {
+    if (!currentAssessmentAnswer) return;
+    if (assessmentIndex >= LAPTOP_ASSESSMENT_QUESTIONS.length - 1) {
+      setAssessmentSaveFailed(!saveCourse({ laptopScore: assessmentPercent }));
+      setAssessmentComplete(true);
+      return;
+    }
+    applyAssessmentQuestion(assessmentIndex + 1);
+  };
+
+  const startConnections = () => {
+    stopTeardown();
+    setExplode(0);
+    setGuided(false);
+    modeRef.current = 'connections';
+    setMode('connections');
+    viewRef.current = 'outside';
+    setView('outside');
+    setConnectionFeedback(
+      allConnectionsComplete
+        ? 'All four connections are complete. Reset them to practise again.'
+        : currentConnection.instruction,
+    );
+  };
+
+  const resetConnections = () => {
+    connectedRef.current = [];
+    connectionTaskRef.current = 0;
+    setConnected([]);
+    setConnectionTask(0);
+    setConnectionFeedback(CONNECTIONS[0].instruction);
+  };
+
+  return (
+    <main className="laptop-lab">
+      <header className="laptop-topbar">
+        <button type="button" className="laptop-back" onClick={onBack}>
+          <ArrowLeft size={16} />
+          Desktop setup
+        </button>
+        <div className="laptop-brand">
+          <AcademyLogo />
+          <span>
+            <strong>Big Change Laptop Lab</strong>
+            <small>
+              {model === 'latitude'
+                ? 'DELL LATITUDE 5410 · UNDERSIDE SERVICE'
+                : 'FRAMEWORK LAPTOP 13 · LEGACY MODEL'}
+            </small>
+          </span>
+        </div>
+        <div className="laptop-header-actions">
+          <select
+            aria-label="Laptop model"
+            value={model}
+            onChange={(e) =>
+              onModelChange(e.target.value as 'latitude' | 'framework')
+            }
+          >
+            <option value="latitude">Dell Latitude 5410</option>
+            <option value="framework">Framework Laptop 13</option>
+          </select>
+          <button
+            type="button"
+            className="laptop-guide-button"
+            aria-label="Task Manager"
+            onClick={onOpenTaskManager}
+          >
+            <Activity size={16} /> Task Manager
+          </button>
+          <button
+            type="button"
+            className={
+              'laptop-guide-button' +
+              (realisticExterior && realisticLoaded ? ' active' : '')
+            }
+            onClick={() => {
+              setGuided(false);
+              guidedRef.current = false;
+              modeRef.current = 'explore';
+              setMode('explore');
+              viewRef.current = 'outside';
+              setView('outside');
+              setRealisticExterior((value) => !value);
+            }}
+            title={
+              model === 'latitude'
+                ? 'Inspect the closed Latitude reference model'
+                : 'Toggle the CAD exterior preview'
+            }
+          >
+            <Scan size={15} />
+            {realisticExterior && realisticLoaded
+              ? model === 'latitude'
+                ? 'Closed exterior'
+                : 'CAD reference'
+              : model === 'latitude'
+                ? 'Open exterior'
+                : 'Realistic open'}
+          </button>
+          <button
+            type="button"
+            className={
+              'laptop-guide-button' + (mode === 'connections' ? ' active' : '')
+            }
+            onClick={startConnections}
+          >
+            <Cable size={15} />
+            Connections
+          </button>
+          <button
+            type="button"
+            className={
+              'laptop-guide-button' + (mode === 'assessment' ? ' active' : '')
+            }
+            onClick={startAssessment}
+          >
+            <ClipboardCheck size={15} />
+            Knowledge check
+          </button>
+          <button type="button" className="laptop-guide-button" aria-pressed={lightGraphics} onClick={() => { stopTeardown(); resetLocalPart(); setLightGraphics(!lightGraphics); }}>{lightGraphics ? 'Full graphics' : 'Light graphics'}</button>
+          <button
+            type="button"
+            className={
+              'laptop-guide-button' +
+              (mode === 'troubleshooting' ? ' active' : '')
+            }
+            onClick={startTroubleshooting}
+          >
+            <Wrench size={15} />
+            Troubleshoot
+          </button>
+          <button
+            type="button"
+            className={'laptop-guide-button' + (guided ? ' active' : '')}
+            onClick={startGuide}
+          >
+            <BookOpen size={15} />
+            Guided lesson
+          </button>
+          <div className="laptop-view-switch">
+            <button
+              type="button"
+              className={view === 'outside' ? 'active' : ''}
+              onClick={() => changeView('outside')}
+            >
+              <PanelTopOpen size={15} />
+              Outside
+            </button>
+            <button
+              type="button"
+              className={view === 'inside' ? 'active' : ''}
+              onClick={() => changeView('inside')}
+            >
+              <CircuitBoard size={15} />
+              Inside
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <aside className="laptop-parts">
+        <p className="laptop-eyebrow">
+          {mode === 'connections'
+            ? `03 / CONNECTIONS · ${Math.min(
+                connected.length + 1,
+                CONNECTIONS.length,
+              )} / ${CONNECTIONS.length}`
+            : mode === 'assessment'
+              ? assessmentComplete
+                ? 'KNOWLEDGE CHECK · COMPLETE'
+                : `KNOWLEDGE CHECK · ${assessmentIndex + 1} / ${LAPTOP_ASSESSMENT_QUESTIONS.length}`
+              : mode === 'troubleshooting'
+                ? `TROUBLESHOOT · ${troubleshootingScenario + 1} / ${LAPTOP_TROUBLESHOOTING_SCENARIOS.length}`
+                : guided
+                  ? `GUIDED LESSON · ${lessonIndex + 1} / ${LESSON_STEPS.length}`
+                  : view === 'outside'
+                    ? '01 / LAPTOP EXTERIOR'
+                    : '02 / LAPTOP INTERNALS'}
+        </p>
+        <h1>
+          {mode === 'connections'
+            ? allConnectionsComplete
+              ? 'Laptop connected.'
+              : currentConnection.name
+            : mode === 'assessment'
+              ? assessmentComplete
+                ? 'Knowledge check complete.'
+                : currentAssessment.title
+              : mode === 'troubleshooting'
+                ? currentTroubleshooting.title
+                : guided
+                  ? lessonStep.title
+                  : view === 'outside'
+                    ? realisticExterior && realisticLoaded
+                      ? model === 'latitude'
+                        ? 'Inspect the closed Latitude.'
+                        : 'Check the closed CAD reference.'
+                      : model === 'latitude'
+                        ? 'Explore the Latitude 5410.'
+                        : 'Explore the realistic open laptop.'
+                    : model === 'latitude'
+                      ? 'Inspect the underside service layout.'
+                      : 'Now look under the keyboard.'}
+        </h1>
+        <p className="laptop-intro">
+          {mode === 'connections'
+            ? allConnectionsComplete
+              ? 'You connected power, USB, an external display and headphones.'
+              : currentConnection.instruction
+            : mode === 'assessment'
+              ? assessmentComplete
+                ? `You answered ${assessmentScore} of ${LAPTOP_ASSESSMENT_QUESTIONS.length} correctly (${assessmentPercent}%).`
+                : currentAssessment.prompt
+              : mode === 'troubleshooting'
+                ? currentTroubleshooting.symptom
+                : guided
+                  ? lessonStep.action
+                  : view === 'outside'
+                    ? realisticExterior && realisticLoaded
+                      ? model === 'latitude'
+                        ? 'Closed Latitude 5410 reference model. Switch to the open model to inspect ports and controls.'
+                        : 'This closed CAD reference preserves Framework Laptop 13 exterior proportions.'
+                      : model === 'latitude'
+                        ? 'Latitude 5410 reference geometry: 14-inch 16:9 display, fixed side ports and a conventional keyboard deck. Interior dimensions are estimated from Dell service illustrations.'
+                        : 'Framework reference geometry with aluminum materials, recessed keys and display glass.'
+                    : model === 'latitude'
+                      ? 'Underside access · 68 Wh configuration · two SODIMM sockets. Component shapes and spacing are estimated from service references.'
+                      : 'Laptop parts are smaller and packed closer together than desktop components.'}
+        </p>
+        {(guided || mode === 'assessment') && (
+          <div
+            className="laptop-progress"
+            aria-label={
+              guided ? 'Laptop lesson progress' : 'Knowledge check progress'
+            }
+          >
+            <span
+              style={{
+                width: guided
+                  ? ((lessonIndex + 1) / LESSON_STEPS.length) * 100 + '%'
+                  : assessmentComplete
+                    ? '100%'
+                    : ((assessmentIndex + 1) /
+                        LAPTOP_ASSESSMENT_QUESTIONS.length) *
+                        100 +
+                      '%',
+              }}
+            />
+          </div>
+        )}
+        {mode === 'connections' ? (
+          <div className="laptop-connection-list">
+            {CONNECTIONS.map((task, index) => {
+              const done = connected.includes(task.id);
+              return (
+                <button
+                  type="button"
+                  key={task.id}
+                  className={
+                    (index === connectionTask && !done ? 'active ' : '') +
+                    (done ? 'done' : '')
+                  }
+                  onClick={() => {
+                    connectionTaskRef.current = index;
+                    setConnectionTask(index);
+                    setConnectionFeedback(
+                      done
+                        ? task.name + ' is already connected.'
+                        : task.instruction,
+                    );
+                  }}
+                >
+                  {done ? <span>✓</span> : <span>{index + 1}</span>}
+                  <strong>{task.name}</strong>
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              className="laptop-reset-connections"
+              onClick={resetConnections}
+            >
+              Reset connections
+            </button>
+          </div>
+        ) : mode === 'assessment' ? (
+          assessmentComplete ? (
+            <div className="laptop-assessment-summary">
+              {assessmentSaveFailed && <p role="alert">This browser could not save the score. Record it before leaving.</p>}
+              <Trophy size={24} />
+              <strong>
+                {assessmentScore} / {LAPTOP_ASSESSMENT_QUESTIONS.length}
+              </strong>
+              <span>{assessmentPercent}% correct</span>
+              <small>
+                {assessmentReview.length
+                  ? 'Review: ' +
+                    assessmentReview
+                      .map((question) => question.review)
+                      .join(' · ')
+                  : 'All topics answered correctly.'}
+              </small>
+            </div>
+          ) : (
+            <div className="laptop-assessment-options">
+              {currentAssessment.options.map((option) => {
+                const chosen = currentAssessmentAnswer === option.id;
+                const correct = option.id === currentAssessment.answer;
+                return (
+                  <button
+                    type="button"
+                    key={option.id}
+                    disabled={Boolean(currentAssessmentAnswer)}
+                    className={
+                      currentAssessmentAnswer
+                        ? correct
+                          ? 'correct'
+                          : chosen
+                            ? 'incorrect'
+                            : ''
+                        : ''
+                    }
+                    onClick={() => answerAssessment(option.id)}
+                  >
+                    <span>
+                      {currentAssessmentAnswer && correct
+                        ? '✓'
+                        : currentAssessmentAnswer && chosen
+                          ? '×'
+                          : '○'}
+                    </span>
+                    <strong>{option.label}</strong>
+                  </button>
+                );
+              })}
+            </div>
+          )
+        ) : mode === 'troubleshooting' ? (
+          <div className="laptop-troubleshoot-options">
+            <p>{currentTroubleshooting.clue}</p>
+            {currentTroubleshooting.options.map((id) => {
+              const part = PARTS.find((candidate) => candidate.id === id)!;
+              const Icon = part.icon;
+              return (
+                <button
+                  type="button"
+                  key={id}
+                  className={
+                    troubleshootingSolved &&
+                    id === currentTroubleshooting.answer
+                      ? 'correct'
+                      : selected === id
+                        ? 'selected'
+                        : ''
+                  }
+                  onClick={() => {
+                    selectedRef.current = id;
+                    setSelected(id);
+                    const correct = id === currentTroubleshooting.answer;
+                    troubleshootingSolvedRef.current = correct;
+                    setTroubleshootingSolved(correct);
+        if (!correct) setTroubleshootingVerified(false);
+                    setTroubleshootingFeedback(
+                      correct
+                        ? 'Correct — ' + currentTroubleshooting.explanation
+                        : 'Not quite. ' + currentTroubleshooting.clue,
+                    );
+                    if (correct) focusTargetRef.current = id;
+                  }}
+                >
+                  <Icon size={16} />
+                  <span>{part.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        ) : guided ? (
+          <div className="laptop-lesson-list" aria-label="Guided lesson steps">
+            {LESSON_STEPS.map((step, index) => (
+              <div
+                key={step.id}
+                className={
+                  index === lessonIndex
+                    ? 'current'
+                    : index < lessonIndex
+                      ? 'done'
+                      : ''
+                }
+              >
+                <span>{index < lessonIndex ? '✓' : index + 1}</span>
+                <strong>{step.title}</strong>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="laptop-part-list">
+            {visibleParts.map((part) => {
+              const Icon = part.icon;
+              return (
+                <button
+                  type="button"
+                  key={part.id}
+                  className={selected === part.id ? 'active' : ''}
+                  onClick={() => {
+                    setGuided(false);
+                    selectedRef.current = part.id;
+                    setSelected(part.id);
+                    if (part.id === 'cpu' && explodeRef.current < 72) {
+                      setExplode(72);
+                      focusTargetRef.current = 'cpu';
+                    }
+                  }}
+                >
+                  <Icon size={17} />
+                  <span>{part.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+        <div className="laptop-next">
+          <strong>
+            {mode === 'connections'
+              ? 'Connection tip'
+              : mode === 'assessment'
+                ? assessmentComplete
+                  ? 'Completion summary'
+                  : 'Assessment tip'
+                : mode === 'troubleshooting'
+                  ? 'Diagnostic clue'
+                  : guided
+                    ? 'What to notice'
+                    : 'Learning goal'}
+          </strong>
+          <span>
+            {mode === 'connections'
+              ? 'Rotate the laptop and look for the glowing port on either side.'
+              : mode === 'assessment'
+                ? assessmentComplete
+                  ? assessmentReview.length
+                    ? 'Review the topics listed above, then try the knowledge check again.'
+                    : 'You answered every knowledge-check question correctly.'
+                  : 'Use the 3D model as a reference before choosing an answer.'
+                : mode === 'troubleshooting'
+                  ? currentTroubleshooting.clue
+                  : guided
+                    ? lessonStep.notice
+                    : view === 'outside'
+                      ? 'Identify the display, keyboard, trackpad and the ports around the chassis.'
+                      : 'Trace how power, storage, memory, cooling and cables fit inside one laptop.'}
+          </span>
+        </div>
+      </aside>
+
+      <section className="laptop-stage">
+        <div className="laptop-camera-views" aria-label="Camera views">
+          {(['left', 'right', 'top', 'reset'] as const).map((preset) => (
+            <button
+              type="button"
+              key={preset}
+              onClick={() => {
+                cameraViewRef.current = preset;
+              }}
+            >
+              {preset === 'left'
+                ? 'Left side'
+                : preset === 'right'
+                  ? 'Right side'
+                  : preset === 'top'
+                    ? 'Top view'
+                    : 'Reset view'}
+            </button>
+          ))}
+        </div>
+        <canvas
+          ref={canvasRef}
+          aria-label="Interactive 3D laptop. Drag to orbit and click a component."
+        />
+        {view === 'inside' && mode === 'explore' && !guided && (
+          <div className="laptop-exploded-labels" ref={explodedLabelsRef} aria-hidden="true">
+            {Object.entries({ battery: 'Battery', motherboard: 'System board', ram: 'RAM', ssd: 'SSD', wifi: 'Wi-Fi', cooling: 'Cooling', speakers: 'Speakers' }).map(([key, label]) => <span key={key} data-part={key} hidden>{label}</span>)}
+          </div>
+        )}
+        <div
+          className={
+            'laptop-stage-tip' +
+            (view === 'inside' && mode === 'explore' && !guided
+              ? ' teardown-open'
+              : '') +
+            (guided ? ' guided' : '')
+          }
+        >
+          <Rotate3D size={15} />
+          {mode === 'connections'
+            ? 'Drag to orbit · find the glowing port · click or use the Connect button'
+            : mode === 'assessment'
+              ? assessmentComplete
+                ? 'Assessment complete · review your result or try again'
+                : 'Orbit the hardware · use the model as evidence · choose an answer'
+              : mode === 'troubleshooting'
+                ? 'Read the symptom · inspect the hardware · click your first suspect'
+                : guided
+                  ? lessonStep.action
+                  : view === 'inside'
+                    ? 'Drag to orbit · click cables or use cable buttons · use teardown slider'
+                    : 'Drag to orbit · scroll to zoom · click a part'}
+        </div>
+
+        {view === 'inside' && mode === 'explore' && !guided && (
+          <div className="laptop-disassembly" aria-label="Laptop teardown">
+            <div className="laptop-disassembly-head">
+              <button
+                type="button"
+                className={teardownPlaying ? 'playing' : ''}
+                onClick={toggleTeardown}
+                aria-label={
+                  teardownPlaying
+                    ? 'Pause laptop teardown'
+                    : 'Play laptop teardown'
+                }
+              >
+                {teardownPlaying ? <Pause size={16} /> : <Play size={16} />}
+                <span>{teardownPlaying ? 'Pause' : 'Auto'}</span>
+              </button>
+              <div>
+                <strong>Laptop anatomy</strong>
+                <span>{teardownStage}</span>
+              </div>
+              <output>{Math.round(explode)}%</output>
+              <button
+                type="button"
+                className="reset"
+                onClick={() => {
+                  stopTeardown();
+                  setExplode(0);
+                  disconnectedInternalCablesRef.current = [];
+                  setDisconnectedInternalCables([]);
+                  setInternalCableFeedback(
+                    'Laptop reassembled. Internal cables are connected again.',
+                  );
+                }}
+                aria-label="Reassemble laptop"
+              >
+                <RotateCcw size={16} />
+              </button>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value={explode}
+              onChange={(event) => setExplode(Number(event.target.value))}
+              aria-label="Laptop teardown progress"
+              aria-valuetext={teardownStage}
+            />
+            <div className="laptop-disassembly-phases" aria-hidden="true">
+              <span>Assembled</span>
+              <span>Service parts</span>
+              <span>Cooling</span>
+              <span>Board out</span>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <aside className="laptop-detail" aria-live="polite">
+        {mode === 'connections' ? (
+          <>
+            <p className="laptop-eyebrow">CONNECTION PRACTICE</p>
+            <h2>
+              {allConnectionsComplete
+                ? 'All connected!'
+                : currentConnection.name}
+            </h2>
+            <p>
+              {allConnectionsComplete
+                ? 'The laptop now has power, USB, display and audio connections.'
+                : currentConnection.instruction}
+            </p>
+            <div className="laptop-why">
+              <strong>Feedback</strong>
+              <p>{connectionFeedback}</p>
+            </div>
+            <div className="laptop-port-key">
+              <span>
+                <i className="power" /> Power
+              </span>
+              <span>
+                <i className="usb" /> USB
+              </span>
+              <span>
+                <i className="hdmi" /> HDMI
+              </span>
+              <span>
+                <i className="audio" /> Audio
+              </span>
+            </div>
+            {!allConnectionsComplete && (
+              <button
+                type="button"
+                className="laptop-primary"
+                onClick={() => completeConnectionTask(currentConnection)}
+                aria-label={`Connect ${currentConnection.name} using the keyboard-accessible alternative`}
+              >
+                Connect highlighted port
+                <span>↵</span>
+              </button>
+            )}
+            {allConnectionsComplete && (
+              <button
+                type="button"
+                className="laptop-primary"
+                onClick={resetConnections}
+              >
+                Practise again
+                <span>↻</span>
+              </button>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="laptop-eyebrow">
+              {mode === 'assessment'
+                ? assessmentComplete
+                  ? 'KNOWLEDGE CHECK COMPLETE'
+                  : `QUESTION ${assessmentIndex + 1} / ${LAPTOP_ASSESSMENT_QUESTIONS.length}`
+                : mode === 'troubleshooting'
+                  ? `TROUBLESHOOT ${troubleshootingScenario + 1} / ${LAPTOP_TROUBLESHOOTING_SCENARIOS.length}`
+                  : guided
+                    ? `LESSON STEP ${lessonIndex + 1} / ${LESSON_STEPS.length}`
+                    : 'SELECTED COMPONENT'}
+            </p>
+            <h2>{selectedPart.name}</h2>
+            <p>{selectedPart.description}</p>
+            <div className="laptop-why">
+              <strong>Why it matters</strong>
+              <p>{selectedPart.why}</p>
+            </div>
+            {mode === 'explore' && view === 'inside' && !guided && (
+              <section
+                className="laptop-cable-controls"
+                aria-label="Keyboard-accessible internal cable controls"
+              >
+                <strong>Internal cables</strong>
+                <p>{internalCableFeedback}</p>
+                <div>
+                  {INTERNAL_CABLES.map((item) => {
+                    const unplugged = disconnectedInternalCables.includes(item.id);
+                    const available = explode >= item.availableAt;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        disabled={!available}
+                        aria-pressed={unplugged}
+                        onClick={() => toggleInternalCable(item.id)}
+                      >
+                        {unplugged ? 'Reconnect ' : 'Unplug '}
+                        {item.label}
+                        {!available ? ` · available at ${item.availableAt}%` : ''}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+            {mode === 'assessment' && (
+              <div
+                className={
+                  'laptop-assessment-card' +
+                  (assessmentComplete
+                    ? ' complete'
+                    : currentAssessmentAnswer
+                      ? currentAssessmentCorrect
+                        ? ' correct'
+                        : ' incorrect'
+                      : '')
+                }
+              >
+                {assessmentComplete ? (
+                  <>
+                    <span>RESULT</span>
+                    <strong>
+                      {assessmentScore} / {LAPTOP_ASSESSMENT_QUESTIONS.length} ·{' '}
+                      {assessmentPercent}%
+                    </strong>
+                    <p>
+                      {assessmentReview.length
+                        ? 'Topics to review: ' +
+                          assessmentReview
+                            .map((question) => question.review)
+                            .join(' · ')
+                        : 'No review topics — every answer was correct.'}
+                    </p>
+                    <div>
+                      <button type="button" onClick={startAssessment}>
+                        Try again ↻
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          modeRef.current = 'explore';
+                          setMode('explore');
+                          setAssessmentComplete(false);
+                        }}
+                      >
+                        Back to explore
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <span>
+                      {!currentAssessmentAnswer
+                        ? 'CHOOSE ONE'
+                        : currentAssessmentCorrect
+                          ? 'CORRECT'
+                          : 'REVIEW THIS'}
+                    </span>
+                    <strong>{currentAssessment.prompt}</strong>
+                    {currentAssessmentAnswer && (
+                      <p>{currentAssessment.explanation}</p>
+                    )}
+                    <button
+                      type="button"
+                      disabled={!currentAssessmentAnswer}
+                      onClick={nextAssessment}
+                    >
+                      {assessmentIndex < LAPTOP_ASSESSMENT_QUESTIONS.length - 1
+                        ? currentAssessmentAnswer
+                          ? 'Next question →'
+                          : 'Choose an answer'
+                        : currentAssessmentAnswer
+                          ? 'See results →'
+                          : 'Choose an answer'}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+            {mode === 'troubleshooting' && (
+              <div
+                className={
+                  'laptop-troubleshoot-card' +
+                  (troubleshootingSolved ? ' solved' : '')
+                }
+              >
+                <span>{troubleshootingSolved ? 'FOUND IT' : 'SYMPTOM'}</span>
+                <strong>{currentTroubleshooting.symptom}</strong>
+                <p>{troubleshootingFeedback}</p>
+                {troubleshootingSolved && <FaultPractice key={currentTroubleshooting.id} scenario={{ ...currentTroubleshooting, ...LAPTOP_FAULT_FOLLOWUPS[currentTroubleshooting.id] }} onVerified={() => setTroubleshootingVerified(true)} />}
+                <div>
+                  <button
+                    type="button"
+                    disabled={troubleshootingScenario === 0}
+                    onClick={() => moveTroubleshooting(-1)}
+                  >
+                    ← Previous
+                  </button>
+                  {troubleshootingScenario <
+                  LAPTOP_TROUBLESHOOTING_SCENARIOS.length - 1 ? (
+                    <button
+                      type="button"
+                      disabled={!troubleshootingSolved || !troubleshootingVerified}
+                      onClick={() => moveTroubleshooting(1)}
+                    >
+                      {troubleshootingVerified
+                        ? 'Next case →'
+                        : troubleshootingSolved ? 'Verify the fix first' : 'Find the component'}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={!troubleshootingSolved || !troubleshootingVerified}
+                      onClick={startTroubleshooting}
+                    >
+                      Practise again ↻
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            {!guided && view === 'inside' && (
+              <div className="laptop-focus-actions">
+                <button
+                  type="button"
+                  onClick={() => {
+                    focusTargetRef.current = selected;
+                  }}
+                  disabled={
+                    ![
+                      'battery',
+                      'motherboard',
+                      'cpu',
+                      'ram',
+                      'ssd',
+                      'fan',
+                      'wifi',
+                      'speakers',
+                    ].includes(selected)
+                  }
+                >
+                  <Crosshair size={14} />
+                  Focus
+                </button>
+                <button
+                  type="button"
+                  className={isolated ? 'active' : ''}
+                  onClick={() => {
+                    const next = !isolated;
+                    isolateRef.current = next;
+                    setIsolated(next);
+                  }}
+                  disabled={
+                    ![
+                      'battery',
+                      'motherboard',
+                      'cpu',
+                      'ram',
+                      'ssd',
+                      'fan',
+                      'wifi',
+                      'speakers',
+                    ].includes(selected)
+                  }
+                >
+                  {isolated ? <Eye size={14} /> : <EyeOff size={14} />}
+                  {isolated ? 'Show all' : 'Isolate'}
+                </button>
+                {isLaptopLocalPart(selected) && mode === 'explore' && (
+                  <>
+                    <button
+                      type="button"
+                      disabled={explode < 18 || localPart === selected}
+                      onClick={() => {
+                        stopTeardown();
+                        localPartRef.current = selected;
+                        localStartedRef.current = performance.now();
+                        localProgressRef.current = window.matchMedia(
+                          '(prefers-reduced-motion: reduce)',
+                        ).matches
+                          ? 1
+                          : 0;
+                        setLocalSelection({
+                          id: selected,
+                          context: localContext,
+                        });
+                      }}
+                    >
+                      <PanelTopOpen size={14} /> Explode part
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!localPart}
+                      onClick={resetLocalPart}
+                    >
+                      <RotateCcw size={14} /> Reset part
+                    </button>
+                    <output className="laptop-local-help">
+                      {explode < 18
+                        ? 'Open the service view to inspect this module.'
+                        : localPart
+                          ? 'Module lifted. Its socket and retainers stay on the motherboard. Reset returns it to the current teardown position.'
+                          : 'Lift only this module to see how it connects. The whole-laptop slider stays where it is.'}
+                      {selected === 'wifi' &&
+                        ' Antenna leads stay routed in the chassis.'}
+                    </output>
+                  </>
+                )}
+              </div>
+            )}
+            {!guided && view === 'inside' && mode === 'explore' && inspectionEnds[selected] !== undefined && (
+              <section className="laptop-part-rotation" aria-label="Rotate detached component">
+                <h3>Rotate this part</h3>
+                <p>{explode >= inspectionEnds[selected] || localPart === selected ? 'Turn the part to inspect its edges and underside. Drag the background to orbit the camera.' : 'Explode this part first, or move the teardown slider until it is removed.'}</p>
+                {(['Tilt', 'Turn', 'Roll'] as const).map((label, axis) => <label key={label}>{label}<output>{inspectionAngles[axis]}°</output><input aria-label={`${label} selected part`} type="range" min={-180} max={180} step={15} value={inspectionAngles[axis]} disabled={!(explode >= inspectionEnds[selected] || localPart === selected)} onChange={event => {
+                  stopTeardown();
+                  const angles = [...inspectionAngles] as [number, number, number];
+                  angles[axis] = Number(event.target.value);
+                  setInspectionState({ angles, context: localContext });
+                  inspectionRef.current = { id: selected, angles: angles.map(angle => angle * Math.PI / 180) as [number, number, number] };
+                }} /></label>)}
+                <button type="button" onClick={() => { inspectionRef.current = null; setInspectionState(null); }} disabled={inspectionAngles.every(angle => angle === 0)}>Reset rotation</button>
+              </section>
+            )}
+            {guided && (
+              <div
+                className={
+                  'laptop-lesson-task' +
+                  (lessonStep.requiredCable
+                    ? lessonStepComplete
+                      ? ' complete'
+                      : ' action'
+                    : '')
+                }
+              >
+                <span>
+                  {lessonStep.requiredCable
+                    ? lessonStepComplete
+                      ? 'ACTION COMPLETE'
+                      : 'DO THIS NOW'
+                    : 'LOOK & NOTICE'}
+                </span>
+                <strong>{lessonStep.action}</strong>
+                {lessonStep.requiredCable && !lessonStepComplete && (
+                  <button type="button" onClick={() => {
+                    const id = lessonStep.requiredCable;
+                    if (!id) return;
+                    const next = [...new Set([...disconnectedInternalCablesRef.current, id])];
+                    disconnectedInternalCablesRef.current = next;
+                    setDisconnectedInternalCables(next);
+                    setInternalCableFeedback(`${id} cable unplugged.`);
+                  }}>Unplug {lessonStep.requiredCable} cable</button>
+                )}
+                {lessonStep.requiredCable && (
+                  <small>
+                    {lessonStepComplete
+                      ? 'Cable unplugged — you can continue.'
+                      : 'Unplug the highlighted cable, or use the button below.'}
+                  </small>
+                )}
+              </div>
+            )}
+            {!guided && view === 'inside' && mode === 'explore' && (
+              <div className="laptop-cable-status">
+                <strong>Service cables</strong>
+                <p>{internalCableFeedback}</p>
+                <div>
+                  {(['battery', 'speaker', 'display'] as const).map((id) => {
+                    const unplugged = disconnectedInternalCables.includes(id);
+                    return (
+                      <button
+                        type="button"
+                        key={id}
+                        className={unplugged ? 'disconnected' : 'connected'}
+                        onClick={() => {
+                          const next = unplugged
+                            ? disconnectedInternalCables.filter(
+                                (candidate) => candidate !== id,
+                              )
+                            : [...disconnectedInternalCables, id];
+                          disconnectedInternalCablesRef.current = next;
+                          setDisconnectedInternalCables(next);
+                          setInternalCableFeedback(
+                            unplugged
+                              ? id[0].toUpperCase() +
+                                  id.slice(1) +
+                                  ' cable reconnected.'
+                              : id[0].toUpperCase() +
+                                  id.slice(1) +
+                                  ' cable unplugged.',
+                          );
+                        }}
+                      >
+                        {id}: {unplugged ? 'unplugged' : 'connected'}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {guided ? (
+              <div className="laptop-guide-controls">
+                <button
+                  type="button"
+                  disabled={lessonIndex === 0}
+                  onClick={() => moveGuide(-1)}
+                >
+                  ← Back
+                </button>
+                {lessonIndex < LESSON_STEPS.length - 1 ? (
+                  <button
+                    type="button"
+                    disabled={!lessonStepComplete}
+                    onClick={() => moveGuide(1)}
+                  >
+                    {lessonStepComplete ? 'Next →' : 'Complete action first'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGuided(false);
+                      guidedRef.current = false;
+                    }}
+                  >
+                    Finish lesson ✓
+                  </button>
+                )}
+              </div>
+            ) : mode === 'troubleshooting' ||
+              mode === 'assessment' ? null : view === 'outside' ? (
+              <button
+                type="button"
+                className="laptop-primary"
+                onClick={() => changeView('inside')}
+              >
+                Open the laptop
+                <span>→</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="laptop-primary"
+                onClick={() => changeView('outside')}
+              >
+                Put the laptop back together
+                <span>↻</span>
+              </button>
+            )}
+          </>
+        )}
+      </aside>
+    </main>
+  );
+}
+
+export default function LaptopLab(props: {
+  onBack: () => void;
+  onOpenTaskManager: () => void;
+}) {
+  const [model, setModel] = useState<'latitude' | 'framework'>('latitude');
+  return (
+    <LaptopScene
+      key={model}
+      {...props}
+      model={model}
+      onModelChange={setModel}
+    />
+  );
+}

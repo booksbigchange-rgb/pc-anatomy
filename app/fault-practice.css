@@ -1,0 +1,6 @@
+.fault-practice { margin-top:16px; padding:14px; border:1px solid #70978c; border-radius:10px; background:#edf6f2; color:#15362d; font-size:13px; line-height:1.5; }
+.fault-practice fieldset { border:0; margin:12px 0; padding:0; display:grid; gap:8px; }
+.fault-practice legend { font-weight:700; margin-bottom:8px; }
+.fault-practice button { min-height:44px; padding:10px; border:1px solid #70978c; border-radius:7px; background:#fff; color:#15362d; text-align:left; width:100%; cursor:pointer; white-space:normal; }
+.fault-practice button:disabled { opacity:.5; cursor:default; }
+.fault-practice .fault-evidence { padding:10px; background:#d7ebe2; }

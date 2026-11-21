@@ -10,12 +10,20 @@ sounds arbitrary, it is usually the scar of a bug.
 
 ## What it is, technically
 
-A static single-page app. Every polygon is generated in TypeScript at runtime
-with three.js — no imported meshes, no image textures, no runtime asset files of
-any kind. The 329 catalogue entries are authored in source, and each one
-is joined to its geometry by a single string id. On top of the explorer sits a
-small school: courses of step-by-step lessons that drive the same stage, written
-for high school students and kept in source the same way.
+A static single-page app. The original PC Anatomy explorer remains procedural:
+its hardware polygons are generated in TypeScript at runtime with three.js, and
+its 329 catalogue entries are joined to geometry by a single string id.
+
+The BigChange school layer adds two things on top of it. **Lessons** are
+step-by-step courses, written for high school students, that drive the same
+stage and are kept in source the same way (see
+[Lessons and links](#lessons-and-links)). The **labs** — Computer Lab, Laptop
+Lab, Build a PC and Task Manager — use a separate audited asset path. Approved
+Framework and KiCad source CAD is pinned, converted in CI to small local GLBs
+under `public/models/`, and served by the same static site. Student browsers
+never fetch those models from third-party hosts. Every external asset requires
+provenance, license review, size/geometry gates and a procedural fallback
+before it can enter the classroom build.
 
 React 19, strict TypeScript, Vite 8, Tailwind 4, and three.js used directly:
 no react-three-fiber. UI primitives under `components/ui/` are generated
@@ -89,6 +97,40 @@ Exploration is data, not code. Adding a scale means adding an entry to
 `builders` registry. There is no route table — navigation is state. The address
 bar is a serialisation of that state (`lib/url-state.ts`), not a router: see
 [Lessons and links](#lessons-and-links).
+
+
+## Big Change school lab layer
+
+The school-facing lab is intentionally outside the core scale tree. It teaches
+whole-device context first, then hands students into the original detailed PC
+explorer.
+
+| Path | Responsibility |
+| --- | --- |
+| `app/computer-lab.tsx` | Whole desktop setup, ports and connection practice. |
+| `app/laptop-lab.tsx` | Laptop exterior/interior scene, guided lesson, connection practice, real CAD loading and teardown UI. |
+| `app/laptop-internals.ts` | Laptop internal teaching geometry, component groups, cables and staged teardown transforms. |
+| `app/use-disassembly-playback.ts` | Shared 0–100 auto/pause/reset playback used by both PC Anatomy and Laptop Anatomy. |
+| `scripts/convert-framework-*.py` | Build-time conversion of pinned Framework CAD/DXF into local GLBs. |
+| `scripts/convert-kicad-laptop-connectors.py` | Build-time conversion of individually reviewed KiCad connector STEP models. |
+| `MODEL_ASSET_MANIFEST.md` | Source, blob, license, dimensions and release status for external 3-D assets. |
+| `THIRD_PARTY_REVIEW.md` | School-safety and redistribution review. |
+
+### Laptop Anatomy teardown
+
+Laptop teardown reuses the PC Anatomy playback idea but does not register the
+laptop as a `lib/levels.ts` scale. The laptop has its own service sequence
+because laptop removal directions and cable dependencies differ from ATX parts.
+
+The current order is:
+
+`bottom cover → battery → SSD/Wi-Fi → RAM/speakers → cooling → CPU → motherboard → display/hinges`.
+
+Parts move as real object groups rather than duplicated "exploded" meshes.
+Battery, motherboard, display, hinges, webcam and reviewed connector geometry
+can be replaced by local CAD-derived GLBs while the procedural objects remain
+fallbacks. Major service cables have explicit disconnect thresholds and manual
+unplug/reconnect state.
 
 ## The scale tree
 

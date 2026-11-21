@@ -1,11 +1,22 @@
 'use client';
-import { Code2, Cpu, GraduationCap, Info, Layers3, Search } from 'lucide-react';
-import { GUIDE, REPOSITORY } from './links';
+import {
+  Code2,
+  Cpu,
+  GraduationCap,
+  Info,
+  Layers3,
+  Monitor,
+  Search,
+} from 'lucide-react';
+import { GUIDE, UPSTREAM_REPOSITORY } from './links';
 
 type Props = {
   layers: boolean;
+  studentMode: boolean;
   onReset: () => void;
+  onOpenLab: () => void;
   onToggleLayers: () => void;
+  onToggleStudentMode: () => void;
   onSearch: () => void;
   onAbout: () => void;
   onLessons: () => void;
@@ -13,30 +24,38 @@ type Props = {
 
 export default function Topbar({
   layers,
+  studentMode,
   onReset,
+  onOpenLab,
   onToggleLayers,
+  onToggleStudentMode,
   onSearch,
   onAbout,
   onLessons,
 }: Props) {
   return (
     <header className="topbar">
-      <button className="brand" onClick={onReset} aria-label="Reset PC Anatomy">
+      <button
+        type="button"
+        className="brand"
+        onClick={onReset}
+        aria-label="Reset Big Change PC Atlas"
+      >
         <span className="brand-icon">
           <Cpu size={21} />
         </span>
-        <span>PC Anatomy</span>
+        <span>Big Change PC Atlas</span>
       </button>
       <a
         className="byline"
-        href={REPOSITORY}
+        href={UPSTREAM_REPOSITORY}
         target="_blank"
         rel="noreferrer"
-        title="PC Anatomy on GitHub"
+        title="Based on the open-source PC Anatomy project"
       >
         <Code2 size={13} />
         <span>
-          Created by <strong>Yoseph</strong>
+          Based on <strong>PC Anatomy</strong> by Yoseph
         </span>
       </a>
       <div className="header-actions">
@@ -48,6 +67,25 @@ export default function Topbar({
           <GraduationCap size={17} />
           <span>Lessons</span>
         </button>
+        <button
+          type="button"
+          className="student-mode-button"
+          onClick={onOpenLab}
+          title="Return to the whole computer setup"
+        >
+          <Monitor size={16} />
+          <span>Computer Lab</span>
+        </button>
+        <button
+          type="button"
+          className="student-mode-button"
+          aria-pressed={studentMode}
+          onClick={onToggleStudentMode}
+          title="Switch between student and technical explanations"
+        >
+          <GraduationCap size={16} />
+          <span>{studentMode ? 'Student mode' : 'Technical mode'}</span>
+        </button>
         <a
           className="guide-link"
           href={GUIDE}
@@ -56,6 +94,7 @@ export default function Topbar({
           Guide
         </a>
         <button
+          type="button"
           className="mobile-layers"
           onClick={onToggleLayers}
           aria-label="Toggle systems"
@@ -64,6 +103,7 @@ export default function Topbar({
           <Layers3 size={19} />
         </button>
         <button
+          type="button"
           className="search-button"
           aria-label="Find a component"
           onClick={onSearch}
@@ -73,6 +113,7 @@ export default function Topbar({
           <kbd>/</kbd>
         </button>
         <button
+          type="button"
           className="info-button"
           aria-label="About and sources"
           onClick={onAbout}

@@ -3269,3 +3269,9 @@ a {
     transition-duration: 0.01ms !important;
   }
 }
+
+@media (max-width: 600px) {
+  .workbench .topbar { grid-template-columns: auto minmax(0, 1fr); }
+  .workbench .byline { display: none; }
+  .workbench .header-actions { justify-self: end; gap: 6px; min-width: 0; }
+}

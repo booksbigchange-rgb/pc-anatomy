@@ -1,0 +1,19 @@
+{
+  "source": "FrameworkComputer/Framework-Laptop-13",
+  "source_commit": "9680262347b80efe2314673bf1f26eb955165fca",
+  "source_path": "Hinges/13_5_hinge_l_assy.stp",
+  "source_blob": "984efde7791b6720b1837870124b5eca80e71963",
+  "license": "CC-BY-4.0",
+  "modified": true,
+  "conversion": "STEP -> STL (CadQuery) -> optimized neutral-material GLB (trimesh)",
+  "source_faces": 13578,
+  "output_faces": 13578,
+  "output_vertices": 6644,
+  "extents_m": [
+    0.0458,
+    0.028345,
+    0.020081
+  ],
+  "glb_bytes": 270440,
+  "release_status": "candidate-for-laptop-anatomy-teardown"
+}
