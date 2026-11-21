@@ -24,6 +24,7 @@ import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { CC0_TREE_COMPUTER_TOWER_FBX_BASE64 } from '@/lib/cc0-computer-tower';
+import { SCHOOL_NAME } from './links';
 
 type LabPartId =
   | 'monitor'
@@ -739,12 +740,15 @@ function addRoom(scene: THREE.Scene) {
 }
 
 export default function ComputerLab({
+  onHome,
   onOpenPC,
   onOpenLaptop,
   onOpenAssembly,
   onOpenTaskManager,
   onOpenCourse,
 }: {
+  /** Back to the School home, from the brand mark. */
+  onHome: () => void;
   onOpenPC: () => void;
   onOpenLaptop: () => void;
   onOpenAssembly: () => void;
@@ -1130,13 +1134,18 @@ export default function ComputerLab({
   return (
     <main className="computer-lab">
       <header className="lab-topbar">
-        <div className="lab-brand">
+        <button
+          type="button"
+          className="lab-brand"
+          onClick={onHome}
+          title="Back to the School home"
+        >
           <AcademyLogo />
           <span>
-            <strong>Big Change Computer Lab</strong>
-            <small>LEARN THE WHOLE COMPUTER</small>
+            <strong>Computer Lab</strong>
+            <small>{SCHOOL_NAME}</small>
           </span>
-        </div>
+        </button>
 
         <div className="lab-mode-switch" aria-label="Computer Lab activity">
           <button

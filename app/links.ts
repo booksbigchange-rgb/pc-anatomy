@@ -8,3 +8,6 @@ export const UPSTREAM_REPOSITORY = 'https://github.com/Yoosseph/pc-anatomy';
 export const GUIDE = `${import.meta.env.BASE_URL}guide/index.html`;
 /** The section of the guide that explains browser hardware acceleration. */
 export const GUIDE_ACCELERATION = GUIDE + '#smoother-3d';
+
+/** The school's name, wherever the interface states it. */
+export const SCHOOL_NAME = 'BigChange PC Hardware Atlas';

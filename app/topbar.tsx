@@ -13,7 +13,7 @@ import { GUIDE, UPSTREAM_REPOSITORY } from './links';
 type Props = {
   layers: boolean;
   studentMode: boolean;
-  onReset: () => void;
+  onHome: () => void;
   onOpenLab: () => void;
   onToggleLayers: () => void;
   onToggleStudentMode: () => void;
@@ -25,7 +25,7 @@ type Props = {
 export default function Topbar({
   layers,
   studentMode,
-  onReset,
+  onHome,
   onOpenLab,
   onToggleLayers,
   onToggleStudentMode,
@@ -38,7 +38,7 @@ export default function Topbar({
       <button
         type="button"
         className="brand"
-        onClick={onReset}
+        onClick={onHome}
         aria-label="Reset Big Change PC Atlas"
       >
         <span className="brand-icon">

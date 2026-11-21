@@ -17,7 +17,17 @@ export default defineConfig({
         // the stage-runtime chunk holds only our geometry code and neither
         // crosses the size warning. Both still load lazily from viewer.tsx.
         codeSplitting: {
-          groups: [{ name: 'three', test: /node_modules[\\/]three[\\/]/ }],
+          // Only three.js itself: its add-ons (loaders, controls) are used
+          // by the labs alone, so they ride in the labs' own chunks and the
+          // explorer never downloads them.
+          groups: [
+            {
+              name: 'three',
+              test: (id) =>
+                /node_modules[\\/]three[\\/]/.test(id) &&
+                !/[\\/]examples[\\/]/.test(id),
+            },
+          ],
         },
       },
     },

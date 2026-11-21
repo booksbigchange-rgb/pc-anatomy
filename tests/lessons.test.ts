@@ -260,8 +260,13 @@ await test('a scene arrives clean and refuses parts from another scale', () => {
 });
 
 await test('addresses round-trip and forgive anything they do not recognise', () => {
-  assert.equal(writeAddress(addressOf(initialState)), '');
+  // The bare address is the School home, so the untouched tower has its own.
+  assert.equal(writeAddress(addressOf(initialState)), '?scale=pc');
   assert.deepEqual(readAddress(''), { kind: 'home' });
+  assert.equal(writeAddress({ kind: 'home' }), '');
+  assert.deepEqual(readAddress('?lab=laptop'), { kind: 'lab', lab: 'laptop' });
+  assert.equal(writeAddress({ kind: 'lab', lab: 'build' }), '?lab=build');
+  assert.deepEqual(readAddress('?lab=nowhere'), { kind: 'home' });
 
   const view = showScene(initialState, {
     level: 'card',

@@ -6,6 +6,7 @@
 @import './assembly-lab.css';
 @import './task-manager-lab.css';
 @import './lessons.css';
+@import './school.css';
 @custom-variant dark (&:is(.dark *));
 @theme inline {
   --color-background: var(--background);

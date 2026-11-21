@@ -1,6 +1,7 @@
-import { levels, rootLevel, type LevelId } from './levels.ts';
+import { levels, type LevelId } from './levels.ts';
 import { partAt, type ExplorerState, type Scene } from './explorer-state.ts';
 import { lessonById } from './lessons/index.ts';
+import { isLabId, type LabId } from './catalogue.ts';
 
 /**
  * The address bar as a serialisation of state, not a route table.
@@ -11,6 +12,8 @@ import { lessonById } from './lessons/index.ts';
  * lesson. Everything stays on the one path, which is why a static host needs
  * no single-page-app fallback for it.
  *
+ *   /                                    the School home
+ *   /?lab=laptop                         one of the labs
  *   /?lesson=the-motherboard&step=3
  *   /?scale=card&part=vapor&explode=60&focus=1
  *
@@ -20,6 +23,7 @@ import { lessonById } from './lessons/index.ts';
 
 export type Address =
   | { kind: 'home' }
+  | { kind: 'lab'; lab: LabId }
   | { kind: 'lesson'; lesson: string; step: number }
   | { kind: 'view'; scene: Scene };
 
@@ -37,6 +41,8 @@ export function readAddress(search: string): Address {
       step: Number.isFinite(step) ? Math.min(count, Math.max(1, step)) - 1 : 0,
     };
   }
+  const lab = q.get('lab');
+  if (lab && isLabId(lab)) return { kind: 'lab', lab };
   const scale = q.get('scale');
   if (!scale || !Object.hasOwn(levels, scale)) return { kind: 'home' };
   const level = scale as LevelId;
@@ -59,7 +65,8 @@ export function readAddress(search: string): Address {
 
 export function writeAddress(address: Address): string {
   const q = new URLSearchParams();
-  if (address.kind === 'lesson') {
+  if (address.kind === 'lab') q.set('lab', address.lab);
+  else if (address.kind === 'lesson') {
     q.set('lesson', address.lesson);
     q.set('step', String(address.step + 1));
   } else if (address.kind === 'view') {
@@ -77,7 +84,10 @@ export function writeAddress(address: Address): string {
   return text ? '?' + text : '';
 }
 
-/** What the explorer is showing, as an address. The untouched machine is home. */
+/**
+ * What the explorer is showing, as an address. Always a view: the bare `/`
+ * belongs to the School home, so even the untouched tower is `?scale=pc`.
+ */
 export function addressOf(state: ExplorerState): Address {
   const part = state.selection?.concept;
   const scene: Scene = { level: state.level };
@@ -90,11 +100,5 @@ export function addressOf(state: ExplorerState): Address {
   if (explode > 0) scene.explode = explode;
   if (state.view !== 'perspective') scene.view = state.view;
   if (state.airflow !== 'auto') scene.airflow = state.airflow;
-  const untouched =
-    scene.level === rootLevel &&
-    !scene.part &&
-    !scene.explode &&
-    !scene.view &&
-    !scene.airflow;
-  return untouched ? { kind: 'home' } : { kind: 'view', scene };
+  return { kind: 'view', scene };
 }

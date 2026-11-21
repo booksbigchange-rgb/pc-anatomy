@@ -1,0 +1,287 @@
+/* The School home: a plain scrolling page with no 3D, so it is on screen at
+   once on a classroom Chromebook. Violet marks courses, cyan marks things to
+   explore, as everywhere else in the school. */
+
+.school {
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  color: #e4e7e9;
+  background:
+    radial-gradient(ellipse at 18% -10%, #2a2233 0%, transparent 55%),
+    radial-gradient(ellipse at 95% 10%, #172a30 0%, transparent 50%), #0f1011;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.school-top {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: calc(14px + var(--safe-t)) calc(28px + var(--safe-r)) 14px
+    calc(28px + var(--safe-l));
+  background: #0d0e0ee6;
+  border-bottom: 1px solid #26272a;
+  backdrop-filter: blur(8px);
+}
+.school-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.school-brand .academy-logo {
+  flex-basis: 38px;
+  width: 38px;
+  height: 42px;
+}
+.school-brand strong,
+.school-brand small {
+  display: block;
+}
+.school-brand strong {
+  font-size: 18px;
+  letter-spacing: 0.2px;
+}
+.school-brand small {
+  margin-top: 3px;
+  color: #8d9097;
+  font: 10px monospace;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+.school-about {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  color: #c4c6ca;
+  border-radius: 6px;
+}
+.school-about:hover {
+  background: #1f2124;
+}
+.school-main {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding: 0 calc(28px + var(--safe-r)) 40px calc(28px + var(--safe-l));
+}
+.school-hero {
+  padding: 56px 0 40px;
+  max-width: 720px;
+}
+.school-eyebrow {
+  margin: 0 0 14px;
+  color: var(--learn, #b497cf);
+  font: 600 11px monospace;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+}
+.school-hero h1 {
+  margin: 0 0 16px;
+  color: #fff;
+  font-size: clamp(30px, 5vw, 46px);
+  font-weight: 600;
+  letter-spacing: -1px;
+  line-height: 1.08;
+}
+.school-hero > p:not(.school-eyebrow) {
+  margin: 0;
+  color: #c4c6ca;
+  font-size: 16px;
+  line-height: 1.65;
+}
+.school-continue {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 26px;
+  padding: 13px 16px;
+  color: #17181a;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #a1d9e2, #b497cf);
+  border-radius: 8px;
+}
+.school-continue:hover {
+  color: #000;
+  filter: brightness(1.06);
+}
+.school-continue small {
+  display: block;
+  margin-bottom: 3px;
+  font: 600 10px monospace;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+.school-subject {
+  padding: 34px 0 10px;
+  border-top: 1px solid #26272a;
+}
+.school-subject-head {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+.school-subject-number {
+  padding-top: 7px;
+  color: #6f7278;
+  font: 12px monospace;
+  letter-spacing: 1px;
+}
+.school-subject-head h2 {
+  margin: 0 0 6px;
+  color: #fff;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+}
+.school-subject-head p {
+  max-width: 640px;
+  margin: 0;
+  color: #b3b5ba;
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+.school-subject-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.school-label {
+  margin: 0 0 10px;
+  color: #8d9097;
+  font: 600 10.5px monospace;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.school-courses .course {
+  background: #161718;
+}
+.school-courses .course + .course {
+  margin-top: 14px;
+}
+.school-exhibits ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.school-exhibits button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  text-align: left;
+  background: #161718;
+  border: 1px solid #303236;
+  border-radius: 8px;
+}
+.school-exhibits button:hover {
+  background: #1a2a2e;
+  border-color: #4d7f89;
+}
+.school-exhibits button > svg:first-child {
+  flex: none;
+  color: var(--accent-bright);
+}
+.school-exhibits button > svg:last-child {
+  flex: none;
+  margin-left: auto;
+  color: #6f8a90;
+}
+.school-exhibits button > span {
+  min-width: 0;
+}
+.school-exhibits strong {
+  display: block;
+  color: #eef0f1;
+  font-size: 14.5px;
+  font-weight: 600;
+}
+.school-exhibits small {
+  display: block;
+  margin-top: 4px;
+  color: #9a9da3;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.school-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px 24px;
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding: 22px calc(28px + var(--safe-r)) calc(28px + var(--safe-b))
+    calc(28px + var(--safe-l));
+  color: #7d8189;
+  font-size: 12px;
+  border-top: 1px solid #26272a;
+}
+.school-foot a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #bdc3cc;
+}
+.school-foot a strong {
+  color: var(--accent-bright);
+}
+.school-loading {
+  height: 100dvh;
+  display: grid;
+  place-items: center;
+  color: #b3b5ba;
+  font-size: 15px;
+}
+
+@media (max-width: 860px) {
+  .school-subject-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .school-top {
+    padding: calc(12px + var(--safe-t)) calc(16px + var(--safe-r)) 12px
+      calc(16px + var(--safe-l));
+  }
+  .school-brand strong {
+    font-size: 15.5px;
+  }
+  .school-main {
+    padding: 0 calc(16px + var(--safe-r)) 32px calc(16px + var(--safe-l));
+  }
+  .school-hero {
+    padding: 34px 0 30px;
+  }
+  .school-hero > p:not(.school-eyebrow) {
+    font-size: 15px;
+  }
+  .school-subject-head {
+    gap: 12px;
+  }
+  .school-subject-head h2 {
+    font-size: 22px;
+  }
+  .school-foot {
+    padding: 18px calc(16px + var(--safe-r)) calc(22px + var(--safe-b))
+      calc(16px + var(--safe-l));
+  }
+}
+
+/* The Computer Lab's brand is a button back to the School home. */
+button.lab-brand {
+  text-align: left;
+}
+button.lab-brand small {
+  text-transform: uppercase;
+}

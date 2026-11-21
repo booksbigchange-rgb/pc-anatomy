@@ -1,10 +1,11 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { EyeOff } from 'lucide-react';
 import { levelPath } from '@/lib/levels';
 import { initialState, showScene, type Selection } from '@/lib/explorer-state';
 import { lessonById } from '@/lib/lessons';
-import { readAddress, type Address } from '@/lib/url-state';
+import { addressOf, readAddress, type Address } from '@/lib/url-state';
+import type { Doorway, LabId } from '@/lib/catalogue';
 import { useExplorer } from './use-explorer';
 import { useLesson } from './use-lesson';
 import { useAddress } from './use-address';
@@ -21,13 +22,51 @@ import SearchDialog from './search-dialog';
 import DetailPanel from './detail-panel';
 import AboutDialog from './about-dialog';
 import ComparisonWorkbench from './comparison-workbench';
-import ComputerLab from './computer-lab';
-import LaptopLab from './laptop-lab';
-import BuildPcLab from './build-pc-lab';
-import TaskManagerLab from './task-manager-lab';
-import CourseLab from './course-lab';
+import SchoolHome from './school-home';
 import LessonPanel from './lesson-panel';
 import CoursesDialog from './courses-dialog';
+
+// The labs are large and most visits open one at most, so each loads only
+// when a student opens it rather than with the School home.
+const ComputerLab = lazy(() => import('./computer-lab'));
+const LaptopLab = lazy(() => import('./laptop-lab'));
+const BuildPcLab = lazy(() => import('./build-pc-lab'));
+const TaskManagerLab = lazy(() => import('./task-manager-lab'));
+const CourseLab = lazy(() => import('./course-lab'));
+
+type Mode =
+  | 'school'
+  | 'lab'
+  | 'laptop'
+  | 'assembly'
+  | 'explorer'
+  | 'comparison'
+  | 'task-manager-pc'
+  | 'task-manager-laptop'
+  | 'course';
+
+/** Which screen each lab address opens, and back again. */
+const labMode: Record<LabId, Mode> = {
+  computer: 'lab',
+  laptop: 'laptop',
+  build: 'assembly',
+  'task-manager': 'task-manager-pc',
+  path: 'course',
+};
+const modeLab: Partial<Record<Mode, LabId>> = {
+  lab: 'computer',
+  laptop: 'laptop',
+  assembly: 'build',
+  'task-manager-pc': 'task-manager',
+  'task-manager-laptop': 'task-manager',
+  course: 'path',
+};
+
+function startMode(address: Address): Mode {
+  if (address.kind === 'home') return 'school';
+  if (address.kind === 'lab') return labMode[address.lab];
+  return 'explorer';
+}
 
 /** Where the address bar says to start, read once. */
 function arrival(): Address {
@@ -62,18 +101,11 @@ export default function Home() {
     [query, setQuery] = useState(''),
     [about, setAbout] = useState(false),
     [studentMode, setStudentMode] = useState(true),
-    // A link to a scale or a lesson opens the explorer; otherwise the school
-    // starts in the Computer Lab.
-    [mode, setMode] = useState<
-      | 'lab'
-      | 'laptop'
-      | 'assembly'
-      | 'explorer'
-      | 'comparison'
-      | 'task-manager-pc'
-      | 'task-manager-laptop'
-      | 'course'
-    >(boot.kind === 'home' ? 'lab' : 'explorer'),
+    // The bare address is the School home; a link names a lab, a scale or a
+    // lesson step and opens that instead.
+    [mode, setMode] = useState<Mode>(() => startMode(boot)),
+    // Where a lab's Back button returns: the hub it was opened from.
+    [hub, setHub] = useState<'school' | 'lab'>('school'),
     // `null` until the viewer has reported for the first time. Zero means the
     // viewer is running and nothing is switched on, which is a different thing
     // to say to the reader, and saying the wrong one was what put "No
@@ -93,20 +125,52 @@ export default function Home() {
   // Back and Forward land on whatever the address now says.
   const follow = useCallback(
     (address: Address) => {
-      if (address.kind === 'lesson')
+      if (address.kind === 'lesson') {
+        setMode('explorer');
         return lesson.begin(address.lesson, address.step);
+      }
       lesson.exit();
+      setMode(startMode(address));
       if (address.kind === 'view') explorer.showScene(address.scene);
-      else explorer.reset();
     },
     [explorer, lesson],
   );
+  const lab = modeLab[mode];
   useAddress({
-    state,
-    run: lesson.run,
-    playing: explorer.playing,
+    address:
+      mode === 'school'
+        ? { kind: 'home' }
+        : lab
+          ? { kind: 'lab', lab }
+          : lesson.run
+            ? {
+                kind: 'lesson',
+                lesson: lesson.run.lesson,
+                step: lesson.run.step,
+              }
+            : addressOf(state),
+    settling: mode === 'explorer' && (!!state.diveInto || explorer.playing),
     onAddress: follow,
   });
+
+  const goHome = useCallback(() => {
+    lesson.exit();
+    setCourseList(false);
+    setMode('school');
+  }, [lesson]);
+
+  /** Open an exhibit from the School home or the Computer Lab. */
+  const open = useCallback(
+    (doorway: Doorway, from: 'school' | 'lab' = 'school') => {
+      lesson.exit();
+      setHub(from);
+      if (doorway.kind === 'lab') return setMode(labMode[doorway.lab]);
+      explorer.showScene({ level: doorway.level });
+      setMode('explorer');
+    },
+    [explorer, lesson],
+  );
+  const back = () => setMode(hub === 'lab' ? 'lab' : 'school');
 
   /** Open a lesson from the course list or the rail. */
   const startLesson = useCallback(
@@ -159,35 +223,71 @@ export default function Home() {
     return () => window.removeEventListener('keydown', key);
   }, [about, choose, courseList, mode, navigate, search, state.level]);
 
-  if (mode === 'course')
-    return <CourseLab onBack={() => setMode('lab')} onActivity={setMode} />;
-  if (mode === 'lab')
-    return (
-      <ComputerLab
-        onOpenCourse={() => setMode('course')}
-        onOpenPC={() => setMode('explorer')}
-        onOpenLaptop={() => setMode('laptop')}
-        onOpenAssembly={() => setMode('assembly')}
-        onOpenTaskManager={() => setMode('task-manager-pc')}
+  const dialogs = (
+    <>
+      <AboutDialog open={about} onOpenChange={setAbout} />
+      <CoursesDialog
+        open={courseList}
+        onOpenChange={setCourseList}
+        progress={lesson.progress}
+        current={lesson.run && !lesson.run.complete ? lesson.run.lesson : null}
+        onStart={startLesson}
       />
-    );
-  if (mode === 'laptop')
+    </>
+  );
+  if (mode === 'school')
     return (
-      <LaptopLab
-        onBack={() => setMode('lab')}
-        onOpenTaskManager={() => setMode('task-manager-laptop')}
-      />
+      <>
+        <SchoolHome
+          progress={lesson.progress}
+          onOpen={(doorway) => open(doorway)}
+          onStartLesson={startLesson}
+          onAbout={() => setAbout(true)}
+        />
+        {dialogs}
+      </>
     );
-  if (mode === 'task-manager-pc' || mode === 'task-manager-laptop')
+  if (mode !== 'explorer' && mode !== 'comparison')
     return (
-      <TaskManagerLab
-        device={mode === 'task-manager-laptop' ? 'laptop' : 'pc'}
-        onBack={() =>
-          setMode(mode === 'task-manager-laptop' ? 'laptop' : 'lab')
-        }
-      />
+      <Suspense fallback={<output className="school-loading">Loading…</output>}>
+        {mode === 'course' && (
+          <CourseLab
+            onBack={back}
+            onActivity={(activity) => {
+              setHub('school');
+              setMode(activity);
+            }}
+          />
+        )}
+        {mode === 'lab' && (
+          <ComputerLab
+            onHome={goHome}
+            onOpenCourse={() => open({ kind: 'lab', lab: 'path' }, 'lab')}
+            onOpenPC={() => open({ kind: 'scale', level: 'pc' }, 'lab')}
+            onOpenLaptop={() => open({ kind: 'lab', lab: 'laptop' }, 'lab')}
+            onOpenAssembly={() => open({ kind: 'lab', lab: 'build' }, 'lab')}
+            onOpenTaskManager={() =>
+              open({ kind: 'lab', lab: 'task-manager' }, 'lab')
+            }
+          />
+        )}
+        {mode === 'laptop' && (
+          <LaptopLab
+            onBack={back}
+            onOpenTaskManager={() => setMode('task-manager-laptop')}
+          />
+        )}
+        {(mode === 'task-manager-pc' || mode === 'task-manager-laptop') && (
+          <TaskManagerLab
+            device={mode === 'task-manager-laptop' ? 'laptop' : 'pc'}
+            onBack={() =>
+              mode === 'task-manager-laptop' ? setMode('laptop') : back()
+            }
+          />
+        )}
+        {mode === 'assembly' && <BuildPcLab onBack={back} />}
+      </Suspense>
     );
-  if (mode === 'assembly') return <BuildPcLab onBack={() => setMode('lab')} />;
   if (mode === 'comparison')
     return (
       <ComparisonWorkbench
@@ -219,10 +319,7 @@ export default function Home() {
           setMode('lab');
         }}
         onToggleStudentMode={() => setStudentMode((value) => !value)}
-        onReset={() => {
-          lesson.exit();
-          explorer.reset();
-        }}
+        onHome={goHome}
         onToggleLayers={() => explorer.setLayers(!layers)}
         onSearch={() => setSearch(true)}
         onAbout={() => setAbout(true)}
@@ -340,14 +437,7 @@ export default function Home() {
         onFocus={explorer.refocus}
         onHide={explorer.hide}
       />
-      <AboutDialog open={about} onOpenChange={setAbout} />
-      <CoursesDialog
-        open={courseList}
-        onOpenChange={setCourseList}
-        progress={lesson.progress}
-        current={lesson.run && !lesson.run.complete ? lesson.run.lesson : null}
-        onStart={startLesson}
-      />
+      {dialogs}
     </main>
   );
 }
