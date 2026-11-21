@@ -98,23 +98,22 @@ Exploration is data, not code. Adding a scale means adding an entry to
 bar is a serialisation of that state (`lib/url-state.ts`), not a router: see
 [Lessons and links](#lessons-and-links).
 
-
 ## Big Change school lab layer
 
 The school-facing lab is intentionally outside the core scale tree. It teaches
 whole-device context first, then hands students into the original detailed PC
 explorer.
 
-| Path | Responsibility |
-| --- | --- |
-| `app/computer-lab.tsx` | Whole desktop setup, ports and connection practice. |
-| `app/laptop-lab.tsx` | Laptop exterior/interior scene, guided lesson, connection practice, real CAD loading and teardown UI. |
-| `app/laptop-internals.ts` | Laptop internal teaching geometry, component groups, cables and staged teardown transforms. |
-| `app/use-disassembly-playback.ts` | Shared 0–100 auto/pause/reset playback used by both PC Anatomy and Laptop Anatomy. |
-| `scripts/convert-framework-*.py` | Build-time conversion of pinned Framework CAD/DXF into local GLBs. |
-| `scripts/convert-kicad-laptop-connectors.py` | Build-time conversion of individually reviewed KiCad connector STEP models. |
-| `MODEL_ASSET_MANIFEST.md` | Source, blob, license, dimensions and release status for external 3-D assets. |
-| `THIRD_PARTY_REVIEW.md` | School-safety and redistribution review. |
+| Path                                         | Responsibility                                                                                        |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `app/computer-lab.tsx`                       | Whole desktop setup, ports and connection practice.                                                   |
+| `app/laptop-lab.tsx`                         | Laptop exterior/interior scene, guided lesson, connection practice, real CAD loading and teardown UI. |
+| `app/laptop-internals.ts`                    | Laptop internal teaching geometry, component groups, cables and staged teardown transforms.           |
+| `app/use-disassembly-playback.ts`            | Shared 0–100 auto/pause/reset playback used by both PC Anatomy and Laptop Anatomy.                    |
+| `scripts/convert-framework-*.py`             | Build-time conversion of pinned Framework CAD/DXF into local GLBs.                                    |
+| `scripts/convert-kicad-laptop-connectors.py` | Build-time conversion of individually reviewed KiCad connector STEP models.                           |
+| `MODEL_ASSET_MANIFEST.md`                    | Source, blob, license, dimensions and release status for external 3-D assets.                         |
+| `THIRD_PARTY_REVIEW.md`                      | School-safety and redistribution review.                                                              |
 
 ### Laptop Anatomy teardown
 
@@ -233,7 +232,7 @@ subsystems stop touching.
 | `app/viewer.tsx`                                                                                                                                                              | The React ↔ three.js bridge: lazy scene load, hover label, error state.                                                                                                                                                                                           |
 | `app/links.ts`                                                                                                                                                                | Destinations used by more than one panel.                                                                                                                                                                                                                         |
 | `app/globals.css`, `app/workbench.css`                                                                                                                                        | The visual direction, desktop through phone.                                                                                                                                                                                                                      |
-| `tests/*.test.ts`                                                                                                                                                             | 75 tests: module loading, catalogue integrity, layout, picking, geometry presence, airflow, the case, comparison state/data/pane/bounds behaviour, and lessons, links and progress.                                                                                               |
+| `tests/*.test.ts`                                                                                                                                                             | 75 tests: module loading, catalogue integrity, layout, picking, geometry presence, airflow, the case, comparison state/data/pane/bounds behaviour, and lessons, links and progress.                                                                               |
 | `scripts/generate-icons.mjs`                                                                                                                                                  | Rasterises `public/favicon.svg` into PNG and ICO variants. Uses Playwright and Edge.                                                                                                                                                                              |
 | `scripts/generate-reference-index.mjs`                                                                                                                                        | Regenerates `docs/component-references.md` from the catalogue. Run it after changing citations.                                                                                                                                                                   |
 

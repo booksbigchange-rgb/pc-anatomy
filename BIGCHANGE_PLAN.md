@@ -63,7 +63,6 @@ PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab i
 - [ ] Troubleshooting scenarios
 - [ ] Assessment hooks
 
-
 ## Realistic laptop exterior V2
 
 - [x] Match chassis width, depth and closed thickness to pinned official Framework CAD
@@ -94,7 +93,6 @@ PC Anatomy remains the detailed internal-hardware engine. The new Computer Lab i
 - [x] Route battery/display/speaker cables to board-side connector mounts
 - [x] Disconnect major cables before their related teardown stages
 - [x] Add click-to-unplug / reconnect interactions for battery, speaker and display service cables
-
 
 ### Laptop Anatomy teardown
 

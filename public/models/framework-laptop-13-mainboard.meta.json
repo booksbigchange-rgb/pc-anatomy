@@ -11,21 +11,12 @@
     "trace_points": 537,
     "width_mm": 233.3,
     "height_mm": 105.83,
-    "drawing_bounds_mm": [
-      49.697,
-      163.349,
-      282.997,
-      269.179
-    ],
+    "drawing_bounds_mm": [49.697, 163.349, 282.997, 269.179],
     "area_mm2": 18773.92
   },
   "output_faces": 1060,
   "output_vertices": 532,
-  "extents_mm": [
-    233.3,
-    1.2,
-    105.83
-  ],
+  "extents_mm": [233.3, 1.2, 105.83],
   "glb_bytes": 22228,
   "release_status": "approved-for-laptop-anatomy-outline"
 }

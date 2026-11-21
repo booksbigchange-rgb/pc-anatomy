@@ -33,5 +33,3 @@ await test('hidden covers and retired fallbacks cannot intercept RAM or CPU clic
     assert.equal(visiblePartHit(hits), null);
   }
 });
-
-

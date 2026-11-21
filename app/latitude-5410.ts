@@ -28,7 +28,15 @@ export const LATITUDE_HOME = {
   speakers: [0, 0.99, 2.4],
 } as const;
 // DDR4 SODIMM envelope follows module datasheets; notch detail is illustrative.
-export const LATITUDE_RAM = { width: 69.6 / 40, depth: 30 / 40, thickness: 1.2 / 40, notchX: 0.04, notchWidth: 0.065, notchDepth: 0.08, centers: [-0.93, 0.93] } as const;
+export const LATITUDE_RAM = {
+  width: 69.6 / 40,
+  depth: 30 / 40,
+  thickness: 1.2 / 40,
+  notchX: 0.04,
+  notchWidth: 0.065,
+  notchDepth: 0.08,
+  centers: [-0.93, 0.93],
+} as const;
 const C = {
   shell: 0x7d858b,
   dark: 0x171b1f,
@@ -40,8 +48,22 @@ const C = {
 function mat(c: number) {
   return new T.MeshStandardMaterial({
     color: c,
-    roughness: c === C.dark ? 0.76 : c === C.board ? 0.72 : c === C.steel || c === 0xad703e ? 0.32 : 0.48,
-    metalness: c === C.steel || c === 0xad703e ? 0.82 : c === C.gold ? 0.72 : c === C.shell ? 0.24 : 0,
+    roughness:
+      c === C.dark
+        ? 0.76
+        : c === C.board
+          ? 0.72
+          : c === C.steel || c === 0xad703e
+            ? 0.32
+            : 0.48,
+    metalness:
+      c === C.steel || c === 0xad703e
+        ? 0.82
+        : c === C.gold
+          ? 0.72
+          : c === C.shell
+            ? 0.24
+            : 0,
   });
 }
 function box(w: number, h: number, d: number, c: number, r = 0.02) {
@@ -51,13 +73,39 @@ function box(w: number, h: number, d: number, c: number, r = 0.02) {
   );
 }
 /** Board cutouts are geometry, so they remain visible when modules lift out. */
-function moduleBoard(w: number, d: number, thickness: number, color: number, holeZ?: number) {
+function moduleBoard(
+  w: number,
+  d: number,
+  thickness: number,
+  color: number,
+  holeZ?: number,
+) {
   const shape = new T.Shape();
-  const points = [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2 - 0.1], [0.08, d / 2 - 0.1], [0.08, d / 2 - 0.18], [0.025, d / 2 - 0.18], [0.025, d / 2 - 0.1], [-w / 2, d / 2 - 0.1]];
-  points.forEach(([x, z], i) => i ? shape.lineTo(x, z) : shape.moveTo(x, z));
+  const points = [
+    [-w / 2, -d / 2],
+    [w / 2, -d / 2],
+    [w / 2, d / 2 - 0.1],
+    [0.08, d / 2 - 0.1],
+    [0.08, d / 2 - 0.18],
+    [0.025, d / 2 - 0.18],
+    [0.025, d / 2 - 0.1],
+    [-w / 2, d / 2 - 0.1],
+  ];
+  points.forEach(([x, z], i) => (i ? shape.lineTo(x, z) : shape.moveTo(x, z)));
   shape.closePath();
-  if (holeZ !== undefined) { const hole = new T.Path(); hole.absarc(0, holeZ, 0.034, 0, Math.PI * 2, true); shape.holes.push(hole); }
-  const mesh = new T.Mesh(new T.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false, curveSegments: 16 }), mat(color));
+  if (holeZ !== undefined) {
+    const hole = new T.Path();
+    hole.absarc(0, holeZ, 0.034, 0, Math.PI * 2, true);
+    shape.holes.push(hole);
+  }
+  const mesh = new T.Mesh(
+    new T.ExtrudeGeometry(shape, {
+      depth: thickness,
+      bevelEnabled: false,
+      curveSegments: 16,
+    }),
+    mat(color),
+  );
   mesh.rotation.x = Math.PI / 2;
   mesh.position.y = thickness / 2;
   mesh.userData.geometryRole = 'module-board';
@@ -135,7 +183,11 @@ function batch(g: T.Group) {
     if (!(o instanceof T.Mesh)) return;
     o.castShadow = true;
     o.receiveShadow = true;
-    if (o.userData.geometryRole || !(o.material instanceof T.MeshStandardMaterial) || o.material.map)
+    if (
+      o.userData.geometryRole ||
+      !(o.material instanceof T.MeshStandardMaterial) ||
+      o.material.map
+    )
       return;
     let p = o.parent;
     while (p && p !== g) {
@@ -197,32 +249,64 @@ function port(
   const trimStart = g.children.length;
   const sx = Math.sign(x);
   if (!round) {
-    const shell = new T.Shape(), cutout = new T.Path();
-    const isTypeC = id.startsWith('usb-c'), isHdmi = id.startsWith('hdmi');
+    const shell = new T.Shape(),
+      cutout = new T.Path();
+    const isTypeC = id.startsWith('usb-c'),
+      isHdmi = id.startsWith('hdmi');
     const profile = (path: T.Shape | T.Path, pw: number, ph: number) => {
       if (isTypeC) {
         const r = ph / 2;
-        path.moveTo(-pw / 2 + r, -r); path.lineTo(pw / 2 - r, -r);
+        path.moveTo(-pw / 2 + r, -r);
+        path.lineTo(pw / 2 - r, -r);
         path.absarc(pw / 2 - r, 0, r, -Math.PI / 2, Math.PI / 2, false);
         path.lineTo(-pw / 2 + r, r);
         path.absarc(-pw / 2 + r, 0, r, Math.PI / 2, Math.PI * 1.5, false);
       } else {
         const inset = isHdmi ? pw * 0.15 : 0;
-        path.moveTo(-pw / 2 + inset, -ph / 2); path.lineTo(pw / 2 - inset, -ph / 2);
-        path.lineTo(pw / 2, ph / 2); path.lineTo(-pw / 2, ph / 2);
+        path.moveTo(-pw / 2 + inset, -ph / 2);
+        path.lineTo(pw / 2 - inset, -ph / 2);
+        path.lineTo(pw / 2, ph / 2);
+        path.lineTo(-pw / 2, ph / 2);
       }
       path.closePath();
     };
-    profile(shell, w + 0.024, h + 0.024); profile(cutout, w - 0.012, h - 0.012);
+    profile(shell, w + 0.024, h + 0.024);
+    profile(cutout, w - 0.012, h - 0.012);
     shell.holes.push(cutout);
-    const trim = new T.Mesh(new T.ExtrudeGeometry(shell, {depth:0.025, bevelEnabled:false, curveSegments:16}), mat(C.steel));
+    const trim = new T.Mesh(
+      new T.ExtrudeGeometry(shell, {
+        depth: 0.025,
+        bevelEnabled: false,
+        curveSegments: 16,
+      }),
+      mat(C.steel),
+    );
     trim.rotation.y = Math.PI / 2;
-    add(g, trim, x + sx * 0.025, 0.84, z); trim.name = `${id} shell`;
-    add(g, box(0.018, isTypeC ? 0.014 : 0.022, w * (isHdmi ? 0.62 : 0.7), id.startsWith('usb-') && !isTypeC ? C.blue : C.dark, 0.002), x + sx * 0.038, 0.85, z);
+    add(g, trim, x + sx * 0.025, 0.84, z);
+    trim.name = `${id} shell`;
+    add(
+      g,
+      box(
+        0.018,
+        isTypeC ? 0.014 : 0.022,
+        w * (isHdmi ? 0.62 : 0.7),
+        id.startsWith('usb-') && !isTypeC ? C.blue : C.dark,
+        0.002,
+      ),
+      x + sx * 0.038,
+      0.85,
+      z,
+    );
     const count = id.startsWith('ethernet') ? 8 : isTypeC ? 10 : isHdmi ? 9 : 4;
     for (let pin = 0; pin < count; pin++) {
-      const spacing = w * 0.62 / count;
-      add(g, box(0.012, 0.008, spacing * 0.42, C.gold, 0), x + sx * 0.047, 0.862, z + (pin - (count - 1) / 2) * spacing);
+      const spacing = (w * 0.62) / count;
+      add(
+        g,
+        box(0.012, 0.008, spacing * 0.42, C.gold, 0),
+        x + sx * 0.047,
+        0.862,
+        z + (pin - (count - 1) / 2) * spacing,
+      );
     }
   } else {
     const ring = new T.Mesh(
@@ -318,7 +402,17 @@ function exterior() {
     ['Ctrl', 'Fn', 'Win', 'Alt', 'Space', 'Alt', 'Ctrl', '←', '↑', '→'],
   ];
   for (let row = 0; row < rows.length; row++) {
-    const weights = rows[row].map(k => k === 'Space' ? 4.5 : k === 'Shift' ? 2.2 : k === 'Enter' || k === 'Caps' ? 1.8 : k === 'Tab' || k === '⌫' ? 1.5 : 1);
+    const weights = rows[row].map((k) =>
+      k === 'Space'
+        ? 4.5
+        : k === 'Shift'
+          ? 2.2
+          : k === 'Enter' || k === 'Caps'
+            ? 1.8
+            : k === 'Tab' || k === '⌫'
+              ? 1.5
+              : 1,
+    );
     const unit = 6.44 / weights.reduce((sum, weight) => sum + weight, 0);
     let x = -3.22;
     for (let i = 0; i < rows[row].length; i++) {
@@ -326,15 +420,15 @@ function exterior() {
         kw = weights[i] * unit;
       const keyDepth = row === 0 ? 0.24 : k === '↑' ? 0.16 : 0.35;
       const keyZ = -1.95 + row * 0.405 - (k === '↑' ? 0.095 : 0);
-      const key = box(
-        kw - 0.045,
-        0.035,
-        keyDepth,
-        0x252a2e,
-        0.035,
-      );
+      const key = box(kw - 0.045, 0.035, keyDepth, 0x252a2e, 0.035);
       add(keyboard, key, x + kw / 2, 1.11, keyZ);
-      add(keyboard, box(kw - 0.065, 0.008, keyDepth - 0.025, 0x30363a, 0.012), x + kw / 2, 1.13, keyZ);
+      add(
+        keyboard,
+        box(kw - 0.065, 0.008, keyDepth - 0.025, 0x30363a, 0.012),
+        x + kw / 2,
+        1.13,
+        keyZ,
+      );
       if (typeof document !== 'undefined') {
         const c = document.createElement('canvas');
         c.width = 128;
@@ -363,7 +457,7 @@ function exterior() {
   add(keyboard, box(0.009, 0.002, 0.048, 0xc5ced3, 0), 2.4472, 1.136, 0.165);
   for (const side of [-1, 1]) {
     const stroke = box(0.009, 0.002, 0.032, 0xc5ced3, 0);
-    stroke.rotation.y = side * Math.PI / 4;
+    stroke.rotation.y = (side * Math.PI) / 4;
     add(keyboard, stroke, 2.4472 + side * 0.01, 1.136, 0.179);
   }
   g.add(batch(keyboard));
@@ -416,8 +510,19 @@ function exterior() {
   );
   add(lid, screen, 0, 2.67, 0.039);
   const glass = new T.Mesh(
-    new T.PlaneGeometry(LATITUDE_DIMENSIONS.screenWidth, LATITUDE_DIMENSIONS.screenHeight),
-    new T.MeshPhysicalMaterial({ color: 0x9eb7c5, transparent: true, opacity: 0.14, roughness: 0.12, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.08 }),
+    new T.PlaneGeometry(
+      LATITUDE_DIMENSIONS.screenWidth,
+      LATITUDE_DIMENSIONS.screenHeight,
+    ),
+    new T.MeshPhysicalMaterial({
+      color: 0x9eb7c5,
+      transparent: true,
+      opacity: 0.14,
+      roughness: 0.12,
+      metalness: 0.1,
+      clearcoat: 1,
+      clearcoatRoughness: 0.08,
+    }),
   );
   add(lid, glass, 0, 2.67, 0.05);
   const lens = disk(0.047, 0.024, 0x0b1216);
@@ -426,11 +531,19 @@ function exterior() {
   add(lid, box(0.13, 0.014, 0.015, 0x39474d), 0.16, 4.96, 0.053);
   for (const x of [-2.9, 2.9]) {
     add(g, box(0.84, 0.15, 0.29, 0x525d63, 0.035), x, 0.97, -2.56);
-    const barrel = disk(0.095, 0.78, 0x525d63); barrel.rotation.z = Math.PI / 2;
+    const barrel = disk(0.095, 0.78, 0x525d63);
+    barrel.rotation.z = Math.PI / 2;
     add(g, barrel, x, 1.035, -2.55);
   }
   // Base-cover seam stays below the socket openings.
-  for (const side of [-1, 1]) add(g, box(0.012, 0.009, d - 0.18, 0x3d464c, 0), side * (w / 2 + 0.002), 0.715, 0);
+  for (const side of [-1, 1])
+    add(
+      g,
+      box(0.012, 0.009, d - 0.18, 0x3d464c, 0),
+      side * (w / 2 + 0.002),
+      0.715,
+      0,
+    );
   add(g, box(w - 0.18, 0.009, 0.012, 0x3d464c, 0), 0, 0.715, d / 2 - 0.001);
   g.add(batch(lid));
   const ports = [
@@ -542,7 +655,12 @@ export function buildLatitude5410() {
     i ? shape.lineTo(p[0], p[1]) : shape.moveTo(p[0], p[1]),
   );
   shape.closePath();
-  for (const [holeX, holeZ] of [[-3.4, -1.15], [-2.05, -1.15], [1.63, -1.15], [3.48, -1.15]]) {
+  for (const [holeX, holeZ] of [
+    [-3.4, -1.15],
+    [-2.05, -1.15],
+    [1.63, -1.15],
+    [3.48, -1.15],
+  ]) {
     const hole = new T.Path();
     hole.absarc(holeX, holeZ, 0.046, 0, Math.PI * 2, true);
     shape.holes.push(hole);
@@ -557,27 +675,84 @@ export function buildLatitude5410() {
     add(board, box(0.21, 0.07, 0.22, 0x505960, 0.018), x, 0.055, -1.02);
     add(board, box(0.16, 0.006, 0.16, 0x899298, 0.012), x, 0.093, -1.02);
   }
-  for (const [bank, [centerX, centerZ]] of [[-2.7, -1.02], [0.6, -0.9], [1.7, -1.04], [2.85, -0.95], [-2.96, 1.7]].entries()) {
-    for (let index = 0; index < 8 + bank % 3 * 2; index++) {
+  for (const [bank, [centerX, centerZ]] of [
+    [-2.7, -1.02],
+    [0.6, -0.9],
+    [1.7, -1.04],
+    [2.85, -0.95],
+    [-2.96, 1.7],
+  ].entries()) {
+    for (let index = 0; index < 8 + (bank % 3) * 2; index++) {
       // Paired decoupling banks around each controller, with a routing gap.
       const column = index % 4;
       const row = Math.floor(index / 4);
       const x = centerX + column * 0.072 + (row % 2 ? 0.022 : 0);
       const z = centerZ + row * 0.062;
-      add(board, box(0.044, 0.012, index % 3 ? 0.025 : 0.035, index % 3 ? 0x9b8868 : C.dark, 0.002), x, 0.022, z);
+      add(
+        board,
+        box(
+          0.044,
+          0.012,
+          index % 3 ? 0.025 : 0.035,
+          index % 3 ? 0x9b8868 : C.dark,
+          0.002,
+        ),
+        x,
+        0.022,
+        z,
+      );
       for (const end of [-1, 1])
-        add(board, box(0.009, 0.013, index % 3 ? 0.025 : 0.035, C.steel, 0), x + end * 0.022, 0.022, z);
+        add(
+          board,
+          box(0.009, 0.013, index % 3 ? 0.025 : 0.035, C.steel, 0),
+          x + end * 0.022,
+          0.022,
+          z,
+        );
     }
-    add(board, box(0.24, 0.045, 0.25, C.dark, 0.008), centerX + 0.12, 0.037, centerZ + 0.52);
+    add(
+      board,
+      box(0.24, 0.045, 0.25, C.dark, 0.008),
+      centerX + 0.12,
+      0.037,
+      centerZ + 0.52,
+    );
     for (let pin = 0; pin < 6; pin++) {
       for (const side of [-1, 1])
-        add(board, box(0.045, 0.009, 0.015, C.steel, 0), centerX + 0.12 + side * 0.14, 0.022, centerZ + 0.43 + pin * 0.035);
+        add(
+          board,
+          box(0.045, 0.009, 0.015, C.steel, 0),
+          centerX + 0.12 + side * 0.14,
+          0.022,
+          centerZ + 0.43 + pin * 0.035,
+        );
     }
-    text(board, 'U · CTRL', 0.3, 0.1, centerX + 0.12, 0.009, centerZ + 0.73, '#a6b7b8');
+    text(
+      board,
+      'U · CTRL',
+      0.3,
+      0.1,
+      centerX + 0.12,
+      0.009,
+      centerZ + 0.73,
+      '#a6b7b8',
+    );
     for (let lane = 0; lane < 6; lane++) {
       const traceX = centerX + lane * 0.036;
-      add(board, box(0.009, 0.002, 0.38, 0x397486, 0), traceX, 0.005, centerZ + 0.39);
-      add(board, box(0.2, 0.002, 0.009, 0x397486, 0), traceX + 0.1, 0.005, centerZ + 0.58);
+      add(
+        board,
+        box(0.009, 0.002, 0.38, 0x397486, 0),
+        traceX,
+        0.005,
+        centerZ + 0.39,
+      );
+      add(
+        board,
+        box(0.2, 0.002, 0.009, 0x397486, 0),
+        traceX + 0.1,
+        0.005,
+        centerZ + 0.58,
+      );
     }
   }
   for (const x of [-3.4, -2.05, 1.63, 3.48]) screw(board, x, 0.075, -1.15);
@@ -595,7 +770,10 @@ export function buildLatitude5410() {
   coinRing.rotation.x = Math.PI / 2;
   add(board, coinRing, -1.8, 0.08, -0.5);
   // DIMM sockets stay fixed on the board when their two modules lift away.
-  const ramEdge = LATITUDE_HOME.ram[2] - LATITUDE_HOME.motherboard[2] + LATITUDE_RAM.depth / 2;
+  const ramEdge =
+    LATITUDE_HOME.ram[2] -
+    LATITUDE_HOME.motherboard[2] +
+    LATITUDE_RAM.depth / 2;
   for (const [index, center] of LATITUDE_RAM.centers.entries()) {
     const x = LATITUDE_HOME.ram[0] + center;
     const socket = box(LATITUDE_RAM.width + 0.08, 0.065, 0.14, 0xd9d7ca);
@@ -605,8 +783,17 @@ export function buildLatitude5410() {
     const key = box(0.04, 0.045, 0.055, 0xd9d7ca, 0.004);
     key.name = `RAM socket key ${index + 1}`;
     key.userData.geometryRole = 'fixed-key';
-    add(board, key, x + LATITUDE_RAM.notchX, LATITUDE_HOME.ram[1] - LATITUDE_HOME.motherboard[1], ramEdge - LATITUDE_RAM.notchDepth / 2);
-    for (const dx of [-LATITUDE_RAM.width / 2 - 0.03, LATITUDE_RAM.width / 2 + 0.03])
+    add(
+      board,
+      key,
+      x + LATITUDE_RAM.notchX,
+      LATITUDE_HOME.ram[1] - LATITUDE_HOME.motherboard[1],
+      ramEdge - LATITUDE_RAM.notchDepth / 2,
+    );
+    for (const dx of [
+      -LATITUDE_RAM.width / 2 - 0.03,
+      LATITUDE_RAM.width / 2 + 0.03,
+    ])
       add(board, box(0.04, 0.06, 0.58, C.steel), x + dx, 0.065, ramEdge - 0.36);
   }
   for (const z of [3.14, 0.765]) {
@@ -658,12 +845,35 @@ export function buildLatitude5410() {
   const ram = owner(new T.Group(), 'ram');
   ram.position.set(...LATITUDE_HOME.ram);
   for (const [index, x] of LATITUDE_RAM.centers.entries()) {
-    const { width: w, depth: d, notchX: nx, notchWidth: nw, notchDepth: nd } = LATITUDE_RAM;
+    const {
+      width: w,
+      depth: d,
+      notchX: nx,
+      notchWidth: nw,
+      notchDepth: nd,
+    } = LATITUDE_RAM;
     const shape = new T.Shape();
-    const outline = [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2], [nx + nw / 2, d / 2], [nx + nw / 2, d / 2 - nd], [nx - nw / 2, d / 2 - nd], [nx - nw / 2, d / 2], [-w / 2, d / 2]];
-    outline.forEach(([px, pz], i) => i ? shape.lineTo(px, pz) : shape.moveTo(px, pz));
+    const outline = [
+      [-w / 2, -d / 2],
+      [w / 2, -d / 2],
+      [w / 2, d / 2],
+      [nx + nw / 2, d / 2],
+      [nx + nw / 2, d / 2 - nd],
+      [nx - nw / 2, d / 2 - nd],
+      [nx - nw / 2, d / 2],
+      [-w / 2, d / 2],
+    ];
+    outline.forEach(([px, pz], i) =>
+      i ? shape.lineTo(px, pz) : shape.moveTo(px, pz),
+    );
     shape.closePath();
-    const pcb = new T.Mesh(new T.ExtrudeGeometry(shape, { depth: LATITUDE_RAM.thickness, bevelEnabled: false }), mat(0x377746));
+    const pcb = new T.Mesh(
+      new T.ExtrudeGeometry(shape, {
+        depth: LATITUDE_RAM.thickness,
+        bevelEnabled: false,
+      }),
+      mat(0x377746),
+    );
     pcb.rotation.x = Math.PI / 2;
     pcb.position.set(x, LATITUDE_RAM.thickness / 2, 0);
     pcb.name = `RAM PCB ${index + 1}`;
@@ -673,13 +883,26 @@ export function buildLatitude5410() {
       add(ram, box(0.27, 0.03, 0.27, C.dark), x - 0.55 + i * 0.365, 0.037, 0);
     for (let i = 0; i < 36; i++) {
       const contactX = -0.82 + i * (1.64 / 35);
-      if (Math.abs(contactX - LATITUDE_RAM.notchX) < LATITUDE_RAM.notchWidth / 2 + 0.012) continue;
-      for (const side of [-1, 1]) add(ram, box(0.024, 0.004, 0.085, C.gold, 0), x + contactX, side * (LATITUDE_RAM.thickness / 2 + 0.002), LATITUDE_RAM.depth / 2 - 0.0425);
+      if (
+        Math.abs(contactX - LATITUDE_RAM.notchX) <
+        LATITUDE_RAM.notchWidth / 2 + 0.012
+      )
+        continue;
+      for (const side of [-1, 1])
+        add(
+          ram,
+          box(0.024, 0.004, 0.085, C.gold, 0),
+          x + contactX,
+          side * (LATITUDE_RAM.thickness / 2 + 0.002),
+          LATITUDE_RAM.depth / 2 - 0.0425,
+        );
     }
   }
-  for (const x of [-0.93, 0.93]) text(ram, 'DDR4 · SODIMM', 1.08, 0.15, x, 0.055, -0.24, '#d3d7c8');
-  for (const x of [-0.93, 0.93]) for (let i = 0; i < 4; i++)
-    add(ram, box(0.27, 0.025, 0.27, C.dark), x - 0.55 + i * 0.365, -0.034, 0);
+  for (const x of [-0.93, 0.93])
+    text(ram, 'DDR4 · SODIMM', 1.08, 0.15, x, 0.055, -0.24, '#d3d7c8');
+  for (const x of [-0.93, 0.93])
+    for (let i = 0; i < 4; i++)
+      add(ram, box(0.27, 0.025, 0.27, C.dark), x - 0.55 + i * 0.365, -0.034, 0);
   batch(ram);
   serviceInterior.add(ram);
   const ssd = owner(new T.Group(), 'ssd');
@@ -687,7 +910,10 @@ export function buildLatitude5410() {
   const ssdPcb = moduleBoard(0.55, 2, 0.036, 0x23734e, -0.94);
   ssdPcb.name = 'SSD PCB';
   ssd.add(ssdPcb);
-  const ssdEyelet = new T.Mesh(new T.RingGeometry(0.034, 0.058, 24), mat(C.gold));
+  const ssdEyelet = new T.Mesh(
+    new T.RingGeometry(0.034, 0.058, 24),
+    mat(C.gold),
+  );
   ssdEyelet.rotation.x = -Math.PI / 2;
   add(ssd, ssdEyelet, 0, 0.02, -0.94);
   for (const z of [-0.68, -0.2, 0.38])
@@ -697,7 +923,8 @@ export function buildLatitude5410() {
     if (i === 9 || i === 10) continue;
     add(ssd, box(0.019, 0.016, 0.1, C.gold, 0), -0.22 + i * 0.029, 0.02, 0.95);
   }
-  for (const z of [-0.45, 0.25]) add(ssd, box(0.34, 0.023, 0.37, C.dark), 0, -0.03, z);
+  for (const z of [-0.45, 0.25])
+    add(ssd, box(0.34, 0.023, 0.37, C.dark), 0, -0.03, z);
   batch(ssd);
   serviceInterior.add(ssd);
   const wifi = owner(new T.Group(), 'wifi');
@@ -720,16 +947,30 @@ export function buildLatitude5410() {
     );
   }
   add(wifi, box(0.29, 0.022, 0.22, C.dark), 0, -0.031, -0.02);
-  for (const x of [-0.19, 0.19]) for (let i = 0; i < 5; i++)
-    add(wifi, box(0.028, 0.008, 0.035, C.gold, 0), x, -0.025, -0.19 + i * 0.075);
+  for (const x of [-0.19, 0.19])
+    for (let i = 0; i < 5; i++)
+      add(
+        wifi,
+        box(0.028, 0.008, 0.035, C.gold, 0),
+        x,
+        -0.025,
+        -0.19 + i * 0.075,
+      );
   batch(wifi);
   serviceInterior.add(wifi);
   const cooling = owner(new T.Group(), 'fan');
   cooling.position.set(...LATITUDE_HOME.cooling);
   add(cooling, box(1.16, 0.07, 0.74, 0x394044), -0.75, 0.015, -1.86);
   for (const dx of [-0.61, 0.61]) {
-    add(cooling, box(0.18, 0.025, 0.9, C.steel, 0.02), -0.75 + dx, 0.022, -1.86);
-    for (const dz of [-0.39, 0.39]) screw(cooling, -0.75 + dx, 0.045, -1.86 + dz);
+    add(
+      cooling,
+      box(0.18, 0.025, 0.9, C.steel, 0.02),
+      -0.75 + dx,
+      0.022,
+      -1.86,
+    );
+    for (const dz of [-0.39, 0.39])
+      screw(cooling, -0.75 + dx, 0.045, -1.86 + dz);
   }
   const contact = box(0.76, 0.02, 0.4, 0xad703e, 0.008);
   contact.name = 'CPU cooler contact';
@@ -752,7 +993,8 @@ export function buildLatitude5410() {
     pipe.position.y = 0.104;
   }
   const blower = new T.Group();
-  const fanX = 2.78, fanZ = -0.55;
+  const fanX = 2.78,
+    fanZ = -0.55;
   // A shallow centrifugal blower: curved vanes inside a formed casing.
   const casingShape = new T.Shape();
   casingShape.moveTo(-0.84, -0.32);
@@ -765,13 +1007,23 @@ export function buildLatitude5410() {
   const intake = new T.Path();
   intake.absarc(0, 0, 0.65, 0, Math.PI * 2, true);
   casingShape.holes.push(intake);
-  const casing = new T.Mesh(new T.ExtrudeGeometry(casingShape, {depth:0.026, bevelEnabled:false, curveSegments:32}), mat(0x454c51));
+  const casing = new T.Mesh(
+    new T.ExtrudeGeometry(casingShape, {
+      depth: 0.026,
+      bevelEnabled: false,
+      curveSegments: 32,
+    }),
+    mat(0x454c51),
+  );
   casing.rotation.x = Math.PI / 2;
   casing.name = 'Blower intake casing';
   casing.userData.geometryRole = 'blower-casing';
   add(blower, casing, fanX, 0.235, fanZ);
   add(blower, disk(0.85, 0.065, C.dark), fanX, 0.055, fanZ);
-  const wall = new T.Mesh(new T.CylinderGeometry(0.84, 0.84, 0.15, 64, 1, true), mat(C.dark));
+  const wall = new T.Mesh(
+    new T.CylinderGeometry(0.84, 0.84, 0.15, 64, 1, true),
+    mat(C.dark),
+  );
   add(blower, wall, fanX, 0.14, fanZ);
   for (let i = 0; i < 43; i++) {
     const vane = new T.Shape();
@@ -780,10 +1032,17 @@ export function buildLatitude5410() {
     vane.lineTo(0.63, 0.038);
     vane.quadraticCurveTo(0.42, -0.083, 0.27, -0.017);
     vane.closePath();
-    const blade = new T.Mesh(new T.ExtrudeGeometry(vane, {depth:0.075, bevelEnabled:false, curveSegments:6}), mat(0x30363b));
+    const blade = new T.Mesh(
+      new T.ExtrudeGeometry(vane, {
+        depth: 0.075,
+        bevelEnabled: false,
+        curveSegments: 6,
+      }),
+      mat(0x30363b),
+    );
     blade.rotation.x = Math.PI / 2;
     const rotor = new T.Group();
-    rotor.rotation.y = i * Math.PI * 2 / 43;
+    rotor.rotation.y = (i * Math.PI * 2) / 43;
     rotor.add(blade);
     add(blower, rotor, fanX, 0.205, fanZ);
   }
@@ -791,8 +1050,15 @@ export function buildLatitude5410() {
   add(blower, disk(0.12, 0.003, 0x626b70), fanX, 0.216, fanZ);
   // Fin stack receives heat from the pipes at the side exhaust.
   for (let i = 0; i < 26; i++)
-    add(blower, box(0.3, 0.14, 0.012, C.steel, 0), 3.73, 0.13, -1.24 + i * 0.055);
-  for (const y of [0.047, 0.213]) add(blower, box(0.32, 0.018, 1.46, C.dark, 0.008), 3.73, y, -0.55);
+    add(
+      blower,
+      box(0.3, 0.14, 0.012, C.steel, 0),
+      3.73,
+      0.13,
+      -1.24 + i * 0.055,
+    );
+  for (const y of [0.047, 0.213])
+    add(blower, box(0.32, 0.018, 1.46, C.dark, 0.008), 3.73, y, -0.55);
   cooling.add(blower);
   for (const [x, z] of [
     [2.25, -1.16],
@@ -806,7 +1072,10 @@ export function buildLatitude5410() {
   speakers.position.set(...LATITUDE_HOME.speakers);
   for (const x of [-2.92, 2.92]) {
     add(speakers, box(1.35, 0.16, 0.32, C.dark, 0.06), x, 0, 0);
-    const surround = new T.Mesh(new T.TorusGeometry(0.105, 0.014, 8, 32), mat(0x363c40));
+    const surround = new T.Mesh(
+      new T.TorusGeometry(0.105, 0.014, 8, 32),
+      mat(0x363c40),
+    );
     surround.rotation.x = Math.PI / 2;
     surround.scale.x = 3.1;
     add(speakers, surround, x, 0.083, 0);
@@ -814,7 +1083,13 @@ export function buildLatitude5410() {
     diaphragm.scale.x = 3.1;
     add(speakers, diaphragm, x, 0.082, 0);
     for (let i = 0; i < 18; i++)
-      add(speakers, box(0.012, 0.003, 0.18, 0x434a4e, 0), x - 0.29 + i * 0.034, 0.09, 0);
+      add(
+        speakers,
+        box(0.012, 0.003, 0.18, 0x434a4e, 0),
+        x - 0.29 + i * 0.034,
+        0.09,
+        0,
+      );
     for (const dx of [-0.56, 0.56]) screw(speakers, x + dx, 0.087, 0);
   }
   batch(speakers);

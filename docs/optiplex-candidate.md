@@ -31,5 +31,4 @@ The reference comparison used Dell’s own Mini Tower manual, retrieved from its
 
 Inspection now starts upright and offers Service view for the bench orientation. Rendering updates when hardware, cover, selection or camera changes, rather than continuously repainting an idle scene; static surfaces remain batched by material.
 
-
 Additional Dell reference: https://dl.dell.com/manuals/all-products/esuprt_desktop/esuprt_optiplex_desktop/optiplex-7040-desktop_setup%20guide_ar-ae.pdf (page 2 rear/front port map).

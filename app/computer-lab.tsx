@@ -465,15 +465,7 @@ function buildTower() {
     group.add(fallbackTowerShell());
   }
 
-  const accentRail = rounded(
-    0.08,
-    3.35,
-    0.08,
-    0.025,
-    COLORS.accent,
-    0.32,
-    0.2,
-  );
+  const accentRail = rounded(0.08, 3.35, 0.08, 0.025, COLORS.accent, 0.32, 0.2);
   accentRail.position.set(-1.13, 2.2, 1.58);
   group.add(accentRail);
 
@@ -611,7 +603,15 @@ function buildNetworkBox() {
   group.add(topInset);
 
   for (const x of [-0.55, -0.18, 0.18, 0.55]) {
-    const light = rounded(0.075, 0.035, 0.035, 0.012, COLORS.accent, 0.25, 0.05);
+    const light = rounded(
+      0.075,
+      0.035,
+      0.035,
+      0.012,
+      COLORS.accent,
+      0.25,
+      0.05,
+    );
     light.position.set(x, 0.31, 0.48);
     group.add(light);
   }
@@ -648,7 +648,15 @@ function buildPowerStrip() {
     group.add(socket);
   }
 
-  const switchMesh = rounded(0.26, 0.06, 0.18, 0.025, COLORS.accent, 0.32, 0.08);
+  const switchMesh = rounded(
+    0.26,
+    0.06,
+    0.18,
+    0.025,
+    COLORS.accent,
+    0.32,
+    0.08,
+  );
   switchMesh.position.set(0.97, 0.13, 0);
   group.add(switchMesh);
 
@@ -699,12 +707,7 @@ function addDesk(scene: THREE.Scene) {
 }
 
 function addRoom(scene: THREE.Scene) {
-  const floor = mesh(
-    new THREE.PlaneGeometry(42, 42),
-    COLORS.floor,
-    0.92,
-    0.01,
-  );
+  const floor = mesh(new THREE.PlaneGeometry(42, 42), COLORS.floor, 0.92, 0.01);
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -2.1;
   floor.receiveShadow = true;
@@ -715,14 +718,19 @@ function addRoom(scene: THREE.Scene) {
     roughness: 0.92,
     metalness: 0,
   });
-  const backWall = new THREE.Mesh(new THREE.PlaneGeometry(34, 15), wallMaterial);
+  const backWall = new THREE.Mesh(
+    new THREE.PlaneGeometry(34, 15),
+    wallMaterial,
+  );
   backWall.position.set(0, 5.1, -7.2);
   backWall.receiveShadow = true;
   scene.add(backWall);
 
   const grid = new THREE.GridHelper(34, 34, 0x34464e, 0x26343a);
   grid.position.y = -2.085;
-  const materials = Array.isArray(grid.material) ? grid.material : [grid.material];
+  const materials = Array.isArray(grid.material)
+    ? grid.material
+    : [grid.material];
   for (const material of materials) {
     material.transparent = true;
     material.opacity = 0.22;
@@ -990,11 +998,7 @@ export default function ComputerLab({
       const hit = raycaster.intersectObjects([...groups.values()], true)[0];
       if (!hit) return;
       let current: THREE.Object3D | null = hit.object;
-      while (
-        current &&
-        !current.userData.labPart &&
-        !current.userData.labPort
-      )
+      while (current && !current.userData.labPart && !current.userData.labPort)
         current = current.parent;
       const id = current?.userData.labPart as LabPartId | undefined;
       if (id) {
@@ -1048,8 +1052,7 @@ export default function ComputerLab({
           for (const material of materials) {
             if (!(material instanceof THREE.MeshStandardMaterial)) continue;
             const selectedNow =
-              modeRef.current === 'explore' &&
-              partId === selectedRef.current;
+              modeRef.current === 'explore' && partId === selectedRef.current;
             material.emissive.setHex(selectedNow ? 0x102f35 : 0x000000);
             material.emissiveIntensity = selectedNow ? 0.48 : 0;
           }
@@ -1076,10 +1079,7 @@ export default function ComputerLab({
           ? item.material
           : [item.material];
         for (const material of materials) {
-          if (
-            'map' in material &&
-            material.map instanceof THREE.Texture
-          )
+          if ('map' in material && material.map instanceof THREE.Texture)
             material.map.dispose();
           material.dispose();
         }
@@ -1166,17 +1166,48 @@ export default function ComputerLab({
         </div>
 
         <div className="lab-machine-actions">
-          <button type="button" className="lab-open-pc" aria-label="My learning path" onClick={onOpenCourse}><BookOpen size={16} /><span>My learning path</span></button>
-          <button type="button" className="lab-open-pc" onClick={onOpenTaskManager} aria-label="Task Manager"><Activity size={16} /><span>Task Manager</span></button>
-          <button type="button" className="lab-open-pc" aria-label="Build a PC" onClick={onOpenAssembly}>
+          <button
+            type="button"
+            className="lab-open-pc"
+            aria-label="My learning path"
+            onClick={onOpenCourse}
+          >
+            <BookOpen size={16} />
+            <span>My learning path</span>
+          </button>
+          <button
+            type="button"
+            className="lab-open-pc"
+            onClick={onOpenTaskManager}
+            aria-label="Task Manager"
+          >
+            <Activity size={16} />
+            <span>Task Manager</span>
+          </button>
+          <button
+            type="button"
+            className="lab-open-pc"
+            aria-label="Build a PC"
+            onClick={onOpenAssembly}
+          >
             <Wrench size={16} />
             <span>Build a PC</span>
           </button>
-          <button type="button" className="lab-open-pc" aria-label="Laptop Lab" onClick={onOpenLaptop}>
+          <button
+            type="button"
+            className="lab-open-pc"
+            aria-label="Laptop Lab"
+            onClick={onOpenLaptop}
+          >
             <Laptop size={16} />
             <span>Laptop Lab</span>
           </button>
-          <button type="button" className="lab-open-pc" aria-label="Explore inside the PC" onClick={onOpenPC}>
+          <button
+            type="button"
+            className="lab-open-pc"
+            aria-label="Explore inside the PC"
+            onClick={onOpenPC}
+          >
             <PcCase size={16} />
             <span>Explore inside the PC</span>
           </button>
@@ -1207,7 +1238,10 @@ export default function ComputerLab({
         </p>
 
         {guided && (
-          <div className="lab-progress" aria-label="Whole computer lesson progress">
+          <div
+            className="lab-progress"
+            aria-label="Whole computer lesson progress"
+          >
             <span
               style={{
                 width: ((guideIndex + 1) / GUIDE_ORDER.length) * 100 + '%',
@@ -1305,7 +1339,9 @@ export default function ComputerLab({
             <h2>{selectedPart.name}</h2>
             <p>{selectedPart.description}</p>
             <div className="lab-lesson">
-              <strong>{guided ? 'Why it matters' : 'What students learn next'}</strong>
+              <strong>
+                {guided ? 'Why it matters' : 'What students learn next'}
+              </strong>
               <p>{selectedPart.lesson}</p>
             </div>
             {guided ? (

@@ -8,11 +8,7 @@
   "source_faces": 101028,
   "output_faces": 44816,
   "output_vertices": 22247,
-  "extents_m": [
-    0.240013,
-    0.007679,
-    0.101053
-  ],
+  "extents_m": [0.240013, 0.007679, 0.101053],
   "glb_bytes": 894752,
   "release_status": "approved-for-realistic-internals-v1"
 }

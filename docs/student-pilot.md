@@ -15,16 +15,16 @@ Use one older computer and one phone. Open the public preview. Use Light graphic
 
 ## Observe and record
 
-| Check | Computer | Phone | Fix needed |
-| --- | --- | --- | --- |
-| Model loads and can rotate | | | |
-| Part/port names are easy to find | | | |
-| Learner can finish assembly without teacher clicks | | | |
-| Wrong direction feedback makes sense | | | |
-| Learner explains RAM versus saved storage | | | |
-| Learner uses evidence before choosing a fix | | | |
-| Buttons are reachable; no sideways page scrolling | | | |
-| Light graphics is usable on this device | | | |
+| Check                                              | Computer | Phone | Fix needed |
+| -------------------------------------------------- | -------- | ----- | ---------- |
+| Model loads and can rotate                         |          |       |            |
+| Part/port names are easy to find                   |          |       |            |
+| Learner can finish assembly without teacher clicks |          |       |            |
+| Wrong direction feedback makes sense               |          |       |            |
+| Learner explains RAM versus saved storage          |          |       |            |
+| Learner uses evidence before choosing a fix        |          |       |            |
+| Buttons are reachable; no sideways page scrolling  |          |       |            |
+| Light graphics is usable on this device            |          |       |            |
 
 Record device/browser, time to load, noticeable freezes, confusing words and unsuccessful taps. Mark each row Pass, Needs help or Failed. Browser automation is not a substitute for these observations.
 

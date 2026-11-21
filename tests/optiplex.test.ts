@@ -52,7 +52,7 @@ void test('OptiPlex core mounts keep board and installed hardware inside the ope
 });
 
 void test('Drive cage remains independently hinged and rear PSU opening stays unobstructed', () => {
-  const {group, driveCage} = createChassis();
+  const { group, driveCage } = createChassis();
   assert.equal(group.getObjectByName('drive-cage'), driveCage);
   driveCage.rotation.z = 0;
   group.updateMatrixWorld(true);
@@ -61,16 +61,39 @@ void test('Drive cage remains independently hinged and rear PSU opening stays un
   driveCage.rotation.z = -Math.PI / 2.4;
   group.updateMatrixWorld(true);
   const open = new T.Box3().setFromObject(driveCage);
-  assert.ok(open.max.y > closed.max.y + .5, 'Hinge must lift cage away from board');
-  const ray = new T.Raycaster(new T.Vector3(0, 1.37, 2.05), new T.Vector3(1,0,0), 0, .3);
-  assert.equal(ray.intersectObject(group, true).length, 0, 'PSU rear opening must be a real opening');
-  ray.set(new T.Vector3(0, 2.95, 2.05), new T.Vector3(1,0,0));
-  assert.ok(ray.intersectObject(group, true).length > 0, 'Rear sheet must surround the PSU opening');
+  assert.ok(
+    open.max.y > closed.max.y + 0.5,
+    'Hinge must lift cage away from board',
+  );
+  const ray = new T.Raycaster(
+    new T.Vector3(0, 1.37, 2.05),
+    new T.Vector3(1, 0, 0),
+    0,
+    0.3,
+  );
+  assert.equal(
+    ray.intersectObject(group, true).length,
+    0,
+    'PSU rear opening must be a real opening',
+  );
+  ray.set(new T.Vector3(0, 2.95, 2.05), new T.Vector3(1, 0, 0));
+  assert.ok(
+    ray.intersectObject(group, true).length > 0,
+    'Rear sheet must surround the PSU opening',
+  );
 });
 
 void test('Motherboard learning targets survive batching and remain fixed when SSD is lifted', () => {
-  const board = createHardware('motherboard'); board.position.set(...MOUNTS.motherboard);
-  for (const id of ['cpu-socket', 'memory-slots', 'expansion-slots', 'storage-socket', 'sata-ports', 'clock-battery']) {
+  const board = createHardware('motherboard');
+  board.position.set(...MOUNTS.motherboard);
+  for (const id of [
+    'cpu-socket',
+    'memory-slots',
+    'expansion-slots',
+    'storage-socket',
+    'sata-ports',
+    'clock-battery',
+  ]) {
     const target = board.getObjectByName(id);
     assert.ok(target, id);
     assert.equal(target.userData.boardTarget, id);
@@ -80,39 +103,97 @@ void test('Motherboard learning targets survive batching and remain fixed when S
   const fixture = board.getObjectByName('storage-socket')!;
   board.updateMatrixWorld(true);
   const home = new T.Box3().setFromObject(fixture);
-  const ssd = createHardware('ssd'); ssd.position.set(...MOUNTS.ssd);
-  const connector = new T.Vector3(MOUNTS.ssd[0], MOUNTS.ssd[1], MOUNTS.ssd[2] - 0.7);
-  assert.ok(home.distanceToPoint(connector) < 0.04, 'SSD contact edge must meet its board socket');
+  const ssd = createHardware('ssd');
+  ssd.position.set(...MOUNTS.ssd);
+  const connector = new T.Vector3(
+    MOUNTS.ssd[0],
+    MOUNTS.ssd[1],
+    MOUNTS.ssd[2] - 0.7,
+  );
+  assert.ok(
+    home.distanceToPoint(connector) < 0.04,
+    'SSD contact edge must meet its board socket',
+  );
   ssd.position.y += 2.3;
-  assert.ok(home.equals(new T.Box3().setFromObject(fixture)), 'Fixture must remain fixed');
-  const holeRay = new T.Raycaster(new T.Vector3(0, 1, 0.61), new T.Vector3(0, -1, 0));
-  const removable = createHardware('ssd'); removable.updateMatrixWorld(true);
-  assert.equal(holeRay.intersectObject(removable, true).length, 0, 'SSD mounting hole must remain open without a travelling screw');
+  assert.ok(
+    home.equals(new T.Box3().setFromObject(fixture)),
+    'Fixture must remain fixed',
+  );
+  const holeRay = new T.Raycaster(
+    new T.Vector3(0, 1, 0.61),
+    new T.Vector3(0, -1, 0),
+  );
+  const removable = createHardware('ssd');
+  removable.updateMatrixWorld(true);
+  assert.equal(
+    holeRay.intersectObject(removable, true).length,
+    0,
+    'SSD mounting hole must remain open without a travelling screw',
+  );
 });
 
 void test('RAM notch is open, contacts fit the slot, and retainers change visibly on their owner', () => {
-  const ram=createHardware('ram'); ram.updateMatrixWorld(true);
-  const ray=new T.Raycaster(new T.Vector3(-1,-.235,-.15),new T.Vector3(1,0,0));
-  assert.equal(ray.intersectObject(ram,true).length,0,'RAM key notch must pass through the PCB');
-  const board=createHardware('motherboard');
-  const screw=board.getObjectByName('ssd-retainer'); const clip=board.getObjectByName('ram-clip-left');
+  const ram = createHardware('ram');
+  ram.updateMatrixWorld(true);
+  const ray = new T.Raycaster(
+    new T.Vector3(-1, -0.235, -0.15),
+    new T.Vector3(1, 0, 0),
+  );
+  assert.equal(
+    ray.intersectObject(ram, true).length,
+    0,
+    'RAM key notch must pass through the PCB',
+  );
+  const board = createHardware('motherboard');
+  const screw = board.getObjectByName('ssd-retainer');
+  const clip = board.getObjectByName('ram-clip-left');
   assert.ok(screw && clip);
-  setHardwareRetainers(board,[]); assert.ok(screw.position.y>0); assert.notEqual(clip.rotation.x,0);
-  setHardwareRetainers(board,['ram','ssd']); assert.equal(screw.position.y,0); assert.equal(clip.rotation.x,0);
-  const card=createHardware('gpu'); const bracket=card.getObjectByName('gpu-retainer'); assert.ok(bracket);
-  setHardwareRetainers(card,[]); assert.notEqual(bracket.rotation.x,0);
-  setHardwareRetainers(card,['gpu']); assert.equal(bracket.rotation.x,0);
+  setHardwareRetainers(board, []);
+  assert.ok(screw.position.y > 0);
+  assert.notEqual(clip.rotation.x, 0);
+  setHardwareRetainers(board, ['ram', 'ssd']);
+  assert.equal(screw.position.y, 0);
+  assert.equal(clip.rotation.x, 0);
+  const card = createHardware('gpu');
+  const bracket = card.getObjectByName('gpu-retainer');
+  assert.ok(bracket);
+  setHardwareRetainers(card, []);
+  assert.notEqual(bracket.rotation.x, 0);
+  setHardwareRetainers(card, ['gpu']);
+  assert.equal(bracket.rotation.x, 0);
 });
 void test('Case ports remain individually pickable through geometry batching', () => {
-  const {group}=createChassis(); const ids=new Set();
-  group.traverse(object=> { if(object.userData.caseTarget) { ids.add(object.userData.caseTarget); assert.ok(!new T.Box3().setFromObject(object).isEmpty()); } });
-  for(const id of ['usb','display','hdmi','network','audio','ps2','serial','button']) assert.ok(ids.has(id),id);
+  const { group } = createChassis();
+  const ids = new Set();
+  group.traverse((object) => {
+    if (object.userData.caseTarget) {
+      ids.add(object.userData.caseTarget);
+      assert.ok(!new T.Box3().setFromObject(object).isEmpty());
+    }
+  });
+  for (const id of [
+    'usb',
+    'display',
+    'hdmi',
+    'network',
+    'audio',
+    'ps2',
+    'serial',
+    'button',
+  ])
+    assert.ok(ids.has(id), id);
 });
 
 void test('A ray into the Ethernet opening identifies the socket backing before the rear shield', () => {
-  const {group}=createChassis(); group.updateMatrixWorld(true);
-  const ray=new T.Raycaster(new T.Vector3(-1,1.2,-.6),new T.Vector3(1,0,0));
-  const hit=ray.intersectObject(group,true)[0]; assert.ok(hit);
-  let object=hit.object; while(object.parent && !object.userData.caseTarget) object=object.parent;
-  assert.equal(object.userData.caseTarget,'network');
+  const { group } = createChassis();
+  group.updateMatrixWorld(true);
+  const ray = new T.Raycaster(
+    new T.Vector3(-1, 1.2, -0.6),
+    new T.Vector3(1, 0, 0),
+  );
+  const hit = ray.intersectObject(group, true)[0];
+  assert.ok(hit);
+  let object = hit.object;
+  while (object.parent && !object.userData.caseTarget) object = object.parent;
+  assert.equal(object.userData.caseTarget, 'network');
 });

@@ -9,11 +9,7 @@
   "source_faces": 14592,
   "output_faces": 14592,
   "output_vertices": 7154,
-  "extents_m": [
-    0.0458,
-    0.028112,
-    0.021134
-  ],
+  "extents_m": [0.0458, 0.028112, 0.021134],
   "glb_bytes": 290768,
   "release_status": "candidate-for-laptop-anatomy-teardown"
 }

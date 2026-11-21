@@ -112,11 +112,11 @@ export default function AboutDialog({ open, onOpenChange }: Props) {
           <ArrowUpRight size={15} />
         </a>
         <p className="about-foot">
-          Big Change learning edition. Upstream PC Anatomy remains credited under
-          its MIT License. Framework Laptop 13 CAD is converted and optimized
-          under CC BY 4.0; its inclusion does not imply endorsement by Framework
-          Computer. Selected laptop connector geometry comes from the KiCad
-          3D component library under CC BY-SA 4.0 with the KiCad library
+          Big Change learning edition. Upstream PC Anatomy remains credited
+          under its MIT License. Framework Laptop 13 CAD is converted and
+          optimized under CC BY 4.0; its inclusion does not imply endorsement by
+          Framework Computer. Selected laptop connector geometry comes from the
+          KiCad 3D component library under CC BY-SA 4.0 with the KiCad library
           exception. No affiliation with NVIDIA, AMD or Intel.
         </p>
       </DialogContent>

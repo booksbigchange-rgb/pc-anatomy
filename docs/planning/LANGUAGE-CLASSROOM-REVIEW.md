@@ -3,7 +3,9 @@
 Status: HUMAN REVIEW REQUIRED. Machine-generated or developer-authored translations are not classroom approval.
 
 ## Tigrinya review
+
 A fluent Eritrean Tigrinya speaker should review every student-facing translated string for:
+
 - natural classroom wording;
 - correct hardware meaning;
 - age-appropriate vocabulary;
@@ -14,7 +16,9 @@ A fluent Eritrean Tigrinya speaker should review every student-facing translated
 For each changed term, record: English source, current Tigrinya, approved Tigrinya, reviewer note.
 
 ## Hebrew review
+
 A fluent Hebrew speaker should review:
+
 - natural student-facing wording;
 - hardware terminology;
 - RTL reading order;
@@ -26,9 +30,11 @@ A fluent Hebrew speaker should review:
 For each changed term, record: English source, current Hebrew, approved Hebrew, RTL/layout note.
 
 ## Fallback safety
+
 English remains the fallback. Missing translations must show understandable English rather than blank labels, broken keys or untranslated internal identifiers.
 
 ## Pass criteria
+
 - Native/fluent reviewer approval recorded for Tigrinya.
 - Native/fluent reviewer approval recorded for Hebrew.
 - RTL spot-check completed in Chrome.
@@ -36,6 +42,7 @@ English remains the fallback. Missing translations must show understandable Engl
 - Core lesson vocabulary is consistent across the product.
 
 ## Sign-off
+
 Tigrinya reviewer:
 Date:
 Approved / Changes required:

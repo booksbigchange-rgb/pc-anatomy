@@ -32,14 +32,22 @@ type Props = {
 };
 
 const studentTips: Record<Concept['category'], string> = {
-  Chassis: 'The chassis protects the hardware and keeps every major part in the right place.',
-  Cooling: 'Cooling removes heat so the computer can keep working safely and reliably.',
-  Board: 'Board components connect the computer parts so they can communicate with each other.',
-  Power: 'Power components deliver the correct electrical power to the rest of the computer.',
-  Memory: 'Memory gives the computer fast temporary space for information it is actively using.',
-  Storage: 'Storage keeps files, programs and data even after the computer is turned off.',
-  Compute: 'Compute components perform the calculations and instructions that make programs run.',
-  Graphics: 'Graphics components calculate and draw images, video and 3D scenes for the display.',
+  Chassis:
+    'The chassis protects the hardware and keeps every major part in the right place.',
+  Cooling:
+    'Cooling removes heat so the computer can keep working safely and reliably.',
+  Board:
+    'Board components connect the computer parts so they can communicate with each other.',
+  Power:
+    'Power components deliver the correct electrical power to the rest of the computer.',
+  Memory:
+    'Memory gives the computer fast temporary space for information it is actively using.',
+  Storage:
+    'Storage keeps files, programs and data even after the computer is turned off.',
+  Compute:
+    'Compute components perform the calculations and instructions that make programs run.',
+  Graphics:
+    'Graphics components calculate and draw images, video and 3D scenes for the display.',
 };
 
 export default function DetailPanel({
@@ -102,7 +110,9 @@ export default function DetailPanel({
             <div className="purpose">
               <h3>{studentMode ? 'Why it matters' : 'What it does'}</h3>
               <p>
-                {studentMode ? studentTips[selected.category] : selected.purpose}
+                {studentMode
+                  ? studentTips[selected.category]
+                  : selected.purpose}
               </p>
             </div>
             <div className="quantity">{selected.quantity}</div>
@@ -163,8 +173,9 @@ export default function DetailPanel({
                   <div className="source-links">
                     <h3>References & architecture</h3>
                     <p>
-                      Manufacturer documents and standards explain this component
-                      family. Illustrative geometry is not a product schematic.
+                      Manufacturer documents and standards explain this
+                      component family. Illustrative geometry is not a product
+                      schematic.
                     </p>
                     {selected.sources.map((s) => (
                       <a

@@ -109,38 +109,114 @@ export function laptopTeardownStage(amount: number) {
   return 'Service layout';
 }
 
-
 export const LAPTOP_CHASSIS_FEATURES = {
   batteryRails: [
-    { position: [-3.02, 0.86, 1.42] as LaptopVec3, size: [0.08, 0.08, 2.3] as LaptopVec3 },
-    { position: [3.02, 0.86, 1.42] as LaptopVec3, size: [0.08, 0.08, 2.3] as LaptopVec3 },
-    { position: [0, 0.86, 2.54] as LaptopVec3, size: [5.96, 0.08, 0.08] as LaptopVec3 },
+    {
+      position: [-3.02, 0.86, 1.42] as LaptopVec3,
+      size: [0.08, 0.08, 2.3] as LaptopVec3,
+    },
+    {
+      position: [3.02, 0.86, 1.42] as LaptopVec3,
+      size: [0.08, 0.08, 2.3] as LaptopVec3,
+    },
+    {
+      position: [0, 0.86, 2.54] as LaptopVec3,
+      size: [5.96, 0.08, 0.08] as LaptopVec3,
+    },
   ],
   speakerPockets: [
-    { position: [-3.08, 0.79, 0.7] as LaptopVec3, size: [0.68, 0.035, 1.58] as LaptopVec3 },
-    { position: [3.08, 0.79, 0.7] as LaptopVec3, size: [0.68, 0.035, 1.58] as LaptopVec3 },
+    {
+      position: [-3.08, 0.79, 0.7] as LaptopVec3,
+      size: [0.68, 0.035, 1.58] as LaptopVec3,
+    },
+    {
+      position: [3.08, 0.79, 0.7] as LaptopVec3,
+      size: [0.68, 0.035, 1.58] as LaptopVec3,
+    },
   ],
   hingeLane: {
     position: [0, 0.82, -2.38] as LaptopVec3,
     size: [6.35, 0.035, 0.16] as LaptopVec3,
   },
   clips: [
-    { role: 'battery', position: [0.18, 0.98, 0.22] as LaptopVec3, rotation: 0.14 },
-    { role: 'display', position: [1.52, 0.98, -1.05] as LaptopVec3, rotation: -0.08 },
-    { role: 'display', position: [1.9, 0.96, -1.82] as LaptopVec3, rotation: -0.14 },
-    { role: 'speaker-right', position: [2.72, 0.93, 0.3] as LaptopVec3, rotation: 0.28 },
-    { role: 'speaker-left', position: [-2.38, 0.91, 1.58] as LaptopVec3, rotation: -0.12 },
-    { role: 'wifi-black', position: [3.02, 0.94, -0.82] as LaptopVec3, rotation: 0.04 },
-    { role: 'wifi-white', position: [2.84, 0.94, -1.42] as LaptopVec3, rotation: -0.02 },
-    { role: 'ribbon', position: [0.34, 0.97, 0.72] as LaptopVec3, rotation: 0.02 },
+    {
+      role: 'battery',
+      position: [0.18, 0.98, 0.22] as LaptopVec3,
+      rotation: 0.14,
+    },
+    {
+      role: 'display',
+      position: [1.52, 0.98, -1.05] as LaptopVec3,
+      rotation: -0.08,
+    },
+    {
+      role: 'display',
+      position: [1.9, 0.96, -1.82] as LaptopVec3,
+      rotation: -0.14,
+    },
+    {
+      role: 'speaker-right',
+      position: [2.72, 0.93, 0.3] as LaptopVec3,
+      rotation: 0.28,
+    },
+    {
+      role: 'speaker-left',
+      position: [-2.38, 0.91, 1.58] as LaptopVec3,
+      rotation: -0.12,
+    },
+    {
+      role: 'wifi-black',
+      position: [3.02, 0.94, -0.82] as LaptopVec3,
+      rotation: 0.04,
+    },
+    {
+      role: 'wifi-white',
+      position: [2.84, 0.94, -1.42] as LaptopVec3,
+      rotation: -0.02,
+    },
+    {
+      role: 'ribbon',
+      position: [0.34, 0.97, 0.72] as LaptopVec3,
+      rotation: 0.02,
+    },
   ],
   tape: [
-    { role: 'battery', position: [0.3, 0.955, 0.05] as LaptopVec3, size: [0.44, 0.016, 0.18] as LaptopVec3, rotation: 0.08 },
-    { role: 'display', position: [1.72, 0.945, -1.52] as LaptopVec3, size: [0.48, 0.016, 0.2] as LaptopVec3, rotation: -0.12 },
-    { role: 'wifi', position: [2.98, 0.935, -1.08] as LaptopVec3, size: [0.36, 0.014, 0.16] as LaptopVec3, rotation: 0.03 },
-    { role: 'speaker-left', position: [-2.34, 0.91, 1.58] as LaptopVec3, size: [0.34, 0.014, 0.14] as LaptopVec3, rotation: -0.12 },
-    { role: 'keyboard', position: [0.12, 0.97, -0.36] as LaptopVec3, size: [0.44, 0.014, 0.18] as LaptopVec3, rotation: 0.02 },
-    { role: 'touchpad', position: [0.48, 0.965, 0.92] as LaptopVec3, size: [0.42, 0.014, 0.18] as LaptopVec3, rotation: -0.08 },
+    {
+      role: 'battery',
+      position: [0.3, 0.955, 0.05] as LaptopVec3,
+      size: [0.44, 0.016, 0.18] as LaptopVec3,
+      rotation: 0.08,
+    },
+    {
+      role: 'display',
+      position: [1.72, 0.945, -1.52] as LaptopVec3,
+      size: [0.48, 0.016, 0.2] as LaptopVec3,
+      rotation: -0.12,
+    },
+    {
+      role: 'wifi',
+      position: [2.98, 0.935, -1.08] as LaptopVec3,
+      size: [0.36, 0.014, 0.16] as LaptopVec3,
+      rotation: 0.03,
+    },
+    {
+      role: 'speaker-left',
+      position: [-2.34, 0.91, 1.58] as LaptopVec3,
+      size: [0.34, 0.014, 0.14] as LaptopVec3,
+      rotation: -0.12,
+    },
+    {
+      role: 'keyboard',
+      position: [0.12, 0.97, -0.36] as LaptopVec3,
+      size: [0.44, 0.014, 0.18] as LaptopVec3,
+      rotation: 0.02,
+    },
+    {
+      role: 'touchpad',
+      position: [0.48, 0.965, 0.92] as LaptopVec3,
+      size: [0.42, 0.014, 0.18] as LaptopVec3,
+      rotation: -0.08,
+    },
   ],
 } as const;
 

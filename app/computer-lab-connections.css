@@ -173,5 +173,5 @@
   font-weight: 650;
 }
 .lab-guide-controls button:disabled {
-  opacity: .35;
+  opacity: 0.35;
 }

@@ -1300,21 +1300,37 @@ export function isLaptopLocalPart(id: string): id is LaptopLocalPart {
   return id === 'ssd' || id === 'ram' || id === 'wifi';
 }
 
-export type LaptopInspectionRotation = { id: string; angles: readonly [number, number, number] };
+export type LaptopInspectionRotation = {
+  id: string;
+  angles: readonly [number, number, number];
+};
 const inspectionCenters = new WeakMap<THREE.Object3D, THREE.Vector3>();
 /** Rotate a detached component around its own center, keeping its teardown pose repeatable. */
-function inspectPart(part: LaptopTeardownPart, angles: readonly [number, number, number]) {
+function inspectPart(
+  part: LaptopTeardownPart,
+  angles: readonly [number, number, number],
+) {
   let center = inspectionCenters.get(part.object);
   if (!center) {
     part.object.updateWorldMatrix(true, true);
-    center = new THREE.Box3().setFromObject(part.object).getCenter(new THREE.Vector3());
+    center = new THREE.Box3()
+      .setFromObject(part.object)
+      .getCenter(new THREE.Vector3());
     part.object.worldToLocal(center);
     inspectionCenters.set(part.object, center);
   }
   const base = part.object.quaternion.clone();
-  const safe = angles.map(angle => Number.isFinite(angle) ? Math.max(-Math.PI, Math.min(Math.PI, angle)) : 0);
-  part.object.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(safe[0], safe[1], safe[2])));
-  part.object.position.add(center.clone().applyQuaternion(base)).sub(center.clone().applyQuaternion(part.object.quaternion));
+  const safe = angles.map((angle) =>
+    Number.isFinite(angle) ? Math.max(-Math.PI, Math.min(Math.PI, angle)) : 0,
+  );
+  part.object.quaternion.multiply(
+    new THREE.Quaternion().setFromEuler(
+      new THREE.Euler(safe[0], safe[1], safe[2]),
+    ),
+  );
+  part.object.position
+    .add(center.clone().applyQuaternion(base))
+    .sub(center.clone().applyQuaternion(part.object.quaternion));
 }
 export function applyLaptopTeardown(
   parts: readonly LaptopTeardownPart[],
@@ -1365,8 +1381,15 @@ export function applyLaptopTeardown(
     }
   }
   if (inspection) {
-    const part = parts.find(part => part.object.userData.laptopPart === inspection.id);
-    if (part && (progress >= part.end || (localPart === inspection.id && localAmount >= 1 && progress >= 18))) inspectPart(part, inspection.angles);
+    const part = parts.find(
+      (part) => part.object.userData.laptopPart === inspection.id,
+    );
+    if (
+      part &&
+      (progress >= part.end ||
+        (localPart === inspection.id && localAmount >= 1 && progress >= 18))
+    )
+      inspectPart(part, inspection.angles);
   }
 }
 

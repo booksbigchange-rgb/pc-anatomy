@@ -9,11 +9,7 @@
   "source_faces": 1860,
   "output_faces": 1860,
   "output_vertices": 930,
-  "extents_m": [
-    0.00419,
-    0.0009,
-    0.0171
-  ],
+  "extents_m": [0.00419, 0.0009, 0.0171],
   "glb_bytes": 38392,
   "release_status": "approved-for-laptop-board-detail"
 }

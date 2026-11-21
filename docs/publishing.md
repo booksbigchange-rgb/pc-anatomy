@@ -3,6 +3,7 @@
 GitHub Pages Source must remain **GitHub Actions**. Branch-folder publishing uses Jekyll and can overwrite the built app.
 
 Both publishing workflows include the two versions in one Pages artifact:
+
 - Original lab: https://booksbigchange-rgb.github.io/pc-anatomy/
 - School branding: https://booksbigchange-rgb.github.io/pc-anatomy/school/
 

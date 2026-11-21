@@ -15,7 +15,10 @@ import {
 } from '../app/laptop-internals.ts';
 
 const close = (actual: number, expected: number, label: string) =>
-  assert.ok(Math.abs(actual - expected) < 1e-6, `${label}: ${actual} !== ${expected}`);
+  assert.ok(
+    Math.abs(actual - expected) < 1e-6,
+    `${label}: ${actual} !== ${expected}`,
+  );
 
 const assertVec = (
   actual: THREE.Vector3,
@@ -69,17 +72,22 @@ await test('guided lesson covers the major removable and thermal components', ()
     'cpu',
     'motherboard',
   ]) {
-    assert.ok(parts.has(required as never), 'lesson misses component: ' + required);
+    assert.ok(
+      parts.has(required as never),
+      'lesson misses component: ' + required,
+    );
   }
 });
-
 
 await test('troubleshooting scenarios are actionable and use visible components', () => {
   assert.ok(LAPTOP_TROUBLESHOOTING_SCENARIOS.length >= 5);
 
   const ids = new Set<string>();
   for (const scenario of LAPTOP_TROUBLESHOOTING_SCENARIOS) {
-    assert.ok(!ids.has(scenario.id), 'duplicate troubleshooting scenario: ' + scenario.id);
+    assert.ok(
+      !ids.has(scenario.id),
+      'duplicate troubleshooting scenario: ' + scenario.id,
+    );
     ids.add(scenario.id);
     assert.ok(
       scenario.options.includes(scenario.answer),
@@ -97,17 +105,22 @@ await test('troubleshooting covers power, cooling, memory, storage, wireless and
     LAPTOP_TROUBLESHOOTING_SCENARIOS.map((scenario) => scenario.answer),
   );
   for (const required of ['battery', 'fan', 'ram', 'ssd', 'wifi', 'display']) {
-    assert.ok(answers.has(required as never), 'missing troubleshooting path: ' + required);
+    assert.ok(
+      answers.has(required as never),
+      'missing troubleshooting path: ' + required,
+    );
   }
 });
-
 
 await test('knowledge check has valid answers and visible 3D reference states', () => {
   assert.ok(LAPTOP_ASSESSMENT_QUESTIONS.length >= 8);
 
   const ids = new Set<string>();
   for (const question of LAPTOP_ASSESSMENT_QUESTIONS) {
-    assert.ok(!ids.has(question.id), 'duplicate assessment question: ' + question.id);
+    assert.ok(
+      !ids.has(question.id),
+      'duplicate assessment question: ' + question.id,
+    );
     ids.add(question.id);
     assert.ok(
       question.options.some((option) => option.id === question.answer),
@@ -134,10 +147,12 @@ await test('knowledge check covers core laptop concepts', () => {
     'motherboard',
     'display',
   ]) {
-    assert.ok(parts.has(required as never), 'assessment misses component: ' + required);
+    assert.ok(
+      parts.has(required as never),
+      'assessment misses component: ' + required,
+    );
   }
 });
-
 
 await test('laptop internal home positions stay inside the Framework chassis envelope', () => {
   for (const [name, item] of Object.entries(LAPTOP_INTERNAL_LAYOUT)) {
@@ -155,7 +170,8 @@ await test('0% teardown preserves every installed internal home transform', () =
   for (const [name, object] of Object.entries(laptop.parts)) {
     const layoutName = name === 'cooling' ? 'cooling' : name;
     const expected =
-      LAPTOP_INTERNAL_LAYOUT[layoutName as keyof typeof LAPTOP_INTERNAL_LAYOUT].home;
+      LAPTOP_INTERNAL_LAYOUT[layoutName as keyof typeof LAPTOP_INTERNAL_LAYOUT]
+        .home;
     assertVec(object.position, expected, name);
   }
   assert.equal(laptopTeardownStage(0), 'Assembled');
@@ -197,8 +213,14 @@ await test('Framework motherboard population is dense, shallow and keeps removab
     maxLocalY = Math.max(maxLocalY, localTop);
   });
 
-  assert.ok(meshCount >= 180, `motherboard is visually under-populated: ${meshCount} meshes`);
-  assert.ok(maxLocalY < 0.55, `motherboard components are implausibly tall: ${maxLocalY}`);
+  assert.ok(
+    meshCount >= 180,
+    `motherboard is visually under-populated: ${meshCount} meshes`,
+  );
+  assert.ok(
+    maxLocalY < 0.55,
+    `motherboard components are implausibly tall: ${maxLocalY}`,
+  );
 
   const boardBox = new THREE.Box3().setFromObject(board);
   for (const name of ['ram', 'ssd', 'wifi'] as const) {
@@ -211,7 +233,6 @@ await test('Framework motherboard population is dense, shallow and keeps removab
 
   assert.equal(board.userData.boardDetailVersion, 2);
 });
-
 
 await test('Framework cooling assembly stays flat and within a laptop-scale envelope', () => {
   const laptop = buildRealisticLaptopInternals();
@@ -230,7 +251,6 @@ await test('Framework cooling assembly stays flat and within a laptop-scale enve
     `cooling depth is outside the expected 85 mm-class envelope: ${size.z}`,
   );
 });
-
 
 await test('removable modules leave their sockets and retainers on the motherboard', () => {
   const laptop = buildRealisticLaptopInternals();
@@ -256,14 +276,21 @@ await test('removable modules leave their sockets and retainers on the motherboa
     'M.2 Wi-Fi socket',
     'Wi-Fi standoff',
   ]) {
-    assert.ok(fixtureNames.has(required), 'missing fixed motherboard fixture: ' + required);
+    assert.ok(
+      fixtureNames.has(required),
+      'missing fixed motherboard fixture: ' + required,
+    );
   }
 
   let wifiEmbeddedCables = 0;
   laptop.parts.wifi.traverse((object) => {
     if (object.userData.cableKind) wifiEmbeddedCables++;
   });
-  assert.equal(wifiEmbeddedCables, 0, 'Wi-Fi antenna cables incorrectly move with the card');
+  assert.equal(
+    wifiEmbeddedCables,
+    0,
+    'Wi-Fi antenna cables incorrectly move with the card',
+  );
 });
 
 await test('internal cabling distinguishes flat flex ribbons from wire harnesses', () => {
@@ -276,10 +303,12 @@ await test('internal cabling distinguishes flat flex ribbons from wire harnesses
     if (object.userData.cableKind === 'wire') wires++;
   });
 
-  assert.ok(ribbons >= 3, `expected at least 3 flat flex ribbons, found ${ribbons}`);
+  assert.ok(
+    ribbons >= 3,
+    `expected at least 3 flat flex ribbons, found ${ribbons}`,
+  );
   assert.ok(wires >= 4, `expected at least 4 wire/coax runs, found ${wires}`);
 });
-
 
 await test('internal material palette preserves distinct real-world surface classes', () => {
   const laptop = buildRealisticLaptopInternals();
@@ -325,7 +354,6 @@ await test('internal material palette preserves distinct real-world surface clas
   assert.ok(pcb && pcb.metalness <= 0.08 && pcb.roughness >= 0.55);
 });
 
-
 await test('chassis realism includes rails, speaker pockets, hinge routing and retention hardware', () => {
   const laptop = buildRealisticLaptopInternals();
   assert.equal(laptop.chassisDetails.userData.chassisDetailVersion, 1);
@@ -344,8 +372,14 @@ await test('chassis realism includes rails, speaker pockets, hinge routing and r
     if (object.userData.retentionKind === 'tape') tape++;
   });
 
-  assert.ok(batteryRails >= 3, `expected battery-bay rails, found ${batteryRails}`);
-  assert.ok(speakerPockets >= 2, `expected speaker pockets, found ${speakerPockets}`);
+  assert.ok(
+    batteryRails >= 3,
+    `expected battery-bay rails, found ${batteryRails}`,
+  );
+  assert.ok(
+    speakerPockets >= 2,
+    `expected speaker pockets, found ${speakerPockets}`,
+  );
   assert.ok(hingeLanes >= 1, 'missing hinge routing lane');
   assert.ok(clips >= 8, `expected cable-retention clips, found ${clips}`);
   assert.ok(tape >= 6, `expected cable-retention tape, found ${tape}`);
@@ -379,16 +413,19 @@ await test('routed chassis cables have roles and remain low inside the laptop en
     assert.ok(roles.has(role), 'missing routed cable role: ' + role);
   }
 
-  assert.ok(maxY < 1.45, `cable routing floats too high above chassis: ${maxY}`);
+  assert.ok(
+    maxY < 1.45,
+    `cable routing floats too high above chassis: ${maxY}`,
+  );
 });
 
 await test('battery cable is visible after the cover opens and before battery removal begins', () => {
   assert.ok(
-    LAPTOP_INTERNAL_LAYOUT.battery.teardown.start > LAPTOP_INPUT_COVER_SERVICE.end,
+    LAPTOP_INTERNAL_LAYOUT.battery.teardown.start >
+      LAPTOP_INPUT_COVER_SERVICE.end,
     'battery begins moving before the student can inspect its cable',
   );
 });
-
 
 await test('18% teaching state removes the Input Cover from the active work area', () => {
   assert.equal(
@@ -413,7 +450,6 @@ await test('100% service row keeps removable modules compact around the chassis'
   assert.ok(maxZ - minZ < 5.2, 'service row is spread too widely across Z');
 });
 
-
 await test('100% service layout stays planar enough to read like a technician mat', () => {
   const laptop = buildRealisticLaptopInternals();
   applyLaptopTeardown(laptop.teardownParts, 100);
@@ -428,21 +464,32 @@ await test('100% service layout stays planar enough to read like a technician ma
   );
 });
 
-
 await test('100% teardown separates service parts from the motherboard staging area', () => {
   const laptop = buildRealisticLaptopInternals();
   applyLaptopTeardown(laptop.teardownParts, 100);
   laptop.inside.updateMatrixWorld(true);
 
   const board = new THREE.Box3().setFromObject(laptop.parts.motherboard);
-  for (const name of ['battery', 'ssd', 'wifi', 'ram', 'cooling', 'cpu'] as const) {
+  for (const name of [
+    'battery',
+    'ssd',
+    'wifi',
+    'ram',
+    'cooling',
+    'cpu',
+  ] as const) {
     const box = new THREE.Box3().setFromObject(laptop.parts[name]);
-    assert.ok(!box.intersectsBox(board), name + ' overlaps motherboard at 100%');
+    assert.ok(
+      !box.intersectsBox(board),
+      name + ' overlaps motherboard at 100%',
+    );
   }
 
   for (const [name, object] of Object.entries(laptop.parts)) {
     assert.ok(
-      [object.position.x, object.position.y, object.position.z].every(Number.isFinite),
+      [object.position.x, object.position.y, object.position.z].every(
+        Number.isFinite,
+      ),
       name + ' has a non-finite service position',
     );
   }
@@ -455,39 +502,73 @@ await test('local module explode composes with global poses without moving fixtu
       const laptop = buildRealisticLaptopInternals();
       applyLaptopTeardown(laptop.teardownParts, stage);
       laptop.inside.updateMatrixWorld(true);
-      const poses = laptop.teardownParts.map(p => ({ p: p.object.position.clone(), r: p.object.rotation.clone() }));
+      const poses = laptop.teardownParts.map((p) => ({
+        p: p.object.position.clone(),
+        r: p.object.rotation.clone(),
+      }));
       const fixtures: { object: THREE.Object3D; matrix: THREE.Matrix4 }[] = [];
-      laptop.parts.motherboard.traverse(object => {
-        if (object.userData.boardFixture) fixtures.push({ object, matrix: object.matrixWorld.clone() });
+      laptop.parts.motherboard.traverse((object) => {
+        if (object.userData.boardFixture)
+          fixtures.push({ object, matrix: object.matrixWorld.clone() });
       });
       assert.ok(fixtures.length >= 8);
-      laptop.parts[id].traverse(object => assert.ok(!object.userData.boardFixture));
+      laptop.parts[id].traverse((object) =>
+        assert.ok(!object.userData.boardFixture),
+      );
       applyLaptopTeardown(laptop.teardownParts, stage, id, 1);
       laptop.inside.updateMatrixWorld(true);
-      fixtures.forEach(({ object, matrix }) => assert.deepEqual(object.matrixWorld.elements, matrix.elements));
+      fixtures.forEach(({ object, matrix }) =>
+        assert.deepEqual(object.matrixWorld.elements, matrix.elements),
+      );
       laptop.teardownParts.forEach((part, index) => {
         if (part.object === laptop.parts[id]) {
           assert.ok(part.object.position.y > poses[index].p.y + 0.6);
-          assert.notDeepEqual(part.object.rotation.toArray(), poses[index].r.toArray());
+          assert.notDeepEqual(
+            part.object.rotation.toArray(),
+            poses[index].r.toArray(),
+          );
         } else {
-          assert.deepEqual(part.object.position.toArray(), poses[index].p.toArray());
-          assert.deepEqual(part.object.rotation.toArray(), poses[index].r.toArray());
+          assert.deepEqual(
+            part.object.position.toArray(),
+            poses[index].p.toArray(),
+          );
+          assert.deepEqual(
+            part.object.rotation.toArray(),
+            poses[index].r.toArray(),
+          );
         }
       });
       const expanded = laptop.parts[id].position.clone();
-      for (let frame = 0; frame < 30; frame++) applyLaptopTeardown(laptop.teardownParts, stage, id, 1);
-      assert.deepEqual(laptop.parts[id].position.toArray(), expanded.toArray(), 'local offsets must not accumulate');
+      for (let frame = 0; frame < 30; frame++)
+        applyLaptopTeardown(laptop.teardownParts, stage, id, 1);
+      assert.deepEqual(
+        laptop.parts[id].position.toArray(),
+        expanded.toArray(),
+        'local offsets must not accumulate',
+      );
       for (const local of [null, id] as const) {
         applyLaptopTeardown(laptop.teardownParts, stage, local, 0);
         laptop.teardownParts.forEach((part, index) => {
-          assert.deepEqual(part.object.position.toArray(), poses[index].p.toArray());
-          assert.deepEqual(part.object.rotation.toArray(), poses[index].r.toArray());
+          assert.deepEqual(
+            part.object.position.toArray(),
+            poses[index].p.toArray(),
+          );
+          assert.deepEqual(
+            part.object.rotation.toArray(),
+            poses[index].r.toArray(),
+          );
         });
       }
       applyLaptopTeardown(laptop.teardownParts, 0, id, 1);
-      laptop.teardownParts.forEach(part => {
-        assert.deepEqual(part.object.position.toArray(), part.homePosition.toArray());
-        assert.deepEqual(part.object.rotation.toArray(), part.homeRotation.toArray());
+      laptop.teardownParts.forEach((part) => {
+        assert.deepEqual(
+          part.object.position.toArray(),
+          part.homePosition.toArray(),
+        );
+        assert.deepEqual(
+          part.object.rotation.toArray(),
+          part.homeRotation.toArray(),
+        );
       });
     }
   }

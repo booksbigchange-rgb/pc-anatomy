@@ -140,7 +140,16 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         processes: [...state.processes, { id, app: action.app }],
-        comparison: { label: `Opened ${APPS[action.app].name}`, before: sample(state.processes, state.device, state.tick, true), after: sample([...state.processes, { id, app: action.app }], state.device, state.tick, true) },
+        comparison: {
+          label: `Opened ${APPS[action.app].name}`,
+          before: sample(state.processes, state.device, state.tick, true),
+          after: sample(
+            [...state.processes, { id, app: action.app }],
+            state.device,
+            state.tick,
+            true,
+          ),
+        },
         feedback: APPS[action.app].description,
       };
     }
@@ -148,8 +157,26 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         processes: endProcess(state.processes, action.id),
-        comparison: { label: 'After ending the selected task', before: sample(state.processes, state.device, state.tick, state.powered), after: sample(endProcess(state.processes, action.id), state.device, state.tick, state.powered) },
-        feedback: state.processes.find(process => process.id === action.id)?.app === 'system' ? 'System stays protected.' : 'App ended. Compare the readings above: its CPU work stopped and its RAM was released. Saved files stay on the SSD.',
+        comparison: {
+          label: 'After ending the selected task',
+          before: sample(
+            state.processes,
+            state.device,
+            state.tick,
+            state.powered,
+          ),
+          after: sample(
+            endProcess(state.processes, action.id),
+            state.device,
+            state.tick,
+            state.powered,
+          ),
+        },
+        feedback:
+          state.processes.find((process) => process.id === action.id)?.app ===
+          'system'
+            ? 'System stays protected.'
+            : 'App ended. Compare the readings above: its CPU work stopped and its RAM was released. Saved files stay on the SSD.',
       };
     case 'mission':
       return {
@@ -252,7 +279,9 @@ export default function TaskManagerLab({
   const [paused, setPaused] = useState(false);
   const [search, setSearch] = useState('');
   const [compactSidebar, setCompactSidebar] = useState(true);
-  useEffect(() => { saveProgress({ taskManager: state.completed }); }, [state.completed]);
+  useEffect(() => {
+    saveProgress({ taskManager: state.completed });
+  }, [state.completed]);
   useEffect(() => {
     if (!state.powered || paused) return;
     const timer = window.setInterval(() => dispatch({ type: 'tick' }), 1000);
@@ -267,9 +296,11 @@ export default function TaskManagerLab({
   const profile = PROFILES[state.device];
   const selected = RESOURCES[resource];
   const mission = state.mission === null ? null : MISSIONS[state.mission];
-  const rows = current.rows.filter((row) => APPS[row.app].name.toLowerCase().includes(search.trim().toLowerCase())).sort(
-    (a, b) => b[sort] - a[sort] || a.id - b.id,
-  );
+  const rows = current.rows
+    .filter((row) =>
+      APPS[row.app].name.toLowerCase().includes(search.trim().toLowerCase()),
+    )
+    .sort((a, b) => b[sort] - a[sort] || a.id - b.id);
   return (
     <main className="tm-lab">
       <header className="tm-header">
@@ -288,11 +319,16 @@ export default function TaskManagerLab({
       </header>
       <div className="tm-layout">
         <aside className={'tm-sidebar' + (compactSidebar ? ' compact' : '')}>
-          <button className="tm-mobile-challenges" aria-expanded={!compactSidebar} onClick={() => setCompactSidebar(!compactSidebar)}>{compactSidebar ? 'Show challenges & XP' : 'Hide challenges & XP'}</button>
+          <button
+            className="tm-mobile-challenges"
+            aria-expanded={!compactSidebar}
+            onClick={() => setCompactSidebar(!compactSidebar)}
+          >
+            {compactSidebar ? 'Show challenges & XP' : 'Hide challenges & XP'}
+          </button>
           <p className="tm-eyebrow">NEW CHAPTER</p>
           <h1>
-            What is your{' '}
-            <br />
+            What is your <br />
             computer doing?
           </h1>
           <p>Open an app. Watch the graphs. Find what makes a computer busy.</p>
@@ -363,7 +399,8 @@ export default function TaskManagerLab({
           </button>
           <p className="tm-note">
             These are learning examples, not readings from your real device.
-            Completed challenges and XP are saved on this browser. Reset clears this chapter’s XP.
+            Completed challenges and XP are saved on this browser. Reset clears
+            this chapter’s XP.
           </p>
         </aside>
         <section className="tm-main" aria-label="Task Manager simulation">
@@ -374,9 +411,18 @@ export default function TaskManagerLab({
             </div>
             <div className="tm-monitor-controls">
               <span className={'tm-live' + (state.powered ? ' on' : '')}>
-                {state.powered ? paused ? '○ Graphs paused' : '● Running simulation' : '○ Powered off'}
+                {state.powered
+                  ? paused
+                    ? '○ Graphs paused'
+                    : '● Running simulation'
+                  : '○ Powered off'}
               </span>
-              <button className="tm-pause" disabled={!state.powered} aria-pressed={paused} onClick={() => setPaused(!paused)}>
+              <button
+                className="tm-pause"
+                disabled={!state.powered}
+                aria-pressed={paused}
+                onClick={() => setPaused(!paused)}
+              >
                 {paused ? <Play size={14} /> : <Pause size={14} />}
                 {paused ? 'Resume graphs' : 'Pause graphs'}
               </button>
@@ -412,7 +458,11 @@ export default function TaskManagerLab({
                   <div className="tm-meter">
                     <i style={{ width: `${current[key]}%` }} />
                   </div>
-                  <Chart history={state.history} resource={key} current={current[key]} />
+                  <Chart
+                    history={state.history}
+                    resource={key}
+                    current={current[key]}
+                  />
                   <small>
                     {key === 'memory'
                       ? `${(current.memoryMB / 1024).toFixed(1)} / ${profile.memory / 1024} GB needed`
@@ -443,7 +493,13 @@ export default function TaskManagerLab({
               <span>
                 {resource === 'memory' ? '100% of RAM needed' : '100% busy'}
               </span>
-              <span>{!state.powered ? 'Computer off' : paused ? 'Paused · app changes still update readings' : 'Updates every second'}</span>
+              <span>
+                {!state.powered
+                  ? 'Computer off'
+                  : paused
+                    ? 'Paused · app changes still update readings'
+                    : 'Updates every second'}
+              </span>
             </div>
             <Chart
               history={state.history}
@@ -493,11 +549,39 @@ export default function TaskManagerLab({
           >
             {state.feedback}
           </output>
-          {state.comparison && <section className="tm-comparison" aria-label="Effect of your last action">
-            <h3>{state.comparison.label}</h3><p>Compare the same simulated moment, before and after your action.</p>
-            <table><thead><tr><th>Resource</th><th>Before</th><th>After</th></tr></thead><tbody>{(Object.keys(RESOURCES) as Resource[]).map(key => <tr key={key}><th>{RESOURCES[key].label}</th><td>{Math.round(state.comparison!.before[key])}%</td><td>{Math.round(state.comparison!.after[key])}%</td></tr>)}</tbody></table>
-            <p>RAM is working space. Disk activity is reading and writing, not how much storage is full.</p>
-          </section>}
+          {state.comparison && (
+            <section
+              className="tm-comparison"
+              aria-label="Effect of your last action"
+            >
+              <h3>{state.comparison.label}</h3>
+              <p>
+                Compare the same simulated moment, before and after your action.
+              </p>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Resource</th>
+                    <th>Before</th>
+                    <th>After</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(Object.keys(RESOURCES) as Resource[]).map((key) => (
+                    <tr key={key}>
+                      <th>{RESOURCES[key].label}</th>
+                      <td>{Math.round(state.comparison!.before[key])}%</td>
+                      <td>{Math.round(state.comparison!.after[key])}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p>
+                RAM is working space. Disk activity is reading and writing, not
+                how much storage is full.
+              </p>
+            </section>
+          )}
           <section className="tm-apps" aria-label="Open a virtual app">
             <div className="tm-card-title">
               <h3>
@@ -545,8 +629,15 @@ export default function TaskManagerLab({
             </div>
             <label className="tm-process-search">
               Find a process
-              <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Type an app name" />
-              <span>{rows.length} of {current.rows.length} processes</span>
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Type an app name"
+              />
+              <span>
+                {rows.length} of {current.rows.length} processes
+              </span>
             </label>
             <div className="tm-table-wrap">
               <table>
@@ -586,10 +677,34 @@ export default function TaskManagerLab({
                           <small> · group {row.id}</small>
                         )}
                       </th>
-                      <td style={{ background: `rgba(24,136,93,${Math.min(.38, row.cpu / 100 * .38)})` }}>{row.cpu.toFixed(1)}%</td>
-                      <td style={{ background: `rgba(132,80,197,${Math.min(.38, row.memory / profile.memory * .65)})` }}>{row.memory.toLocaleString()} MB</td>
-                      <td style={{ background: `rgba(202,114,24,${Math.min(.38, row.disk / 100 * .38)})` }}>{row.disk.toFixed(1)}%</td>
-                      <td style={{ background: `rgba(34,120,195,${Math.min(.38, row.network / profile.network * .38)})` }}>{row.network.toFixed(1)} Mbps</td>
+                      <td
+                        style={{
+                          background: `rgba(24,136,93,${Math.min(0.38, (row.cpu / 100) * 0.38)})`,
+                        }}
+                      >
+                        {row.cpu.toFixed(1)}%
+                      </td>
+                      <td
+                        style={{
+                          background: `rgba(132,80,197,${Math.min(0.38, (row.memory / profile.memory) * 0.65)})`,
+                        }}
+                      >
+                        {row.memory.toLocaleString()} MB
+                      </td>
+                      <td
+                        style={{
+                          background: `rgba(202,114,24,${Math.min(0.38, (row.disk / 100) * 0.38)})`,
+                        }}
+                      >
+                        {row.disk.toFixed(1)}%
+                      </td>
+                      <td
+                        style={{
+                          background: `rgba(34,120,195,${Math.min(0.38, (row.network / profile.network) * 0.38)})`,
+                        }}
+                      >
+                        {row.network.toFixed(1)} Mbps
+                      </td>
                       <td>
                         <button
                           disabled={row.app === 'system'}
@@ -608,7 +723,11 @@ export default function TaskManagerLab({
                   The virtual computer is off. Turn it on to start exploring.
                 </p>
               )}
-              {state.powered && rows.length === 0 && <p className="tm-off">No matching processes. Clear the search to show all apps.</p>}
+              {state.powered && rows.length === 0 && (
+                <p className="tm-off">
+                  No matching processes. Clear the search to show all apps.
+                </p>
+              )}
             </div>
             <p className="tm-table-note">
               A process is a running program or job. End only the virtual apps

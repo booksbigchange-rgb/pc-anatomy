@@ -46,10 +46,19 @@ try {
   }
   await page.getByRole('button', { name: /Enter interactive/ }).click();
   await shot('02-open-case');
-  await page.getByRole('button', {name: 'Close drive cage', exact: true}).click();
-  assert.equal(await page.getByRole('button', {name: 'Open drive cage', exact: true}).getAttribute('aria-pressed'), 'false');
+  await page
+    .getByRole('button', { name: 'Close drive cage', exact: true })
+    .click();
+  assert.equal(
+    await page
+      .getByRole('button', { name: 'Open drive cage', exact: true })
+      .getAttribute('aria-pressed'),
+    'false',
+  );
   await shot('02b-cage-closed');
-  await page.getByRole('button', {name: 'Open drive cage', exact: true}).click();
+  await page
+    .getByRole('button', { name: 'Open drive cage', exact: true })
+    .click();
   await shot('02c-cage-open');
   await page
     .getByRole('button', { name: 'Fit side cover', exact: true })
@@ -80,12 +89,23 @@ try {
   pickCamera.position.set(2.5, 17, 0.01);
   pickCamera.lookAt(2.5, 1.1, 0);
   pickCamera.updateMatrixWorld();
-  await page.getByRole('button', {name:'Close drive cage',exact:true}).click();
+  await page
+    .getByRole('button', { name: 'Close drive cage', exact: true })
+    .click();
   await page.waitForTimeout(200);
-  const blockedPoint = new T.Vector3(3.64, 3.02, -.3).project(pickCamera);
-  await page.mouse.click(pickRect.x + (blockedPoint.x+1)*pickRect.width/2, pickRect.y+(1-blockedPoint.y)*pickRect.height/2);
-  assert.equal(await page.getByRole('combobox', {name:'Select component'}).inputValue(),'ram','Clicking a closed metal cage must not select the SSD underneath');
-  await page.getByRole('button', {name:'Open drive cage',exact:true}).click();
+  const blockedPoint = new T.Vector3(3.64, 3.02, -0.3).project(pickCamera);
+  await page.mouse.click(
+    pickRect.x + ((blockedPoint.x + 1) * pickRect.width) / 2,
+    pickRect.y + ((1 - blockedPoint.y) * pickRect.height) / 2,
+  );
+  assert.equal(
+    await page.getByRole('combobox', { name: 'Select component' }).inputValue(),
+    'ram',
+    'Clicking a closed metal cage must not select the SSD underneath',
+  );
+  await page
+    .getByRole('button', { name: 'Open drive cage', exact: true })
+    .click();
   await page.waitForTimeout(200);
   const coolerPoint = new T.Vector3(1.48, 1.82, -1.68).project(pickCamera);
   await page.mouse.click(
@@ -100,15 +120,35 @@ try {
   );
 
   // Fixed motherboard targets are individually identifiable, by list and direct picking.
-  for (const target of ['CPU socket', 'Memory slots', 'Expansion slots', 'M.2 storage socket', 'SATA ports', 'Clock battery']) {
-    await page.getByRole('button', {name:target,exact:true}).click();
+  for (const target of [
+    'CPU socket',
+    'Memory slots',
+    'Expansion slots',
+    'M.2 storage socket',
+    'SATA ports',
+    'Clock battery',
+  ]) {
+    await page.getByRole('button', { name: target, exact: true }).click();
     assert.equal(await page.locator('.assembly-detail h2').innerText(), target);
-    assert.equal(await page.getByRole('button', {name:'Explode selected',exact:true}).isEnabled(), false, 'Fixed board targets cannot be removed independently');
+    assert.equal(
+      await page
+        .getByRole('button', { name: 'Explode selected', exact: true })
+        .isEnabled(),
+      false,
+      'Fixed board targets cannot be removed independently',
+    );
   }
-  await page.getByRole('button', {name:'Memory slots',exact:true}).click();
-  const batteryPoint = new T.Vector3(3.34, .85, -.09).project(pickCamera);
-  await page.mouse.click(pickRect.x + (batteryPoint.x+1)*pickRect.width/2, pickRect.y+(1-batteryPoint.y)*pickRect.height/2);
-  assert.equal(await page.locator('.assembly-detail h2').innerText(), 'Clock battery', 'Direct battery pick must identify its holder');
+  await page.getByRole('button', { name: 'Memory slots', exact: true }).click();
+  const batteryPoint = new T.Vector3(3.34, 0.85, -0.09).project(pickCamera);
+  await page.mouse.click(
+    pickRect.x + ((batteryPoint.x + 1) * pickRect.width) / 2,
+    pickRect.y + ((1 - batteryPoint.y) * pickRect.height) / 2,
+  );
+  assert.equal(
+    await page.locator('.assembly-detail h2').innerText(),
+    'Clock battery',
+    'Direct battery pick must identify its holder',
+  );
   await shot('06b-board-learning-target');
   await page
     .getByRole('combobox', { name: 'Select component' })
@@ -131,13 +171,36 @@ try {
   await page
     .getByRole('button', { name: 'Return selected', exact: true })
     .click();
-  await page.getByText('Practise troubleshooting',{exact:true}).click();
-  await page.getByRole('button',{name:'Inspect the CPU fan connection',exact:true}).click();
-  assert.match(await page.locator('.fault-practice output').innerText(), /does not explain/);
-  await page.getByRole('button',{name:'Inspect the monitor connection and input',exact:true}).click();
-  await page.getByRole('button',{name:'Reconnect the monitor cable and select its input',exact:true}).click();
-  await page.getByRole('button',{name:'3. Run the check again',exact:true}).click();
-  assert.match(await page.locator('.fault-practice').innerText(), /Verified: the simulated fault is resolved/);
+  await page.getByText('Practise troubleshooting', { exact: true }).click();
+  await page
+    .getByRole('button', {
+      name: 'Inspect the CPU fan connection',
+      exact: true,
+    })
+    .click();
+  assert.match(
+    await page.locator('.fault-practice output').innerText(),
+    /does not explain/,
+  );
+  await page
+    .getByRole('button', {
+      name: 'Inspect the monitor connection and input',
+      exact: true,
+    })
+    .click();
+  await page
+    .getByRole('button', {
+      name: 'Reconnect the monitor cable and select its input',
+      exact: true,
+    })
+    .click();
+  await page
+    .getByRole('button', { name: '3. Run the check again', exact: true })
+    .click();
+  assert.match(
+    await page.locator('.fault-practice').innerText(),
+    /Verified: the simulated fault is resolved/,
+  );
   await shot('08b-diagnosis-verified');
   await page
     .getByRole('button', { name: 'Start assembly practice', exact: true })
@@ -173,15 +236,23 @@ try {
     ['psu', [-4.9, 1.2, -0.5], [1.33, 1.37, 2.05]],
   ];
   for (let i = 0; i < steps.length; i++) {
-    if (i === 2) await page.getByRole('button', { name: 'Apply thermal paste', exact: true }).click();
+    if (i === 2)
+      await page
+        .getByRole('button', { name: 'Apply thermal paste', exact: true })
+        .click();
     const [id, start, target] = steps[i],
       origin = new T.Vector3(...start),
       dest = new T.Vector3(...target),
       from = screen(origin);
-    if ([1,3,4,5].includes(i)) {
-      await page.mouse.click(from.x,from.y);
-      assert.match(await page.locator('.assembly-feedback').innerText(), /Wrong direction/);
-      await page.getByRole('button',{name:'Turn part 180°',exact:true}).click();
+    if ([1, 3, 4, 5].includes(i)) {
+      await page.mouse.click(from.x, from.y);
+      assert.match(
+        await page.locator('.assembly-feedback').innerText(),
+        /Wrong direction/,
+      );
+      await page
+        .getByRole('button', { name: 'Turn part 180°', exact: true })
+        .click();
     }
     const ray = new T.Raycaster();
     ray.setFromCamera(
@@ -223,29 +294,82 @@ try {
     );
   }
   await shot('10-completed-placement');
-  await page.getByRole('button',{name:'Test power-on',exact:true}).click();
-  assert.match(await page.locator('.assembly-wiring').innerText(), /Close RAM clips/);
-  for (const name of ['Close RAM clips','Fasten SSD screw','Secure expansion bracket']) await page.getByRole('button',{name,exact:true}).click();
+  await page
+    .getByRole('button', { name: 'Test power-on', exact: true })
+    .click();
+  assert.match(
+    await page.locator('.assembly-wiring').innerText(),
+    /Close RAM clips/,
+  );
+  for (const name of [
+    'Close RAM clips',
+    'Fasten SSD screw',
+    'Secure expansion bracket',
+  ])
+    await page.getByRole('button', { name, exact: true }).click();
   await page.getByRole('button', { name: 'Corner 2', exact: true }).click();
-  assert.match(await page.locator('.assembly-feedback').innerText(), /Choose corner 1/);
-  await page.getByRole('button', { name: 'Test power-on', exact: true }).click();
-  assert.match(await page.locator('.assembly-wiring').innerText(), /Fasten the cooler/);
-  for (const corner of [1, 3, 2, 4]) await page.getByRole('button', { name: `Corner ${corner}`, exact: true }).click();
-  await page.getByRole('button', { name: 'Test power-on', exact: true }).click();
-  assert.ok((await page.locator('.assembly-wiring').innerText()).includes('Connect PSU'));
-  await page.getByRole('combobox', { name: 'Choose PC cable' }).selectOption('board-power');
-  await page.getByRole('button', { name: 'CPU fan header', exact: true }).click();
-  assert.ok((await page.locator('.assembly-feedback').innerText()).includes('Wrong socket'));
-  for (const [id, target] of [['board-power', 'Board power socket'], ['cpu-power', 'CPU power socket'], ['fan', 'CPU fan header'], ['switch', 'Power-button header'], ['display', 'Graphics display output'], ['mains', 'PSU AC inlet']]) {
-    await page.getByRole('combobox', { name: 'Choose PC cable' }).selectOption(id);
+  assert.match(
+    await page.locator('.assembly-feedback').innerText(),
+    /Choose corner 1/,
+  );
+  await page
+    .getByRole('button', { name: 'Test power-on', exact: true })
+    .click();
+  assert.match(
+    await page.locator('.assembly-wiring').innerText(),
+    /Fasten the cooler/,
+  );
+  for (const corner of [1, 3, 2, 4])
+    await page
+      .getByRole('button', { name: `Corner ${corner}`, exact: true })
+      .click();
+  await page
+    .getByRole('button', { name: 'Test power-on', exact: true })
+    .click();
+  assert.ok(
+    (await page.locator('.assembly-wiring').innerText()).includes(
+      'Connect PSU',
+    ),
+  );
+  await page
+    .getByRole('combobox', { name: 'Choose PC cable' })
+    .selectOption('board-power');
+  await page
+    .getByRole('button', { name: 'CPU fan header', exact: true })
+    .click();
+  assert.ok(
+    (await page.locator('.assembly-feedback').innerText()).includes(
+      'Wrong socket',
+    ),
+  );
+  for (const [id, target] of [
+    ['board-power', 'Board power socket'],
+    ['cpu-power', 'CPU power socket'],
+    ['fan', 'CPU fan header'],
+    ['switch', 'Power-button header'],
+    ['display', 'Graphics display output'],
+    ['mains', 'PSU AC inlet'],
+  ]) {
+    await page
+      .getByRole('combobox', { name: 'Choose PC cable' })
+      .selectOption(id);
     await page.getByRole('button', { name: target, exact: true }).click();
   }
-  await page.getByRole('button', { name: 'Close drive cage', exact: true }).click();
-  await page.getByRole('button', { name: 'Fit side cover', exact: true }).click();
-  await page.getByRole('button', { name: 'Test power-on', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Close drive cage', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Fit side cover', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Test power-on', exact: true })
+    .click();
   await page.getByText('✓ POST passed', { exact: true }).waitFor();
   await shot('11-power-on-passed');
-  assert.equal(await page.getByRole('combobox', { name: 'Choose PC cable' }).isEnabled(), false);
+  assert.equal(
+    await page.getByRole('combobox', { name: 'Choose PC cable' }).isEnabled(),
+    false,
+  );
   await page.getByRole('button', { name: 'Shut down PC', exact: true }).click();
   await page
     .getByRole('button', { name: 'Restart practice', exact: false })
@@ -278,4 +402,3 @@ try {
 } finally {
   await browser.close();
 }
-

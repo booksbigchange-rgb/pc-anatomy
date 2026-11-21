@@ -1288,15 +1288,24 @@ function LaptopScene({
   >({});
   const [assessmentComplete, setAssessmentComplete] = useState(false);
   const [assessmentSaveFailed, setAssessmentSaveFailed] = useState(false);
-  const [inspectionState, setInspectionState] = useState<{ angles: [number, number, number]; context: string } | null>(null);
+  const [inspectionState, setInspectionState] = useState<{
+    angles: [number, number, number];
+    context: string;
+  } | null>(null);
   const inspectionRef = useRef<LaptopInspectionRotation | null>(null);
-  const [inspectionEnds, setInspectionEnds] = useState<Record<string, number>>({});
+  const [inspectionEnds, setInspectionEnds] = useState<Record<string, number>>(
+    {},
+  );
   const localPartRef = useRef<LaptopLocalPart | null>(null);
   const localProgressRef = useRef(0);
   const localStartedRef = useRef(0);
   const localContext = `${model}:${selected}:${view}:${mode}:${guided}:${lessonIndex}`;
-  const inspectionAngles: [number, number, number] = inspectionState?.context === localContext ? inspectionState.angles : [0, 0, 0];
-  if (inspectionState && inspectionState.context !== localContext) setInspectionState(null);
+  const inspectionAngles: [number, number, number] =
+    inspectionState?.context === localContext
+      ? inspectionState.angles
+      : [0, 0, 0];
+  if (inspectionState && inspectionState.context !== localContext)
+    setInspectionState(null);
   const [localSelection, setLocalSelection] = useState<{
     id: LaptopLocalPart;
     context: string;
@@ -1416,24 +1425,27 @@ function LaptopScene({
     connectedRef.current = connected;
   }, [connected]);
 
-  const completeConnectionTask = useCallback((task: LaptopConnectionTask) => {
-    const nextConnected = connectedRef.current.includes(task.id)
-      ? connectedRef.current
-      : [...connectedRef.current, task.id];
-    connectedRef.current = nextConnected;
-    setConnected(nextConnected);
-    setConnectionFeedback('Correct — ' + task.name + ' is connected.');
+  const completeConnectionTask = useCallback(
+    (task: LaptopConnectionTask) => {
+      const nextConnected = connectedRef.current.includes(task.id)
+        ? connectedRef.current
+        : [...connectedRef.current, task.id];
+      connectedRef.current = nextConnected;
+      setConnected(nextConnected);
+      setConnectionFeedback('Correct — ' + task.name + ' is connected.');
 
-    const nextIndex = CONNECTIONS.findIndex(
-      (candidate, index) =>
-        index > connectionTaskRef.current &&
-        !nextConnected.includes(candidate.id),
-    );
-    if (nextIndex >= 0) {
-      connectionTaskRef.current = nextIndex;
-      setConnectionTask(nextIndex);
-    }
-  }, [CONNECTIONS]);
+      const nextIndex = CONNECTIONS.findIndex(
+        (candidate, index) =>
+          index > connectionTaskRef.current &&
+          !nextConnected.includes(candidate.id),
+      );
+      if (nextIndex >= 0) {
+        connectionTaskRef.current = nextIndex;
+        setConnectionTask(nextIndex);
+      }
+    },
+    [CONNECTIONS],
+  );
 
   const toggleInternalCable = useCallback((cableId: LaptopInternalCableId) => {
     const next = disconnectedInternalCablesRef.current.includes(cableId)
@@ -1468,7 +1480,9 @@ function LaptopScene({
       antialias: true,
       powerPreference: 'high-performance',
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, lightGraphics ? 1 : 2));
+    renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio, lightGraphics ? 1 : 2),
+    );
     renderer.shadowMap.enabled = !lightGraphics;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -1488,7 +1502,7 @@ function LaptopScene({
     const controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true;
     let cameraManuallyMoved = false;
-    let lastAutoFit = "";
+    let lastAutoFit = '';
     const markCameraManual = () => {
       cameraManuallyMoved = true;
     };
@@ -1540,7 +1554,11 @@ function LaptopScene({
     addEnvironment(scene);
 
     const laptop = model === 'latitude' ? buildLatitude5410() : buildLaptop();
-    const removalEnds = Object.fromEntries(laptop.teardownParts.filter(part => part.object.userData.laptopPart).map(part => [part.object.userData.laptopPart, part.end]));
+    const removalEnds = Object.fromEntries(
+      laptop.teardownParts
+        .filter((part) => part.object.userData.laptopPart)
+        .map((part) => [part.object.userData.laptopPart, part.end]),
+    );
     let inspectionThresholdsPublished = false;
     for (const cable of laptop.disconnectCables)
       cable.object.userData.laptopCable = cable.id;
@@ -2122,14 +2140,30 @@ function LaptopScene({
       if (insideNow) {
         const labels = explodedLabelsRef.current;
         if (labels) {
-          for (const label of labels.querySelectorAll<HTMLElement>('[data-part]')) {
+          for (const label of labels.querySelectorAll<HTMLElement>(
+            '[data-part]',
+          )) {
             const key = label.dataset.part as keyof typeof laptop.parts;
             const object = laptop.parts[key];
-            const point = new THREE.Box3().setFromObject(object).getCenter(new THREE.Vector3()).project(camera);
-            const teardown = laptop.teardownParts.find(part => part.object === object);
+            const point = new THREE.Box3()
+              .setFromObject(object)
+              .getCenter(new THREE.Vector3())
+              .project(camera);
+            const teardown = laptop.teardownParts.find(
+              (part) => part.object === object,
+            );
             const smallScreen = canvas.clientWidth < 500;
-            const selectedKey = selectedRef.current === 'fan' ? 'cooling' : selectedRef.current;
-            const shown = !!teardown && explodeRef.current >= teardown.end && object.visible && (!smallScreen || key === selectedKey) && point.z > -1 && point.z < 1 && Math.abs(point.x) < .94 && Math.abs(point.y) < .88;
+            const selectedKey =
+              selectedRef.current === 'fan' ? 'cooling' : selectedRef.current;
+            const shown =
+              !!teardown &&
+              explodeRef.current >= teardown.end &&
+              object.visible &&
+              (!smallScreen || key === selectedKey) &&
+              point.z > -1 &&
+              point.z < 1 &&
+              Math.abs(point.x) < 0.94 &&
+              Math.abs(point.y) < 0.88;
             label.hidden = !shown;
             label.style.left = `${(point.x + 1) * 50}%`;
             label.style.top = `${(1 - point.y) * 50}%`;
@@ -2150,7 +2184,9 @@ function LaptopScene({
           explodeRef.current,
           local,
           localProgressRef.current,
-          modeRef.current === 'explore' && !guidedRef.current ? inspectionRef.current : null,
+          modeRef.current === 'explore' && !guidedRef.current
+            ? inspectionRef.current
+            : null,
         );
 
         // During the first half of the flip students still see the normal
@@ -2208,7 +2244,11 @@ function LaptopScene({
 
       if (!insideNow) lastAutoFit = '';
       const autoFitSignature = `${explodeRef.current}:${canvas.clientWidth}:${canvas.clientHeight}:${isolateRef.current}:${selectedRef.current}:${localPartRef.current}:${localProgressRef.current.toFixed(2)}`;
-      if (insideNow && !cameraManuallyMoved && autoFitSignature !== lastAutoFit) {
+      if (
+        insideNow &&
+        !cameraManuallyMoved &&
+        autoFitSignature !== lastAutoFit
+      ) {
         lastAutoFit = autoFitSignature;
         const rawService = (explodeRef.current - 72) / 28;
         const serviceT = Math.min(1, Math.max(0, rawService));
@@ -2216,31 +2256,50 @@ function LaptopScene({
 
         camera.position.lerpVectors(
           new THREE.Vector3(9.2, 8.4, 11.8),
-          model === 'latitude' ? new THREE.Vector3(11.5, 14.5, 19.5) : new THREE.Vector3(7.6, 10.8, 12.6),
+          model === 'latitude'
+            ? new THREE.Vector3(11.5, 14.5, 19.5)
+            : new THREE.Vector3(7.6, 10.8, 12.6),
           easedService,
         );
         controls.target.lerpVectors(
           new THREE.Vector3(0, 1.15, 0.15),
-          model === 'latitude' ? new THREE.Vector3(0.6, 1.15, 2) : new THREE.Vector3(0, 1.15, 0.8),
+          model === 'latitude'
+            ? new THREE.Vector3(0.6, 1.15, 2)
+            : new THREE.Vector3(0, 1.15, 0.8),
           easedService,
         );
         // Fit the complete service assembly while keeping manual orbit untouched.
         laptop.inside.updateMatrixWorld(true);
         const bounds = new THREE.Box3();
-        laptop.inside.traverseVisible(object => {
+        laptop.inside.traverseVisible((object) => {
           if (!(object instanceof THREE.Mesh)) return;
-          if (!object.geometry.boundingBox) object.geometry.computeBoundingBox();
+          if (!object.geometry.boundingBox)
+            object.geometry.computeBoundingBox();
           if (object.geometry.boundingBox)
-            bounds.union(object.geometry.boundingBox.clone().applyMatrix4(object.matrixWorld));
+            bounds.union(
+              object.geometry.boundingBox
+                .clone()
+                .applyMatrix4(object.matrixWorld),
+            );
         });
         const sphere = bounds.getBoundingSphere(new THREE.Sphere());
         const verticalHalfFov = THREE.MathUtils.degToRad(camera.fov / 2);
-        const horizontalHalfFov = Math.atan(Math.tan(verticalHalfFov) * camera.aspect);
-        const fitDistance = sphere.radius / Math.sin(Math.min(verticalHalfFov, horizontalHalfFov)) * 1.12;
+        const horizontalHalfFov = Math.atan(
+          Math.tan(verticalHalfFov) * camera.aspect,
+        );
+        const fitDistance =
+          (sphere.radius /
+            Math.sin(Math.min(verticalHalfFov, horizontalHalfFov))) *
+          1.12;
         controls.maxDistance = Math.max(22, fitDistance * 1.5);
-        const direction = camera.position.clone().sub(controls.target).normalize();
+        const direction = camera.position
+          .clone()
+          .sub(controls.target)
+          .normalize();
         controls.target.copy(sphere.center);
-        camera.position.copy(sphere.center).addScaledVector(direction, fitDistance);
+        camera.position
+          .copy(sphere.center)
+          .addScaledVector(direction, fitDistance);
       }
 
       const activeRoot = insideNow ? laptop.inside : laptop.outside;
@@ -2317,7 +2376,13 @@ function LaptopScene({
         }
       });
     };
-  }, [model, CONNECTIONS, lightGraphics, completeConnectionTask, toggleInternalCable]);
+  }, [
+    model,
+    CONNECTIONS,
+    lightGraphics,
+    completeConnectionTask,
+    toggleInternalCable,
+  ]);
 
   const changeView = (next: LaptopView) => {
     setGuided(false);
@@ -2410,7 +2475,8 @@ function LaptopScene({
   };
 
   const moveTroubleshooting = (direction: -1 | 1) => {
-    if (direction === 1 && (!troubleshootingSolved || !troubleshootingVerified)) return;
+    if (direction === 1 && (!troubleshootingSolved || !troubleshootingVerified))
+      return;
     const next = Math.min(
       LAPTOP_TROUBLESHOOTING_SCENARIOS.length - 1,
       Math.max(0, troubleshootingScenario + direction),
@@ -2585,7 +2651,18 @@ function LaptopScene({
             <ClipboardCheck size={15} />
             Knowledge check
           </button>
-          <button type="button" className="laptop-guide-button" aria-pressed={lightGraphics} onClick={() => { stopTeardown(); resetLocalPart(); setLightGraphics(!lightGraphics); }}>{lightGraphics ? 'Full graphics' : 'Light graphics'}</button>
+          <button
+            type="button"
+            className="laptop-guide-button"
+            aria-pressed={lightGraphics}
+            onClick={() => {
+              stopTeardown();
+              resetLocalPart();
+              setLightGraphics(!lightGraphics);
+            }}
+          >
+            {lightGraphics ? 'Full graphics' : 'Light graphics'}
+          </button>
           <button
             type="button"
             className={
@@ -2754,7 +2831,12 @@ function LaptopScene({
         ) : mode === 'assessment' ? (
           assessmentComplete ? (
             <div className="laptop-assessment-summary">
-              {assessmentSaveFailed && <p role="alert">This browser could not save the score. Record it before leaving.</p>}
+              {assessmentSaveFailed && (
+                <p role="alert">
+                  This browser could not save the score. Record it before
+                  leaving.
+                </p>
+              )}
               <Trophy size={24} />
               <strong>
                 {assessmentScore} / {LAPTOP_ASSESSMENT_QUESTIONS.length}
@@ -2827,7 +2909,7 @@ function LaptopScene({
                     const correct = id === currentTroubleshooting.answer;
                     troubleshootingSolvedRef.current = correct;
                     setTroubleshootingSolved(correct);
-        if (!correct) setTroubleshootingVerified(false);
+                    if (!correct) setTroubleshootingVerified(false);
                     setTroubleshootingFeedback(
                       correct
                         ? 'Correct — ' + currentTroubleshooting.explanation
@@ -2945,8 +3027,24 @@ function LaptopScene({
           aria-label="Interactive 3D laptop. Drag to orbit and click a component."
         />
         {view === 'inside' && mode === 'explore' && !guided && (
-          <div className="laptop-exploded-labels" ref={explodedLabelsRef} aria-hidden="true">
-            {Object.entries({ battery: 'Battery', motherboard: 'System board', ram: 'RAM', ssd: 'SSD', wifi: 'Wi-Fi', cooling: 'Cooling', speakers: 'Speakers' }).map(([key, label]) => <span key={key} data-part={key} hidden>{label}</span>)}
+          <div
+            className="laptop-exploded-labels"
+            ref={explodedLabelsRef}
+            aria-hidden="true"
+          >
+            {Object.entries({
+              battery: 'Battery',
+              motherboard: 'System board',
+              ram: 'RAM',
+              ssd: 'SSD',
+              wifi: 'Wi-Fi',
+              cooling: 'Cooling',
+              speakers: 'Speakers',
+            }).map(([key, label]) => (
+              <span key={key} data-part={key} hidden>
+                {label}
+              </span>
+            ))}
           </div>
         )}
         <div
@@ -3114,7 +3212,9 @@ function LaptopScene({
                 <p>{internalCableFeedback}</p>
                 <div>
                   {INTERNAL_CABLES.map((item) => {
-                    const unplugged = disconnectedInternalCables.includes(item.id);
+                    const unplugged = disconnectedInternalCables.includes(
+                      item.id,
+                    );
                     const available = explode >= item.availableAt;
                     return (
                       <button
@@ -3126,7 +3226,9 @@ function LaptopScene({
                       >
                         {unplugged ? 'Reconnect ' : 'Unplug '}
                         {item.label}
-                        {!available ? ` · available at ${item.availableAt}%` : ''}
+                        {!available
+                          ? ` · available at ${item.availableAt}%`
+                          : ''}
                       </button>
                     );
                   })}
@@ -3217,7 +3319,16 @@ function LaptopScene({
                 <span>{troubleshootingSolved ? 'FOUND IT' : 'SYMPTOM'}</span>
                 <strong>{currentTroubleshooting.symptom}</strong>
                 <p>{troubleshootingFeedback}</p>
-                {troubleshootingSolved && <FaultPractice key={currentTroubleshooting.id} scenario={{ ...currentTroubleshooting, ...LAPTOP_FAULT_FOLLOWUPS[currentTroubleshooting.id] }} onVerified={() => setTroubleshootingVerified(true)} />}
+                {troubleshootingSolved && (
+                  <FaultPractice
+                    key={currentTroubleshooting.id}
+                    scenario={{
+                      ...currentTroubleshooting,
+                      ...LAPTOP_FAULT_FOLLOWUPS[currentTroubleshooting.id],
+                    }}
+                    onVerified={() => setTroubleshootingVerified(true)}
+                  />
+                )}
                 <div>
                   <button
                     type="button"
@@ -3230,17 +3341,23 @@ function LaptopScene({
                   LAPTOP_TROUBLESHOOTING_SCENARIOS.length - 1 ? (
                     <button
                       type="button"
-                      disabled={!troubleshootingSolved || !troubleshootingVerified}
+                      disabled={
+                        !troubleshootingSolved || !troubleshootingVerified
+                      }
                       onClick={() => moveTroubleshooting(1)}
                     >
                       {troubleshootingVerified
                         ? 'Next case →'
-                        : troubleshootingSolved ? 'Verify the fix first' : 'Find the component'}
+                        : troubleshootingSolved
+                          ? 'Verify the fix first'
+                          : 'Find the component'}
                     </button>
                   ) : (
                     <button
                       type="button"
-                      disabled={!troubleshootingSolved || !troubleshootingVerified}
+                      disabled={
+                        !troubleshootingSolved || !troubleshootingVerified
+                      }
                       onClick={startTroubleshooting}
                     >
                       Practise again ↻
@@ -3338,20 +3455,69 @@ function LaptopScene({
                 )}
               </div>
             )}
-            {!guided && view === 'inside' && mode === 'explore' && inspectionEnds[selected] !== undefined && (
-              <section className="laptop-part-rotation" aria-label="Rotate detached component">
-                <h3>Rotate this part</h3>
-                <p>{explode >= inspectionEnds[selected] || localPart === selected ? 'Turn the part to inspect its edges and underside. Drag the background to orbit the camera.' : 'Explode this part first, or move the teardown slider until it is removed.'}</p>
-                {(['Tilt', 'Turn', 'Roll'] as const).map((label, axis) => <label key={label}>{label}<output>{inspectionAngles[axis]}°</output><input aria-label={`${label} selected part`} type="range" min={-180} max={180} step={15} value={inspectionAngles[axis]} disabled={!(explode >= inspectionEnds[selected] || localPart === selected)} onChange={event => {
-                  stopTeardown();
-                  const angles = [...inspectionAngles] as [number, number, number];
-                  angles[axis] = Number(event.target.value);
-                  setInspectionState({ angles, context: localContext });
-                  inspectionRef.current = { id: selected, angles: angles.map(angle => angle * Math.PI / 180) as [number, number, number] };
-                }} /></label>)}
-                <button type="button" onClick={() => { inspectionRef.current = null; setInspectionState(null); }} disabled={inspectionAngles.every(angle => angle === 0)}>Reset rotation</button>
-              </section>
-            )}
+            {!guided &&
+              view === 'inside' &&
+              mode === 'explore' &&
+              inspectionEnds[selected] !== undefined && (
+                <section
+                  className="laptop-part-rotation"
+                  aria-label="Rotate detached component"
+                >
+                  <h3>Rotate this part</h3>
+                  <p>
+                    {explode >= inspectionEnds[selected] ||
+                    localPart === selected
+                      ? 'Turn the part to inspect its edges and underside. Drag the background to orbit the camera.'
+                      : 'Explode this part first, or move the teardown slider until it is removed.'}
+                  </p>
+                  {(['Tilt', 'Turn', 'Roll'] as const).map((label, axis) => (
+                    <label key={label}>
+                      {label}
+                      <output>{inspectionAngles[axis]}°</output>
+                      <input
+                        aria-label={`${label} selected part`}
+                        type="range"
+                        min={-180}
+                        max={180}
+                        step={15}
+                        value={inspectionAngles[axis]}
+                        disabled={
+                          !(
+                            explode >= inspectionEnds[selected] ||
+                            localPart === selected
+                          )
+                        }
+                        onChange={(event) => {
+                          stopTeardown();
+                          const angles = [...inspectionAngles] as [
+                            number,
+                            number,
+                            number,
+                          ];
+                          angles[axis] = Number(event.target.value);
+                          setInspectionState({ angles, context: localContext });
+                          inspectionRef.current = {
+                            id: selected,
+                            angles: angles.map(
+                              (angle) => (angle * Math.PI) / 180,
+                            ) as [number, number, number],
+                          };
+                        }}
+                      />
+                    </label>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      inspectionRef.current = null;
+                      setInspectionState(null);
+                    }}
+                    disabled={inspectionAngles.every((angle) => angle === 0)}
+                  >
+                    Reset rotation
+                  </button>
+                </section>
+              )}
             {guided && (
               <div
                 className={
@@ -3372,14 +3538,24 @@ function LaptopScene({
                 </span>
                 <strong>{lessonStep.action}</strong>
                 {lessonStep.requiredCable && !lessonStepComplete && (
-                  <button type="button" onClick={() => {
-                    const id = lessonStep.requiredCable;
-                    if (!id) return;
-                    const next = [...new Set([...disconnectedInternalCablesRef.current, id])];
-                    disconnectedInternalCablesRef.current = next;
-                    setDisconnectedInternalCables(next);
-                    setInternalCableFeedback(`${id} cable unplugged.`);
-                  }}>Unplug {lessonStep.requiredCable} cable</button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const id = lessonStep.requiredCable;
+                      if (!id) return;
+                      const next = [
+                        ...new Set([
+                          ...disconnectedInternalCablesRef.current,
+                          id,
+                        ]),
+                      ];
+                      disconnectedInternalCablesRef.current = next;
+                      setDisconnectedInternalCables(next);
+                      setInternalCableFeedback(`${id} cable unplugged.`);
+                    }}
+                  >
+                    Unplug {lessonStep.requiredCable} cable
+                  </button>
                 )}
                 {lessonStep.requiredCable && (
                   <small>
