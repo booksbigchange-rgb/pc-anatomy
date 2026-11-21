@@ -1,11 +1,11 @@
 import * as T from 'three';
-import { buildModel, refreshBatches, type Piece } from './models';
+import { buildModel, refreshBatches, type Piece } from './models.ts';
 import { resolvePickNear } from './picking.ts';
 import { airflowShown, airflowStrength } from './airflow.ts';
-import { byId, openLevel } from './manifest';
+import { byId, openLevel } from './manifest.ts';
 import type { ExplorerState, Selection } from './explorer-state.ts';
 import { isPhysical } from './levels.ts';
-import { smoothstep } from './layout';
+import { smoothstep } from './layout.ts';
 import {
   applyPiecePose,
   disposeModelResources,
@@ -14,7 +14,7 @@ import {
   posedModelBounds,
   prepareModelInventory,
   ModelStageScratch,
-} from './model-stage';
+} from './model-stage.ts';
 import {
   animateObjects,
   collectAnimatedObjects,
