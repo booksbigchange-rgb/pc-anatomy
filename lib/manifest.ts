@@ -1,6 +1,7 @@
 import { coolerConcepts } from './concepts/cooler.ts';
 import { liquidConcepts } from './concepts/liquid.ts';
 import { processorConcepts } from './concepts/processors.ts';
+import { chipConcepts } from './concepts/chip.ts';
 import { ssdConcepts } from './concepts/ssd.ts';
 import { nvmeConcepts } from './concepts/nvme.ts';
 import { fanConcepts } from './concepts/fan.ts';
@@ -48,6 +49,7 @@ export const manifest: Concept[] = [
   ...coolerConcepts,
   ...liquidConcepts,
   ...processorConcepts,
+  ...chipConcepts,
   ...ssdConcepts,
   ...nvmeConcepts,
   ...gpuConcepts,

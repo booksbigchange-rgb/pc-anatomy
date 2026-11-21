@@ -55,6 +55,42 @@ notch, an M-key contact gap, a controller, DRAM and two NAND packages. BGA joint
 are beneath the chips. Package count, contact count and routing are illustrative.
 The model is an educational assembly, not a reproduction of the Samsung 990 PRO PCB.
 
+## Inside the chip · November 21, 2026
+
+Five logical scales continue below one Zen 5 core: the core itself, an integer
+ALU, a 4-bit adder, a CMOS AND gate and a single n-channel transistor. Each
+document below was downloaded and read on November 21, 2026 before it was cited.
+
+- **Zen 5 core** — AMD, _Software Optimization Guide for the AMD Zen5
+  Microarchitecture_, 58455 rev. 1.00, August 2024 (`zen5`). Supports: six ALU
+  pipelines, four AGU pipelines and six FPU pipes; up to sixteen micro-ops
+  issued per cycle; 4-way x86 decode; dispatch of up to 8 macro-ops per cycle;
+  an op cache of previously decoded instructions; 32 KB L1 instruction cache,
+  48 KB L1 data cache and 1 MB L2 per core; four-way 512-bit floating-point and
+  packed-integer execution; out-of-order, two-thread superscalar organisation.
+- **ALU** — TI SN74LS181 _Arithmetic Logic Units / Function Generators_
+  (`ls181`). The datasheet is a scan, so only its title is machine-readable;
+  it is cited for the idea that one unit performs both arithmetic and logic,
+  not for any figure. AMD does not publish the circuits inside a Zen 5 ALU
+  pipe, and the ALU scale says it is a teaching model.
+- **Adder** — TI CD74HC283 _4-Bit Binary Full Adder with Fast Carry_ (`hc283`):
+  adds two 4-bit binary numbers and generates a carry-out; full internal
+  look-ahead carry. The scale draws the simpler ripple-carry form and says so.
+- **AND gate** — TI SN74HC08 _Quadruple 2-Input AND Gates_ (`hc08`): Y = A·B in
+  positive logic; CMOS inputs and push-pull outputs. TI's _CMOS Power
+  Consumption and Cpd Calculation_, SCAA035B (`cmospower`): in a CMOS inverter
+  the p-MOS device connects the output to VCC and the n-MOS device to GND, one
+  of them is always off, and no current flows into the gate. The series and
+  parallel arrangement drawn for the NAND half is the standard textbook
+  circuit, not a published schematic of any product, and the scale says so.
+- **Transistor** — SCAA035B Figure 2 (`cmospower`): an n-MOS device's N+
+  source and drain diffusions in a P-substrate, and no current into the gate.
+  The cross-section is illustrative and not to scale.
+
+Not cited, because the page could not be read: TSMC's process pages (a bot
+check blocks automated reading). The lessons therefore make no claim about
+the transistor shapes used on TSMC's 4 nm process.
+
 ## Additional graphics cards · September 17, 2026
 
 The GPU menu now holds three complete cards, each in its own dropdown and each

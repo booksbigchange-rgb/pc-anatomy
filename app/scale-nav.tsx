@@ -1,6 +1,8 @@
 'use client';
 import {
+  Binary,
   Box,
+  Calculator,
   ChevronDown,
   ChevronRight,
   CircuitBoard,
@@ -13,6 +15,8 @@ import {
   Layers3,
   Microscope,
   PcCase,
+  SquarePlus,
+  ToggleLeft,
   X,
   Zap,
 } from 'lucide-react';
@@ -32,6 +36,11 @@ const levelIcon: Record<LevelId, typeof Box> = {
   motherboard: CircuitBoard,
   ryzen: Cpu,
   ryzenio: CircuitBoard,
+  zen5core: Cpu,
+  alu: Calculator,
+  adder: SquarePlus,
+  gate: Binary,
+  transistor: ToggleLeft,
   corei9: Cpu,
   coreio: CircuitBoard,
   psu: Zap,

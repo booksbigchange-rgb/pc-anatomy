@@ -1,10 +1,11 @@
 import { howAComputerWorks } from './how-a-computer-works.ts';
+import { insideTheChip } from './inside-the-chip.ts';
 import type { Course, Lesson } from './types.ts';
 
 export type * from './types.ts';
 
 /** Every course, in the order the course list shows them. */
-export const courses: Course[] = [howAComputerWorks];
+export const courses: Course[] = [howAComputerWorks, insideTheChip];
 
 export const courseById: Record<string, Course> = Object.fromEntries(
   courses.map((course) => [course.id, course]),

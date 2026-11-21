@@ -239,6 +239,22 @@ export const sources = {
     name: 'KitGuru (independent review) · Arc B580 Limited Edition cooler and board',
     url: 'https://www.kitguru.net/components/graphic-cards/dominic-moass/intel-arc-b580-limited-edition-review/all/1/',
   },
+  hc283: {
+    name: 'Texas Instruments · CD74HC283 4-bit binary full adder with fast carry datasheet',
+    url: 'https://www.ti.com/lit/ds/symlink/cd74hc283.pdf',
+  },
+  hc08: {
+    name: 'Texas Instruments · SN74HC08 quadruple 2-input AND gates datasheet',
+    url: 'https://www.ti.com/lit/ds/symlink/sn74hc08.pdf',
+  },
+  ls181: {
+    name: 'Texas Instruments · SN74LS181 arithmetic logic units / function generators datasheet',
+    url: 'https://www.ti.com/lit/ds/symlink/sn54ls181.pdf',
+  },
+  cmospower: {
+    name: 'Texas Instruments · CMOS power consumption and Cpd calculation (SCAA035B)',
+    url: 'https://www.ti.com/lit/an/scaa035b/scaa035b.pdf',
+  },
 } as const;
 
 export type SourceId = keyof typeof sources;

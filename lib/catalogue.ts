@@ -117,6 +117,55 @@ export const subjects: Subject[] = [
       },
     ],
   },
+  {
+    id: 'chips',
+    title: 'Inside the chip',
+    summary:
+      'Zoom from one processor core down to a single transistor, and see how billions of tiny switches add up to maths.',
+    courses: ['inside-the-chip'],
+    exhibits: [
+      {
+        id: 'zen5-core',
+        title: 'A processor core',
+        summary:
+          'One of the sixteen cores in a Ryzen processor: fetch, decode, schedulers, execution pipes and caches.',
+        icon: 'chip',
+        open: { kind: 'scale', level: 'zen5core' },
+      },
+      {
+        id: 'alu',
+        title: 'Arithmetic logic unit',
+        summary:
+          'The calculator inside a core: an adder, a logic unit, a shifter and the flags that drive decisions.',
+        icon: 'alu',
+        open: { kind: 'scale', level: 'alu' },
+      },
+      {
+        id: 'adder',
+        title: 'Adder',
+        summary:
+          'A 4-bit adder built from XOR, AND and OR gates, carrying from column to column.',
+        icon: 'adder',
+        open: { kind: 'scale', level: 'adder' },
+      },
+      {
+        id: 'logic-gate',
+        title: 'Logic gate',
+        summary:
+          'An AND gate made of six transistors switched between the power rail and ground.',
+        icon: 'gate',
+        open: { kind: 'scale', level: 'gate' },
+      },
+      {
+        id: 'transistor',
+        title: 'Transistor',
+        summary:
+          'One switch cut open: silicon, source, drain, gate, insulator and channel.',
+        icon: 'switch',
+        open: { kind: 'scale', level: 'transistor' },
+      },
+    ],
+  },
 ];
 
 export const subjectById: Record<string, Subject> = Object.fromEntries(

@@ -86,6 +86,7 @@ export const processorConcepts: Concept[] = [
     category: 'Compute',
     parent: 'zenccd',
     level: 'ryzen',
+    open: 'zen5core',
     description:
       'A full out of order core with its own 80 KB of L1 and 1 MB of L2, running two threads.',
     purpose:

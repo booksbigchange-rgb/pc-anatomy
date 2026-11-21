@@ -6,6 +6,7 @@ import { buildRadeonCard } from './radeon-card.ts';
 import { buildRadeonArchitecture } from './radeon-architecture.ts';
 import { buildArcCard } from './arc-card.ts';
 import { buildArcArchitecture } from './arc-architecture.ts';
+import { buildChipArchitecture } from './chip-architecture.ts';
 import { buildMachine } from './machine.ts';
 import { buildMotherboard } from './mainboard.ts';
 import { buildPowerSupply } from './power-supply.ts';
@@ -97,6 +98,11 @@ const builders: Record<LevelId, (tools: ModelTools, root: T.Group) => void> = {
   motherboard: buildMotherboard,
   ryzen: buildRyzen,
   ryzenio: buildRyzenIo,
+  zen5core: (tools, root) => buildChipArchitecture('zen5core', tools, root),
+  alu: (tools, root) => buildChipArchitecture('alu', tools, root),
+  adder: (tools, root) => buildChipArchitecture('adder', tools, root),
+  gate: (tools, root) => buildChipArchitecture('gate', tools, root),
+  transistor: (tools, root) => buildChipArchitecture('transistor', tools, root),
   corei9: buildCoreUltra,
   coreio: buildCoreIo,
   psu: buildPowerSupply,

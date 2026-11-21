@@ -12,6 +12,11 @@ export type LevelId =
   | 'motherboard'
   | 'ryzen'
   | 'ryzenio'
+  | 'zen5core'
+  | 'alu'
+  | 'adder'
+  | 'gate'
+  | 'transistor'
   | 'corei9'
   | 'coreio'
   | 'psu'
@@ -158,6 +163,66 @@ export const levels: Record<LevelId, LevelDef> = {
     summary: 'Memory, PCIe, display and chiplet fabric',
     kind: 'logical',
     concept: 'zeniod',
+    phases: dissectionPhases,
+    detailed: true,
+  },
+  zen5core: {
+    id: 'zen5core',
+    parent: 'ryzen',
+    name: 'Zen 5 core',
+    title: 'Inside one Zen 5 core.',
+    caption: 'ZEN 5 · ONE OF SIXTEEN CORES',
+    summary: 'Fetch, decode, schedulers, execution pipes and caches',
+    kind: 'logical',
+    concept: 'zencore',
+    phases: dissectionPhases,
+    detailed: true,
+  },
+  alu: {
+    id: 'alu',
+    parent: 'zen5core',
+    name: 'ALU',
+    title: 'An arithmetic logic unit.',
+    caption: 'TEACHING MODEL · INTEGER ALU',
+    summary: 'Adder, logic unit, shifter, result select and flags',
+    kind: 'logical',
+    concept: 'z5alu',
+    phases: dissectionPhases,
+    detailed: true,
+  },
+  adder: {
+    id: 'adder',
+    parent: 'alu',
+    name: 'Adder',
+    title: 'Adding with logic gates.',
+    caption: '4-BIT RIPPLE-CARRY ADDER · TEACHING MODEL',
+    summary: 'Four full adders, each made of five gates',
+    kind: 'logical',
+    concept: 'aluadder',
+    phases: dissectionPhases,
+    detailed: true,
+  },
+  gate: {
+    id: 'gate',
+    parent: 'adder',
+    name: 'AND gate',
+    title: 'An AND gate, made of switches.',
+    caption: 'CMOS AND GATE · SIX TRANSISTORS',
+    summary: 'Six transistors between the power rail and ground',
+    kind: 'logical',
+    concept: 'gateand',
+    phases: dissectionPhases,
+    detailed: true,
+  },
+  transistor: {
+    id: 'transistor',
+    parent: 'gate',
+    name: 'Transistor',
+    title: 'One switch, up close.',
+    caption: 'N-CHANNEL MOSFET · CROSS-SECTION',
+    summary: 'Source, drain, gate, insulator and channel',
+    kind: 'logical',
+    concept: 'cmosnmos',
     phases: dissectionPhases,
     detailed: true,
   },

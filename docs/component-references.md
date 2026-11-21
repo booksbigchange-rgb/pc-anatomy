@@ -131,6 +131,44 @@ Manufacturer documents support component roles, architecture or construction. Th
 | arrowiod2d | Die-to-die interface | Core Ultra I/O tile | [Intel · Core Ultra 200S architecture and interfaces datasheet](https://edc.intel.com/content/www/us/en/design/products/platforms/details/arrow-lake-s/core-ultra-200s-series-processors-datasheet-volume-1-of-2/) |
 | arrowioclock | Clock and signal conditioning | Core Ultra I/O tile | [Intel · Core Ultra 200S architecture and interfaces datasheet](https://edc.intel.com/content/www/us/en/design/products/platforms/details/arrow-lake-s/core-ultra-200s-series-processors-datasheet-volume-1-of-2/) · [PCI-SIG · PCI Express specifications](https://pcisig.com/specifications) |
 | arrowbase | Foveros base tile | Core Ultra 9 285K | [Intel · Core Ultra 200S architecture and interfaces datasheet](https://edc.intel.com/content/www/us/en/design/products/platforms/details/arrow-lake-s/core-ultra-200s-series-processors-datasheet-volume-1-of-2/) |
+| z5fetch | Fetch and branch prediction | Zen 5 core | [AMD · Zen 5 microarchitecture optimization guide](https://docs.amd.com/v/u/en-US/58455_1.00) |
+| z5l1i | L1 instruction cache | Zen 5 core | [AMD · Zen 5 microarchitecture optimization guide](https://docs.amd.com/v/u/en-US/58455_1.00) |
+| z5decode | Decode and op cache | Zen 5 core | [AMD · Zen 5 microarchitecture optimization guide](https://docs.amd.com/v/u/en-US/58455_1.00) |
+| z5schedule | Schedulers | Zen 5 core | [AMD · Zen 5 microarchitecture optimization guide](https://docs.amd.com/v/u/en-US/58455_1.00) |
+| z5alu | Integer ALU pipes | Zen 5 core | [AMD · Zen 5 microarchitecture optimization guide](https://docs.amd.com/v/u/en-US/58455_1.00) |
+| z5agu | Address generation pipes | Zen 5 core | [AMD · Zen 5 microarchitecture optimization guide](https://docs.amd.com/v/u/en-US/58455_1.00) |
+| z5fpu | Floating-point and vector unit | Zen 5 core | [AMD · Zen 5 microarchitecture optimization guide](https://docs.amd.com/v/u/en-US/58455_1.00) |
+| z5l1d | L1 data cache | Zen 5 core | [AMD · Zen 5 microarchitecture optimization guide](https://docs.amd.com/v/u/en-US/58455_1.00) |
+| z5l2 | L2 cache | Zen 5 core | [AMD · Zen 5 microarchitecture optimization guide](https://docs.amd.com/v/u/en-US/58455_1.00) |
+| aluinput | Operands | ALU | [Texas Instruments · SN74LS181 arithmetic logic units / function generators datasheet](https://www.ti.com/lit/ds/symlink/sn54ls181.pdf) |
+| aluop | Operation select | ALU | [Texas Instruments · SN74LS181 arithmetic logic units / function generators datasheet](https://www.ti.com/lit/ds/symlink/sn54ls181.pdf) |
+| aluadder | Adder | ALU | [Texas Instruments · CD74HC283 4-bit binary full adder with fast carry datasheet](https://www.ti.com/lit/ds/symlink/cd74hc283.pdf) · [Texas Instruments · SN74LS181 arithmetic logic units / function generators datasheet](https://www.ti.com/lit/ds/symlink/sn54ls181.pdf) |
+| alulogic | Logic unit | ALU | [Texas Instruments · SN74HC08 quadruple 2-input AND gates datasheet](https://www.ti.com/lit/ds/symlink/sn74hc08.pdf) · [Texas Instruments · SN74LS181 arithmetic logic units / function generators datasheet](https://www.ti.com/lit/ds/symlink/sn54ls181.pdf) |
+| alushift | Shifter | ALU | [AMD · Zen 5 microarchitecture optimization guide](https://docs.amd.com/v/u/en-US/58455_1.00) |
+| alumux | Result select | ALU | [Texas Instruments · SN74LS181 arithmetic logic units / function generators datasheet](https://www.ti.com/lit/ds/symlink/sn54ls181.pdf) |
+| aluflags | Flags | ALU | [Texas Instruments · CD74HC283 4-bit binary full adder with fast carry datasheet](https://www.ti.com/lit/ds/symlink/cd74hc283.pdf) |
+| aluresult | Result | ALU | [Texas Instruments · SN74LS181 arithmetic logic units / function generators datasheet](https://www.ti.com/lit/ds/symlink/sn54ls181.pdf) |
+| addbits | Input bits | Adder | [Texas Instruments · CD74HC283 4-bit binary full adder with fast carry datasheet](https://www.ti.com/lit/ds/symlink/cd74hc283.pdf) |
+| addfull | Full adder | Adder | [Texas Instruments · CD74HC283 4-bit binary full adder with fast carry datasheet](https://www.ti.com/lit/ds/symlink/cd74hc283.pdf) |
+| gatexor | XOR gate | Adder | [Texas Instruments · CD74HC283 4-bit binary full adder with fast carry datasheet](https://www.ti.com/lit/ds/symlink/cd74hc283.pdf) |
+| gateand | AND gate | Adder | [Texas Instruments · SN74HC08 quadruple 2-input AND gates datasheet](https://www.ti.com/lit/ds/symlink/sn74hc08.pdf) · [Texas Instruments · CD74HC283 4-bit binary full adder with fast carry datasheet](https://www.ti.com/lit/ds/symlink/cd74hc283.pdf) |
+| gateor | OR gate | Adder | [Texas Instruments · CD74HC283 4-bit binary full adder with fast carry datasheet](https://www.ti.com/lit/ds/symlink/cd74hc283.pdf) |
+| addcarry | Carry chain | Adder | [Texas Instruments · CD74HC283 4-bit binary full adder with fast carry datasheet](https://www.ti.com/lit/ds/symlink/cd74hc283.pdf) |
+| addsum | Sum bits | Adder | [Texas Instruments · CD74HC283 4-bit binary full adder with fast carry datasheet](https://www.ti.com/lit/ds/symlink/cd74hc283.pdf) |
+| cmosvcc | Power rail (VCC) | AND gate | [Texas Instruments · CMOS power consumption and Cpd calculation (SCAA035B)](https://www.ti.com/lit/an/scaa035b/scaa035b.pdf) |
+| cmosgnd | Ground rail (GND) | AND gate | [Texas Instruments · CMOS power consumption and Cpd calculation (SCAA035B)](https://www.ti.com/lit/an/scaa035b/scaa035b.pdf) |
+| cmosin | Inputs A and B | AND gate | [Texas Instruments · CMOS power consumption and Cpd calculation (SCAA035B)](https://www.ti.com/lit/an/scaa035b/scaa035b.pdf) · [Texas Instruments · SN74HC08 quadruple 2-input AND gates datasheet](https://www.ti.com/lit/ds/symlink/sn74hc08.pdf) |
+| cmospmos | p-channel transistors | AND gate | [Texas Instruments · CMOS power consumption and Cpd calculation (SCAA035B)](https://www.ti.com/lit/an/scaa035b/scaa035b.pdf) |
+| cmosnmos | n-channel transistors | AND gate | [Texas Instruments · CMOS power consumption and Cpd calculation (SCAA035B)](https://www.ti.com/lit/an/scaa035b/scaa035b.pdf) |
+| cmosnand | NAND output | AND gate | [Texas Instruments · CMOS power consumption and Cpd calculation (SCAA035B)](https://www.ti.com/lit/an/scaa035b/scaa035b.pdf) |
+| cmosout | AND output | AND gate | [Texas Instruments · SN74HC08 quadruple 2-input AND gates datasheet](https://www.ti.com/lit/ds/symlink/sn74hc08.pdf) · [Texas Instruments · CMOS power consumption and Cpd calculation (SCAA035B)](https://www.ti.com/lit/an/scaa035b/scaa035b.pdf) |
+| fetbody | P-type silicon | Transistor | [Texas Instruments · CMOS power consumption and Cpd calculation (SCAA035B)](https://www.ti.com/lit/an/scaa035b/scaa035b.pdf) |
+| fetsource | Source | Transistor | [Texas Instruments · CMOS power consumption and Cpd calculation (SCAA035B)](https://www.ti.com/lit/an/scaa035b/scaa035b.pdf) |
+| fetdrain | Drain | Transistor | [Texas Instruments · CMOS power consumption and Cpd calculation (SCAA035B)](https://www.ti.com/lit/an/scaa035b/scaa035b.pdf) |
+| fetchannel | Channel | Transistor | [Texas Instruments · CMOS power consumption and Cpd calculation (SCAA035B)](https://www.ti.com/lit/an/scaa035b/scaa035b.pdf) |
+| fetoxide | Gate insulator | Transistor | [Texas Instruments · CMOS power consumption and Cpd calculation (SCAA035B)](https://www.ti.com/lit/an/scaa035b/scaa035b.pdf) |
+| fetgate | Gate | Transistor | [Texas Instruments · CMOS power consumption and Cpd calculation (SCAA035B)](https://www.ti.com/lit/an/scaa035b/scaa035b.pdf) |
+| fetcontact | Metal contacts | Transistor | [Texas Instruments · CMOS power consumption and Cpd calculation (SCAA035B)](https://www.ti.com/lit/an/scaa035b/scaa035b.pdf) |
 | ssdcase | SSD base tray | SATA SSD | [Samsung · 870 EVO SATA SSD hardware datasheet](https://download.semiconductor.samsung.com/resources/data-sheet/Samsung_SSD_870_EVO_Data_Sheet_Rev1.1_230509.pdf) |
 | ssdcover | SSD cover | SATA SSD | [Samsung · 870 EVO SATA SSD hardware datasheet](https://download.semiconductor.samsung.com/resources/data-sheet/Samsung_SSD_870_EVO_Data_Sheet_Rev1.1_230509.pdf) |
 | ssdboard | SSD controller board | SATA SSD | [Samsung · 870 EVO SATA SSD hardware datasheet](https://download.semiconductor.samsung.com/resources/data-sheet/Samsung_SSD_870_EVO_Data_Sheet_Rev1.1_230509.pdf) · [Samsung · SSD controller and flash architecture white paper](https://download.semiconductor.samsung.com/resources/white-paper/Samsung_SSD_950_PRO_White_paper.pdf) |
