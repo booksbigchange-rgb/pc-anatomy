@@ -6,7 +6,7 @@ It is built on [**PC Anatomy**](https://github.com/Yoosseph/pc-anatomy) by Yosep
 
 Before changing any code, read [**ARCHITECTURE.md →**](ARCHITECTURE.md). It is the full technical picture of the project — the scale tree, where every module lives, the conventions behind the geometry, and the traps that are not obvious from reading the source. It is written to be read start to finish by whoever is doing the work, person or language model.
 
-The PC explorer's polygons are generated in TypeScript with three.js, with no imported models or image textures. The Computer Lab and Laptop Lab add a small set of reviewed CAD models, converted to local files at build time and recorded in [MODEL_ASSET_MANIFEST.md](MODEL_ASSET_MANIFEST.md). The roughly 370 selectable components each carry a name, a description, an explanation of their purpose, specifications, and citations instead of stopping at a label.
+The PC explorer's polygons are generated in TypeScript with three.js, with no imported models or image textures. The Computer Lab and Laptop Lab add a small set of reviewed CAD models, converted to local files at build time and recorded in [MODEL_ASSET_MANIFEST.md](MODEL_ASSET_MANIFEST.md). The roughly 390 selectable components each carry a name, a description, an explanation of their purpose, specifications, and citations instead of stopping at a label.
 
 ![An assembled ATX tower in PC Anatomy: a dual-glass aluminium case with the motherboard, graphics card, cooler and power supply visible through the window](docs/screenshots/pc-assembled.png)
 
@@ -17,6 +17,9 @@ Press **Auto** at the left end of the bottom bar to watch the machine take itsel
 ```text
 Desktop PC
 ├── Motherboard
+│   ├── Network controller
+│   │   ├── Ethernet frame
+│   │   └── Ethernet cable
 │   ├── Ryzen 9 9950X
 │   │   ├── Ryzen I/O die
 │   │   └── Zen 5 core
@@ -50,6 +53,8 @@ Desktop PC
             └── Render slice
                 └── Xe-core
                     └── Xe vector engine (XVE)
+
+Home network (a second root: computer, router, Wi-Fi, provider, DNS, web server)
 ```
 
 The slider moves each scale from its assembled state to a laid-out inventory. Search can jump directly to a component at any depth, while breadcrumbs and the scale navigator move back through the machine.
@@ -94,6 +99,23 @@ The site opens on the **School home**, which lists each subject with its course 
 5. **The transistor** — one switch, cut open
 
 The core follows AMD's published Zen 5 figures. The ALU, adder, gate and transistor are teaching models, and each says so; see [SOURCES.md](SOURCES.md) for what every cited document supports.
+
+**Networks and the internet.** Exhibits: a home network (with the router, Wi-Fi, DNS and a web server), the network controller, an Ethernet cable and a packet's layers. Course, _How the internet reaches you_:
+
+1. **Your home network** — private addresses, the router, Wi-Fi and DNS
+2. **The network controller** — MAC, PHY, transformer, jack and status lights
+3. **The Ethernet cable** — eight wires in four twisted pairs
+4. **A packet's layers** — data inside TCP, inside IP, inside Ethernet
+
+The networking facts come from the IETF RFCs that define them and Texas Instruments' DP83867 Ethernet datasheet; see [SOURCES.md](SOURCES.md).
+
+### For teachers
+
+There are no accounts, so everything works through links and each student's own browser:
+
+- **For teachers** (`/?teach`) lists every lesson with its steps and answer key, copies lesson links, and builds an **assignment link** for a set of lessons with an optional title. Anyone can open it, so the answer keys are not secret.
+- A student who opens an assignment link (`/?assign=…`) sees it on their School home, with each lesson's status, until they remove it.
+- **My progress** (`/?progress`) shows every lesson's status and its best "right first time" score on the checks, with a certificate for each finished course. Students can print it or show it to the teacher; the teacher page cannot see it.
 
 Every screen has its own link, so a teacher can send a class straight to a lab (`/?lab=laptop`), a lesson step (`/?lesson=the-motherboard&step=3`) or a part (`/?scale=card&part=vapor&explode=60`). Back and Forward step between them.
 
