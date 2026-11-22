@@ -45,3 +45,8 @@ next-env.d.ts
 /Claude outputs/
 /_pcanatomy-commit.ps1
 /HANDOFF.md
+
+# The /atlas/ build made by the Pages workflow
+atlas-dist/
+# Screenshots and results written by tests/browser
+verification/

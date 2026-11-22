@@ -659,6 +659,27 @@ production build on every push and pull request with Node.js 22.
 The suite builds every scale, so a geometry regression usually surfaces as a
 failing assertion rather than a silent visual change.
 
+## Publishing
+
+`.github/workflows/pages.yml` on this branch runs only by hand
+(`workflow_dispatch`) and publishes three editions side by side on GitHub
+Pages: the lab edition from `bigchange-school` at `/pc-anatomy/`, the school
+branding edition at `/pc-anatomy/school/`, and this branch at
+`/pc-anatomy/atlas/` (built with `--base /pc-anatomy/atlas/`). The root and
+`/school/` are built and verified exactly as `bigchange-school`'s own workflow
+does them. That branch has gone its own way — it removed the 3D explorer this
+branch is built on — so the two are published next to each other rather than
+merged. A push to `bigchange-school` runs that branch's workflow, which does
+not build `/atlas/`, so `/atlas/` disappears until this workflow runs again.
+
+Anything that links to the site must stay base-relative: use
+`import.meta.env.BASE_URL` (as `app/links.ts` does) or `location.pathname`,
+never a path starting with `/`.
+
+`tests/browser/atlas-smoke.mjs` checks the School home, a lesson link and the
+teacher page. The lab checks beside it start at `/?lab=computer` through
+`tests/browser/start.mjs`, because the bare address is the School home.
+
 ## What is verified, and what is not
 
 Keep this section honest; it is the part a newcomer will trust.
@@ -685,6 +706,13 @@ Keep this section honest; it is the part a newcomer will trust.
   link opened as a student, kept across a reload and removed, and the
   print views of the teacher page and progress report. The certificate was
   only seen with seeded progress, not after finishing a course by hand.
+- The lab browser checks were run against a local production build in a
+  headless, software-rendered browser. dell-fit, latitude, learning-polish
+  and course pass (and dell-fit passes under `/pc-anatomy/atlas/`). optiplex
+  and visual-priorities fail — and fail the same way against the unmodified
+  `school-readiness-beta` — so the atlas workflow reports them without
+  blocking. Against the dev server, learning-polish also times out, because
+  the lazily loaded labs arrive as hundreds of separate modules there.
   The labs themselves were
   only opened, not exercised; their own classroom protocols are in
   `docs/planning/`.

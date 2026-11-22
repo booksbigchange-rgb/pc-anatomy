@@ -23,6 +23,12 @@ try {
   await page.goto(
     computerLab(process.env.ATLAS_TEST_URL || 'http://127.0.0.1:5186/'),
   );
+  // The labs load on demand, so the Computer Lab arrives a moment after the
+  // first paint; isVisible() below does not wait for it.
+  await page
+    .locator('header')
+    .getByRole('button', { name: 'My learning path', exact: true })
+    .waitFor();
   for (const name of [
     'My learning path',
     'Task Manager',

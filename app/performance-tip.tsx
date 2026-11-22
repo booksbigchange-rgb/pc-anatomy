@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowUpRight, X, Zap } from 'lucide-react';
 import { hasHardwareAcceleration } from '@/lib/graphics-acceleration';
+import { GUIDE_ACCELERATION } from './links';
 
 const seenKey = 'pc-anatomy-performance-tip-v1';
 
@@ -58,11 +59,7 @@ export default function PerformanceTip({ ready }: { ready: boolean }) {
             Try enabling browser hardware acceleration for smoother rendering.
           </span>
         </output>
-        <a
-          href="/guide/index.html#smoother-3d"
-          target="_blank"
-          rel="noreferrer"
-        >
+        <a href={GUIDE_ACCELERATION} target="_blank" rel="noreferrer">
           How to enable it <ArrowUpRight size={13} />
         </a>
       </div>

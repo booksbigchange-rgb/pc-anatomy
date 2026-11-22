@@ -101,7 +101,12 @@ try {
     'Hover must preserve readable text on the light button',
   );
   await shot('03-final-review');
-  await page.reload();
+  // A fresh load of the Computer Lab, rather than a reload: reloading now
+  // keeps the student on the screen they were on (the learning path has its
+  // own address), and this step checks that results survive a new visit.
+  await page.goto(
+    computerLab(process.env.ATLAS_TEST_URL || 'http://127.0.0.1:5186/'),
+  );
   await click('My learning path');
   assert.match(
     await page.getByRole('region', { name: 'Learning path' }).innerText(),
