@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import { computerLab } from './start.mjs';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 await mkdir('verification/course', { recursive: true });
@@ -22,7 +23,9 @@ const shot = async (name) => {
   return page.screenshot({ path: `verification/course/${name}.png` });
 };
 try {
-  await page.goto(process.env.ATLAS_TEST_URL || 'http://127.0.0.1:5186/');
+  await page.goto(
+    computerLab(process.env.ATLAS_TEST_URL || 'http://127.0.0.1:5186/'),
+  );
   await click('My learning path');
   await shot('01-learning-path');
   await click('How parts work together');

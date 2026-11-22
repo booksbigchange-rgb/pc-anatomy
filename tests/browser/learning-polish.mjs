@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import { computerLab } from './start.mjs';
 import * as T from 'three';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -21,7 +22,9 @@ const shot = async (name) =>
     timeout: 30000,
   });
 try {
-  await page.goto(process.env.ATLAS_TEST_URL || 'http://127.0.0.1:5186/');
+  await page.goto(
+    computerLab(process.env.ATLAS_TEST_URL || 'http://127.0.0.1:5186/'),
+  );
   await page.getByRole('button', { name: 'Task Manager', exact: true }).click();
   await page
     .locator('.tm-app-grid button')

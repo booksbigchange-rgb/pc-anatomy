@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import { computerLab } from './start.mjs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import * as T from 'three';
@@ -29,7 +30,9 @@ const shot = async (name) => {
   });
 };
 try {
-  await page.goto(process.env.ATLAS_TEST_URL ?? 'http://127.0.0.1:5173/');
+  await page.goto(
+    computerLab(process.env.ATLAS_TEST_URL ?? 'http://127.0.0.1:5173/'),
+  );
   await page.getByRole('button', { name: 'Laptop Lab', exact: true }).click();
   assert.equal(
     await page.getByRole('combobox', { name: 'Laptop model' }).inputValue(),

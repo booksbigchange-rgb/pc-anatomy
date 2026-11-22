@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import { computerLab } from './start.mjs';
 import { mkdir } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 const directory = 'verification/dell-fit';
@@ -23,7 +24,7 @@ const shot = async (name) => {
   await page.screenshot({ path: `${directory}/${name}.png` });
 };
 try {
-  await page.goto(url);
+  await page.goto(computerLab(url));
   if (await page.getByRole('button', { name: /Skip intro/ }).count())
     await page.getByRole('button', { name: /Skip intro/ }).click();
   await page.getByRole('button', { name: 'Laptop Lab', exact: true }).click();
@@ -88,7 +89,7 @@ try {
     .getByRole('button', { name: 'Reset rotation', exact: true })
     .click();
   await page.getByRole('button', { name: 'Show all', exact: true }).click();
-  await page.goto(url);
+  await page.goto(computerLab(url));
   await page.getByRole('button', { name: /Build.*PC/i }).click();
   for (const choice of [
     /Intel Core i5-6500/,

@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import { computerLab } from './start.mjs';
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 const dir = 'verification/visual-priorities';
@@ -19,7 +20,9 @@ const shot = async (name) => {
   await page.screenshot({ path: `${dir}/${name}.png` });
 };
 try {
-  await page.goto(process.env.ATLAS_TEST_URL || 'http://127.0.0.1:5186/');
+  await page.goto(
+    computerLab(process.env.ATLAS_TEST_URL || 'http://127.0.0.1:5186/'),
+  );
   for (const name of [
     'My learning path',
     'Task Manager',
@@ -58,7 +61,9 @@ try {
       .fill(value);
     await shot(`03-teardown-${value}`);
   }
-  await page.goto(process.env.ATLAS_TEST_URL || 'http://127.0.0.1:5186/');
+  await page.goto(
+    computerLab(process.env.ATLAS_TEST_URL || 'http://127.0.0.1:5186/'),
+  );
   await page
     .locator('header')
     .getByRole('button', { name: 'Explore inside the PC', exact: true })
