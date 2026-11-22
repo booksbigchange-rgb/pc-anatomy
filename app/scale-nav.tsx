@@ -2,19 +2,23 @@
 import {
   Binary,
   Box,
+  Cable,
   Calculator,
   ChevronDown,
   ChevronRight,
   CircuitBoard,
   Cpu,
   Droplets,
+  EthernetPort,
   Fan,
   GitCompareArrows,
   GraduationCap,
   HardDrive,
   Layers3,
   Microscope,
+  Package,
   PcCase,
+  Router,
   SquarePlus,
   ToggleLeft,
   X,
@@ -24,7 +28,8 @@ import {
   branches,
   levels,
   menuRoot,
-  rootLevel,
+  rootOf,
+  roots,
   submenuRoot,
   type LevelId,
 } from '@/lib/levels';
@@ -36,6 +41,10 @@ const levelIcon: Record<LevelId, typeof Box> = {
   motherboard: CircuitBoard,
   ryzen: Cpu,
   ryzenio: CircuitBoard,
+  nic: EthernetPort,
+  frame: Package,
+  cable: Cable,
+  homenet: Router,
   zen5core: Cpu,
   alu: Calculator,
   adder: SquarePlus,
@@ -115,119 +124,132 @@ export default function ScaleNav({
         <ChevronRight size={15} />
       </button>
       <nav className="scale-navigation" aria-label="Exploration scale">
-        <button
-          className={level === rootLevel ? 'active' : ''}
-          aria-current={level === rootLevel ? 'true' : undefined}
-          onClick={() => {
-            onOpenMenu(null);
-            onNavigate(rootLevel);
-          }}
-        >
-          <span>01</span>
-          <PcCase size={18} />
-          <div>
-            {levels[rootLevel].name}
-            <small>{levels[rootLevel].summary}</small>
-          </div>
-          <ChevronRight size={15} />
-        </button>
-
-        {branches().map(({ root, label, levels: scales, submenus }, index) => {
-          const Icon = levelIcon[root];
-          const open = shownMenu === root;
-          const here = menuRoot(level) === root;
-          const scaleButton = (id: LevelId) => (
+        {roots.map((root) => {
+          const RootIcon = levelIcon[root];
+          const current = rootOf(level) === root;
+          return (
             <button
-              key={id}
-              className={id === level ? 'active' : ''}
-              aria-current={id === level ? 'true' : undefined}
-              onClick={() => onNavigate(id)}
+              key={root}
+              className={
+                (level === root ? 'active' : '') + (current ? ' root-here' : '')
+              }
+              aria-current={level === root ? 'true' : undefined}
+              onClick={() => {
+                onOpenMenu(null);
+                onNavigate(root);
+              }}
             >
-              <i />
+              <span>{String(roots.indexOf(root) + 1).padStart(2, '0')}</span>
+              <RootIcon size={18} />
               <div>
-                {levels[id].name}
-                <small>
-                  {levels[id].detailed
-                    ? levels[id].summary
-                    : levels[id].summary + ' · placeholder'}
-                </small>
+                {levels[root].name}
+                <small>{levels[root].summary}</small>
               </div>
+              <ChevronRight size={15} />
             </button>
           );
-          return (
-            <div
-              className={
-                'branch' + (open ? ' open' : '') + (here ? ' here' : '')
-              }
-              key={root}
-            >
+        })}
+
+        {branches(rootOf(level)).map(
+          ({ root, label, levels: scales, submenus }, index) => {
+            const Icon = levelIcon[root];
+            const open = shownMenu === root;
+            const here = menuRoot(level) === root;
+            const scaleButton = (id: LevelId) => (
               <button
-                className="branch-head"
-                aria-expanded={open}
-                onClick={() => onOpenMenu(open ? rootLevel : root)}
+                key={id}
+                className={id === level ? 'active' : ''}
+                aria-current={id === level ? 'true' : undefined}
+                onClick={() => onNavigate(id)}
               >
-                <span>{String(index + 2).padStart(2, '0')}</span>
-                <Icon size={18} />
+                <i />
                 <div>
-                  {label}
+                  {levels[id].name}
                   <small>
-                    {submenus.length > 0
-                      ? `${submenus.length} ${label === 'GPU' ? 'cards' : 'models'} · ${scales.length} scales`
-                      : label === 'Power supply'
-                        ? `${scales.length} models`
-                        : `${scales.length} ${scales.length === 1 ? 'scale' : 'scales'} inside`}
+                    {levels[id].detailed
+                      ? levels[id].summary
+                      : levels[id].summary + ' · placeholder'}
                   </small>
                 </div>
-                <ChevronDown size={15} />
               </button>
-              {open && submenus.length === 0 && (
-                <div className="branch-scales">{scales.map(scaleButton)}</div>
-              )}
-              {open && submenus.length > 0 && (
-                <div className="branch-scales branch-submenus">
-                  {submenus.map((sub) => {
-                    const subOpen = shownSubmenu === sub.root;
-                    const subHere = submenuRoot(level) === sub.root;
-                    return (
-                      <div
-                        key={sub.root}
-                        className={
-                          'submenu' +
-                          (subOpen ? ' open' : '') +
-                          (subHere ? ' here' : '')
-                        }
-                      >
-                        <button
-                          className="submenu-head"
-                          aria-expanded={subOpen}
-                          onClick={() =>
-                            onOpenSubmenu(subOpen ? 'none' : sub.root)
+            );
+            return (
+              <div
+                className={
+                  'branch' + (open ? ' open' : '') + (here ? ' here' : '')
+                }
+                key={root}
+              >
+                <button
+                  className="branch-head"
+                  aria-expanded={open}
+                  onClick={() => onOpenMenu(open ? rootOf(level) : root)}
+                >
+                  <span>
+                    {String(index + roots.length + 1).padStart(2, '0')}
+                  </span>
+                  <Icon size={18} />
+                  <div>
+                    {label}
+                    <small>
+                      {submenus.length > 0
+                        ? `${submenus.length} ${label === 'GPU' ? 'cards' : 'models'} · ${scales.length} scales`
+                        : label === 'Power supply'
+                          ? `${scales.length} models`
+                          : `${scales.length} ${scales.length === 1 ? 'scale' : 'scales'} inside`}
+                    </small>
+                  </div>
+                  <ChevronDown size={15} />
+                </button>
+                {open && submenus.length === 0 && (
+                  <div className="branch-scales">{scales.map(scaleButton)}</div>
+                )}
+                {open && submenus.length > 0 && (
+                  <div className="branch-scales branch-submenus">
+                    {submenus.map((sub) => {
+                      const subOpen = shownSubmenu === sub.root;
+                      const subHere = submenuRoot(level) === sub.root;
+                      return (
+                        <div
+                          key={sub.root}
+                          className={
+                            'submenu' +
+                            (subOpen ? ' open' : '') +
+                            (subHere ? ' here' : '')
                           }
                         >
-                          <i />
-                          <div>
-                            {sub.label}
-                            <small>
-                              {sub.note ? sub.note + ' · ' : ''}
-                              {sub.levels.length}{' '}
-                              {sub.levels.length === 1 ? 'scale' : 'scales'}
-                            </small>
-                          </div>
-                          <ChevronDown size={13} />
-                        </button>
-                        {subOpen && (
-                          <div className="submenu-scales">
-                            {sub.levels.map(scaleButton)}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
+                          <button
+                            className="submenu-head"
+                            aria-expanded={subOpen}
+                            onClick={() =>
+                              onOpenSubmenu(subOpen ? 'none' : sub.root)
+                            }
+                          >
+                            <i />
+                            <div>
+                              {sub.label}
+                              <small>
+                                {sub.note ? sub.note + ' · ' : ''}
+                                {sub.levels.length}{' '}
+                                {sub.levels.length === 1 ? 'scale' : 'scales'}
+                              </small>
+                            </div>
+                            <ChevronDown size={13} />
+                          </button>
+                          {subOpen && (
+                            <div className="submenu-scales">
+                              {sub.levels.map(scaleButton)}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          },
+        )}
       </nav>
     </div>
   );

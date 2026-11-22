@@ -368,6 +368,7 @@ export const motherboardConcepts: Concept[] = [
   }),
   concept({
     id: 'lan',
+    open: 'nic',
     name: 'Network controller',
     shortName: 'Ethernet',
     category: 'Board',

@@ -55,6 +55,40 @@ notch, an M-key contact gap, a controller, DRAM and two NAND packages. BGA joint
 are beneath the chips. Package count, contact count and routing are illustrative.
 The model is an educational assembly, not a reproduction of the Samsung 990 PRO PCB.
 
+## Networks and the internet · November 22, 2026
+
+A home network root and three scales below the motherboard's network
+controller: the controller, the Ethernet frame its MAC builds and the cable
+its jack takes. Each document below was downloaded and read on November 22,
+2026 before it was cited.
+
+- **ASUS TUF Gaming X670E-Plus WiFi manual** (`mainboardmanual`): 1 × Realtek
+  2.5 Gb Ethernet; 2×2 Wi-Fi 6E (802.11 a/b/g/n/ac/ax).
+- **TI DP83867 Ethernet PHY datasheet** (`dp83867`), the worked example for the
+  controller: a PHY for 10/100/1000 Mb/s that "interfaces directly to twisted
+  pair media via an external transformer" and to the MAC through MII, GMII or
+  RGMII; crosstalk cancellation; LEDs for link and activity; "the standard
+  cabling with eight wires (four twisted pairs)", a gigabit link failing on two
+  pairs; CAT5, CAT5e and CAT6 named as cable categories. The board's own
+  Realtek controller has no document cited here, so nothing is claimed about
+  its internal layout, and the controller scale says so.
+- **RFC 894**: IP over Ethernet; 48-bit Ethernet addresses; type field 0800 for
+  IP; data field 46–1500 octets, so at most 1500 bytes of IP packet per frame.
+- **RFC 791**: 32-bit IP source and destination addresses; time to live,
+  reduced along the route, the datagram destroyed at zero.
+- **RFC 9293**: 16-bit source and destination ports, 32-bit sequence number,
+  "a reliable, in-order, byte-stream service".
+- **RFC 1918**: the private ranges 10/8, 172.16/12 and 192.168/16.
+- **RFC 3022**: NAT joins a realm of private addresses to an external realm of
+  globally unique addresses.
+- **RFC 1034**: DNS uses names to retrieve host addresses.
+- **RFC 1122**: hosts' communication layers (link, IP, transport).
+
+Not cited, because the page could not be read as text: the Wi-Fi Alliance's
+site (a script-rendered page). Wi-Fi claims rest on the ASUS manual only. No
+document read here explains why the pairs are twisted, so the lessons do not
+say why.
+
 ## Inside the chip · November 21, 2026
 
 Five logical scales continue below one Zen 5 core: the core itself, an integer

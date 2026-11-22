@@ -83,5 +83,44 @@ export function diagramKit(
     return add(id, group, pos, delta);
   };
 
-  return { backdrop, block };
+  /**
+   * A labelled block whose lettering is sized to be read.
+   *
+   * `label` draws text at a fixed size on a 512 × 96 canvas and stretches the
+   * canvas to the width it is given, so with `block`'s widths a short word
+   * fills only a sliver of its plane. Here the width is worked back from how
+   * wide the letters should be — about 25 px a character at that font — and
+   * capped by the block's depth so tall letters never spill off a thin block.
+   * It is also less metallic, so the key light's glare does not wash out the
+   * lettering on the blocks nearest it. The newer diagrams use this; `block`
+   * is kept as it was so the older ones look the same.
+   */
+  const readableBlock = (
+    id: string,
+    size: Vec3,
+    pos: Vec3,
+    color: string,
+    text: string,
+    delta: Vec3 = [0, 1, Math.sign(pos[2]) * 0.4],
+  ) => {
+    const group = new T.Group();
+    put(group, box(size, color, 0.12), [0, 0, 0]);
+    label(
+      group,
+      text,
+      [0, size[1] / 2 + 0.01, 0],
+      readableWidth(text, size),
+      palette.text,
+    );
+    return add(id, group, pos, delta);
+  };
+
+  return { backdrop, block, readableBlock };
+}
+
+/** The `label` width that makes `text` legible on a block of `size`. */
+export function readableWidth(text: string, size: Vec3) {
+  const chars = Math.max(text.length, 1);
+  const across = Math.min(size[0] * 0.82, chars * 0.24);
+  return Math.min((across * 512) / (chars * 25.2), (size[2] * 0.7 * 512) / 42);
 }

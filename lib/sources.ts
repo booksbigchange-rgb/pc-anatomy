@@ -255,6 +255,38 @@ export const sources = {
     name: 'Texas Instruments · CMOS power consumption and Cpd calculation (SCAA035B)',
     url: 'https://www.ti.com/lit/an/scaa035b/scaa035b.pdf',
   },
+  dp83867: {
+    name: 'Texas Instruments · DP83867 10/100/1000 Ethernet physical layer transceiver datasheet',
+    url: 'https://www.ti.com/lit/ds/symlink/dp83867ir.pdf',
+  },
+  rfc894: {
+    name: 'IETF · RFC 894, Transmission of IP datagrams over Ethernet networks',
+    url: 'https://www.rfc-editor.org/rfc/rfc894.html',
+  },
+  rfc791: {
+    name: 'IETF · RFC 791, Internet Protocol',
+    url: 'https://www.rfc-editor.org/rfc/rfc791.html',
+  },
+  rfc9293: {
+    name: 'IETF · RFC 9293, Transmission Control Protocol (TCP)',
+    url: 'https://www.rfc-editor.org/rfc/rfc9293.html',
+  },
+  rfc1918: {
+    name: 'IETF · RFC 1918, Address allocation for private internets',
+    url: 'https://www.rfc-editor.org/rfc/rfc1918.html',
+  },
+  rfc3022: {
+    name: 'IETF · RFC 3022, Traditional IP network address translator (NAT)',
+    url: 'https://www.rfc-editor.org/rfc/rfc3022.html',
+  },
+  rfc1034: {
+    name: 'IETF · RFC 1034, Domain names: concepts and facilities',
+    url: 'https://www.rfc-editor.org/rfc/rfc1034.html',
+  },
+  rfc1122: {
+    name: 'IETF · RFC 1122, Requirements for Internet hosts: communication layers',
+    url: 'https://www.rfc-editor.org/rfc/rfc1122.html',
+  },
 } as const;
 
 export type SourceId = keyof typeof sources;

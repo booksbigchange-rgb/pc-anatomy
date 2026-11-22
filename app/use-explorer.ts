@@ -15,6 +15,7 @@ import {
   levelPath,
   levels,
   menuRoot,
+  rootOf,
   submenuRoot,
   type LevelId,
 } from '@/lib/levels';
@@ -91,8 +92,11 @@ export function useExplorer(start: ExplorerState = initialState) {
     setHiddenMenuOpen(false);
     setOpenMenu(null);
     setOpenSubmenu(null);
+    // Back to the top of whichever tree is open: the home network resets to
+    // the home network, not to the tower.
     setState((s) => ({
       ...initialState,
+      level: rootOf(s.level),
       cameraRevision: s.cameraRevision + 1,
     }));
     setLayers(false);

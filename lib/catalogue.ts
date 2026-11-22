@@ -40,7 +40,11 @@ export type ExhibitIcon =
   | 'switch'
   | 'gate'
   | 'adder'
-  | 'alu';
+  | 'alu'
+  | 'router'
+  | 'nic'
+  | 'cable'
+  | 'packet';
 
 export type Exhibit = {
   id: string;
@@ -163,6 +167,47 @@ export const subjects: Subject[] = [
           'One switch cut open: silicon, source, drain, gate, insulator and channel.',
         icon: 'switch',
         open: { kind: 'scale', level: 'transistor' },
+      },
+    ],
+  },
+  {
+    id: 'networks',
+    title: 'Networks and the internet',
+    summary:
+      'Follow your data out of the computer: through the network controller and the cable, past your home router and across the internet.',
+    courses: ['how-the-internet-reaches-you'],
+    exhibits: [
+      {
+        id: 'home-network',
+        title: 'Home network',
+        summary:
+          'Your computer, the router, private addresses, Wi-Fi, DNS and the web server at the other end.',
+        icon: 'router',
+        open: { kind: 'scale', level: 'homenet' },
+      },
+      {
+        id: 'network-controller',
+        title: 'Network controller',
+        summary:
+          'The chip that turns data into signals: MAC, PHY, transformer, jack and status lights.',
+        icon: 'nic',
+        open: { kind: 'scale', level: 'nic' },
+      },
+      {
+        id: 'ethernet-cable',
+        title: 'Ethernet cable',
+        summary:
+          'An RJ45 plug and a cable cut open: eight wires in four twisted pairs.',
+        icon: 'cable',
+        open: { kind: 'scale', level: 'cable' },
+      },
+      {
+        id: 'ethernet-frame',
+        title: 'A packet’s layers',
+        summary:
+          'Data wrapped in TCP, then IP, then Ethernet, like envelopes inside envelopes.',
+        icon: 'packet',
+        open: { kind: 'scale', level: 'frame' },
       },
     ],
   },

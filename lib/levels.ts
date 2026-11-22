@@ -12,6 +12,10 @@ export type LevelId =
   | 'motherboard'
   | 'ryzen'
   | 'ryzenio'
+  | 'nic'
+  | 'frame'
+  | 'cable'
+  | 'homenet'
   | 'zen5core'
   | 'alu'
   | 'adder'
@@ -163,6 +167,54 @@ export const levels: Record<LevelId, LevelDef> = {
     summary: 'Memory, PCIe, display and chiplet fabric',
     kind: 'logical',
     concept: 'zeniod',
+    phases: dissectionPhases,
+    detailed: true,
+  },
+  nic: {
+    id: 'nic',
+    parent: 'motherboard',
+    name: 'Network controller',
+    title: 'Inside the network controller.',
+    caption: 'WIRED ETHERNET · MAC AND PHY',
+    summary: 'MAC, PHY, transformer, jack and status lights',
+    kind: 'logical',
+    concept: 'lan',
+    phases: dissectionPhases,
+    detailed: true,
+  },
+  frame: {
+    id: 'frame',
+    parent: 'nic',
+    name: 'Ethernet frame',
+    title: 'A packet, wrapped in layers.',
+    caption: 'ETHERNET FRAME · IP PACKET · TCP SEGMENT',
+    summary: 'Data inside TCP, inside IP, inside Ethernet',
+    kind: 'logical',
+    concept: 'nicmac',
+    phases: dissectionPhases,
+    detailed: true,
+  },
+  cable: {
+    id: 'cable',
+    parent: 'nic',
+    name: 'Ethernet cable',
+    title: 'Eight wires, four twisted pairs.',
+    caption: 'RJ45 PLUG · TWISTED-PAIR CABLE',
+    summary: 'Plug, contacts, twisted pairs and jacket',
+    kind: 'physical',
+    concept: 'nicjack',
+    phases: dissectionPhases,
+    detailed: true,
+  },
+  homenet: {
+    id: 'homenet',
+    parent: null,
+    name: 'Home network',
+    title: 'How your computer reaches the internet.',
+    caption: 'HOME NETWORK · ROUTER · INTERNET',
+    summary: 'Computer, router, provider, DNS and a web server',
+    kind: 'logical',
+    concept: 'homenet',
     phases: dissectionPhases,
     detailed: true,
   },
@@ -563,7 +615,20 @@ export const levels: Record<LevelId, LevelDef> = {
 
 export const levelIds = Object.keys(levels) as LevelId[];
 
+/** The root the explorer opens on: the desktop PC. */
 export const rootLevel: LevelId = 'pc';
+
+/**
+ * Every root: a scale with no parent. The machine was once the only one; a
+ * subject whose top is not inside a PC, such as a home network, is a root of
+ * its own, with its own branches, rather than a fake child of the tower.
+ */
+export const roots: LevelId[] = levelIds.filter((id) => !levels[id].parent);
+
+/** The root a scale belongs to. */
+export function rootOf(id: LevelId): LevelId {
+  return levelPath(id)[0];
+}
 
 /** Root-first path to a level. Replaces the old hand-written table. */
 export function levelPath(id: LevelId): LevelId[] {
@@ -632,9 +697,11 @@ export function submenuRoot(id: LevelId): LevelId | null {
  * fan and the tower cooler are both cooling, so they share a heading instead
  * of producing two menus of one entry each.
  */
-export function branches(): Branch[] {
+export function branches(tree: LevelId = rootLevel): Branch[] {
   const grouped = new Map<string, LevelId[]>();
-  for (const root of levelIds.filter((id) => levels[id].branchLabel)) {
+  for (const root of levelIds.filter(
+    (id) => levels[id].branchLabel && rootOf(id) === tree,
+  )) {
     const label = levels[root].branchLabel ?? levels[root].name;
     grouped.set(label, [
       ...(grouped.get(label) ?? []),
@@ -660,5 +727,8 @@ export function branches(): Branch[] {
  * Cooling heading, keyed by whichever of them comes first.
  */
 export function menuRoot(id: LevelId): LevelId | null {
-  return branches().find((branch) => branch.levels.includes(id))?.root ?? null;
+  return (
+    branches(rootOf(id)).find((branch) => branch.levels.includes(id))?.root ??
+    null
+  );
 }

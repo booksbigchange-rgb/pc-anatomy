@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import type * as THREE from 'three';
 import type { ModelTools } from './hardware.ts';
 import type { Vec3 } from './layout.ts';
 import { diagramKit, type DiagramPalette } from './diagram-kit.ts';
@@ -35,37 +35,7 @@ export function buildChipArchitecture(
   tools: ModelTools,
   root: THREE.Group,
 ) {
-  const { backdrop } = diagramKit(tools, palette);
-  const { add, box, label } = tools;
-
-  /**
-   * A labelled block, like the kit's, with lettering sized to be read.
-   *
-   * `label` draws text at a fixed size on a 512 × 96 canvas and stretches
-   * the canvas to the width it is given, so a short word fills only a sliver
-   * of it. Here the width is worked back from how wide the letters should
-   * be, about 25 px a character at that font, and capped by the block's
-   * depth so tall letters never spill off a thin block.
-   */
-  const block = (
-    id: string,
-    size: Vec3,
-    pos: Vec3,
-    color: string,
-    text: string,
-    delta: Vec3 = [0, 1, Math.sign(pos[2]) * 0.4],
-  ) => {
-    const group = new THREE.Group();
-    group.add(box(size, color, 0.45));
-    const chars = Math.max(text.length, 1);
-    const across = Math.min(size[0] * 0.82, chars * 0.24);
-    const width = Math.min(
-      (across * 512) / (chars * 25.2),
-      (size[2] * 0.7 * 512) / 42,
-    );
-    label(group, text, [0, size[1] / 2 + 0.01, 0], width, palette.text);
-    return add(id, group, pos, delta);
-  };
+  const { backdrop, readableBlock: block } = diagramKit(tools, palette);
 
   if (level === 'zen5core') {
     backdrop(root, [11.2, 7.6], 'ZEN 5 CORE · AMD');

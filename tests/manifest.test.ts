@@ -22,6 +22,7 @@ import {
   levelIds,
   levels,
   rootLevel,
+  roots,
 } from '../lib/levels.ts';
 import { sources } from '../lib/sources.ts';
 
@@ -62,9 +63,12 @@ await test('M.2 is reachable from its motherboard and the Storage menu without d
     'ssd',
     'nvme',
   ]);
-  const menus = branches().flatMap((b) => b.levels);
+  // Every scale but the roots is listed in exactly one menu of its tree.
+  const menus = roots.flatMap((root) =>
+    branches(root).flatMap((b) => b.levels),
+  );
   assert.equal(new Set(menus).size, menus.length);
-  assert.equal(menus.length, levelIds.length - 1);
+  assert.equal(menus.length, levelIds.length - roots.length);
   assert.equal(selectSearch(initialState, 'nvmenand').level, 'nvme');
 });
 await test('power supply menu separates modular and fixed-cable models', () => {
@@ -178,9 +182,14 @@ await test('explosion stage interpolation clamps boundaries and progresses monot
 });
 
 await test('every scale sits on a finite path back to the machine, and each has something to render', () => {
+  // The explorer opens on the machine; any other root is a subject of its own
+  // and must name the concept that stands for it, as the machine does.
+  assert.ok(roots.includes(rootLevel));
+  for (const root of roots)
+    assert.equal(byId[levels[root].concept]?.open, root, root);
   for (const id of levelIds) {
     const path = levelPath(id);
-    assert.equal(path[0], rootLevel, id + ' does not descend from the machine');
+    assert.ok(roots.includes(path[0]), id + ' does not descend from a root');
     assert.equal(path.at(-1), id);
     assert.equal(new Set(path).size, path.length, 'cycle in path to ' + id);
     // A scale nobody can reach, or one with nothing on it, is a dead branch.
@@ -241,9 +250,9 @@ await test('branching does not strand the viewer: back always reaches the machin
   for (const id of levelIds) {
     let cursor = id,
       steps = 0;
-    while (cursor !== rootLevel && steps++ < levelIds.length)
+    while (!roots.includes(cursor) && steps++ < levelIds.length)
       cursor = levelPath(cursor).at(-2)!;
-    assert.equal(cursor, rootLevel, 'cannot walk back from ' + id);
+    assert.ok(roots.includes(cursor), 'cannot walk back from ' + id);
   }
 });
 
