@@ -8,9 +8,12 @@ import {
   answerPick,
   beginStep,
   canReveal,
+  outcomeOf,
   reveal as revealAnswer,
+  scoreOf,
   stepOf,
   type LessonRun,
+  type Outcome,
 } from '@/lib/lesson-run';
 import {
   readProgress,
@@ -19,6 +22,7 @@ import {
   resumeStep,
   writeProgress,
   type Progress,
+  type Score,
 } from '@/lib/progress';
 
 /** localStorage, or nothing where reading it throws. */
@@ -47,6 +51,18 @@ export function useLesson(
     readProgress(storage()),
   );
   useEffect(() => writeProgress(storage(), progress), [progress]);
+  // How each check of the lesson being taken went, the first time it was
+  // answered in this sitting, and the score of the lesson just finished.
+  const [outcomes, setOutcomes] = useState<Record<number, Outcome>>({});
+  const [lastScore, setLastScore] = useState<Score | null>(null);
+
+  /** Take an answered run, noting its outcome if this step has none yet. */
+  const answered = useCallback((next: LessonRun) => {
+    setRun(next);
+    const outcome = outcomeOf(next);
+    if (outcome)
+      setOutcomes((o) => (next.step in o ? o : { ...o, [next.step]: outcome }));
+  }, []);
 
   const open = useCallback(
     (next: LessonRun) => {
@@ -59,19 +75,26 @@ export function useLesson(
 
   /** Start a lesson where the reader left it, or at a given step. */
   const begin = useCallback(
-    (lesson: string, step?: number) =>
-      open(beginStep(lesson, step ?? resumeStep(progress, lessonById[lesson]))),
-    [open, progress],
+    (lesson: string, step?: number) => {
+      const at = step ?? resumeStep(progress, lessonById[lesson]);
+      // A new lesson, or the same one from the top, is a fresh sitting.
+      if (run?.lesson !== lesson || at === 0) setOutcomes({});
+      setLastScore(null);
+      open(beginStep(lesson, at));
+    },
+    [open, progress, run?.lesson],
   );
 
   const next = useCallback(() => {
     if (!run?.solved) return;
     const moved = advance(run);
     if (moved.complete) {
+      const score = scoreOf(run.lesson, outcomes);
       setRun(moved);
-      setProgress((p) => recordDone(p, run.lesson));
+      setLastScore(score);
+      setProgress((p) => recordDone(p, run.lesson, score));
     } else open(moved);
-  }, [open, run]);
+  }, [open, outcomes, run]);
 
   const goTo = useCallback(
     (step: number) => {
@@ -86,23 +109,27 @@ export function useLesson(
   }, [run, showScene]);
 
   const choose = useCallback(
-    (index: number) => setRun((r) => r && answerChoice(r, index)),
-    [],
+    (index: number) => {
+      if (run) answered(answerChoice(run, index));
+    },
+    [answered, run],
   );
 
   const pick = useCallback(
-    (concept: string) => setRun((r) => r && answerPick(r, concept)),
-    [],
+    (concept: string) => {
+      if (run) answered(answerPick(run, concept));
+    },
+    [answered, run],
   );
 
   const reveal = useCallback(() => {
     if (!run) return;
     const check = stepOf(run).check;
-    setRun(revealAnswer(run));
+    answered(revealAnswer(run));
     // Showing the answer to a find check means pointing at it on the stage.
     if (check?.kind === 'find')
       showScene({ ...stepOf(run).scene, part: check.answers[0], focus: true });
-  }, [run, showScene]);
+  }, [answered, run, showScene]);
 
   const exit = useCallback(() => setRun(null), []);
 
@@ -110,6 +137,8 @@ export function useLesson(
   return {
     run,
     progress,
+    /** Checks right at the first try in the lesson just finished. */
+    lastScore,
     lesson: run ? lessonById[run.lesson] : null,
     step,
     /** A click on the stage is an answer, not a dive. */

@@ -23,6 +23,7 @@ type Props = {
   waitingPart: Concept | null;
   onShowPart: (id: string) => void;
   onOpenCourses: () => void;
+  onOpenProgress: () => void;
 };
 
 /**
@@ -35,6 +36,7 @@ export default function LessonPanel({
   waitingPart,
   onShowPart,
   onOpenCourses,
+  onOpenProgress,
 }: Props) {
   const { run, step, progress } = lesson;
   const current = lesson.lesson;
@@ -128,6 +130,12 @@ export default function LessonPanel({
             {lessonsDone(progress, course)} of {course.lessons.length} lessons
             in {course.title}.
           </p>
+          {lesson.lastScore && lesson.lastScore.of > 0 && (
+            <p className="lesson-score">
+              Right first time: {lesson.lastScore.right} of{' '}
+              {lesson.lastScore.of} checks.
+            </p>
+          )}
           {following ? (
             <button
               className="lesson-next"
@@ -147,6 +155,7 @@ export default function LessonPanel({
           )}
           <div className="lesson-complete-actions">
             <button onClick={onOpenCourses}>All lessons</button>
+            <button onClick={onOpenProgress}>My progress</button>
             <button onClick={lesson.exit}>Keep exploring</button>
           </div>
         </div>

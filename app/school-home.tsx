@@ -5,6 +5,8 @@ import {
   Binary,
   Cable,
   Calculator,
+  Check,
+  ClipboardList,
   Code2,
   Cpu,
   EthernetPort,
@@ -13,6 +15,7 @@ import {
   Monitor,
   Package,
   PcCase,
+  Presentation,
   Route,
   Router,
   SquarePlus,
@@ -20,7 +23,8 @@ import {
   Wrench,
 } from 'lucide-react';
 import { subjects, type Doorway, type ExhibitIcon } from '@/lib/catalogue';
-import { courseById, type Lesson } from '@/lib/lessons';
+import { courseById, courseOf, lessonById, type Lesson } from '@/lib/lessons';
+import type { Assignment } from '@/lib/assignment';
 import { lessonStatus, type Progress } from '@/lib/progress';
 import AcademyLogo from './academy-logo';
 import CourseCard from './course-card';
@@ -46,9 +50,14 @@ const icons: Record<ExhibitIcon, typeof Cpu> = {
 
 type Props = {
   progress: Progress;
+  /** An assignment a teacher's link left in this browser, if any. */
+  assignment: Assignment | null;
   onOpen: (doorway: Doorway) => void;
   onStartLesson: (lesson: string) => void;
   onAbout: () => void;
+  onProgress: () => void;
+  onTeacher: () => void;
+  onClearAssignment: () => void;
 };
 
 /** The first lesson a reader is part way through, in catalogue order. */
@@ -69,6 +78,10 @@ export default function SchoolHome({
   onOpen,
   onStartLesson,
   onAbout,
+  onProgress,
+  onTeacher,
+  onClearAssignment,
+  assignment,
 }: Props) {
   const resume = inProgress(progress);
   return (
@@ -81,14 +94,34 @@ export default function SchoolHome({
             <small>A 3D school for technology</small>
           </span>
         </div>
-        <button
-          type="button"
-          className="school-about"
-          onClick={onAbout}
-          aria-label="About and sources"
-        >
-          <Info size={19} />
-        </button>
+        <div className="teach-actions">
+          <button
+            type="button"
+            className="header-button"
+            onClick={onProgress}
+            aria-label="My progress"
+          >
+            <ClipboardList size={15} />
+            <span>My progress</span>
+          </button>
+          <button
+            type="button"
+            className="header-button"
+            onClick={onTeacher}
+            aria-label="For teachers"
+          >
+            <Presentation size={15} />
+            <span>For teachers</span>
+          </button>
+          <button
+            type="button"
+            className="school-about"
+            onClick={onAbout}
+            aria-label="About and sources"
+          >
+            <Info size={19} />
+          </button>
+        </div>
       </header>
 
       <main className="school-main">
@@ -115,6 +148,64 @@ export default function SchoolHome({
             </button>
           )}
         </section>
+
+        {assignment && (
+          <section className="assignment" aria-labelledby="assignment-title">
+            <header>
+              <div>
+                <p className="school-eyebrow">Assigned by your teacher</p>
+                <h2 id="assignment-title">
+                  {assignment.title ?? 'Your assignment'}
+                </h2>
+              </div>
+              <span>
+                {
+                  assignment.lessons.filter((id) => progress.lessons[id]?.done)
+                    .length
+                }{' '}
+                of {assignment.lessons.length} done
+              </span>
+            </header>
+            <ol>
+              {assignment.lessons.map((id) => {
+                const lesson = lessonById[id];
+                const status = lessonStatus(progress, lesson);
+                return (
+                  <li key={id}>
+                    <button
+                      type="button"
+                      className={status}
+                      onClick={() => onStartLesson(id)}
+                    >
+                      <span className="course-number" aria-hidden="true">
+                        {status === 'done' ? <Check size={14} /> : null}
+                      </span>
+                      <span className="course-lesson">
+                        <strong>{lesson.title}</strong>
+                        <small>{courseOf(id)?.title}</small>
+                      </span>
+                      <span className="course-action">
+                        {status === 'done'
+                          ? 'Done'
+                          : status === 'started'
+                            ? 'Continue'
+                            : 'Start'}
+                        <ArrowRight size={13} />
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+            <button
+              type="button"
+              className="assignment-clear"
+              onClick={onClearAssignment}
+            >
+              Remove this assignment from this browser
+            </button>
+          </section>
+        )}
 
         {subjects.map((subject, index) => (
           <section

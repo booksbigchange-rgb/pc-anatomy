@@ -2,6 +2,7 @@ import { levels, type LevelId } from './levels.ts';
 import { partAt, type ExplorerState, type Scene } from './explorer-state.ts';
 import { lessonById } from './lessons/index.ts';
 import { isLabId, type LabId } from './catalogue.ts';
+import { cleanAssignment, type Assignment } from './assignment.ts';
 
 /**
  * The address bar as a serialisation of state, not a route table.
@@ -14,6 +15,9 @@ import { isLabId, type LabId } from './catalogue.ts';
  *
  *   /                                    the School home
  *   /?lab=laptop                         one of the labs
+ *   /?teach                              the teacher page
+ *   /?progress                           a student's progress report
+ *   /?assign=a,b&title=Week%203          an assignment from a teacher
  *   /?lesson=the-motherboard&step=3
  *   /?scale=card&part=vapor&explode=60&focus=1
  *
@@ -24,6 +28,9 @@ import { isLabId, type LabId } from './catalogue.ts';
 export type Address =
   | { kind: 'home' }
   | { kind: 'lab'; lab: LabId }
+  | { kind: 'teacher' }
+  | { kind: 'progress' }
+  | { kind: 'assignment'; assignment: Assignment }
   | { kind: 'lesson'; lesson: string; step: number }
   | { kind: 'view'; scene: Scene };
 
@@ -41,6 +48,16 @@ export function readAddress(search: string): Address {
       step: Number.isFinite(step) ? Math.min(count, Math.max(1, step)) - 1 : 0,
     };
   }
+  const assign = q.get('assign');
+  if (assign !== null) {
+    const assignment = cleanAssignment(
+      assign.split(','),
+      q.get('title') ?? undefined,
+    );
+    if (assignment) return { kind: 'assignment', assignment };
+  }
+  if (q.has('teach')) return { kind: 'teacher' };
+  if (q.has('progress')) return { kind: 'progress' };
   const lab = q.get('lab');
   if (lab && isLabId(lab)) return { kind: 'lab', lab };
   const scale = q.get('scale');
@@ -66,7 +83,12 @@ export function readAddress(search: string): Address {
 export function writeAddress(address: Address): string {
   const q = new URLSearchParams();
   if (address.kind === 'lab') q.set('lab', address.lab);
-  else if (address.kind === 'lesson') {
+  else if (address.kind === 'teacher') q.set('teach', '');
+  else if (address.kind === 'progress') q.set('progress', '');
+  else if (address.kind === 'assignment') {
+    q.set('assign', address.assignment.lessons.join(','));
+    if (address.assignment.title) q.set('title', address.assignment.title);
+  } else if (address.kind === 'lesson') {
     q.set('lesson', address.lesson);
     q.set('step', String(address.step + 1));
   } else if (address.kind === 'view') {
@@ -80,7 +102,8 @@ export function writeAddress(address: Address): string {
     if (scene.part && scene.focus) q.set('focus', '1');
     if (scene.part && scene.isolate) q.set('isolate', '1');
   }
-  const text = q.toString();
+  // A flag with no value reads better as `?teach` than as `?teach=`.
+  const text = q.toString().replace(/=(?=&|$)/g, '');
   return text ? '?' + text : '';
 }
 

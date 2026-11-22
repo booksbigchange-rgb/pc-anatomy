@@ -9,8 +9,11 @@ import type { Course, Lesson } from './lessons/types.ts';
  * site data) or holds something unexpected, and falls back to empty.
  */
 
+/** Checks answered right at the first try, out of the checks in a lesson. */
+export type Score = { right: number; of: number };
+
 export type Progress = {
-  lessons: Record<string, { done?: boolean; step?: number }>;
+  lessons: Record<string, { done?: boolean; step?: number; best?: Score }>;
 };
 
 export const progressKey = 'pc-anatomy:progress:v1';
@@ -35,12 +38,13 @@ export function readProgress(store: Store | null): Progress {
     const lessons: Progress['lessons'] = {};
     for (const [id, entry] of Object.entries(parsed.lessons)) {
       if (!entry || typeof entry !== 'object') continue;
-      const { done, step } = entry as Record<string, unknown>;
+      const { done, step, best } = entry as Record<string, unknown>;
       lessons[id] = {
         ...(done === true ? { done: true } : {}),
         ...(Number.isInteger(step) && (step as number) >= 0
           ? { step: step as number }
           : {}),
+        ...(isScore(best) ? { best } : {}),
       };
     }
     return { lessons };
@@ -70,11 +74,36 @@ export function recordStep(
   };
 }
 
-export function recordDone(progress: Progress, lesson: string): Progress {
-  if (progress.lessons[lesson]?.done && progress.lessons[lesson].step === 0)
-    return progress;
+function isScore(value: unknown): value is Score {
+  if (!value || typeof value !== 'object') return false;
+  const { right, of } = value as Record<string, unknown>;
+  return (
+    Number.isInteger(right) &&
+    Number.isInteger(of) &&
+    (right as number) >= 0 &&
+    (right as number) <= (of as number)
+  );
+}
+
+/**
+ * Mark a lesson finished, keeping the better of this score and any earlier
+ * one: a student who reviews a lesson should never see their record go down.
+ */
+export function recordDone(
+  progress: Progress,
+  lesson: string,
+  score?: Score,
+): Progress {
+  const before = progress.lessons[lesson];
+  const best =
+    score && (!before?.best || score.right > before.best.right)
+      ? score
+      : before?.best;
   return {
-    lessons: { ...progress.lessons, [lesson]: { done: true, step: 0 } },
+    lessons: {
+      ...progress.lessons,
+      [lesson]: { done: true, step: 0, ...(best ? { best } : {}) },
+    },
   };
 }
 

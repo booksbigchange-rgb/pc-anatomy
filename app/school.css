@@ -338,12 +338,12 @@ button.lab-brand small {
   border-color: #4d7f89;
 }
 @media (max-width: 1380px) {
-  .header-button span,
+  .topbar .header-button span,
   .search-button > span,
   .search-button kbd {
     display: none;
   }
-  .header-button {
+  .topbar .header-button {
     width: 36px;
     justify-content: center;
     padding: 0;

@@ -6,6 +6,11 @@ import { initialState, showScene, type Selection } from '@/lib/explorer-state';
 import { lessonById } from '@/lib/lessons';
 import { addressOf, readAddress, type Address } from '@/lib/url-state';
 import type { Doorway, LabId } from '@/lib/catalogue';
+import {
+  readAssignment,
+  writeAssignment,
+  type Assignment,
+} from '@/lib/assignment';
 import { useExplorer } from './use-explorer';
 import { useLesson } from './use-lesson';
 import { useAddress } from './use-address';
@@ -23,6 +28,8 @@ import DetailPanel from './detail-panel';
 import AboutDialog from './about-dialog';
 import ComparisonWorkbench from './comparison-workbench';
 import SchoolHome from './school-home';
+import TeacherPage from './teacher-page';
+import ProgressPage from './progress-page';
 import LessonPanel from './lesson-panel';
 import CoursesDialog from './courses-dialog';
 
@@ -36,6 +43,8 @@ const CourseLab = lazy(() => import('./course-lab'));
 
 type Mode =
   | 'school'
+  | 'teach'
+  | 'progress'
   | 'lab'
   | 'laptop'
   | 'assembly'
@@ -63,9 +72,21 @@ const modeLab: Partial<Record<Mode, LabId>> = {
 };
 
 function startMode(address: Address): Mode {
-  if (address.kind === 'home') return 'school';
+  // An assignment link lands on the School home, which then shows it.
+  if (address.kind === 'home' || address.kind === 'assignment') return 'school';
+  if (address.kind === 'teacher') return 'teach';
+  if (address.kind === 'progress') return 'progress';
   if (address.kind === 'lab') return labMode[address.lab];
   return 'explorer';
+}
+
+/** localStorage, or nothing where reading it throws. */
+function storage() {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
 }
 
 /** Where the address bar says to start, read once. */
@@ -75,6 +96,12 @@ function arrival(): Address {
 
 export default function Home() {
   const [boot] = useState(arrival);
+  // An assignment from a teacher's link, kept in this browser until cleared.
+  // A new link replaces the one before it.
+  const [assignment, setAssignment] = useState<Assignment | null>(() =>
+    boot.kind === 'assignment' ? boot.assignment : readAssignment(storage()),
+  );
+  useEffect(() => writeAssignment(storage(), assignment), [assignment]);
   const explorer = useExplorer(
     boot.kind === 'lesson'
       ? showScene(initialState, lessonById[boot.lesson].steps[boot.step].scene)
@@ -132,6 +159,7 @@ export default function Home() {
       lesson.exit();
       setMode(startMode(address));
       if (address.kind === 'view') explorer.showScene(address.scene);
+      if (address.kind === 'assignment') setAssignment(address.assignment);
     },
     [explorer, lesson],
   );
@@ -140,15 +168,19 @@ export default function Home() {
     address:
       mode === 'school'
         ? { kind: 'home' }
-        : lab
-          ? { kind: 'lab', lab }
-          : lesson.run
-            ? {
-                kind: 'lesson',
-                lesson: lesson.run.lesson,
-                step: lesson.run.step,
-              }
-            : addressOf(state),
+        : mode === 'teach'
+          ? { kind: 'teacher' }
+          : mode === 'progress'
+            ? { kind: 'progress' }
+            : lab
+              ? { kind: 'lab', lab }
+              : lesson.run
+                ? {
+                    kind: 'lesson',
+                    lesson: lesson.run.lesson,
+                    step: lesson.run.step,
+                  }
+                : addressOf(state),
     settling: mode === 'explorer' && (!!state.diveInto || explorer.playing),
     onAddress: follow,
   });
@@ -240,12 +272,25 @@ export default function Home() {
       <>
         <SchoolHome
           progress={lesson.progress}
+          assignment={assignment}
           onOpen={(doorway) => open(doorway)}
           onStartLesson={startLesson}
           onAbout={() => setAbout(true)}
+          onProgress={() => setMode('progress')}
+          onTeacher={() => setMode('teach')}
+          onClearAssignment={() => setAssignment(null)}
         />
         {dialogs}
       </>
+    );
+  if (mode === 'teach') return <TeacherPage onHome={goHome} />;
+  if (mode === 'progress')
+    return (
+      <ProgressPage
+        progress={lesson.progress}
+        onHome={goHome}
+        onStartLesson={startLesson}
+      />
     );
   if (mode !== 'explorer' && mode !== 'comparison')
     return (
@@ -364,6 +409,10 @@ export default function Home() {
       </aside>
       <LessonPanel
         lesson={lesson}
+        onOpenProgress={() => {
+          lesson.exit();
+          setMode('progress');
+        }}
         waitingPart={detailWaits ? selected : null}
         onShowPart={(id) => setDetailFor(id)}
         onOpenCourses={() => setCourseList(true)}

@@ -96,6 +96,31 @@ export function reveal(run: LessonRun): LessonRun {
   return { ...run, solved: true, feedback: { tone: 'revealed', text } };
 }
 
+/**
+ * How a check went: right at the first try, right after a wrong answer, or
+ * given away with "Show me". Null while it is unanswered or has no check.
+ */
+export type Outcome = 'first' | 'later' | 'revealed';
+
+export function outcomeOf(run: LessonRun): Outcome | null {
+  if (!stepOf(run).check || !run.solved || !run.feedback) return null;
+  if (run.feedback.tone === 'revealed') return 'revealed';
+  return run.attempts === 0 ? 'first' : 'later';
+}
+
+/** A lesson's score from the outcomes recorded on its steps. */
+export function scoreOf(
+  lesson: string,
+  outcomes: Record<number, Outcome>,
+): { right: number; of: number } {
+  const steps = lessonById[lesson].steps;
+  const checks = steps.flatMap((s, i) => (s.check ? [i] : []));
+  return {
+    right: checks.filter((i) => outcomes[i] === 'first').length,
+    of: checks.length,
+  };
+}
+
 export function canReveal(run: LessonRun) {
   return !run.solved && run.attempts >= revealAfter;
 }
